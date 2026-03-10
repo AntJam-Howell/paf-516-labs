@@ -96,8 +96,9 @@ mapping later.
 
 # The 5 hardship index variables (identical to Lab 1)
 hardship_vars <- c(
-  pov_num      = "B17001_002",   # Population below poverty
-  pov_den      = "B17001_001",   # Poverty universe total
+  pov_below50  = "C17002_002",   # Income-to-poverty ratio under .50
+  pov_50to99   = "C17002_003",   # Income-to-poverty ratio .50 to .99
+  pov_den      = "C17002_001",   # Poverty universe total
   med_income   = "B19013_001",   # Median household income
   unemp_num    = "B23025_005",   # Unemployed
   unemp_den    = "B23025_002",   # In labor force
@@ -153,7 +154,7 @@ cbg <- cbg_raw %>%
 # Compute derived rates from numerator/denominator pairs
 cbg <- cbg %>%
   mutate(
-    poverty_rate = pov_num / pov_den,
+    poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
     unemp_rate   = unemp_num / unemp_den,
     no_hs_rate   = nohs_num / nohs_den,
     no_ins_rate  = noins_num / noins_den,
@@ -408,7 +409,7 @@ build_index <- function(df) {
     select(-moe) %>%
     pivot_wider(names_from = variable, values_from = estimate) %>%
     mutate(
-      poverty_rate = pov_num / pov_den,
+      poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
       unemp_rate   = unemp_num / unemp_den,
       no_hs_rate   = nohs_num / nohs_den,
       no_ins_rate  = noins_num / noins_den

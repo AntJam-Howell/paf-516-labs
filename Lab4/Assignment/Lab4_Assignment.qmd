@@ -63,8 +63,9 @@ people), giving us finer spatial resolution to detect local clustering.
 # Each pair is a numerator/denominator for computing a rate,
 # except median_income which is a single estimate.
 hardship_vars <- c(
-  pov_num      = "B17001_002",   # Population below poverty level
-  pov_den      = "B17001_001",   # Total population (poverty universe)
+  pov_below50  = "C17002_002",   # Income-to-poverty ratio under .50
+  pov_50to99   = "C17002_003",   # Income-to-poverty ratio .50 to .99
+  pov_den      = "C17002_001",   # Total population (poverty universe)
   unemp_num    = "B23025_005",   # Unemployed population
   unemp_den    = "B23025_002",   # Population in labor force
   no_hs_num    = "B15003_002",   # No high school diploma (less than 9th grade)
@@ -98,7 +99,7 @@ cbg_wide <- cbg_raw %>%
 # Compute rates from numerator/denominator pairs
 cbg_wide <- cbg_wide %>%
   mutate(
-    poverty_rate = pov_num / pov_den,
+    poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
     unemp_rate   = unemp_num / unemp_den,
     no_hs_rate   = no_hs_num / no_hs_den,
     no_ins_rate  = no_ins_num / no_ins_den

@@ -70,8 +70,9 @@ We use the same 5 economic hardship variables from Lab 1. One important note: th
 # These are the SAME 5 indicators from Lab 1.
 # Each rate variable needs a numerator and denominator.
 hardship_vars <- c(
-  pov_num      = "B17001_002",   # Population below poverty level
-  pov_den      = "B17001_001",   # Total population (poverty universe)
+  pov_below50  = "C17002_002",   # Income-to-poverty ratio under .50
+  pov_50to99   = "C17002_003",   # Income-to-poverty ratio .50 to .99
+  pov_den      = "C17002_001",   # Total population (poverty universe)
   unemp_num    = "B23025_005",   # Unemployed population
   unemp_den    = "B23025_002",   # In labor force (denominator)
   no_hs_num    = "B15003_002",   # No high school diploma
@@ -141,7 +142,7 @@ build_hardship_index <- function( df ) {
   # Compute rate variables from numerator/denominator pairs
   wide <- wide %>%
     mutate(
-      poverty_rate = pov_num / pov_den,
+      poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
       unemp_rate   = unemp_num / unemp_den,
       no_hs_rate   = no_hs_num / no_hs_den,
       no_ins_rate  = no_ins_num / no_ins_den

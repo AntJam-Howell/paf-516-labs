@@ -67,8 +67,9 @@ vars_available <- load_variables( 2023, "acs5", cache = TRUE )
 # Define our indicator variables for an "economic hardship" construct
 # Each variable name is given a readable alias
 hardship_vars <- c(
-  pct_poverty    = "B17001_002",   # Population below poverty level
-  pop_total_pov  = "B17001_001",   # Total population (poverty universe) - for denominator
+  pov_below50    = "C17002_002",   # Income-to-poverty ratio under .50
+  pov_50to99     = "C17002_003",   # Income-to-poverty ratio .50 to .99
+  pov_den        = "C17002_001",   # Total population (poverty universe)
   median_income  = "B19013_001",   # Median household income
   pct_unemp_num  = "B23025_005",   # Unemployed population
   pct_unemp_den  = "B23025_002",   # In labor force (denominator for unemployment)
@@ -110,7 +111,7 @@ CenDF_wide <- CenDF %>%
 CenDF_wide <- CenDF_wide %>%
   mutate(
     # Poverty rate: people below poverty / poverty universe
-    poverty_rate = pct_poverty / pop_total_pov,
+    poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
     # Unemployment rate: unemployed / in labor force
     unemp_rate   = pct_unemp_num / pct_unemp_den,
     # Percent without high school diploma
@@ -143,7 +144,7 @@ index_z <- index_z %>%
 
 | Variable | Census Code | Why Included |
 |----------|------------|--------------|
-| Poverty rate | B17001_002 / B17001_001 | Direct measure of economic deprivation |
+| Poverty rate | C17002_002 + C17002_003 / C17002_001 | Direct measure of economic deprivation |
 | Unemployment rate | B23025_005 / B23025_002 | Reflects labor market hardship |
 | No high school diploma | B15003_002 / B15003_001 | Education is a strong predictor of economic outcomes |
 | No health insurance | B27010_017 / B27010_001 | Lack of insurance reflects economic vulnerability |
@@ -285,7 +286,7 @@ county_wide <- county_df %>%
 # Compute the same rate variables as the tract level
 county_wide <- county_wide %>%
   mutate(
-    poverty_rate = pct_poverty / pop_total_pov,
+    poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
     unemp_rate   = pct_unemp_num / pct_unemp_den,
     no_hs_rate   = pct_no_hs_num / pct_no_hs_den,
     no_ins_rate  = pct_no_ins_num / pct_no_ins_den
@@ -361,7 +362,7 @@ cbg_wide <- cbg_df %>%
 
 cbg_wide <- cbg_wide %>%
   mutate(
-    poverty_rate = pct_poverty / pop_total_pov,
+    poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
     unemp_rate   = pct_unemp_num / pct_unemp_den,
     no_hs_rate   = pct_no_hs_num / pct_no_hs_den,
     no_ins_rate  = pct_no_ins_num / pct_no_ins_den

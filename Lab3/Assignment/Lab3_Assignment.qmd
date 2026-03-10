@@ -53,8 +53,9 @@ In Labs 1 and 2 we worked at the tract and county level. Here we move to **censu
 
 # Define our 5-variable economic hardship indicator set (same as Lab 1)
 hardship_vars <- c(
-  pct_poverty    = "B17001_002",   # Population below poverty level
-  pop_total_pov  = "B17001_001",   # Total population (poverty universe)
+  pov_below50    = "C17002_002",   # Income-to-poverty ratio under .50
+  pov_50to99     = "C17002_003",   # Income-to-poverty ratio .50 to .99
+  pov_den        = "C17002_001",   # Total population (poverty universe)
   median_income  = "B19013_001",   # Median household income
   pct_unemp_num  = "B23025_005",   # Unemployed population
   pct_unemp_den  = "B23025_002",   # In labor force (denominator)
@@ -100,7 +101,7 @@ cbg_wide <- cbg_raw %>%
 # Compute derived rate variables
 cbg_wide <- cbg_wide %>%
   mutate(
-    poverty_rate = pct_poverty / pop_total_pov,
+    poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
     unemp_rate   = pct_unemp_num / pct_unemp_den,
     no_hs_rate   = pct_no_hs_num / pct_no_hs_den,
     no_ins_rate  = pct_no_ins_num / pct_no_ins_den
