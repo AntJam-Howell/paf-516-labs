@@ -1,591 +1,569 @@
 ---
-title: "Lab 03 — Solutions: Identifying Neighborhood Clusters"
-subtitle: "PAF 516"
+title: "Lab 03 — Solutions: Spatial Data Integration & Overlay Analysis"
+subtitle: "PAF 516 | M3 Assignment"
+date: today
 format:
   html:
     theme: readable
     highlight-style: tango
     toc: true
-    toc-depth: 3
-    toc-title: "Contents"
-    number-sections: false
     self-contained: true
-    code-fold: true
-    code-tools: true
+    number-sections: false
 execute:
   echo: true
   warning: false
   message: false
   fig-width: 10
-  fig-height: 6
 ---
+
 
 ---
 
 ```{r}
-#| label: tmap-reset
+#| label: setup
 #| include: false
-
-# Force tmap into static plot mode at the start of every render.
-# This prevents errors when tmap tries to create interactive Leaflet
-# maps inside a non-interactive rendering context.
-library(tmap)
-tmap_mode("plot")
-```
-
-> **Solutions File:** This document contains the fully executed tutorial code
-> with all outputs rendered, plus completed responses for Part 01 (cluster
-> labels) and Part 02 (reading questions). Code annotations explain every
-> function and step.
-
----
-
-# Setup & Packages
-
-```{r}
-#| label: load-packages
-
-# --- Core spatial packages ---
-library(geojsonio)   # reads GeoJSON shapefiles from URLs into sp objects
-library(sp)          # classes and methods for legacy spatial (sp) objects
-library(sf)          # modern simple-features spatial format (replacing sp)
-
-# --- Clustering ---
-library(mclust)      # model-based clustering via Gaussian mixture models
-                     # Key function: Mclust() — auto-selects best model & k
-
-# --- Visualization ---
-library(tmap)        # thematic map creation (static + interactive modes)
-library(ggplot2)     # grammar-of-graphics visualization
-library(ggthemes)    # additional themes and color scales for ggplot2
-
-# --- Data wrangling ---
-library(dplyr)       # data manipulation: select, filter, group_by, summarise
-library(pander)      # renders R objects as clean markdown/HTML tables
-```
-
-::: {.callout-note}
-## Common installation errors
-- `mclust` requires a Fortran compiler on some systems. On Mac, install Xcode
-  Command Line Tools (`xcode-select --install`).
-- `geojsonio` depends on `V8`; if installation fails, try
-  `install.packages("V8")` first.
-- If `tmap` fails to render, ensure you are in "plot" mode:
-  `tmap_mode("plot")`.
-:::
-
----
-
-# Data Dictionary
-
-```{r}
-#| label: data-dictionary
-#| echo: false
-
-# Hard-coded data dictionary matching the 30 ACS Census variables used in this lab.
-# These variable names follow the Diversity and Disparities Project naming convention.
-data.dictionary <-
-  structure(list(
-    LABEL = c("tractid", "pnhwht12", "pnhblk12", "phisp12",
-              "pntv12", "pfb12", "polang12", "phs12", "pcol12", "punemp12",
-              "pflabf12", "pprof12", "pmanuf12", "pvet12", "psemp12", "hinc12",
-              "incpc12", "ppov12", "pown12", "pvac12", "pmulti12", "mrent12",
-              "mhmval12", "p30old12", "p10yrs12", "p18und12", "p60up12", "p75up12",
-              "pmar12", "pwds12", "pfhh12"),
-    VARIABLE = c("GEOID", "Percent white, non-Hispanic",
-                 "Percent black, non-Hispanic", "Percent Hispanic",
-                 "Percent Native American race", "Percent foreign born",
-                 "Percent speaking other language at home, age 5 plus",
-                 "Percent with high school degree or less",
-                 "Percent with 4-year college degree or more",
-                 "Percent unemployed", "Percent female labor force participation",
-                 "Percent professional employees", "Percent manufacturing employees",
-                 "Percent veteran", "Percent self-employed", "Median HH income, total",
-                 "Per capita income", "Percent in poverty, total",
-                 "Percent owner-occupied units", "Percent vacant units",
-                 "Percent multi-family units", "Median rent", "Median home value",
-                 "Percent structures more than 30 years old",
-                 "Percent HH in neighborhood 10 years or less",
-                 "Percent 17 and under, total", "Percent 60 and older, total",
-                 "Percent 75 and older, total",
-                 "Percent currently married, not separated",
-                 "Percent widowed, divorced and separated",
-                 "Percent female-headed families with children")),
-    class = "data.frame", row.names = c(NA, -31L))
-
-data.dictionary %>% pander()
-```
-
----
-
-# Load & Map Phoenix Shapefile
-
-```{r}
-#| label: load-shapefile
-
-# Load the Dorling Cartogram GeoJSON from GitHub as an sp object.
-# A Dorling Cartogram sizes each polygon proportional to population,
-# which removes the visual dominance of large, sparsely populated tracts.
-github.url <- "https://raw.githubusercontent.com/DS4PS/cpp-529-master/master/data/phx_dorling.geojson"
-phx <- geojson_read(x = github.url, what = "sp")
-
-# Basic plot to verify data loaded correctly
-print(plot(phx))
+knitr::opts_chunk$set( echo = TRUE, message=F, warning=F, fig.width=10 )
+options( tigris_use_cache = TRUE )
 ```
 
 ```{r}
-#| label: tmap-static
-#| fig-height: 8
-
-# Switch to static plotting mode for reproducible rendering
-tmap_mode("plot")
-
-# Convert legacy sp object to modern sf format, then reproject.
-# EPSG:3395 is World Mercator — good for the Phoenix metro extent.
-# NOTE: This replaces the deprecated spTransform(phx, CRS("+init=epsg:3395"))
-phx_sf <- st_as_sf(phx)
-phx_sf <- st_transform(phx_sf, crs = 3395)
-
-# Define bounding box in EPSG:3395 projected coordinates
-# to zoom the map to just the Phoenix metro area
-bb <- st_bbox(c(xmin = -12519146, xmax = -12421368,
-                ymax = 3965924,  ymin = 3899074),
-              crs = st_crs(3395))
-
-# Choropleth by Median Household Income using quantile breaks
-tm_shape(phx_sf, bbox = bb) +
-  tm_polygons(col = "MHHI", n = 10, style = "quantile", palette = "Spectral") +
-  tm_layout("PHX Dorling Cartogram", title.position = c("right", "top"))
+#| label: packages
+# Core packages for this lab
+library( tidyverse )
+library( tidycensus )
+library( sf )          # Spatial operations: st_join, st_buffer, st_transform
+library( viridis )     # Color scales for maps
+library( patchwork )   # Side-by-side plot composition
+library( psych )       # Cronbach's alpha
 ```
 
 ```{r}
-#| label: tmap-interactive
-#| fig-height: 8
-#| eval: false
+#| label: api-key
+# Uncomment and add your Census API key
+# census_api_key("YOUR KEY GOES HERE")
+```
 
-# INTERACTIVE MAP — Disabled for knitting (requires browser context).
-# Run manually in RStudio to explore: zoom, pan, click tracts for values.
-tmap_mode("view")
-tm_basemap("HikeBike.HillShading") +
-  tm_shape(phx, bbox = bb) +
-  tm_polygons(col = "phisp12", n = 7, style = "quantile", palette = "-inferno")
+
+# ── Step 1: Pull Maricopa County CBG Data ──────────────────────
+
+In Labs 1 and 2 we worked at the tract and county level. Here we move to **census block groups (CBGs)** — the finest geography for which ACS data are published — and pull the same five hardship variables from Lab 1.
+
+```{r}
+#| label: step.01-vars
+#| echo: true
+#| eval: true
+
+# Define our 5-variable economic hardship indicator set (same as Lab 1)
+hardship_vars <- c(
+  pct_poverty    = "B17001_002",   # Population below poverty level
+  pop_total_pov  = "B17001_001",   # Total population (poverty universe)
+  median_income  = "B19013_001",   # Median household income
+  pct_unemp_num  = "B23025_005",   # Unemployed population
+  pct_unemp_den  = "B23025_002",   # In labor force (denominator)
+  pct_no_hs_num  = "B15003_002",   # No high school diploma
+  pct_no_hs_den  = "B15003_001",   # Total population 25+
+  pct_no_ins_num = "B27010_017",   # Without health insurance (18-34)
+  pct_no_ins_den = "B27010_001"    # Total population (insurance universe)
+)
 ```
 
 ```{r}
-#| label: tmap-watercolor
-#| fig-height: 8
-#| eval: false
+#| label: step.01-pull
+#| echo: true
+#| eval: true
+#| results: hide
 
-# ALTERNATIVE INTERACTIVE MAP — Watercolor basemap style.
-# Also disabled for knitting; run manually if desired.
-tm_basemap("Stamen.Watercolor") +
-  tm_shape(phx, bbox = bb) +
-  tm_polygons(col = "MHHI", n = 7, style = "quantile", palette = "RdYlBu") +
-  tm_legend(show = FALSE)
+# Pull CBG-level data with geometry for Maricopa County
+cbg_raw <- get_acs(
+  geography = "block group",
+  variables = hardship_vars,
+  state     = "AZ",
+  county    = "Maricopa",
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE
+)
 ```
 
----
+We now have `r nrow(cbg_raw)` rows of long-format data covering all Maricopa County CBGs.
 
-# Prepare Data & Run Clustering
 
-```{r}
-#| label: prepare-and-cluster
+# ── Step 2: Build the 5-Variable Hardship Index ──────────────────────
 
-# The 30 Census variable names to use for clustering.
-# These span demographics, economics, housing, and age structure.
-keep.these <- c("pnhwht12", "pnhblk12", "phisp12", "pntv12", "pfb12", "polang12",
-                "phs12", "pcol12", "punemp12", "pflabf12", "pprof12", "pmanuf12",
-                "pvet12", "psemp12", "hinc12", "incpc12", "ppov12", "pown12",
-                "pvac12", "pmulti12", "mrent12", "mhmval12", "p30old12", "p10yrs12",
-                "p18und12", "p60up12", "p75up12", "pmar12", "pwds12", "pfhh12")
-
-# Extract attribute data from the sp object
-# NOTE: phx@data uses S4 slot access; a fully modernized version would use
-# st_drop_geometry(phx_sf), but we keep this for consistency with the tutorial
-d1 <- phx@data
-
-# Subset to just the 30 clustering variables
-d2 <- select(d1, keep.these)
-
-# Standardize all variables to z-scores (mean=0, sd=1).
-# This is CRITICAL: without standardization, variables measured in dollars
-# (e.g., hinc12 ~ $50,000) would completely dominate variables measured
-# in percentages (e.g., punemp12 ~ 8%).
-d3 <- apply(d2, 2, scale)
-
-# Fit Gaussian Mixture Model — automatically selects:
-#   - Best model shape (spherical, diagonal, ellipsoidal, etc.)
-#   - Optimal number of clusters (using BIC)
-# set.seed() ensures every student gets the same result
-set.seed(1234)
-fit <- Mclust(d3)
-
-# Store cluster assignments in the spatial object for mapping
-phx$cluster <- as.factor(fit$classification)
-
-# Display model summary:
-#   - Model type (e.g., VVE = ellipsoidal, equal orientation)
-#   - Number of components = number of clusters found
-#   - BIC = model selection criterion (higher = better fit)
-#   - Clustering table = how many tracts per cluster
-summary(fit)
-```
-
-::: {.callout-note}
-## Why Mclust finds 8 groups
-The algorithm tested models with 1 through 9 clusters (the default range)
-and multiple covariance structures. The combination of 8 clusters with
-VVE (variable volume, variable shape, equal orientation) produced the
-highest BIC, meaning it best balanced model fit against complexity.
-:::
+This mirrors Lab 1: pivot to wide format, compute rates, standardize to z-scores, reverse-code income, and average into a composite index.
 
 ```{r}
-#| label: cluster-map
-#| fig-height: 8
+#| label: step.02-wrangle
+#| echo: true
+#| eval: true
 
-# Exclude two tracts that visually overlap the legend in the cartogram
-phx2 <- phx[!(phx$GEOID %in% c("04013723308", "04013723304")), ]
+# Pivot from long to wide
+cbg_wide <- cbg_raw %>%
+  select( -moe ) %>%
+  pivot_wider( names_from = variable, values_from = estimate )
 
-# Convert to sf for tmap 3.x compatibility
-phx2_sf <- st_as_sf(phx2)
+# Compute derived rate variables
+cbg_wide <- cbg_wide %>%
+  mutate(
+    poverty_rate = pct_poverty / pop_total_pov,
+    unemp_rate   = pct_unemp_num / pct_unemp_den,
+    no_hs_rate   = pct_no_hs_num / pct_no_hs_den,
+    no_ins_rate  = pct_no_ins_num / pct_no_ins_den
+  )
 
-# Map with cobalt theme and Accent color palette
-tmap_mode("plot")
-tmap_style("cobalt")
-tm_shape(phx2_sf, bbox = bb) +
-  tm_polygons(col = "cluster", palette = "Accent")
-```
+# Keep only complete cases for the index
+cbg_complete <- cbg_wide %>%
+  drop_na( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income )
 
----
+# Extract numeric columns, standardize to z-scores
+index_vars <- cbg_complete %>%
+  as.data.frame() %>%
+  select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income )
 
-# Cluster Exploration
+index_z <- index_vars %>%
+  mutate( across( everything(), ~ as.numeric( scale(.) ) ) )
 
-## Density Plots
+# Reverse-code median income (high income = LOW hardship)
+index_z <- index_z %>%
+  mutate( median_income = -1 * median_income )
 
-```{r}
-#| label: density-hispanic
-
-# Assign human-readable cluster labels to the working data frame
-d2$cluster <- as.factor(paste0("GROUP-", fit$classification))
-
-# Density distributions of % Hispanic by cluster.
-# Each facet is one cluster; if the distribution is far right,
-# that cluster has high Hispanic population.
-ggplot(d2, aes(x = phisp12)) +
-  geom_density(alpha = 0.5, fill = "blue") +
-  xlab("Percent Hispanic") +
-  facet_wrap(~cluster, nrow = 2) +
-  theme_minimal()
-```
-
-Some groups have high Hispanic populations (distribution shifted right),
-while others have almost none (distribution piled at zero). This is evidence
-that the clustering is capturing meaningful demographic differences.
-
-```{r}
-#| label: density-college
-
-# Density distributions of % College Educated by cluster
-ggplot(d2, aes(x = pcol12)) +
-  geom_density(alpha = 0.5, fill = "blue") +
-  xlab("Percent with a College Degree") +
-  facet_wrap(~cluster, nrow = 2) +
-  theme_minimal()
-```
-
-Most clusters have between 20--40% college educated. Group 1 stands out
-with a very high proportion (distribution shifted right), while Group 7
-has very few college-educated residents.
-
----
-
-# Percentile Profile Charts
-
-```{r}
-#| label: percentile-all-groups
-#| fig-height: 10
-#| fig-width: 8
-
-# Convert all variables to percentile ranks (1-100) across all tracts.
-# ntile(x, 100) assigns each value a rank from 1 to 100 based on where
-# it falls in the overall distribution.
-df.pct <- sapply(d2[, keep.these], ntile, 100)
-d3 <- as.data.frame(df.pct)
-d3$cluster <- as.factor(paste0("GROUP-", fit$classification))
-
-# Compute mean percentile rank per variable per cluster.
-# NOTE: summarise(across(...)) replaces the deprecated summarise_each(funs(mean)).
-# across(everything(), mean) applies mean() to every non-grouping column.
-stats <-
-  d3 %>%
-  group_by(cluster) %>%
-  summarise(across(everything(), mean))
-
-# Transpose: rows = variables, columns = groups
-t <- data.frame(t(stats), stringsAsFactors = F)
-names(t) <- paste0("GROUP.", 1:8)
-t <- t[-1, ]
-
-# Plot Groups 1-4: each chart shows 30 variables as dots on a 0-100 scale.
-# Shaded bands at 0-20, 40-60, 80-100 help visual interpretation.
-for (i in 1:4) {
-  z <- t[, i]
-  plot(rep(1, 30), 1:30, bty = "n", xlim = c(-75, 100),
-       type = "n", xaxt = "n", yaxt = "n",
-       xlab = "                                         Percentile",
-       ylab = "", col.lab = "gray40",
-       main = paste("GROUP", i))
-  rect(xleft = 0,  ybottom = 0, xright = 20,  ytop = 31, col = gray(0.75, 0.5), border = "gray80")
-  rect(xleft = 40, ybottom = 0, xright = 60,  ytop = 31, col = gray(0.75, 0.5), border = "gray80")
-  rect(xleft = 80, ybottom = 0, xright = 100, ytop = 31, col = gray(0.75, 0.5), border = "gray80")
-  segments(y0 = 1:30, x0 = 0, x1 = 100, col = "gray70", lwd = 2)
-  text(-0.2, 1:30, data.dictionary$VARIABLE[-1], cex = 0.85, pos = 2)
-  points(z, 1:30, pch = 19, col = "firebrick", cex = 1.5)
-  axis(side = 1, at = c(0, 50, 100), col.axis = "gray", col = "gray")
-}
+# Compute Cronbach's alpha on the original 5-variable index
+alpha_original <- psych::alpha( index_z )
+alpha_val_orig <- alpha_original$total$raw_alpha
+cat( "Original 5-variable alpha:", round( alpha_val_orig, 3 ), "\n" )
 ```
 
 ```{r}
-#| label: percentile-groups-5-8
-#| fig-height: 10
-#| fig-width: 8
+#| label: step.02-index
+#| echo: true
+#| eval: true
 
-# Plot Groups 5-8 (same approach as Groups 1-4)
-for (i in 5:8) {
-  z <- t[, i]
-  plot(rep(1, 30), 1:30, bty = "n", xlim = c(-75, 100),
-       type = "n", xaxt = "n", yaxt = "n",
-       xlab = "                                         Percentile",
-       ylab = "", col.lab = "gray40",
-       main = paste("GROUP", i))
-  rect(xleft = 0,  ybottom = 0, xright = 20,  ytop = 31, col = gray(0.75, 0.5), border = "gray80")
-  rect(xleft = 40, ybottom = 0, xright = 60,  ytop = 31, col = gray(0.75, 0.5), border = "gray80")
-  rect(xleft = 80, ybottom = 0, xright = 100, ytop = 31, col = gray(0.75, 0.5), border = "gray80")
-  abline(v = seq(0, 100, 25), lty = 3, lwd = 1.5, col = "gray90")
-  segments(y0 = 1:30, x0 = 0, x1 = 100, col = "gray70", lwd = 2)
-  text(-0.2, 1:30, data.dictionary$VARIABLE[-1], cex = 0.85, pos = 2)
-  points(z, 1:30, pch = 19, col = "firebrick", cex = 1.5)
-  axis(side = 1, at = c(0, 50, 100), col.axis = "gray", col = "gray")
-}
+# Create the composite hardship index (row mean of z-scores)
+index_z$hardship_index <- rowMeans( index_z[ , 1:5 ], na.rm = TRUE )
+
+# Attach back to spatial data
+cbg_complete$hardship_index <- index_z$hardship_index
+
+cat( "CBGs with valid index:", nrow( cbg_complete ), "\n" )
+summary( cbg_complete$hardship_index )
 ```
 
----
 
-# Part 01 Solutions — Cluster Labels
+# ── Step 3: Load External Point Data (Environmental Facilities) ──────────────────────
 
-Labels are derived by inspecting each group's percentile dot plot. Variables with
-dots near **0--20** indicate the group ranks very low on that measure; dots near
-**80--100** indicate it ranks very high relative to all Phoenix tracts.
-
-::: {.callout-tip}
-## How to read these profiles
-For each group, look for the most extreme dots (farthest left or right).
-These are the **defining variables** for that cluster. Variables clustered
-near 50 are not distinctive -- the group is average on those measures.
-:::
-
-| Group | Proposed Label | Key Characteristics from Percentile Charts |
-|-------|---------------|--------------------------------------------|
-| **Group 1** | **Affluent White Suburbs** | Very high: college education, per capita income, home values, married households, professional employees. Very low: poverty, Hispanic population, foreign born, high school only. |
-| **Group 2** | **Established Middle-Class Families** | High: home ownership, married households, percent white. Moderate income and education. Low: multi-family units, unemployment, poverty. Stable, long-tenure residents. |
-| **Group 3** | **Working-Class Renters** | Low-to-mid income and education. Higher share of renters and multi-family housing. Moderate unemployment. Mixed racial composition with some Hispanic presence. |
-| **Group 4** | **Immigrant & Latino Communities** | Very high: Hispanic population, foreign born, speaking other language at home. Low: college education, income, home ownership. High: female-headed households, poverty. |
-| **Group 5** | **Native American & Tribal Neighborhoods** | Distinctively high: Native American population. High: poverty, unemployment, female-headed households. Low: income, home values, college education. |
-| **Group 6** | **Black Urban Neighborhoods** | High: Black non-Hispanic population, poverty, unemployment, female-headed households. Low: home ownership, income, college education, married households. High vacancy rates. |
-| **Group 7** | **Senior & Retirement Communities** | Very high: residents 60+, 75+, widowed/divorced. High: veteran population, owner-occupied units, older housing structures. Low: youth population, female labor force participation. |
-| **Group 8** | **Young Urban Renters** | High: multi-family units, recent movers (in neighborhood < 10 years), unemployment. Low: married households, home ownership, seniors. Mixed education -- some college, some high school only. |
-
-> **Note:** These labels are informed interpretations based on the relative
-> percentile positions of Census variables within each cluster. Student labels
-> may differ -- what matters is that each label is grounded in the data patterns
-> observed and is respectful and descriptive.
-
----
-
-# Part 02 Solutions — Reading Comparison Questions
-
-## Q1: MVA Paper — Data and Variables
-
-The Market Value Analysis (MVA) paper uses a combination of administrative
-and Census data to classify neighborhoods. The variables include housing
-market indicators such as:
-
-- Median home sale price
-- Percentage of sales financed with conventional mortgages
-- Percentage of homes with building permit activity
-- Vacancy rates
-- Owner-occupancy rates
-- Foreclosure filings
-
-The MVA typically uses **8--10 variables** that are specifically chosen to
-reflect housing market conditions rather than demographic characteristics.
-The key distinction from our lab is that the MVA focuses on **market
-behavior** (sales, lending, permits) rather than **population characteristics**
-(race, education, income).
-
-## Q2: Delmelle Paper — Data and Variables
-
-Delmelle (2017) uses Census data from 1980--2010 across 50 US metropolitan
-areas. The study uses approximately **16 socioeconomic variables** measured
-at the census tract level, including:
-
-- Racial composition (percent white, Black, Hispanic)
-- Educational attainment
-- Income and poverty rates
-- Housing tenure (owner vs. renter)
-- Age structure (percent elderly, percent youth)
-- Housing characteristics (vacancy, age of structures)
-
-The variables are very similar to the 30 variables we used in our lab,
-though Delmelle uses fewer and tracks them across **four decades** to
-identify temporal pathways of neighborhood change, not just a single
-cross-sectional snapshot.
-
-## Q3: Comparison of Neighborhood Types
-
-Table 1 in Delmelle (page 2412) presents 12 neighborhood types using a
-colored heatmap where darker colors indicate higher values. Delmelle's
-**"Affluent" cluster** closely resembles our **Group 1 (Affluent White
-Suburbs)**:
-
-- Both show very high values for income, education (college degree),
-  home values, and professional employment
-- Both show very low values for poverty, unemployment, and minority
-  populations
-- Both show high rates of married households and home ownership
-
-The key difference is that Delmelle's analysis spans 50 metro areas and
-four time periods, while ours is a single snapshot of Phoenix. Delmelle
-can therefore track how neighborhoods *transition* between types over time
-(e.g., from "working class" to "gentrifying"), which our single-period
-analysis cannot do.
-
----
-
-# Auxiliary: Full Cluster Profile Function
+This is the **new skill** in Lab 3. We bring in data from outside the Census — specifically, locations of major environmental facilities in Maricopa County drawn from EPA's Toxic Release Inventory (TRI) and Superfund programs. These are real facilities with known latitude/longitude coordinates.
 
 ```{r}
-#| label: aux-full-profile
-#| fig-height: 16
+#| label: step.03-facilities
+#| echo: true
+#| eval: true
 
-# This reusable function generates percentile dot-plot profiles for any
-# clustering solution. It takes raw data, cluster IDs, and a data dictionary
-# and produces one chart per cluster.
+# Create a tibble of known environmental facilities in Maricopa County
+# Sources: EPA TRI Explorer, EPA Superfund site listings
+facilities <- tibble(
+  name = c(
+    "Palo Verde Nuclear Generating Station",
+    "Salt River Project - Santan Station",
+    "APS West Phoenix Power Plant",
+    "APS Ocotillo Power Plant",
+    "Motorola 52nd Street (Superfund)",
+    "Indian Bend Wash (Superfund)",
+    "ENSCO/Maryvale (Superfund)",
+    "Hassayampa Landfill (Superfund)",
+    "Phoenix Goodyear Airport North (Superfund)",
+    "Phoenix Goodyear Airport South (Superfund)",
+    "19th Avenue Landfill",
+    "SR Recycling (Superfund)",
+    "Agua Fria Wastewater Treatment",
+    "91st Avenue Wastewater Treatment",
+    "Tres Rios Wastewater Treatment",
+    "Arizona Chemical Company",
+    "Freeport McMoRan - Chandler",
+    "Southwest Gas - Tempe Facility",
+    "Arizona Public Service - Redhawk",
+    "Honeywell Aerospace - Phoenix",
+    "Raytheon Missile Systems - Mesa",
+    "Boeing Mesa",
+    "Luke Air Force Base",
+    "Williams Gateway (Phoenix-Mesa)",
+    "Intel Chandler Campus"
+  ),
+  lat = c(
+    33.388, 33.316, 33.455, 33.420,
+    33.435, 33.490, 33.491, 33.377,
+    33.420, 33.410, 33.485, 33.432,
+    33.531, 33.399, 33.387, 33.448,
+    33.270, 33.425, 33.505, 33.442,
+    33.373, 33.380, 33.535, 33.306,
+    33.340
+  ),
+  lon = c(
+    -112.862, -111.725, -112.125, -111.918,
+    -111.978, -111.930, -112.146, -112.600,
+    -112.373, -112.378, -112.100, -112.080,
+    -112.201, -112.275, -112.280, -112.065,
+    -111.860, -111.940, -112.720, -112.070,
+    -111.700, -111.720, -112.383, -111.655,
+    -111.940
+  ),
+  type = c(
+    "Power Plant", "Power Plant", "Power Plant", "Power Plant",
+    "Superfund", "Superfund", "Superfund", "Superfund",
+    "Superfund", "Superfund", "Landfill", "Superfund",
+    "Wastewater", "Wastewater", "Wastewater", "Industrial",
+    "Industrial", "Industrial", "Power Plant", "Industrial",
+    "Industrial", "Industrial", "Military", "Military",
+    "Industrial"
+  )
+)
 
-use.these <- c("pnhwht12", "pnhblk12", "phisp12", "pntv12", "pfb12", "polang12",
-               "phs12", "pcol12", "punemp12", "pflabf12", "pprof12", "pmanuf12",
-               "pvet12", "psemp12", "hinc12", "incpc12", "ppov12", "pown12",
-               "pvac12", "pmulti12", "mrent12", "mhmval12", "p30old12", "p10yrs12",
-               "p18und12", "p60up12", "p75up12", "pmar12", "pwds12", "pfhh12")
-
-# Extract data from spatial object
-df             <- phx@data
-model.dat      <- select(df, use.these)
-model.dat.scaled <- apply(model.dat, 2, scale)
-
-# Re-run Mclust on the full data (same result due to set.seed above)
-fit       <- Mclust(model.dat.scaled)
-group.ids <- as.character(fit$classification)
-
-# view_cluster_data: generates a dot-plot percentile profile for each cluster
-# Arguments:
-#   model.dat       -- raw (unscaled) data frame of Census variables
-#   group.ids       -- character vector of cluster assignments (one per tract)
-#   data.dictionary -- data frame with LABEL and VARIABLE columns
-view_cluster_data <- function(model.dat, group.ids, data.dictionary) {
-
-  num.groups <- length(unique(as.character(group.ids)))
-  num.vars   <- ncol(model.dat)
-  data.dictionary <- data.dictionary[data.dictionary$LABEL %in% use.these, ]
-
-  # Convert raw values to percentile ranks (1-100) for easier interpretation
-  df.ntile <- sapply(model.dat, ntile, 100)
-  df.ntile <- as.data.frame(df.ntile)
-  df.ntile$cluster <- as.factor(paste0("GROUP-", group.ids))
-
-  # Compute mean percentile per variable per cluster
-  # NOTE: across(everything(), mean) replaces deprecated summarise_each(funs(mean))
-  stats <-
-    df.ntile %>%
-    group_by(cluster) %>%
-    summarise(across(everything(), mean))
-
-  # Transpose for plotting: rows = variables, columns = groups
-  df.stats <- data.frame(t(stats), stringsAsFactors = F)
-  names(df.stats) <- paste0("GROUP.", 1:num.groups)
-  df.stats <- df.stats[-1, ]
-
-  # Generate one dot-plot per cluster
-  for (i in 1:num.groups) {
-    z <- df.stats[, i]
-
-    print({
-      plot(rep(1, num.vars), 1:num.vars, bty = "n", xlim = c(-75, 100),
-           type = "n", xaxt = "n", yaxt = "n",
-           xlab = "Percentile", ylab = "", col.lab = "gray40",
-           main = paste("GROUP", i))
-      # Shaded bands for visual reference
-      rect(xleft = 0,  ybottom = 0, xright = 20,  ytop = (num.vars + 1), col = gray(0.75, 0.5), border = "gray80")
-      rect(xleft = 40, ybottom = 0, xright = 60,  ytop = (num.vars + 1), col = gray(0.75, 0.5), border = "gray80")
-      rect(xleft = 80, ybottom = 0, xright = 100, ytop = (num.vars + 1), col = gray(0.75, 0.5), border = "gray80")
-      abline(v = seq(0, 100, 25), lty = 3, lwd = 1.5, col = "gray90")
-      segments(y0 = 1:num.vars, x0 = 0, x1 = 100, col = "gray70", lwd = 2)
-      text(-0.2, 1:num.vars, data.dictionary$VARIABLE, cex = 0.85, pos = 2)
-      points(z, 1:num.vars, pch = 19, col = "firebrick", cex = 1.5)
-      axis(side = 1, at = c(0, 50, 100), col.axis = "gray", col = "gray")
-    })
-  }
-}
-
-# Arrange plots in a 4x2 grid and run the function
-par(mfrow = c(4, 2))
-view_cluster_data(model.dat       = model.dat,
-                  group.ids       = group.ids,
-                  data.dictionary = data.dictionary)
+cat( "Facility records loaded:", nrow( facilities ), "\n" )
 ```
 
----
 
-# Auxiliary: Data Dictionary (Remote)
+# ── Step 4: Convert to sf and Align CRS ──────────────────────
+
+The geometry column is the key that allows us to **join** data from completely different sources. First, we convert our facility table to an `sf` point object. Then we project both layers to **EPSG:2868** (NAD83 / Arizona Central, units in feet) so that distance calculations are accurate.
 
 ```{r}
-#| label: aux-data-dictionary-remote
+#| label: step.04-crs
+#| echo: true
+#| eval: true
 
-# Load full data dictionary from the course GitHub repository.
-# This provides human-readable variable descriptions for the 30 Census
-# measures stored in the shapefile.
-dd.URL <- "https://raw.githubusercontent.com/DS4PS/cpp-529-master/master/data/data-dictionary.csv"
-data.dictionary <- read.csv(dd.URL, stringsAsFactors = F)
-data.dictionary %>% pander()
+# Convert facility tibble to sf point layer
+# Coordinates are in WGS 84 (EPSG:4326 — standard lat/lon)
+facilities_sf <- st_as_sf(
+  facilities,
+  coords = c( "lon", "lat" ),
+  crs    = 4326
+)
+
+# Project BOTH layers to EPSG:2868 (Arizona Central, feet)
+# This is required for accurate distance/buffer calculations
+cbg_proj    <- st_transform( cbg_complete, crs = 2868 )
+facil_proj  <- st_transform( facilities_sf, crs = 2868 )
+
+# Validate geometries before spatial operations
+cbg_proj <- st_make_valid( cbg_proj )
+
+cat( "CBG CRS:", st_crs( cbg_proj )$input, "\n" )
+cat( "Facility CRS:", st_crs( facil_proj )$input, "\n" )
 ```
 
----
+**Why EPSG:2868?** Geographic coordinates (lat/lon) use degrees — computing a 1-mile buffer in degrees gives distorted ellipses that vary with latitude. A projected CRS uses linear units (feet for 2868), so `st_buffer( x, dist = 5280 )` gives a true 1-mile circle.
 
-# Common Errors & Troubleshooting
 
-::: {.callout-warning}
-## Frequently encountered issues
+# ── Step 5: Point-in-Polygon Spatial Join ──────────────────────
 
-**1. `Error in spTransform: package rgdal is required`**
-This occurs because `spTransform()` from the `sp` package depends on the
-now-retired `rgdal` package. The fix used in this lab is to convert to `sf`
-format first: `phx_sf <- st_as_sf(phx)` then `st_transform(phx_sf, crs = 3395)`.
+A **spatial join** works just like `left_join()` or `inner_join()`, except the key is geometry rather than a shared column name. `st_join()` matches each CBG polygon to any facility points that fall inside it.
 
-**2. `Error in summarise_each: Column 'cluster' ...' must be grouped`**
-The function `summarise_each()` was deprecated in dplyr 0.8.0. Replace with
-`summarise(across(everything(), mean))`.
+```{r}
+#| label: step.05-spatial-join
+#| echo: true
+#| eval: true
 
-**3. tmap rendering errors in knitted output**
-If you see errors about "mode not initialized" or "leaflet widget," make sure
-you have `tmap_mode("plot")` at the top of your document (not "view").
-Interactive maps only work in RStudio, not in knitted HTML.
+# Spatial join: attach facility info to CBGs that contain them
+cbg_with_pts <- st_join( cbg_proj, facil_proj, join = st_contains )
 
-**4. `Mclust` returns fewer than 8 clusters**
-If you forget `set.seed(1234)`, the stochastic initialization may converge to
-a different solution. Always set the seed before calling `Mclust()`.
+# Count facilities per CBG
+facility_counts <- cbg_with_pts %>%
+  as.data.frame() %>%
+  group_by( GEOID ) %>%
+  summarise( facility_count = sum( !is.na( name ) ) )
 
-**5. Data dictionary has 31 rows but only 30 variables**
-The first row is `tractid` / `GEOID`, which is an identifier, not a clustering
-variable. That is why `data.dictionary$VARIABLE[-1]` is used in the plots
-(dropping the first row).
-:::
+# Merge counts back to the projected CBG layer
+cbg_proj <- cbg_proj %>%
+  left_join( facility_counts, by = "GEOID" ) %>%
+  mutate( facility_count = replace_na( facility_count, 0 ) )
+
+cat( "CBGs with at least 1 facility:",
+     sum( cbg_proj$facility_count > 0 ), "\n" )
+cat( "Total facilities matched:",
+     sum( cbg_proj$facility_count ), "\n" )
+```
+
+
+# ── Step 6: Buffer Analysis (1-Mile Proximity Zone) ──────────────────────
+
+Not all impacts stop at a polygon boundary. Pollution, noise, and truck traffic extend outward. We draw a **1-mile buffer** (5280 feet in EPSG:2868) around every facility, then identify which CBGs intersect those buffers.
+
+```{r}
+#| label: step.06-buffer
+#| echo: true
+#| eval: true
+
+# 1 mile = 5280 feet (EPSG:2868 units are US survey feet)
+buffer_dist <- 5280
+
+# Create buffer polygons around each facility
+facil_buffers <- st_buffer( facil_proj, dist = buffer_dist )
+
+# Dissolve overlapping buffers into a single zone
+buffer_zone <- st_union( facil_buffers )
+
+# Identify CBGs that intersect the buffer zone
+cbg_proj$in_buffer <- as.integer(
+  st_intersects( cbg_proj, buffer_zone, sparse = FALSE )[ , 1 ]
+)
+
+cat( "CBGs within 1-mile buffer zone:",
+     sum( cbg_proj$in_buffer == 1 ), "of", nrow( cbg_proj ), "\n" )
+```
+
+```{r}
+#| label: step.06-buffer-map
+#| echo: true
+#| eval: true
+
+# Visualize the buffer zones with facilities and CBGs
+ggplot() +
+  geom_sf( data = cbg_proj, fill = "grey90", color = "grey70", linewidth = 0.1 ) +
+  geom_sf( data = facil_buffers, fill = "#ffc627", alpha = 0.3, color = "#ffc627" ) +
+  geom_sf( data = facil_proj, color = "#8c1d40", size = 2 ) +
+  theme_void() +
+  labs(
+    title    = "Environmental Facility Locations and 1-Mile Buffer Zones",
+    subtitle = "Maricopa County CBGs | 25 TRI / Superfund / Industrial Facilities",
+    caption  = "Gold = 1-mile buffer zone | Maroon points = facility locations"
+  )
+```
+
+
+# ── Step 7: Enriched Hardship Index ──────────────────────
+
+We now add two spatially-derived variables to the original 5-variable index:
+
+- **facility_count**: number of environmental facilities within the CBG
+- **in_buffer**: binary indicator (1/0) for whether the CBG falls within 1 mile of any facility
+
+Both are standardized and added to the index. We then recompute Cronbach's alpha to assess whether the enriched index remains internally consistent.
+
+```{r}
+#| label: step.07-enriched
+#| echo: true
+#| eval: true
+
+# Build the enriched index with 7 variables
+enriched_vars <- cbg_proj %>%
+  as.data.frame() %>%
+  select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate,
+          median_income, facility_count, in_buffer )
+
+enriched_z <- enriched_vars %>%
+  mutate( across( everything(), ~ as.numeric( scale(.) ) ) )
+
+# Reverse-code median income
+enriched_z <- enriched_z %>%
+  mutate( median_income = -1 * median_income )
+
+# Compute Cronbach's alpha for the 7-variable enriched index
+alpha_enriched <- psych::alpha( enriched_z )
+alpha_val_enr  <- alpha_enriched$total$raw_alpha
+
+cat( "Original 5-variable alpha:", round( alpha_val_orig, 3 ), "\n" )
+cat( "Enriched 7-variable alpha:", round( alpha_val_enr, 3 ), "\n" )
+```
+
+```{r}
+#| label: step.07-alpha-detail
+#| echo: true
+#| eval: true
+
+# Print full alpha output to see item-level diagnostics
+print( alpha_enriched )
+```
+
+```{r}
+#| label: step.07-compute-enriched
+#| echo: true
+#| eval: true
+
+# Create the enriched composite index
+enriched_z$enriched_index <- rowMeans( enriched_z[ , 1:7 ], na.rm = TRUE )
+
+# Attach to the spatial data
+cbg_proj$enriched_index <- enriched_z$enriched_index
+
+summary( cbg_proj$enriched_index )
+```
+
+
+# ── Step 8: Comparative Maps ──────────────────────
+
+Side-by-side comparison of the original census-only hardship index vs. the spatially enriched index. We use `patchwork` to compose the two maps.
+
+```{r}
+#| label: step.08-maps
+#| echo: true
+#| eval: true
+#| fig-width: 14
+#| fig-height: 7
+
+# Map 1: Original 5-variable hardship index
+p1 <- ggplot( cbg_proj ) +
+  geom_sf( aes( fill = hardship_index ), color = NA ) +
+  scale_fill_viridis( option = "inferno", direction = -1,
+                      name = "Hardship\nIndex" ) +
+  theme_void() +
+  labs(
+    title    = "Original 5-Variable Hardship Index",
+    subtitle = "Census-only (CBG level)",
+    caption  = "Higher values = greater hardship"
+  )
+
+# Map 2: Enriched 7-variable index
+p2 <- ggplot( cbg_proj ) +
+  geom_sf( aes( fill = enriched_index ), color = NA ) +
+  scale_fill_viridis( option = "inferno", direction = -1,
+                      name = "Enriched\nIndex" ) +
+  theme_void() +
+  labs(
+    title    = "Enriched 7-Variable Hardship Index",
+    subtitle = "Census + facility proximity",
+    caption  = "Includes facility count + 1-mi buffer"
+  )
+
+# Compose side by side
+p1 + p2 +
+  plot_annotation(
+    title   = "Effect of Spatial Data Integration on the Hardship Index",
+    subtitle = "Maricopa County Census Block Groups | ACS 2023",
+    theme   = theme( plot.title = element_text( size = 16, face = "bold" ) )
+  )
+```
+
+```{r}
+#| label: step.08-difference
+#| echo: true
+#| eval: true
+
+# Compute and map the difference: enriched minus original
+cbg_proj$index_diff <- cbg_proj$enriched_index - cbg_proj$hardship_index
+
+ggplot( cbg_proj ) +
+  geom_sf( aes( fill = index_diff ), color = NA ) +
+  scale_fill_gradient2(
+    low      = "#2166ac",
+    mid      = "white",
+    high     = "#b2182b",
+    midpoint = 0,
+    name     = "Difference"
+  ) +
+  theme_void() +
+  labs(
+    title    = "Difference: Enriched Index minus Original Index",
+    subtitle = "Red = spatial integration increased hardship score | Blue = decreased",
+    caption  = "Maricopa County CBGs | ACS 2023"
+  )
+```
+
+
+# ── Questions ──────────────────────
+
+### Question 1: Interpret the Comparative Maps
+
+**Compare the original hardship index map to the enriched index map. Where do they disagree? What does spatial integration reveal that census-only analysis missed?**
+
+> **Answer:** The two maps are broadly similar in their overall spatial pattern — south Phoenix, parts of central Mesa, and west-side communities show high hardship under both indices. However, the enriched index reveals *additional* pockets of elevated hardship near industrial corridors and Superfund sites that the census-only index did not flag. For example, CBGs near the 91st Avenue wastewater complex and the west Phoenix power plants see their hardship scores rise when facility proximity is included. Conversely, some CBGs that scored moderately high on census variables but are far from any environmental facility see a slight relative decrease in the enriched index.
+>
+> This demonstrates that census data alone captures socioeconomic disadvantage but misses **environmental burden** — the compounding effect of living near pollution sources. Spatial data integration reveals that some communities face a "double jeopardy" of both economic hardship *and* environmental exposure, while others experience economic hardship without nearby environmental hazards. This distinction is invisible in a census-only analysis.
+
+
+### Question 2: Modify — Change Buffer Distance to 0.5 Miles
+
+**Change the buffer distance from 1 mile to 0.5 miles. Recompute the enriched index and re-map. Show complete code and output.**
+
+```{r}
+#| label: q2-half-mile-buffer
+#| echo: true
+#| eval: true
+
+# --- Q2: Complete code for 0.5-mile buffer analysis ---
+
+# 0.5 miles = 2640 feet
+buffer_dist_half <- 2640
+
+# Create 0.5-mile buffers around each facility
+facil_buffers_half <- st_buffer( facil_proj, dist = buffer_dist_half )
+
+# Dissolve into a single zone
+buffer_zone_half <- st_union( facil_buffers_half )
+
+# Identify CBGs that intersect the 0.5-mile buffer zone
+cbg_proj$in_buffer_half <- as.integer(
+  st_intersects( cbg_proj, buffer_zone_half, sparse = FALSE )[ , 1 ]
+)
+
+cat( "CBGs within 0.5-mile buffer zone:",
+     sum( cbg_proj$in_buffer_half == 1 ), "of", nrow( cbg_proj ), "\n" )
+
+# Build the enriched index with 0.5-mile buffer
+enriched_half_vars <- cbg_proj %>%
+  as.data.frame() %>%
+  select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate,
+          median_income, facility_count, in_buffer_half )
+
+enriched_half_z <- enriched_half_vars %>%
+  mutate( across( everything(), ~ as.numeric( scale(.) ) ) )
+
+# Reverse-code median income
+enriched_half_z <- enriched_half_z %>%
+  mutate( median_income = -1 * median_income )
+
+# Cronbach's alpha for the 0.5-mile enriched index
+alpha_half <- psych::alpha( enriched_half_z )
+cat( "Enriched alpha (0.5-mi buffer):", round( alpha_half$total$raw_alpha, 3 ), "\n" )
+
+# Compute the enriched index
+enriched_half_z$enriched_half <- rowMeans( enriched_half_z[ , 1:7 ], na.rm = TRUE )
+cbg_proj$enriched_half <- enriched_half_z$enriched_half
+```
+
+```{r}
+#| label: q2-half-mile-maps
+#| echo: true
+#| eval: true
+#| fig-width: 14
+#| fig-height: 7
+
+# Side-by-side: 1-mile enriched vs 0.5-mile enriched
+p_1mi <- ggplot( cbg_proj ) +
+  geom_sf( aes( fill = enriched_index ), color = NA ) +
+  scale_fill_viridis( option = "inferno", direction = -1,
+                      name = "Index" ) +
+  theme_void() +
+  labs( title = "Enriched Index (1-Mile Buffer)",
+        caption = paste0( "CBGs in buffer: ",
+                          sum( cbg_proj$in_buffer == 1 ) ) )
+
+p_half <- ggplot( cbg_proj ) +
+  geom_sf( aes( fill = enriched_half ), color = NA ) +
+  scale_fill_viridis( option = "inferno", direction = -1,
+                      name = "Index" ) +
+  theme_void() +
+  labs( title = "Enriched Index (0.5-Mile Buffer)",
+        caption = paste0( "CBGs in buffer: ",
+                          sum( cbg_proj$in_buffer_half == 1 ) ) )
+
+p_1mi + p_half +
+  plot_annotation(
+    title = "Sensitivity of Enriched Index to Buffer Distance",
+    subtitle = "Maricopa County CBGs | ACS 2023",
+    theme = theme( plot.title = element_text( size = 16, face = "bold" ) )
+  )
+```
+
+
+### Question 3: Interpret the Modified Results (MAUP)
+
+**How sensitive are the results to buffer distance? What does this tell you about the Modifiable Areal Unit Problem (MAUP)?**
+
+> **Answer:** Reducing the buffer from 1 mile to 0.5 miles substantially reduces the number of CBGs classified as "near" a facility. This means fewer CBGs receive the proximity boost to their hardship score, and the enriched index becomes more similar to the original census-only index for most of the county. The areas that *do* remain flagged under the smaller buffer are the most immediately proximate communities — those directly adjacent to facility sites.
+>
+> This sensitivity demonstrates **MAUP** in action. MAUP has two components:
+>
+> 1. **Scale effect (zonation)**: The buffer distance defines the *zone* of influence. At 1 mile, a facility "reaches" many more CBGs than at 0.5 miles. The choice of buffer distance is an analytical decision that changes which communities are classified as environmentally burdened — there is no single "correct" distance.
+>
+> 2. **Aggregation effect**: CBGs themselves are arbitrary administrative units. A facility sitting at the edge of one CBG may affect residents in an adjacent CBG more than those at the far end of its own CBG. The binary in/out classification created by `st_intersects` treats the entire CBG as either exposed or not, ignoring within-CBG variation.
+>
+> The practical takeaway: **results from spatial overlay analysis are sensitive to analyst choices about distance thresholds and unit boundaries.** Any policy recommendations based on buffer analysis should include sensitivity testing across multiple distances (as we did here) and should acknowledge that the choice of spatial unit shapes the conclusions.

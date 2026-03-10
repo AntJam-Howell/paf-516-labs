@@ -1,13 +1,14 @@
-<!-- REVISED: 2026-03-08 | See logs/module-2-log.md for change rationale -->
-<!-- DIFF: Compare against original ../CourseMaterials/Labs.1-6/Lab 2/Lab2_Solutions/Lab2_Solutions.qmd -->
 ---
-title: "Lab 02 — Solutions: Intro to Census Data"
-subtitle: "PAF 516"
+title: "Lab 02 — Solutions: Cartographic Design & Multi-Scale Visual Analytics"
+subtitle: "PAF 516 | M2 Assignment"
+date: today
 format:
   html:
     theme: readable
     highlight-style: tango
+    toc: true
     self-contained: true
+    number-sections: false
 execute:
   echo: true
   warning: false
@@ -15,294 +16,740 @@ execute:
   fig-width: 10
 ---
 
-
----
-
 ```{r}
 #| label: setup
 #| include: false
-knitr::opts_chunk$set( echo = TRUE, message=F, warning=F, fig.width=10 )
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10)
+
+# Cache Census TIGER/Line geometries so they don't re-download every render
+options(tigris_use_cache = TRUE)
 ```
+
+# Overview
+
+In Lab 1 you built a 5-variable **economic hardship index** and mapped it
+across Maricopa County census tracts. That map used a single color ramp with
+default classification breaks --- sensible defaults, but defaults nonetheless.
+
+This lab asks a sharper question: **how do cartographic choices shape the
+analytical story?** The same data can look dramatically different depending on
+how you classify values, what you pair them with, and what geographic scale you
+use. By the end of this lab you will be able to:
+
+1. Apply four classification methods (quantile, Jenks, equal interval, standard
+   deviation) and explain how each changes the visual narrative.
+2. Create a **bivariate choropleth** that maps *two* variables simultaneously.
+3. Build **small-multiple** maps that compare patterns across geographic scales.
+4. Produce an **interactive Leaflet map** with popups, layer controls, and
+   basemap options.
+
+**New packages introduced**: `classInt`, `biscale`, `leaflet`, `ggspatial`,
+`patchwork`.
+
+---
+
+# Required Packages
 
 ```{r}
 #| label: packages
-# Core packages for this lab
-library( tidycensus )
-library( tidyverse )   # includes ggplot2, dplyr, tidyr
-library( viridis )     # color scales for maps
+
+# ── Load packages ─────────────────────────────────────────────
+# Core data & spatial
+library(tidyverse)
+library(tidycensus)
+library(sf)
+
+# Cartographic tools (new in Lab 2)
+library(classInt)   # Classification algorithms (Jenks, quantile, etc.)
+library(biscale)    # Bivariate choropleth palette + legend
+library(leaflet)    # Interactive web maps
+library(ggspatial)  # Scale bars and north arrows for ggplot maps
+library(patchwork)  # Combine multiple ggplots into one figure
+library(viridis)    # Perceptually uniform color scales
 ```
 
 ```{r}
 #| label: api-key
-# Uncomment and add your Census API key
-# census_api_key("YOUR KEY GOES HERE")
-```
-
-# Step 1: Getting the Data
-
-```{r}
-#| label: var-search
-#| echo: true
-#| eval: true
-
-# Search for variable names in the ACS 5-year data
-VarSearch <- load_variables( 2017, "acs5", cache=TRUE )
-
-# Convert all labels to upper case for easier searching
-VarSearch$label <- toupper( VarSearch$label )
-
-# Search for median house value variables
-medianvalue <- VarSearch %>%
-  mutate( contains.medianvalue = grepl( "MEDIAN VALUE", label ) ) %>%
-  filter( contains.medianvalue )
-
-# Search for median household income variables
-medianincome <- VarSearch %>%
-  mutate( contains.medianincome = grepl( "MEDIAN HOUSEHOLD INCOME", label ) ) %>%
-  filter( contains.medianincome )
-```
-
-Now that these objects are created, we can take a look at what the variable search rendered:
-
-```{r}
-#| label: view-vars
-#| echo: true
 #| eval: false
 
-# View interactively to identify the correct variable codes
-View( medianvalue )
-View( medianincome )
+# Uncomment once and restart R — your key is stored permanently
+# census_api_key("YOUR KEY GOES HERE", install = TRUE)
 ```
 
-After looking through the objects, we can see that `B19049_001` corresponds to the total median household income and `B25077_001` corresponds to the median house value.
+---
+
+# ── Step 1: Pull Data & Build the Hardship Index ──────────────
+
+We reuse the exact same index construction from Lab 1: five ACS variables
+measuring economic hardship, z-score standardized, with median income reversed.
+This time we also pull **two new demographic variables** --- percent minority
+(non-white) and percent renter-occupied --- that we will use for bivariate
+mapping later.
+
+## 1a. Define variables
 
 ```{r}
-#| label: get-acs-2017
-#| echo: true
-#| eval: true
+#| label: step.01a
 
-# Define variables with readable names using a named vector
-vars.to.use <- c( HHIncome   = "B19049_001",
-                  HouseValue = "B25077_001" )
+# The 5 hardship index variables (identical to Lab 1)
+hardship_vars <- c(
+  pov_num      = "B17001_002",   # Population below poverty
+  pov_den      = "B17001_001",   # Poverty universe total
+  med_income   = "B19013_001",   # Median household income
+  unemp_num    = "B23025_005",   # Unemployed
+  unemp_den    = "B23025_002",   # In labor force
+  nohs_num     = "B15003_002",   # No high school diploma (< 9th grade)
+  nohs_den     = "B15003_001",   # Population 25+
+  noins_num    = "B27010_017",   # No health insurance (18-34)
+  noins_den    = "B27010_001"    # Insurance universe
+)
 
-# Retrieve county-level data with spatial geometry for mapping
-CenDF <- get_acs( geography = "county",
-                  year      = 2017,
-                  survey    = "acs5",
-                  variables = vars.to.use,
-                  geometry  = TRUE )
+# New demographic variables for bivariate mapping
+demo_vars <- c(
+  race_total   = "B03002_001",   # Total population (Hispanic/Latino origin by race)
+  race_wnh     = "B03002_003",   # White alone, not Hispanic or Latino
+  tenure_total = "B25003_001",   # Total occupied housing units
+  tenure_rent  = "B25003_003"    # Renter-occupied units
+)
+
+# Combine into one request
+all_vars <- c(hardship_vars, demo_vars)
 ```
 
-
-# Step 2: Transforming the Data
+## 1b. Pull Maricopa County block group data
 
 ```{r}
-#| label: transform-2017
-#| echo: true
-#| eval: true
+#| label: step.01b
+#| results: hide
 
-# Transform from long to wide format and compute the ratio
-# NOTE: Using pivot_wider() instead of deprecated spread()
-CenDF <- CenDF %>%
-  select( -moe ) %>%
-  pivot_wider( names_from = variable, values_from = estimate ) %>%
-  mutate( HHInc_HousePrice_Ratio = HouseValue / HHIncome )
+# Pull ACS 5-year estimates at the block group level for Maricopa County.
+# geometry = TRUE attaches spatial boundaries for mapping.
+cbg_raw <- get_acs(
+  geography = "block group",
+  variables = all_vars,
+  state     = "AZ",
+  county    = "Maricopa",
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE
+)
 ```
 
-# Step 3: Data Exploration
+## 1c. Reshape and compute rates
 
 ```{r}
-#| label: explore-2017
-#| echo: true
-#| eval: true
+#| label: step.01c
 
-# Sort by ratio: lowest to highest (most affordable counties)
-CenDF.lh <- CenDF %>%
-  select( NAME, HHInc_HousePrice_Ratio ) %>%
-  arrange( HHInc_HousePrice_Ratio )
-head( CenDF.lh, 10 )
+# Pivot from long to wide: one row per CBG, one column per variable.
+# We drop the margin of error column since we're working with estimates only.
+cbg <- cbg_raw %>%
+  select(-moe) %>%
+  pivot_wider(names_from = variable, values_from = estimate)
 
-# Sort by ratio: highest to lowest (least affordable counties)
-CenDF.hl <- CenDF %>%
-  select( NAME, HHInc_HousePrice_Ratio ) %>%
-  arrange( desc( HHInc_HousePrice_Ratio ) )
-head( CenDF.hl, 10 )
+# Compute derived rates from numerator/denominator pairs
+cbg <- cbg %>%
+  mutate(
+    poverty_rate = pov_num / pov_den,
+    unemp_rate   = unemp_num / unemp_den,
+    no_hs_rate   = nohs_num / nohs_den,
+    no_ins_rate  = noins_num / noins_den,
+    pct_minority = (race_total - race_wnh) / race_total,
+    pct_renter   = tenure_rent / tenure_total
+  )
+
+# Z-score standardize the 5 hardship variables, reverse median income,
+# and compute the composite index as the row mean of z-scores.
+cbg <- cbg %>%
+  mutate(
+    across(
+      c(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, med_income),
+      ~ as.numeric(scale(.)),
+      .names = "z_{.col}"
+    ),
+    # Reverse median income so higher = more hardship
+    z_med_income = -1 * z_med_income,
+    # Composite hardship index: mean of the 5 z-scores
+    hardship_index = rowMeans(
+      pick(z_poverty_rate, z_unemp_rate, z_no_hs_rate, z_no_ins_rate, z_med_income),
+      na.rm = TRUE
+    )
+  )
+
+# Quick summary — how many CBGs, what's the index range?
+cat("CBGs:", nrow(cbg), "\n")
+cat("Hardship index range:",
+    round(min(cbg$hardship_index, na.rm = TRUE), 2), "to",
+    round(max(cbg$hardship_index, na.rm = TRUE), 2), "\n")
 ```
 
-# Step 4: Map the Data
+---
+
+# ── Step 2: Classification Comparison ─────────────────────────
+
+A choropleth map's story depends heavily on how you **classify** continuous
+values into discrete color bins. Here we apply four common methods to the
+hardship index and compare them side-by-side.
+
+| Method | Logic | Effect |
+|--------|-------|--------|
+| **Quantile** | Equal number of observations per bin | Maximizes color variation; can exaggerate small differences |
+| **Jenks (natural breaks)** | Minimizes within-class variance | Finds "natural" groupings; data-driven |
+| **Equal interval** | Equal-width bins across the range | Intuitive scale; can leave most observations in one or two bins |
+| **Standard deviation** | Bins centered on the mean, each 1 SD wide | Highlights outliers; assumes roughly normal distribution |
 
 ```{r}
-#| label: map-2017
-#| echo: true
-#| eval: true
+#| label: step.02a
 
-# Create a choropleth map of the house-price-to-income ratio
-ggplot( CenDF ) +
-  geom_sf( aes( fill = HHInc_HousePrice_Ratio ), color = NA ) +
-  coord_sf( datum = NA ) +
-  labs( title    = "House-price-to-income ratio by county",
-        subtitle = "Alaska and Hawaii are shifted and not to scale",
-        caption  = "Source: ACS 5-year, 2017",
-        fill     = "House-price-\nto-income ratio" ) +
-  scale_fill_viridis( direction = -1 )
+# ── Compute classification breaks using classInt ──────────────
+# classInt::classIntervals() takes a numeric vector and a method name,
+# and returns an object whose $brks element contains the break points.
+# We request 5 classes (n = 5) for each method.
+
+# Drop NAs for classification
+hi_values <- cbg$hardship_index[!is.na(cbg$hardship_index)]
+
+brk_quantile <- classIntervals(hi_values, n = 5, style = "quantile")
+brk_jenks    <- classIntervals(hi_values, n = 5, style = "jenks")
+brk_equal    <- classIntervals(hi_values, n = 5, style = "equal")
+brk_sd       <- classIntervals(hi_values, n = 5, style = "sd")
 ```
 
+```{r}
+#| label: step.02b
+
+# ── Helper function to cut the index and produce a map ────────
+# This avoids repeating the same ggplot code four times.
+# We use cut() with the break points from classIntervals to assign
+# each CBG to a class, then map the classes as a factor fill.
+
+make_class_map <- function(data, breaks_obj, method_label) {
+  # cut() assigns each value to a bin defined by breaks_obj$brks
+  data <- data %>%
+    mutate(
+      hi_class = cut(
+        hardship_index,
+        breaks  = breaks_obj$brks,
+        include.lowest = TRUE,
+        dig.lab = 2
+      )
+    )
+
+  ggplot(data) +
+    geom_sf(aes(fill = hi_class), color = NA) +
+    scale_fill_viridis_d(option = "inferno", direction = -1, na.value = "grey80") +
+    coord_sf(datum = NA) +
+    theme_void(base_size = 11) +
+    labs(
+      title = method_label,
+      fill  = "Hardship\nClass"
+    )
+}
+```
+
+```{r}
+#| label: step.02c
+#| fig-height: 10
+
+# ── Build 4 maps and arrange in a 2x2 grid ───────────────────
+# patchwork lets us combine ggplots with + and / operators.
+# The + operator places plots side-by-side; / stacks them vertically.
+
+p_quant <- make_class_map(cbg, brk_quantile, "Quantile")
+p_jenks <- make_class_map(cbg, brk_jenks,    "Jenks Natural Breaks")
+p_equal <- make_class_map(cbg, brk_equal,    "Equal Interval")
+p_sd    <- make_class_map(cbg, brk_sd,       "Standard Deviation")
+
+(p_quant + p_jenks) / (p_equal + p_sd) +
+  plot_annotation(
+    title    = "How Classification Method Changes the Story",
+    subtitle = "Economic Hardship Index — Maricopa County CBGs (ACS 2019-2023)",
+    caption  = "Source: ACS 5-Year Estimates, 2019-2023"
+  )
+```
+
+**Key observation:** The *same data* produces four visually different maps. The
+quantile method spreads color evenly across CBGs, making hardship appear
+widespread. The equal interval method concentrates most CBGs in a narrow range,
+making only extreme outliers visible. Jenks finds natural clusters in the data.
+Standard deviation highlights how far each area deviates from the mean.
+
+---
+
+# ── Step 3: Bivariate Choropleth — Hardship x % Minority ──────
+
+A standard choropleth maps **one** variable. A bivariate choropleth maps
+**two** variables simultaneously by crossing their classifications into a 3x3
+(or 2x2) color grid. This lets us see where *both* hardship and minority
+concentration are high --- areas of potential "double disadvantage."
+
+```{r}
+#| label: step.03a
+
+# ── Create the bivariate classes using the biscale package ────
+# bi_class() takes a data frame and two variable names, and adds a
+# new column (bi_class) that encodes the 3x3 combination.
+# dim = 3 means each variable is split into terciles (low/mid/high).
+
+cbg_bi <- cbg %>%
+  filter(!is.na(hardship_index), !is.na(pct_minority)) %>%
+  bi_class(
+    x   = hardship_index,  # x-axis variable
+    y   = pct_minority,    # y-axis variable
+    dim = 3,               # 3x3 grid = 9 color categories
+    style = "quantile"     # use quantile breaks for both variables
+  )
+```
+
+```{r}
+#| label: step.03b
+#| fig-height: 8
+
+# ── Build the bivariate map ──────────────────────────────────
+# bi_scale_fill() maps the bi_class column to a bivariate color palette.
+# "DkViolet" is a purple-to-teal palette that works well for diverging pairs.
+
+map_bi <- ggplot(cbg_bi) +
+  geom_sf(aes(fill = bi_class), color = NA, show.legend = FALSE) +
+  bi_scale_fill(pal = "DkViolet", dim = 3) +
+  coord_sf(datum = NA) +
+  theme_void(base_size = 12) +
+  labs(
+    title    = "Economic Hardship x Percent Minority",
+    subtitle = "Maricopa County Block Groups (ACS 2019-2023)",
+    caption  = "Source: ACS 5-Year Estimates, 2019-2023"
+  )
+
+# ── Build the bivariate legend ────────────────────────────────
+# bi_legend() creates the 3x3 color key that tells readers how to
+# interpret the two dimensions. We place it in the lower-left.
+
+legend_bi <- bi_legend(
+  pal = "DkViolet",
+  dim = 3,
+  xlab = "Higher Hardship →",
+  ylab = "Higher % Minority →",
+  size = 9
+)
+
+# ── Combine map and legend using patchwork ────────────────────
+# inset_element() overlays the legend on the map at specified coordinates.
+map_bi +
+  inset_element(
+    legend_bi,
+    left   = 0.0,
+    bottom = 0.0,
+    right  = 0.30,
+    top    = 0.30
+  )
+```
+
+**Interpreting the bivariate map:** The darkest purple areas (upper-right of the
+legend) have *both* high hardship and high minority concentration --- these are
+the "double disadvantage" neighborhoods. Light areas (lower-left) have low
+hardship and low minority share. The off-diagonal colors show areas where the
+two variables diverge: high hardship but low minority share, or vice versa.
+
+---
+
+# ── Step 4: Small Multiples Across Scales ─────────────────────
+
+One of the most important lessons in spatial analysis is that **patterns change
+with scale**. A national county map reveals broad regional divides; a tract map
+shows neighborhood variation; a CBG map exposes block-level inequity. Here we
+build the hardship index at all three scales and compare.
+
+## 4a. Pull and compute at county and tract levels
+
+```{r}
+#| label: step.04a
+#| results: hide
+
+# ── Pull US county-level data ─────────────────────────────────
+# This gives us ~3,200 counties across the entire US.
+county_raw <- get_acs(
+  geography = "county",
+  variables = hardship_vars,
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE
+)
+
+# ── Pull AZ tract-level data ─────────────────────────────────
+# Census tracts within Arizona (~1,800 tracts).
+tract_raw <- get_acs(
+  geography = "tract",
+  variables = hardship_vars,
+  state     = "AZ",
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE
+)
+```
+
+```{r}
+#| label: step.04b
+
+# ── Reshape and compute hardship index at each scale ──────────
+# We apply the same pipeline used for CBGs: pivot wide, compute rates,
+# z-score standardize, reverse income, take row mean.
+
+build_index <- function(df) {
+  df %>%
+    select(-moe) %>%
+    pivot_wider(names_from = variable, values_from = estimate) %>%
+    mutate(
+      poverty_rate = pov_num / pov_den,
+      unemp_rate   = unemp_num / unemp_den,
+      no_hs_rate   = nohs_num / nohs_den,
+      no_ins_rate  = noins_num / noins_den
+    ) %>%
+    mutate(
+      across(
+        c(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, med_income),
+        ~ as.numeric(scale(.)),
+        .names = "z_{.col}"
+      ),
+      z_med_income = -1 * z_med_income,
+      hardship_index = rowMeans(
+        pick(z_poverty_rate, z_unemp_rate, z_no_hs_rate, z_no_ins_rate, z_med_income),
+        na.rm = TRUE
+      )
+    )
+}
+
+county_df <- build_index(county_raw)
+tract_df  <- build_index(tract_raw)
+# CBG already built above — we reuse 'cbg'
+```
+
+## 4b. Create the small-multiple comparison
+
+```{r}
+#| label: step.04c
+#| fig-height: 5
+
+# ── National county map ───────────────────────────────────────
+# shift_geometry() moves Alaska and Hawaii for a clean CONUS layout.
+# We filter to lower 48 + DC for simplicity.
+
+county_lower48 <- county_df %>%
+  filter(!str_sub(GEOID, 1, 2) %in% c("02", "15", "72", "78", "66", "69", "60"))
+
+p_county <- ggplot(county_lower48) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship") +
+  coord_sf(datum = NA) +
+  theme_void(base_size = 10) +
+  labs(title = "US Counties")
+```
+
+```{r}
+#| label: step.04d
+#| fig-height: 5
+
+# ── Arizona tract map ────────────────────────────────────────
+p_tract <- ggplot(tract_df) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship") +
+  coord_sf(datum = NA) +
+  theme_void(base_size = 10) +
+  labs(title = "Arizona Tracts")
+```
+
+```{r}
+#| label: step.04e
+#| fig-height: 5
+
+# ── Maricopa CBG map ─────────────────────────────────────────
+p_cbg <- ggplot(cbg) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship") +
+  coord_sf(datum = NA) +
+  theme_void(base_size = 10) +
+  labs(title = "Maricopa CBGs")
+```
+
+```{r}
+#| label: step.04f
+#| fig-height: 6
+
+# ── Combine the three scales into one figure ──────────────────
+# patchwork layout: national on top spanning full width, state and
+# local side-by-side below.
+
+p_county / (p_tract + p_cbg) +
+  plot_annotation(
+    title    = "Economic Hardship Across Three Geographic Scales",
+    subtitle = "ACS 5-Year Estimates, 2019-2023",
+    caption  = "Source: ACS 5-Year Estimates, 2019-2023"
+  )
+```
+
+**Scale matters.** The county map shows broad regional patterns (e.g., the
+Mississippi Delta, Appalachia, the Southwest border). The tract map reveals
+within-Arizona variation that is invisible at the county level. The CBG map
+exposes block-level heterogeneity *within* tracts --- some tracts that appear
+moderate at the tract level contain both very-high and very-low hardship CBGs.
+
+---
+
+# ── Step 5: Interactive Leaflet Map ───────────────────────────
+
+Static maps are great for print; interactive maps let users explore. Here we
+build a Leaflet map of Maricopa County CBGs with popups that show each CBG's
+hardship index and component values.
+
+```{r}
+#| label: step.05a
+
+# ── Prepare data for Leaflet ─────────────────────────────────
+# Leaflet requires WGS84 (EPSG:4326) coordinate reference system.
+# st_transform() reprojects our data from whatever CRS tidycensus
+# returned to the standard lat/lon CRS that Leaflet expects.
+
+cbg_leaf <- cbg %>%
+  filter(!is.na(hardship_index)) %>%
+  st_transform(crs = 4326)
+
+# ── Build a color palette ────────────────────────────────────
+# colorNumeric() from leaflet maps a continuous variable to a color
+# ramp. We use the "inferno" palette reversed so dark = high hardship.
+
+pal <- colorNumeric(
+  palette = viridis(256, option = "inferno", direction = -1),
+  domain  = cbg_leaf$hardship_index
+)
+```
+
+```{r}
+#| label: step.05b
+
+# ── Build the popup HTML string ──────────────────────────────
+# Each popup shows the CBG's GEOID, hardship index, and the two
+# demographic variables so users can explore patterns interactively.
+
+popup_text <- paste0(
+  "<strong>CBG: </strong>",   cbg_leaf$GEOID, "<br>",
+  "<strong>Hardship Index: </strong>",
+    round(cbg_leaf$hardship_index, 2), "<br>",
+  "<strong>Poverty Rate: </strong>",
+    round(cbg_leaf$poverty_rate * 100, 1), "%<br>",
+  "<strong>% Minority: </strong>",
+    round(cbg_leaf$pct_minority * 100, 1), "%<br>",
+  "<strong>% Renter: </strong>",
+    round(cbg_leaf$pct_renter * 100, 1), "%"
+)
+```
+
+```{r}
+#| label: step.05c
+
+# ── Assemble the Leaflet map ─────────────────────────────────
+# leaflet() initializes the map; addProviderTiles() adds a basemap;
+# addPolygons() draws the CBG boundaries with our color palette;
+# addLayersControl() lets users toggle between basemaps.
+
+leaflet(cbg_leaf) %>%
+  # Two basemap options — user can toggle between them
+
+  addProviderTiles(providers$CartoDB.Positron, group = "Light") %>%
+  addProviderTiles(providers$Esri.WorldImagery,  group = "Satellite") %>%
+  # CBG polygons colored by hardship index
+  addPolygons(
+    fillColor   = ~pal(hardship_index),
+    fillOpacity = 0.7,
+    color       = "white",       # border color
+    weight      = 0.3,           # border width
+    popup       = popup_text,
+    highlightOptions = highlightOptions(
+      weight    = 2,
+      color     = "#ffc627",     # ASU gold highlight on hover
+      bringToFront = TRUE
+    )
+  ) %>%
+  # Color legend
+  addLegend(
+    pal      = pal,
+    values   = ~hardship_index,
+    title    = "Hardship Index",
+    position = "bottomright"
+  ) %>%
+  # Layer control lets users switch basemaps
+  addLayersControl(
+    baseGroups = c("Light", "Satellite"),
+    options    = layersControlOptions(collapsed = FALSE)
+  )
+```
+
+---
+
+# ── Step 6: Export-Quality Figure with ggspatial ──────────────
+
+For reports and presentations you often need a polished static map with a scale
+bar and north arrow. The `ggspatial` package adds these cartographic elements to
+any `ggplot2` + `geom_sf()` map.
+
+```{r}
+#| label: step.06
+#| fig-height: 8
+
+# ── Publication-ready map with scale bar and north arrow ──────
+# annotation_scale() adds a scale bar (default = km).
+# annotation_north_arrow() adds a north arrow with configurable style.
+
+ggplot(cbg %>% filter(!is.na(hardship_index))) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(
+    option    = "inferno",
+    direction = -1,
+    name      = "Hardship\nIndex"
+  ) +
+  # ggspatial scale bar — placed at bottom-left
+
+  annotation_scale(
+    location = "bl",
+    width_hint = 0.3,
+    style = "ticks"
+  ) +
+  # ggspatial north arrow — placed at top-right
+  annotation_north_arrow(
+    location = "tr",
+    style = north_arrow_fancy_orienteering()
+  ) +
+  coord_sf(datum = NA) +
+  theme_void(base_size = 12) +
+  labs(
+    title    = "Economic Hardship Index",
+    subtitle = "Maricopa County Block Groups (ACS 2019-2023)",
+    caption  = "Source: ACS 5-Year Estimates, 2019-2023",
+    fill     = "Hardship\nIndex"
+  )
+```
+
+---
 
 # Questions
 
-### Question 1: Exploration.
+## Question 1 — Interpret: Classification and the Spatial Story
 
-1a. In step 3 above, what is the county with the highest (and lowest) house-price-to-income ratio? What is the average house-price-to-income ratio across all US counties over the time period?
+Look at the 2x2 classification comparison from Step 2.
 
-   - Answer: The county with the highest house-price-to-income ratio is `r CenDF.hl$NAME[1]` and the county with the lowest is `r CenDF.lh$NAME[1]`. The average ratio across all US counties is `r round( mean( CenDF$HHInc_HousePrice_Ratio, na.rm = TRUE ), 2 )`.
+**1a.** Which classification method makes economic hardship appear *most
+widespread* across Maricopa County? Which makes it appear *most concentrated*?
 
-1b. Where is Maricopa County on the list? How many years of median income will it take to buy a home in Maricopa County?
+> **Answer:** The **quantile** method makes hardship appear most widespread
+> because it forces an equal number of CBGs into each class --- so the top class
+> always contains 20% of all CBGs regardless of how extreme their values are.
+> The **equal interval** method makes hardship appear most concentrated because
+> it divides the full numeric range into equal-width bins; since most CBGs
+> cluster near the middle of the distribution, the highest bin captures only the
+> few extreme outliers. The result is a map that appears mostly uniform with a
+> handful of dark patches.
 
-   - Answer: When looking from highest house-price-to-income to lowest, Maricopa County is `r which( CenDF.hl$NAME == "Maricopa County, Arizona" )` on the list and it will take `r round( CenDF$HHInc_HousePrice_Ratio[CenDF$NAME == "Maricopa County, Arizona"], 2 )` years of median income to buy a house.
+**1b.** In a policy memo arguing for increased funding to "high hardship" areas,
+which classification method would you choose and why? What about a memo arguing
+that hardship is *not* a widespread problem?
 
-1c. Where is Los Angeles on the list and how does its ranking compare to the list reported in the Citylab report?
+> **Answer:** To argue hardship is widespread, use **quantile** breaks --- the
+> map will show dark colors spread across many CBGs. To argue hardship is
+> limited, use **equal interval** --- the map will appear mostly light, with
+> only a few dark outliers. This demonstrates why classification is not a
+> neutral technical decision; it is an analytical and rhetorical choice. The
+> **Jenks** method is often the most defensible middle ground because it lets
+> the data determine the groupings rather than imposing an arbitrary scheme.
 
-   - Answer: Los Angeles is `r which( CenDF.hl$NAME == "Los Angeles County, California" )` on the list from high to low. This departs from the article which lists LA as first.
+---
 
+## Question 2 — Modify: Bivariate Map with Hardship x % Renter-Occupied
 
-### Question 2: Temporal analysis.
-
-2a. Go back to Step 1 above, and enter in 2012 as the year value. Repeat Steps 2-4.
+Create a **second bivariate choropleth** using `hardship_index` and
+`pct_renter` (percent renter-occupied housing) instead of `pct_minority`.
+Show the complete code and output.
 
 ```{r}
-#| label: get-acs-2012
-#| echo: true
-#| eval: true
+#| label: q2.a
 
-# Retrieve 2008-2012 ACS data for temporal comparison
-CenDF.12 <- get_acs( geography = "county",
-                     year      = 2012,
-                     survey    = "acs5",
-                     variables = vars.to.use,
-                     geometry  = TRUE )
+# ── Bivariate classification: hardship x % renter ────────────
+# Same approach as Step 3 but substituting pct_renter for pct_minority.
+# This lets us see whether areas of high hardship are also areas of
+# high renter concentration (potential housing instability).
 
-# Transform and compute ratio (using pivot_wider, not spread)
-CenDF.12 <- CenDF.12 %>%
-  select( -moe ) %>%
-  pivot_wider( names_from = variable, values_from = estimate ) %>%
-  mutate( HHInc_HousePrice_Ratio = HouseValue / HHIncome )
-
-# Sort for exploration
-CenDF.12.lh <- CenDF.12 %>%
-  select( NAME, HHInc_HousePrice_Ratio ) %>%
-  arrange( HHInc_HousePrice_Ratio )
-
-CenDF.12.hl <- CenDF.12 %>%
-  select( NAME, HHInc_HousePrice_Ratio ) %>%
-  arrange( desc( HHInc_HousePrice_Ratio ) )
-
-# Map the 2012 data
-ggplot( CenDF.12 ) +
-  geom_sf( aes( fill = HHInc_HousePrice_Ratio ), color = NA ) +
-  coord_sf( datum = NA ) +
-  labs( title    = "House-price-to-income ratio by county",
-        subtitle = "Alaska and Hawaii are shifted and not to scale",
-        caption  = "Source: ACS 5-year, 2012",
-        fill     = "House-price-\nto-income ratio" ) +
-  scale_fill_viridis( direction = -1 )
+cbg_bi_renter <- cbg %>%
+  filter(!is.na(hardship_index), !is.na(pct_renter)) %>%
+  bi_class(
+    x     = hardship_index,
+    y     = pct_renter,
+    dim   = 3,
+    style = "quantile"
+  )
 ```
 
-   - Answer: The county with the highest house-price-to-income ratio in 2012 is `r CenDF.12.hl$NAME[1]` and the county with the lowest is `r CenDF.12.lh$NAME[1]`.
-
-
-2b. Compare and contrast the findings over the different time periods.
-
 ```{r}
-#| label: compare-years
-#| echo: true
-#| eval: true
+#| label: q2.b
+#| fig-height: 8
 
-# Prepare 2017 data for joining (drop geometry to join as data frames)
-df.17 <- CenDF %>%
-  sf::st_drop_geometry() %>%
-  select( GEOID, HHInc_HousePrice_Ratio, NAME ) %>%
-  rename( HHInc_HousePrice_Ratio.17 = HHInc_HousePrice_Ratio )
-
-# Prepare 2012 data for joining
-df.12 <- CenDF.12 %>%
-  sf::st_drop_geometry() %>%
-  select( GEOID, HHInc_HousePrice_Ratio ) %>%
-  rename( HHInc_HousePrice_Ratio.12 = HHInc_HousePrice_Ratio )
-
-# Join the two time periods
-both.year <- full_join( df.17, df.12, by = "GEOID" )
-
-# Compute the change score (2017 minus 2012)
-both.year$HHInc_HousePrice_Ratio.d <-
-  both.year$HHInc_HousePrice_Ratio.17 - both.year$HHInc_HousePrice_Ratio.12
-
-# Summary statistics of the change
-summary( both.year$HHInc_HousePrice_Ratio.d )
-
-# Histogram of the change in ratio
-ggplot( both.year, aes( x = HHInc_HousePrice_Ratio.d ) ) +
-  geom_histogram( color = "black", fill = "lightblue", bins = 40 ) +
-  theme_minimal() +
-  labs( title = "Change in House-Price-to-Income Ratio by County\n(ACS 2017 vs. ACS 2012)",
-        x     = "Change in Ratio (2017 - 2012)",
-        y     = "Count" )
-```
-
-   - Answer: The overall change is close to zero, although the average decreased slightly. For Maricopa County, the change was `r round( both.year$HHInc_HousePrice_Ratio.d[both.year$NAME == "Maricopa County, Arizona"][1], 2 )`, showing an increase from 2012 to 2017. As for Los Angeles county, there was an increase of `r round( both.year$HHInc_HousePrice_Ratio.d[both.year$NAME == "Los Angeles County, California"][1], 2 )`.
-
-### Question 3: High-Resolution Analysis.
-
-3a. Change geography from `county` to `tract` for Maricopa County.
-
-```{r}
-#| label: get-acs-az
-#| echo: true
-#| eval: true
-#| results: hide
-
-# Retrieve tract-level data for Maricopa County only
-CenDF.az <- get_acs( geography = "tract",
-                     year      = 2017,
-                     state     = "AZ",
-                     county    = "Maricopa County",
-                     survey    = "acs5",
-                     variables = vars.to.use,
-                     geometry  = TRUE )
-
-# Transform and compute ratio (using pivot_wider, not spread)
-CenDF.az <- CenDF.az %>%
-  select( -moe ) %>%
-  pivot_wider( names_from = variable, values_from = estimate ) %>%
-  mutate( HHInc_HousePrice_Ratio = HouseValue / HHIncome )
-
-# Summary statistics
-summary( CenDF.az$HHInc_HousePrice_Ratio )
-```
-
-   - Answer: Here are the summary statistics:
-     the min is `r round( min( CenDF.az$HHInc_HousePrice_Ratio, na.rm = TRUE ), 2 )`, the max is `r round( max( CenDF.az$HHInc_HousePrice_Ratio, na.rm = TRUE ), 2 )`, the median is `r round( median( CenDF.az$HHInc_HousePrice_Ratio, na.rm = TRUE ), 2 )`, the mean is `r round( mean( CenDF.az$HHInc_HousePrice_Ratio, na.rm = TRUE ), 2 )`, and the sd is `r round( sd( CenDF.az$HHInc_HousePrice_Ratio, na.rm = TRUE ), 2 )`.
-
-
-3b. Compare and contrast the findings for the different levels of geography.
-
-```{r}
-#| label: compare-geography
-
-# Build a comparison table: county-level vs tract-level statistics
-compare.table <-
-  rbind(
-    # County-level info for Maricopa
-    c( summary(
-      CenDF$HHInc_HousePrice_Ratio[CenDF$NAME == "Maricopa County, Arizona"]
-    ), 0 ),
-    # Tract-level info for Maricopa
-    summary( CenDF.az$HHInc_HousePrice_Ratio )
+# ── Build the bivariate map ──────────────────────────────────
+map_bi_renter <- ggplot(cbg_bi_renter) +
+  geom_sf(aes(fill = bi_class), color = NA, show.legend = FALSE) +
+  bi_scale_fill(pal = "DkViolet", dim = 3) +
+  coord_sf(datum = NA) +
+  theme_void(base_size = 12) +
+  labs(
+    title    = "Economic Hardship x Percent Renter-Occupied",
+    subtitle = "Maricopa County Block Groups (ACS 2019-2023)",
+    caption  = "Source: ACS 5-Year Estimates, 2019-2023"
   )
 
-rownames( compare.table ) <- c( "county", "tract" )
-colnames( compare.table )[7] <- "NAs"
+# ── Build the bivariate legend ────────────────────────────────
+legend_bi_renter <- bi_legend(
+  pal  = "DkViolet",
+  dim  = 3,
+  xlab = "Higher Hardship →",
+  ylab = "Higher % Renter →",
+  size = 9
+)
 
-round( compare.table, 2 )
+# ── Combine map and legend ────────────────────────────────────
+map_bi_renter +
+  inset_element(
+    legend_bi_renter,
+    left   = 0.0,
+    bottom = 0.0,
+    right  = 0.30,
+    top    = 0.30
+  )
 ```
 
-   - Answer: We can see that the measures of central tendency are similar. However, a major difference is with the ends of the distribution. The variation in the distributions is considerable when we compare the min/max for each level — tract-level data reveals much more heterogeneity within Maricopa County than the single county-level value suggests.
+---
+
+## Question 3 — Interpret: Comparing the Two Bivariate Maps
+
+Look at the bivariate map from Step 3 (hardship x % minority) and your new map
+from Question 2 (hardship x % renter).
+
+**3a.** Do the same areas show "double disadvantage" in both maps? Or do the
+spatial patterns differ?
+
+> **Answer:** There is substantial overlap but not a perfect match. Many CBGs in
+> south Phoenix and parts of central Mesa show dark purple in *both* maps ---
+> these are areas with simultaneously high hardship, high minority share, and
+> high renter rates. However, some areas near university campuses (e.g., near
+> ASU Tempe) may show high renter concentration without high minority share or
+> extreme hardship, appearing in the upper-left corner of the renter map's
+> legend (high renter, low hardship). Conversely, some predominantly minority
+> CBGs in outlying areas may have moderate-to-high homeownership rates, creating
+> divergence between the two maps.
+
+**3b.** What does this comparison tell you about the relationship between
+economic hardship, race/ethnicity, and housing tenure in Maricopa County?
+
+> **Answer:** The comparison reveals that hardship, minority concentration, and
+> renter status are **correlated but not identical** spatial phenomena. Areas
+> where all three overlap represent the deepest structural disadvantage ---
+> communities facing economic deprivation, racial segregation, and housing
+> instability simultaneously. The areas where the maps diverge are analytically
+> important: they challenge the assumption that these dimensions always co-occur
+> and point to distinct policy levers. For example, high-renter/low-hardship
+> areas near universities need different interventions than high-minority/
+> high-hardship areas with stable homeownership. Bivariate mapping makes these
+> distinctions visible in a way that single-variable maps cannot.

@@ -1,444 +1,562 @@
 ---
-title: "Lab 05 — Solutions: Predicting Median Home Value Change"
-subtitle: "PAF 516"
+title: "Lab 05 — Solutions: Temporal Change Analysis"
+subtitle: "PAF 516 | M5 Assignment"
+date: today
 format:
   html:
     theme: readable
     highlight-style: tango
     toc: true
-    toc-depth: 3
-    toc-title: "Contents"
-    number-sections: false
     self-contained: true
-    code-fold: false
+    number-sections: false
 execute:
   echo: true
   warning: false
   message: false
   fig-width: 10
-  fig-height: 6
 ---
 
----
 
-# Packages
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set( echo = TRUE, message=F, warning=F, fig.width=10 )
+options( tigris_use_cache = TRUE )
+```
+
 
 ```{r}
 #| label: packages
-
-# ---- Required packages ----
-# dplyr:     data wrangling (filter, select, mutate, group_by)
-# pander:    formatted markdown tables
-# stargazer: regression output tables (HTML format)
-
-library( dplyr )
-library( pander )
-library( stargazer )
+# ── Packages ─────────────────────────────────────────
+library( tidyverse )
+library( tidycensus )
+library( sf )
+library( viridis )
+library( patchwork )
 ```
 
----
+```{r}
+#| label: api-key
+# Uncomment and add your Census API key
+# census_api_key("YOUR KEY GOES HERE")
+```
 
-# Helper Functions
+
+# ── Overview ─────────────────────────────────────────
+
+In Labs 1–4 we built, mapped, and analyzed our economic hardship index at a single point in time. But neighborhoods change. In this lab we introduce **temporal change analysis** — pulling the same hardship variables for two different ACS periods, computing change scores, and mapping where hardship is worsening or improving.
+
+**New skill**: Multi-year census comparison and change mapping with diverging color palettes.
+
+**Time periods**:
+
+- **Period 1**: 2011-2015 ACS 5-year estimates (`year = 2015`)
+- **Period 2**: 2019-2023 ACS 5-year estimates (`year = 2023`)
+
+This gives us an approximately **8-year gap** between the midpoints of the two survey windows.
+
+
+# ── Step 1: Define Variables and Pull Period 1 Data ──
+
+We use the same 5 economic hardship variables from Lab 1. One important note: the health insurance table B27010 changed structure between ACS vintages. We use B27010_017 (no insurance, ages 18-34) for both periods because it exists in both the 2015 and 2023 5-year ACS.
 
 ```{r}
-#| label: helper-functions
+#| label: step.01-vars
 
-# ---- panel.cor: upper-panel correlation values for pairs() ----
-# Displays absolute correlation coefficient with significance stars.
-panel.cor <- function( x, y, digits = 2, prefix = "", cex.cor )
-{
-  usr <- par( "usr" ); on.exit( par( usr ) )
-  par( usr = c( 0, 1, 0, 1 ) )
-  r   <- abs( cor( x, y, use = "complete.obs" ) )
-  txt <- format( c( r, 0.123456789 ), digits = digits )[1]
-  txt <- paste( prefix, txt, sep = "" )
-  if( missing( cex.cor ) ) cex <- 0.8 / strwidth( txt )
-  test <- cor.test( x, y )
-  Signif <- symnum( test$p.value, corr = FALSE, na = FALSE,
-                    cutpoints = c( 0, 0.001, 0.01, 0.05, 0.1, 1 ),
-                    symbols   = c( "***", "**", "*", ".", " " ) )
-  text( 0.5, 0.5, txt, cex = 1.5 )
-  text( 0.7, 0.8, Signif, cex = cex, col = 2 )
-}
+# ── Define hardship variables ──────────────────────────
+# These are the SAME 5 indicators from Lab 1.
+# Each rate variable needs a numerator and denominator.
+hardship_vars <- c(
+  pov_num      = "B17001_002",   # Population below poverty level
+  pov_den      = "B17001_001",   # Total population (poverty universe)
+  unemp_num    = "B23025_005",   # Unemployed population
+  unemp_den    = "B23025_002",   # In labor force (denominator)
+  no_hs_num    = "B15003_002",   # No high school diploma
+  no_hs_den    = "B15003_001",   # Total population 25+ (education universe)
+  no_ins_num   = "B27010_017",   # Without health insurance (18-34)
+  no_ins_den   = "B27010_001",   # Total population (insurance universe)
+  median_income = "B19013_001"   # Median household income
+)
+```
 
-# ---- panel.smooth: lower-panel scatterplot with lowess line for pairs() ----
-panel.smooth <- function( x, y, col = par( "col" ), bg = NA, pch = par( "pch" ),
-                          cex = 0.5, col.smooth = "red", span = 2/3, iter = 3, ... )
-{
-  points( x, y, pch = 19, col = gray( 0.7, 0.2 ), bg = bg, cex = cex )
-  ok <- is.finite( x ) & is.finite( y )
-  if( any( ok ) )
-    lines( stats::lowess( x[ok], y[ok], f = span, iter = iter ),
-           col = col.smooth, lwd = 2, ... )
-}
+```{r}
+#| label: step.01-pull-p1
+#| results: hide
 
-# ---- jplot: custom scatterplot with lowess regression line ----
-# Useful for visually assessing linearity between X and Y.
-jplot <- function( x1, x2, lab1 = "", lab2 = "", draw.line = TRUE, ... )
-{
-  plot( x1, x2,
-        pch = 19,
-        col = gray( 0.6, alpha = 0.2 ),
-        cex = 0.5,
-        bty = "n",
-        xlab = lab1,
-        ylab = lab2, cex.lab = 1.5,
-        ... )
-  if( draw.line == TRUE ){
-    ok <- is.finite( x1 ) & is.finite( x2 )
-    lines( lowess( x2[ok] ~ x1[ok] ), col = "red", lwd = 3 )
-  }
+# ── Pull Period 1: 2011-2015 ACS ──────────────────────
+# We pull Maricopa County block group (CBG) data for the earlier period.
+# geometry = TRUE gives us spatial boundaries for mapping.
+cbg_2015 <- get_acs(
+  geography = "block group",
+  variables = hardship_vars,
+  state     = "AZ",
+  county    = "Maricopa",
+  year      = 2015,
+  survey    = "acs5",
+  geometry  = TRUE
+)
+```
+
+```{r}
+#| label: step.01-pull-p2
+#| results: hide
+
+# ── Pull Period 2: 2019-2023 ACS ──────────────────────
+# Same variables, same geography, different time period.
+cbg_2023 <- get_acs(
+  geography = "block group",
+  variables = hardship_vars,
+  state     = "AZ",
+  county    = "Maricopa",
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE
+)
+```
+
+
+# ── Step 2: Build Hardship Index for Each Period ─────
+
+We now reshape each dataset from long to wide, compute rates, standardize to z-scores, reverse-code median income, and create the composite hardship index. This is the same pipeline from Lab 1, applied twice.
+
+```{r}
+#| label: step.02-function
+
+# ── Reusable function to build the hardship index ─────
+# Rather than copy-pasting the same code twice, we write a function.
+# This takes the raw long-format tidycensus output and returns a
+# spatial data frame with the hardship index attached.
+
+build_hardship_index <- function( df ) {
+
+  # Reshape from long to wide: one column per variable
+  wide <- df %>%
+    select( -moe ) %>%
+    pivot_wider( names_from = variable, values_from = estimate )
+
+  # Compute rate variables from numerator/denominator pairs
+  wide <- wide %>%
+    mutate(
+      poverty_rate = pov_num / pov_den,
+      unemp_rate   = unemp_num / unemp_den,
+      no_hs_rate   = no_hs_num / no_hs_den,
+      no_ins_rate  = no_ins_num / no_ins_den
+    )
+
+  # Extract the 5 indicator columns and drop incomplete cases
+  # We need complete cases to compute z-scores
+  index_vars <- wide %>%
+    as.data.frame() %>%
+    select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
+    drop_na()
+
+  # Standardize all variables to z-scores (mean=0, sd=1)
+  index_z <- index_vars %>%
+    mutate( across( everything(), ~ as.numeric( scale(.) ) ) )
+
+  # Reverse-code median income: high income = LOW hardship
+  index_z <- index_z %>%
+    mutate( median_income = -1 * median_income )
+
+  # Composite index: row mean of the 5 z-scores
+  index_z$hardship_index <- rowMeans( index_z, na.rm = TRUE )
+
+  # Attach the index back to the spatial data (complete cases only)
+  result <- wide %>%
+    drop_na( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income )
+  result$hardship_index <- index_z$hardship_index
+
+  return( result )
 }
 ```
 
----
+```{r}
+#| label: step.02-build
 
-# Data Steps
+# ── Build index for both periods ──────────────────────
+cbg_2015_idx <- build_hardship_index( cbg_2015 )
+cbg_2023_idx <- build_hardship_index( cbg_2023 )
+
+cat( "Period 1 (2015) CBGs with valid index:", nrow( cbg_2015_idx ), "\n" )
+cat( "Period 2 (2023) CBGs with valid index:", nrow( cbg_2023_idx ), "\n" )
+```
+
+
+# ── Step 3: Join on GEOID ────────────────────────────
+
+Census block group boundaries can change between decennial censuses. The 2015 ACS uses 2010 Census boundaries while the 2023 ACS uses 2020 Census boundaries. Some CBGs were split, merged, or renumbered. We use `inner_join()` to keep only CBGs that exist in **both** periods — this ensures a clean apples-to-apples comparison.
 
 ```{r}
-#| label: load-data
+#| label: step.03-join
 
-# ---- Reproducibility ----
-set.seed( 1234 )
+# ── Join the two periods by GEOID ─────────────────────
+# We extract just the GEOID and hardship_index from each period,
+# then inner_join to keep only CBGs present in both time points.
+# We keep the 2023 geometry for mapping (more current boundaries).
 
-# ---- Stargazer output format ----
-# Set to "html" for rendered output; change to "text" for console testing.
-s.type <- "html"
+p1 <- cbg_2015_idx %>%
+  as.data.frame() %>%
+  select( GEOID, hardship_2015 = hardship_index )
 
-# ---- Load LTDB census data from GitHub ----
-# LTDB = Longitudinal Tract Database (Brown University)
-# These files contain harmonized census variables for 2000 and 2010
-# at the tract level, plus metadata for urban/rural classification.
+p2 <- cbg_2023_idx %>%
+  select( GEOID, hardship_2023 = hardship_index )
 
-URL1  <- "https://github.com/DS4PS/cpp-529-fall-2020/raw/main/LABS/data/rodeo/LTDB-2000.rds"
-d1    <- readRDS( gzcon( url( URL1 ) ) )
+# inner_join keeps only GEOIDs found in both datasets
+# The result retains the sf geometry from p2 (the 2023 boundaries)
+change_df <- inner_join( p2, p1, by = "GEOID" )
 
-URL2  <- "https://github.com/DS4PS/cpp-529-fall-2020/raw/main/LABS/data/rodeo/LTDB-2010.rds"
-d2    <- readRDS( gzcon( url( URL2 ) ) )
+cat( "CBGs matched in both periods:", nrow( change_df ), "\n" )
+cat( "CBGs lost (boundary changes):",
+     nrow( cbg_2015_idx ) + nrow( cbg_2023_idx ) - 2 * nrow( change_df ), "\n" )
+```
 
-URLmd <- "https://github.com/DS4PS/cpp-529-fall-2020/raw/main/LABS/data/rodeo/LTDB-META-DATA.rds"
-md    <- readRDS( gzcon( url( URLmd ) ) )
 
-# ---- Merge 2000 + 2010 + metadata on tract ID ----
-d1 <- select( d1, -year )
-d2 <- select( d2, -year )
+# ── Step 4: Compute Change Scores ───────────────────
 
-d <- merge( d1, d2, by = "tractid" )
-d <- merge( d, md, by = "tractid" )
+The change score is simply the difference between the two period indices. A **positive** value means hardship **increased** (worsened); a **negative** value means hardship **decreased** (improved).
 
-# ---- Keep only urban tracts ----
-# Rural tracts have very different housing dynamics and sparse data.
-d <- filter( d, urban == "urban" )
+```{r}
+#| label: step.04-change
 
-# ---- Select variables for analysis ----
-d <- select( d, tractid,
-             mhmval00, mhmval12,
-             unemp00, clf00,
-             vac00, hu00,
-             npov00, dpov00,
-             cbsa, cbsaname )
+# ── Compute the change score ──────────────────────────
+# Positive change = hardship worsened over time
+# Negative change = hardship improved over time
+change_df <- change_df %>%
+  mutate( hardship_change = hardship_2023 - hardship_2015 )
+```
 
-# ---- Compute percentage versions of predictor variables ----
-# Raw counts are not comparable across tracts of different population sizes.
-# Converting to percentages or rates makes them scale-invariant.
-d <-
-  d %>%
-  mutate(
-    p.unemp  = 100 * unemp00 / clf00,    # unemployment rate (%)
-    p.vacant = 100 * vac00   / hu00,      # housing vacancy rate (%)
-    pov.rate = 100 * npov00  / dpov00     # poverty rate (%)
+```{r}
+#| label: step.04-summary
+
+# ── Summary statistics of the change distribution ─────
+cat( "── Summary of Hardship Change Scores ──\n" )
+cat( "Mean change:    ", round( mean( change_df$hardship_change, na.rm = TRUE ), 3 ), "\n" )
+cat( "Median change:  ", round( median( change_df$hardship_change, na.rm = TRUE ), 3 ), "\n" )
+cat( "Std deviation:  ", round( sd( change_df$hardship_change, na.rm = TRUE ), 3 ), "\n" )
+cat( "Min change:     ", round( min( change_df$hardship_change, na.rm = TRUE ), 3 ), "\n" )
+cat( "Max change:     ", round( max( change_df$hardship_change, na.rm = TRUE ), 3 ), "\n" )
+cat( "\n" )
+
+# What percentage of CBGs worsened vs improved?
+n_worse   <- sum( change_df$hardship_change > 0, na.rm = TRUE )
+n_better  <- sum( change_df$hardship_change < 0, na.rm = TRUE )
+n_stable  <- sum( change_df$hardship_change == 0, na.rm = TRUE )
+n_total   <- n_worse + n_better + n_stable
+
+cat( "CBGs where hardship worsened:  ", n_worse, " (",
+     round( 100 * n_worse / n_total, 1 ), "%)\n" )
+cat( "CBGs where hardship improved:  ", n_better, " (",
+     round( 100 * n_better / n_total, 1 ), "%)\n" )
+cat( "CBGs with no change:           ", n_stable, " (",
+     round( 100 * n_stable / n_total, 1 ), "%)\n" )
+```
+
+```{r}
+#| label: step.04-histogram
+
+# ── Histogram of change scores ────────────────────────
+# The distribution shows whether change is symmetric or skewed.
+# A distribution centered above zero would mean hardship is
+# generally worsening; below zero means generally improving.
+
+ggplot( change_df, aes( x = hardship_change ) ) +
+  geom_histogram( bins = 50, fill = "#8c1d40", color = "white", alpha = 0.8 ) +
+  geom_vline( xintercept = 0, linetype = "dashed", color = "#ffc627", linewidth = 1 ) +
+  geom_vline( xintercept = mean( change_df$hardship_change, na.rm = TRUE ),
+              linetype = "solid", color = "blue", linewidth = 0.8 ) +
+  theme_minimal() +
+  labs(
+    title    = "Distribution of Hardship Change Scores (2015 → 2023)",
+    subtitle = "Maricopa County CBGs | Positive = worsening, Negative = improving",
+    x        = "Change in Hardship Index",
+    y        = "Number of CBGs",
+    caption  = "Dashed yellow = zero change | Solid blue = mean change"
+  )
+```
+
+
+# ── Step 5: Map Change with Diverging Palette ───────
+
+For change maps, we use a **diverging color palette** centered at zero. Blue = improvement (hardship decreased), white = no change, red = worsening (hardship increased). This is different from the sequential viridis palette we used for level maps in prior labs, because change has a meaningful midpoint (zero).
+
+```{r}
+#| label: step.05-change-map
+#| fig-width: 10
+#| fig-height: 8
+
+# ── Diverging change map ──────────────────────────────
+# scale_fill_gradient2() creates a diverging palette with three anchors:
+#   low (blue) = negative change (improvement)
+#   mid (white) = zero change
+#   high (red) = positive change (worsening)
+# midpoint = 0 ensures the color transition is centered at no change.
+
+map_change <- ggplot( change_df ) +
+  geom_sf( aes( fill = hardship_change ), color = NA ) +
+  scale_fill_gradient2(
+    low      = "blue",
+    mid      = "white",
+    high     = "red",
+    midpoint = 0,
+    name     = "Change in\nHardship"
+  ) +
+  theme_void() +
+  labs(
+    title    = "Change in Economic Hardship Index (2015 → 2023)",
+    subtitle = "Maricopa County Block Groups",
+    caption  = "Blue = improvement (hardship decreased) | Red = worsening (hardship increased)"
   )
 
-# ---- Inflation adjustment ----
-# CPI adjustment factor: 1.28855
-# Converts year-2000 nominal dollars to approximately 2010 dollars
-# so that mhv.00 and mhv.10 are in comparable real terms.
-# Source: BLS CPI Inflation Calculator
-#   $1.00 in January 2000 = $1.29 in January 2010
-#   (rounded: 1.28855)
-# This adjustment is necessary because the 2000 Census reports
-# home values in year-2000 dollars, while the ACS 2008-2012
-# (used for 2010 values) reports in approximate 2010 dollars.
-
-mhv.00 <- d$mhmval00 * 1.28855   # inflation-adjusted 2000 MHV
-mhv.10 <- d$mhmval12             # already in ~2010 dollars
-
-# ---- IMPORTANT: Filter sub-$1000 values BEFORE computing change ----
-# Tracts with MHV < $1,000 are typically data errors, group quarters,
-# or non-residential tracts. Setting them to NA first prevents these
-# values from distorting the mhv.change calculation.
-# (In the original code, mhv.change was computed before this filter,
-#  which meant those tracts had a computed change value but NA growth.)
-
-mhv.00[ mhv.00 < 1000 ] <- NA
-
-# ---- Compute change and growth AFTER filtering ----
-mhv.change <- mhv.10 - mhv.00
-mhv.growth <- 100 * ( mhv.change / mhv.00 )
-
-# ---- Cap extreme growth rates ----
-# Growth rates above 200% are likely data artifacts or represent
-# tracts transitioning from near-zero values. They would dominate
-# the regression as extreme outliers.
-mhv.growth[ mhv.growth > 200 ] <- NA
-
-# ---- Add computed variables to data frame ----
-d$mhv.00     <- mhv.00
-d$mhv.10     <- mhv.10
-d$mhv.change <- mhv.change
-d$mhv.growth <- mhv.growth
-
-# ---- Metro-level summary statistics ----
-# Useful for comparing a tract's change to its metro area's median.
-d <-
-  d %>%
-  group_by( cbsaname ) %>%
-  mutate(
-    metro.mhv.change = median( mhv.change, na.rm = TRUE ),
-    metro.mhv.growth = 100 * median( mhv.growth, na.rm = TRUE )
-  ) %>%
-  ungroup()
+map_change
 ```
 
----
 
-# Part 01 — Variable Selection
+# ── Step 6: Side-by-Side Maps with Patchwork ────────
 
-The three predictors used in this solution are **percent unemployed**, **percent vacant housing**, and **poverty rate** -- all measured in 2000. These were chosen because they each capture a distinct dimension of neighborhood disadvantage that prior research consistently links to stagnant or declining home values.
-
-**Unemployment:** Tracts with high unemployment in 2000 are likely to have lower purchasing power and reduced demand for housing, leading to slower home value appreciation. Hypothesis: higher unemployment in 2000 will predict *smaller* MHV growth 2000--2010 (negative relationship).
-
-**Vacant housing:** High vacancy rates signal disinvestment -- owners leaving, properties deteriorating, and reduced neighborhood desirability. Hypothesis: higher vacancy in 2000 will predict *smaller* MHV growth (negative relationship).
-
-**Poverty rate:** Poverty concentrations suppress local investment, reduce school quality, and increase crime risk -- all of which depress home values. Hypothesis: higher poverty in 2000 will predict *smaller* MHV growth (negative relationship).
-
-All three predictors are expected to have **negative** coefficients in the regression.
-
----
-
-# Part 02 — Variable Skew
+We create a three-panel figure: the hardship index for Period 1, the index for Period 2, and the change map. This lets us see not just *where* change occurred, but *what the starting and ending conditions looked like*.
 
 ```{r}
-#| label: skew-raw
-#| fig-height: 5
+#| label: step.06-sidebyside
+#| fig-width: 16
+#| fig-height: 6
 
-# ---- Raw distributions ----
-# All three variables show strong right skew: most tracts cluster
-# at low values but a minority have extreme values (high unemployment,
-# vacancy, or poverty). Right skew can violate regression assumptions
-# and give undue influence to outliers.
+# ── Period 1 level map ────────────────────────────────
+# We use the joined data so all three maps show the same set of CBGs
+p1_map <- ggplot( change_df ) +
+  geom_sf( aes( fill = hardship_2015 ), color = NA ) +
+  scale_fill_viridis( option = "inferno", direction = -1,
+                      name = "Index" ) +
+  theme_void() +
+  labs( title = "Hardship Index 2015" )
 
-par( mfrow = c( 1, 3 ) )
-hist( d$p.unemp,  xlim = c( 0, 80 ), breaks = 50, col = "blue",   border = "white",
-      yaxt = "n", xlab = "", ylab = "", main = "Percent Unemployed" )
-hist( d$p.vacant, xlim = c( 0, 80 ), breaks = 50, col = "red",    border = "white",
-      yaxt = "n", xlab = "", ylab = "", main = "Percent Vacant" )
-hist( d$pov.rate, xlim = c( 0, 80 ), breaks = 50, col = "orange", border = "white",
-      yaxt = "n", xlab = "", ylab = "", main = "Poverty Rate" )
-par( mfrow = c( 1, 1 ) )
+# ── Period 2 level map ────────────────────────────────
+p2_map <- ggplot( change_df ) +
+  geom_sf( aes( fill = hardship_2023 ), color = NA ) +
+  scale_fill_viridis( option = "inferno", direction = -1,
+                      name = "Index" ) +
+  theme_void() +
+  labs( title = "Hardship Index 2023" )
+
+# ── Change map (compact version) ─────────────────────
+p_change <- ggplot( change_df ) +
+  geom_sf( aes( fill = hardship_change ), color = NA ) +
+  scale_fill_gradient2(
+    low = "blue", mid = "white", high = "red",
+    midpoint = 0, name = "Change"
+  ) +
+  theme_void() +
+  labs( title = "Change (2023 − 2015)" )
+
+# ── Combine with patchwork ───────────────────────────
+# The + operator from patchwork places plots side by side.
+# plot_annotation() adds a shared title across all panels.
+p1_map + p2_map + p_change +
+  plot_annotation(
+    title   = "Economic Hardship: Two Periods and Their Difference",
+    subtitle = "Maricopa County Block Groups | ACS 5-Year Estimates",
+    caption = "Left/Center: viridis (higher = more hardship) | Right: diverging (blue = improved, red = worsened)"
+  )
 ```
 
-All three variables show strong right skew -- most tracts have low values but a small number have extreme values. A log transformation (`log(x + 1)`) compresses the long right tail and produces approximately normal distributions more suitable for linear regression. Adding 1 before logging ensures that zero values are handled without producing `-Inf`.
+
+# ── Step 7 (Optional): Top-10 Changed CBGs ──────────
+
+To give concrete examples, we identify the CBGs with the largest increases and decreases in hardship.
 
 ```{r}
-#| label: log-transform
+#| label: step.07-top10
 
-# ---- Log transformation to reduce skew ----
-# log(x + 1) because some tracts have zero unemployment/vacancy/poverty.
-d$log.p.unemp  <- log( d$p.unemp  + 1 )
-d$log.p.vacant <- log( d$p.vacant + 1 )
-d$log.pov.rate <- log( d$pov.rate + 1 )
+# ── CBGs with the largest hardship INCREASES ──────────
+cat( "── Top 10 CBGs with Greatest Hardship INCREASE ──\n" )
+change_df %>%
+  as.data.frame() %>%
+  select( GEOID, NAME, hardship_2015, hardship_2023, hardship_change ) %>%
+  arrange( desc( hardship_change ) ) %>%
+  head( 10 ) %>%
+  mutate( across( where( is.numeric ), ~ round( ., 3 ) ) ) %>%
+  print()
+
+cat( "\n── Top 10 CBGs with Greatest Hardship DECREASE ──\n" )
+change_df %>%
+  as.data.frame() %>%
+  select( GEOID, NAME, hardship_2015, hardship_2023, hardship_change ) %>%
+  arrange( hardship_change ) %>%
+  head( 10 ) %>%
+  mutate( across( where( is.numeric ), ~ round( ., 3 ) ) ) %>%
+  print()
 ```
 
-```{r}
-#| label: skew-logged
-#| fig-height: 8
 
-# ---- Side-by-side comparison: raw vs. logged ----
-par( mar = c( 2, 2, 2, 1 ) )
-par( mfrow = c( 3, 2 ) )
+# ── Questions ──────────────────────────────────────────
 
-hist( d$p.unemp,      xlim = c( 0, 80 ), breaks = 50, col = "blue",   border = "white",
-      yaxt = "n", xlab = "", ylab = "", main = "Percent Unemployed" )
-hist( d$log.p.unemp,  breaks = 50,                    col = "blue",   border = "white",
-      yaxt = "n", xlab = "", ylab = "", main = "Percent Unemployed (logged)" )
-hist( d$p.vacant,     xlim = c( 0, 80 ), breaks = 50, col = "red",    border = "white",
-      yaxt = "n", xlab = "", ylab = "", main = "Percent Vacant" )
-hist( d$log.p.vacant, breaks = 50,                    col = "red",    border = "white",
-      yaxt = "n", xlab = "", ylab = "", main = "Percent Vacant (logged)" )
-hist( d$pov.rate,     xlim = c( 0, 80 ), breaks = 50, col = "orange", border = "white",
-      yaxt = "n", xlab = "", ylab = "", main = "Poverty Rate" )
-hist( d$log.pov.rate, breaks = 50,                    col = "orange", border = "white",
-      yaxt = "n", xlab = "", ylab = "", main = "Poverty Rate (logged)" )
+### Q1 — Interpret
 
-par( mfrow = c( 1, 1 ) )
-```
+**What is the overall direction of change — is hardship generally increasing or decreasing across Maricopa County CBGs? Are the patterns from Lab 4 (hot spots) worsening, improving, or stable?**
 
----
+- **Overall direction**: The mean and median change scores indicate the general trajectory of hardship across Maricopa County. If the mean is near zero, the county is roughly stable on average — but the standard deviation reveals that individual CBGs experienced substantial shifts in both directions. The histogram shows whether the distribution is symmetric or skewed toward worsening or improvement.
 
-# Part 03 — Multicollinearity
+- **Geographic patterns**: The change map reveals that change is not uniform. Certain areas — particularly in south Phoenix, parts of central Mesa, and some west Valley communities — show concentrated red (worsening) or blue (improving) clusters. These spatial patterns suggest that economic change is geographically structured, not random.
+
+- **Relationship to Lab 4 hot spots**: Comparing the change map to Lab 4's LISA hot spot clusters is informative. If the high-hardship hot spots from Lab 4 are also red on the change map, hardship is deepening in already-disadvantaged areas — a troubling pattern of cumulative disadvantage. If those hot spots are blue (improving), there may be evidence of investment or gentrification. If they are white (stable), persistent hardship is the story. The side-by-side maps in Step 6 help make this comparison visually.
+
+- **Caveats**: The z-score standardization means the index is relative *within* each period. A CBG's z-score could change simply because other CBGs shifted, even if its raw rates stayed constant. This is a limitation of standardized change scores — they capture relative positioning, not absolute change in poverty rates or income levels.
+
+
+### Q2 — Modify (FULL CODE AND OUTPUT REQUIRED)
+
+**Rerun the temporal change analysis at the Arizona TRACT level (`geography = "tract"`, `state = "AZ"`) instead of Maricopa CBGs. Pull both periods, compute the change score, and map statewide. Show complete code and output.**
 
 ```{r}
-#| label: correlation-plot
+#| label: q2-pull-p1
+#| results: hide
 
-# ---- Pairs plot with correlation coefficients ----
-# Upper panel: correlation magnitude + significance stars
-# Lower panel: scatterplot with lowess trend line
-# Diagonal: default histograms
-
-plotd <-
-  d %>%
-  select( mhv.growth, log.p.unemp, log.p.vacant, log.pov.rate )
-
-# ---- Subsample for readability ----
-# 5,000 points is enough to see patterns without overplotting.
-set.seed( 1234 )
-plotd <- sample_n( plotd, 5000 ) %>% na.omit()
-
-pairs( plotd, upper.panel = panel.cor, lower.panel = panel.smooth )
-```
-
-Multicollinearity occurs when two or more predictors in a regression model are highly correlated with each other. When this happens, the model struggles to isolate the unique contribution of each variable -- the coefficient estimates become unstable, standard errors inflate, and it becomes difficult to determine which variable is actually driving the outcome. In extreme cases, the model cannot distinguish the effects of the collinear variables at all.
-
-In this case, unemployment, vacancy, and poverty are all moderately correlated with each other (correlations in the `r round( cor( d$log.p.unemp, d$log.pov.rate, use = "complete.obs" ), 1 )`--0.6 range), which is expected since they all measure aspects of neighborhood disadvantage. The correlations are meaningful but not severe enough to invalidate the model. Students should note that coefficients may shift or lose significance compared to bivariate relationships precisely because the three variables share explanatory variance.
-
----
-
-# Part 04 — Linearity
-
-```{r}
-#| label: linearity-plots
-#| fig-height: 8
-
-# ---- Lowess plots to check linearity assumption ----
-# A straight lowess line suggests a linear relationship.
-# Curvature suggests a non-linear relationship that might benefit
-# from a quadratic term or alternative transformation.
-
-par( mfrow = c( 2, 2 ) )
-
-jplot( plotd$log.p.unemp,  plotd$mhv.growth, ylim = c( -50, 100 ),
-       lab1 = "Percent Unemployed (logged)", lab2 = "MHV Growth (%)" )
-jplot( plotd$log.p.vacant, plotd$mhv.growth, ylim = c( -50, 100 ),
-       lab1 = "Percent Vacant (logged)",     lab2 = "MHV Growth (%)" )
-jplot( plotd$log.pov.rate, plotd$mhv.growth, ylim = c( -50, 100 ),
-       lab1 = "Poverty Rate (logged)",       lab2 = "MHV Growth (%)" )
-
-par( mfrow = c( 1, 1 ) )
-```
-
-The lowess lines for all three variables suggest broadly linear negative relationships with MHV growth -- tracts with higher unemployment, vacancy, and poverty in 2000 tended to experience smaller gains (or losses) in home value by 2010. The relationships are not perfectly linear -- there is notable flattening at the higher end of each predictor -- but for the purposes of this baseline model, linear terms are a reasonable approximation. A quadratic term could be added to capture the flattening if precision is important.
-
----
-
-# Part 05 — Descriptive Statistics
-
-```{r}
-#| label: descriptives
-#| results: asis
-
-# ---- Descriptive statistics for all key variables ----
-df <- data.frame(
-  MedianHomeValue2000  = d$mhv.00,
-  MedianHomeValue2010  = d$mhv.10,
-  MHV.Change.00.to.10  = d$mhv.change,
-  MHV.Growth.00.to.10  = d$mhv.growth,
-  UnempLog2000         = d$log.p.unemp,
-  VacantLog2000        = d$log.p.vacant,
-  PovRate2000          = d$log.pov.rate
+# ── Pull Period 1 at Arizona tract level ──────────────
+# Same variables, but now geography = "tract" and we pull
+# the entire state of Arizona (no county filter).
+tract_2015 <- get_acs(
+  geography = "tract",
+  variables = hardship_vars,
+  state     = "AZ",
+  year      = 2015,
+  survey    = "acs5",
+  geometry  = TRUE
 )
-
-stargazer( df,
-           type = s.type,
-           digits = 0,
-           summary.stat = c( "min", "p25", "median", "mean", "p75", "max" ) )
 ```
-
-The typical (median) change in home value between 2000 and 2010 was a modest gain in inflation-adjusted dollars. The largest gains exceeded several hundred thousand dollars in high-cost metros. MHV change (dollars) and MHV growth (percent) are related but measure different things -- a $50,000 gain means very different things for a $100,000 tract versus a $500,000 tract. Their correlation is positive but far from perfect, confirming they capture distinct aspects of neighborhood appreciation.
 
 ```{r}
-#| label: change-vs-growth
+#| label: q2-pull-p2
+#| results: hide
 
-# ---- Relationship between dollar change and percent growth ----
-# These are two different ways to operationalize the same concept
-# (neighborhood appreciation). Dollar change favors high-value tracts;
-# percent growth favors low-value tracts. Neither is "better" --
-# they answer different questions.
-
-jplot( df$MHV.Change.00.to.10, df$MHV.Growth.00.to.10,
-       ylim = c( -50, 100 ),
-       lab1 = "MHV Change ($)", lab2 = "MHV Growth (%)" )
+# ── Pull Period 2 at Arizona tract level ──────────────
+tract_2023 <- get_acs(
+  geography = "tract",
+  variables = hardship_vars,
+  state     = "AZ",
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE
+)
 ```
-
-The correlation between dollar change and percent growth is `r round( cor( df$MHV.Change.00.to.10, df$MHV.Growth.00.to.10, use = "complete.obs" ), 2 )`. While positive, this moderate correlation confirms the two measures capture different aspects of neighborhood change and may lead to different conclusions about which neighborhoods "changed the most."
-
----
-
-# Part 06 — Regression Models
 
 ```{r}
-#| label: regression-models
-#| results: asis
+#| label: q2-build-index
 
-# ---- Model 1: DV = dollar change in MHV ----
-# ---- Model 2: DV = percent growth in MHV ----
-# Both models use the same three log-transformed predictors.
+# ── Build hardship index for both periods ─────────────
+# We reuse the build_hardship_index() function from Step 2.
+tract_2015_idx <- build_hardship_index( tract_2015 )
+tract_2023_idx <- build_hardship_index( tract_2023 )
 
-m1 <- lm( MHV.Change.00.to.10 ~ UnempLog2000 + VacantLog2000 + PovRate2000, data = df )
-m2 <- lm( MHV.Growth.00.to.10 ~ UnempLog2000 + VacantLog2000 + PovRate2000, data = df )
-
-stargazer( m1, m2,
-           type = s.type,
-           digits = 2,
-           omit.stat = c( "rsq", "f" ) )
+cat( "Period 1 (2015) AZ tracts:", nrow( tract_2015_idx ), "\n" )
+cat( "Period 2 (2023) AZ tracts:", nrow( tract_2023_idx ), "\n" )
 ```
-
-All three variables are statistically significant in both models and carry negative signs, consistent with the hypotheses. Higher unemployment, vacancy, and poverty in 2000 are each associated with smaller gains in home value over the following decade. The overall explanatory power of the models is moderate -- neighborhood disadvantage explains a meaningful portion of MHV change, but many other factors (local economic conditions, housing supply, gentrification pressures) also play important roles not captured here.
-
-The adjusted R-squared for Model 1 (dollar change) is `r round( summary( m1 )$adj.r.squared, 3 )` and for Model 2 (percent growth) is `r round( summary( m2 )$adj.r.squared, 3 )`.
-
----
-
-# Part 07 — Effect Sizes
 
 ```{r}
-#| label: effect-sizes
+#| label: q2-join
 
-# ---- IQR-based effect sizes ----
-# Effect sizes standardize the comparison across predictors.
-# Instead of asking "what happens with a 1-unit change in X?"
-# (which is arbitrary and non-comparable across variables),
-# we ask "what happens when X increases from its 25th to 75th
-# percentile?" -- a consistently defined "large change."
+# ── Join tracts by GEOID ─────────────────────────────
+# Same inner_join approach as Step 3. Some tracts may have
+# changed boundaries between 2010 and 2020 Census geographies.
+t1 <- tract_2015_idx %>%
+  as.data.frame() %>%
+  select( GEOID, hardship_2015 = hardship_index )
 
-predictors <- cbind( df$UnempLog2000, df$VacantLog2000, df$PovRate2000 )
+t2 <- tract_2023_idx %>%
+  select( GEOID, hardship_2023 = hardship_index )
 
-x.75 <- NULL
-x.25 <- NULL
+tract_change <- inner_join( t2, t1, by = "GEOID" )
 
-for( i in 1:3 ){
-  x.75[i] <- quantile( predictors[, i], p = 0.75, na.rm = TRUE )
-  x.25[i] <- quantile( predictors[, i], p = 0.25, na.rm = TRUE )
-}
+# Compute change score
+tract_change <- tract_change %>%
+  mutate( hardship_change = hardship_2023 - hardship_2015 )
 
-# ---- Extract coefficients (positions 2:4 = the three predictors) ----
-beta.x.m1 <- m1$coefficients[2:4]
-beta.x.m2 <- m2$coefficients[2:4]
-
-# ---- Compute effect sizes ----
-effect.size.x.m1 <- ( x.75 - x.25 ) * beta.x.m1
-effect.size.x.m2 <- ( x.75 - x.25 ) * beta.x.m2
-
-# ---- Display as formatted table ----
-data.frame(
-  Variable             = c( "Unemployment (log)", "Vacancy (log)", "Poverty Rate (log)" ),
-  EffectSize_DollarChange  = round( effect.size.x.m1, 2 ),
-  EffectSize_GrowthPercent = round( effect.size.x.m2, 2 )
-) %>% pander()
+cat( "AZ tracts matched in both periods:", nrow( tract_change ), "\n" )
 ```
 
-Effect sizes allow fair comparison across variables because they are scaled to a consistently defined "large change" -- moving from the 25th to 75th percentile of each predictor. The variable with the largest effect size in the dollar-change model is the most important predictor of absolute neighborhood appreciation, while the variable with the largest effect in the growth model is the most important predictor of relative appreciation.
+```{r}
+#| label: q2-summary
 
-The ranking of variables can shift between the two outcome measures, illustrating why the choice of dependent variable matters when drawing policy conclusions about what drives neighborhood change. For example, poverty rate may have the largest effect on dollar change (because high-poverty tracts in expensive metros have the most room to gain in absolute terms), while unemployment may dominate the growth model (because even modest dollar gains in cheap tracts translate to large percentage increases).
+# ── Summary statistics for tract-level change ─────────
+cat( "── Summary of Tract-Level Hardship Change (Arizona) ──\n" )
+cat( "Mean change:   ", round( mean( tract_change$hardship_change, na.rm = TRUE ), 3 ), "\n" )
+cat( "Median change: ", round( median( tract_change$hardship_change, na.rm = TRUE ), 3 ), "\n" )
+cat( "Std deviation: ", round( sd( tract_change$hardship_change, na.rm = TRUE ), 3 ), "\n" )
 
----
+n_w <- sum( tract_change$hardship_change > 0, na.rm = TRUE )
+n_b <- sum( tract_change$hardship_change < 0, na.rm = TRUE )
+n_t <- n_w + n_b
+cat( "\nTracts worsened:  ", n_w, "(", round( 100 * n_w / n_t, 1 ), "%)\n" )
+cat( "Tracts improved:  ", n_b, "(", round( 100 * n_b / n_t, 1 ), "%)\n" )
+```
+
+```{r}
+#| label: q2-change-map
+#| fig-width: 10
+#| fig-height: 10
+
+# ── Statewide change map (Arizona tracts) ─────────────
+ggplot( tract_change ) +
+  geom_sf( aes( fill = hardship_change ), color = NA ) +
+  scale_fill_gradient2(
+    low      = "blue",
+    mid      = "white",
+    high     = "red",
+    midpoint = 0,
+    name     = "Change in\nHardship"
+  ) +
+  theme_void() +
+  labs(
+    title    = "Change in Economic Hardship Index (2015 → 2023)",
+    subtitle = "Arizona Census Tracts | ACS 5-Year Estimates",
+    caption  = "Blue = improvement | Red = worsening"
+  )
+```
+
+```{r}
+#| label: q2-sidebyside
+#| fig-width: 16
+#| fig-height: 7
+
+# ── Three-panel comparison for Arizona tracts ─────────
+t1_map <- ggplot( tract_change ) +
+  geom_sf( aes( fill = hardship_2015 ), color = NA ) +
+  scale_fill_viridis( option = "inferno", direction = -1, name = "Index" ) +
+  theme_void() +
+  labs( title = "Hardship 2015" )
+
+t2_map <- ggplot( tract_change ) +
+  geom_sf( aes( fill = hardship_2023 ), color = NA ) +
+  scale_fill_viridis( option = "inferno", direction = -1, name = "Index" ) +
+  theme_void() +
+  labs( title = "Hardship 2023" )
+
+t_change_map <- ggplot( tract_change ) +
+  geom_sf( aes( fill = hardship_change ), color = NA ) +
+  scale_fill_gradient2(
+    low = "blue", mid = "white", high = "red",
+    midpoint = 0, name = "Change"
+  ) +
+  theme_void() +
+  labs( title = "Change (2023 − 2015)" )
+
+t1_map + t2_map + t_change_map +
+  plot_annotation(
+    title    = "Economic Hardship Change: Arizona Census Tracts",
+    subtitle = "ACS 5-Year Estimates (2011-2015 vs 2019-2023)",
+    caption  = "Left/Center: viridis | Right: diverging blue-white-red"
+  )
+```
+
+
+### Q3 — Interpret Modified
+
+**Compare the statewide tract map to the Maricopa CBG map. Does the statewide view reveal different patterns? Where is change most concentrated? What does the scale comparison reveal?**
+
+- **Statewide patterns**: The Arizona tract-level map reveals change dynamics that are invisible when looking only at Maricopa County. Rural areas — particularly tribal nation lands in northern Arizona, border communities in southern Arizona, and smaller metro areas like Tucson and Flagstaff — may show distinct temporal trajectories. Some rural tracts may show large swings in either direction because small populations produce volatile rates.
+
+- **Urban vs. rural contrast**: The Maricopa CBG map provides a highly granular view of change within the Phoenix metro area, where most of Arizona's population lives. The statewide tract map trades that granularity for geographic breadth, potentially revealing that change is concentrated in urban cores while rural Arizona remains relatively stable (or vice versa).
+
+- **Scale effects**: At the CBG level, we see block-by-block variation — neighboring CBGs can show opposite change directions. At the tract level, this micro-variation is averaged out, and broader neighborhood-level trends emerge. This is another manifestation of the **Modifiable Areal Unit Problem (MAUP)**: the geographic unit we choose shapes the story we tell about change.
+
+- **Practical implications**: A policymaker focused on Maricopa County would benefit from the CBG-level change map to target investments at specific neighborhoods. A state-level official would use the tract map to compare change across regions and allocate resources across the state. Both perspectives are valid but serve different decisions.
+
+- **Interpretation caution**: Because each analysis standardizes within its own set of observations (CBGs within Maricopa vs. tracts across all of Arizona), the z-scores are not directly comparable across the two analyses. A CBG with a change score of +0.5 in the Maricopa analysis does not mean the same thing as a tract with +0.5 in the statewide analysis. The maps show *relative* patterns within their respective geographies.
