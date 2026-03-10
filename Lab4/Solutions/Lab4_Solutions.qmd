@@ -1,0 +1,492 @@
+---
+title: "Lab 04 -- Solutions: Build a City Dataset (San Diego)"
+subtitle: "PAF 516"
+format:
+  html:
+    theme: readable
+    highlight-style: tango
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    number-sections: false
+    embed-resources: true
+    code-fold: false
+execute:
+  echo: true
+  warning: false
+  message: false
+  fig-width: 10
+  fig-height: 8
+---
+
+
+```{r}
+#| label: tmap-reset
+#| include: false
+library(tmap)
+tmap_mode("plot")
+```
+
+> City used: **San Diego, CA** (FIPS: 06-073)
+
+---
+
+# Packages
+
+All packages loaded here at the top for reproducibility. Note the deprecated packages that have been removed.
+
+```{r}
+#| label: packages
+
+# --- Core spatial packages ---
+library( sf )          # simple features -- the modern R spatial standard
+library( geojsonio )   # read/write GeoJSON shapefiles
+
+# --- Analysis packages ---
+library( mclust )      # Gaussian mixture model cluster analysis
+library( corrplot )    # correlation visualization for index construction
+
+# --- Visualization packages ---
+library( tmap )        # thematic maps
+library( ggplot2 )     # general-purpose plotting
+library( ggthemes )    # additional ggplot themes
+
+# --- Data wrangling ---
+library( dplyr )       # data manipulation (select, filter, mutate, etc.)
+library( pander )      # formatted table output
+
+# --- Census data ---
+library( tidycensus )  # Census API access (requires API key)
+
+# --- Cartogram ---
+library( cartogram )   # Dorling cartogram transformation
+
+# RETIRED -- do NOT load these packages:
+# library( maptools )  # retired from CRAN 2023-10-16
+# library( rgdal )     # retired from CRAN 2023-10-16
+# library( sp )        # superseded by sf; not needed in this pipeline
+```
+
+> **Why no sp?** The `sp` package and its companions `rgdal` and `maptools` have been retired from CRAN. All spatial operations in this solutions file use the `sf` (simple features) package. Key replacements:
+>
+> | Deprecated (sp/rgdal) | Modern (sf) |
+> |-----------------------|-------------|
+> | `as_Spatial()` | Not needed -- stay in sf |
+> | `spTransform(x, CRS("+init=epsg:3395"))` | `st_transform(x, crs = 3395)` |
+> | `object@data` | `st_drop_geometry(object)` |
+> | `rbind()` for sf | `dplyr::bind_rows()` |
+> | `geojson_write()` for sp | `st_write()` for sf |
+
+---
+
+# Part 01 Solutions
+
+## Step 1 -- MSA Selection
+
+San Diego is a single-county MSA, which simplifies both the crosswalk lookup and the API call.
+
+```{r}
+#| label: crosswalk
+crosswalk <- read.csv(
+  "https://raw.githubusercontent.com/DS4PS/cpp-529-master/master/data/cbsatocountycrosswalk.csv",
+  stringsAsFactors = FALSE, colClasses = "character"
+)
+
+# Confirm the MSA name in the crosswalk
+grep("^SAN DIEGO", crosswalk$msaname, value = TRUE)
+
+# Select FIPS codes for San Diego
+these.sd   <- crosswalk$msaname == grep("^SAN DIEGO", crosswalk$msaname, value = TRUE)
+these.fips <- crosswalk$fipscounty[these.sd]
+these.fips <- na.omit(these.fips)
+
+state.fips  <- substr(these.fips, 1, 2)
+county.fips <- substr(these.fips, 3, 5)
+cbind(these.fips, state.fips, county.fips) %>% pander()
+```
+
+> San Diego MSA = one county (San Diego County), entirely within California (state FIPS `06`). Only one `get_acs()` call needed.
+
+## Step 2 -- Population Download
+
+```{r}
+#| label: population
+#| results: hide
+
+# census_api_key("YOUR KEY HERE")
+
+sdd.pop <- get_acs(
+  geography = "tract", variables = "B01003_001",
+  state = "06", county = "073", geometry = TRUE
+) %>%
+  select(GEOID, estimate) %>%
+  rename(POP = estimate)
+
+# GEOID alignment: The LTDB dataset omits the leading zero for states
+# with single-digit FIPS codes (01-09). California is state 06, so
+# GEOID "06073001100" in the ACS must become "6073001100" for the merge.
+# This approach works for ALL states: only strips leading zero when present.
+sdd.pop$GEOID <- ifelse(
+  substr(sdd.pop$GEOID, 1, 1) == "0",
+  substr(sdd.pop$GEOID, 2, nchar(sdd.pop$GEOID)),
+  sdd.pop$GEOID
+)
+```
+
+> **Common error:** If you hard-code `substr(GEOID, 2, 11)` this only works for 11-character GEOIDs. The conditional approach above works for any GEOID length and any state.
+
+## Step 3 -- Merge Census Data
+
+```{r}
+#| label: merge-census
+URL <- "https://github.com/DS4PS/cpp-529-master/raw/master/data/ltdb_std_2010_sample.rds"
+census.dat <- readRDS(gzcon(url(URL)))
+
+# Merge sf object with data.frame -- sf preserves geometry automatically
+sdd <- merge(sdd.pop, census.dat, by.x = "GEOID", by.y = "tractid")
+
+# Remove any empty geometries (tracts with no polygon data)
+sdd <- sdd[!st_is_empty(sdd), ]
+```
+
+> **Common error:** If you get zero rows after the merge, your GEOIDs do not match. Check whether your state has a leading zero that needs stripping. Print `head(sdd.pop$GEOID)` and `head(census.dat$tractid)` to compare formats.
+
+## Step 4 -- Dorling Cartogram (sf-native pipeline)
+
+```{r}
+#| label: build-cartogram
+#| fig-height: 8
+
+# Validate and project to World Mercator (EPSG:3395) for the cartogram
+# st_make_valid() fixes any topology issues in the shapefile
+sdd <- st_make_valid(sdd)
+sdd <- st_transform(sdd, crs = 3395)
+
+# Remove zero-population tracts (cannot create meaningful cartogram bubbles)
+sdd <- sdd[sdd$POP != 0 & (!is.na(sdd$POP)), ]
+
+# Population weight: divide by max tract population to normalize to ~1.0
+# This gives the largest tract a weight of 1 and scales all others proportionally.
+# The original code used a fixed divisor of 9000; using max(POP) is more portable.
+max_pop <- max(sdd$POP, na.rm = TRUE)
+sdd$pop.w <- sdd$POP / max_pop
+
+# Build Dorling cartogram
+# k = 0.05 controls circle packing density (smaller = tighter)
+sd_dorling_sf <- cartogram_dorling(x = sdd, weight = "pop.w", k = 0.05)
+plot(st_geometry(sd_dorling_sf))
+```
+
+> **Note:** The original solutions file converted to `sp` with `as_Spatial()` and used `spTransform()`. That pipeline is no longer necessary. The `cartogram_dorling()` function accepts `sf` objects directly since cartogram v0.2.0.
+
+```{r}
+#| label: cartogram-map
+#| fig-height: 8
+
+tmap_mode("plot")
+tm_shape(sd_dorling_sf) +
+  tm_polygons(size = "POP", col = "hinc12", n = 7, style = "quantile", palette = "Spectral") +
+  tm_layout("Dorling Cartogram\nof Household Income\nfor San Diego",
+            title.position = c("right", "top"))
+```
+
+```{r}
+#| label: save-cartogram
+#| eval: false
+
+# Save for reuse in final project (sf-native approach)
+sd_export <- st_transform(sd_dorling_sf, crs = 4326)
+st_write(sd_export, "sd_dorling.geojson", delete_dsn = TRUE)
+
+# To reload:
+# sd_dorling_sf <- st_read("sd_dorling.geojson")
+# sd_dorling_sf <- st_transform(sd_dorling_sf, crs = 3395)
+```
+
+## Step 5 -- Prepare Clustering Data
+
+```{r}
+#| label: prepare-data
+
+keep.these <- c("pnhwht12","pnhblk12","phisp12","pntv12","pfb12","polang12",
+                "phs12","pcol12","punemp12","pflabf12","pprof12","pmanuf12",
+                "pvet12","psemp12","hinc12","incpc12","ppov12","pown12",
+                "pvac12","pmulti12","mrent12","mhmval12","p30old12","p10yrs12",
+                "p18und12","p60up12","p75up12","pmar12","pwds12","pfhh12")
+
+# Use st_drop_geometry() to extract the data frame from an sf object.
+# The original solutions used sd_dorling@data which is sp-specific syntax.
+d1 <- st_drop_geometry(sd_dorling_sf)
+d2 <- select(d1, all_of(keep.these))
+d3 <- apply(d2, 2, scale)
+
+head(d3[, 1:6]) %>% pander()
+```
+
+## Step 6 -- Cluster Analysis
+
+```{r}
+#| label: cluster-analysis
+
+# Set seed for reproducibility -- Mclust uses EM algorithm with random initialization
+set.seed(1234)
+fit <- Mclust(d3)
+summary(fit)
+
+# Store cluster assignments back in the sf object for mapping
+sd_dorling_sf$cluster <- as.factor(fit$classification)
+```
+
+> Mclust automatically selects the optimal number of clusters using BIC. For San Diego with 30 variables, it typically finds `r length(unique(fit$classification))` groups.
+
+## Step 7 -- Cluster Map
+
+```{r}
+#| label: cluster-map
+#| fig-height: 8
+
+tmap_mode("plot")
+tmap_style("cobalt")
+
+tm_shape(sd_dorling_sf) +
+  tm_polygons(col = "cluster", palette = "Accent")
+```
+
+## Step 8 -- Percentile Profiles
+
+```{r}
+#| label: cluster-profiles
+#| fig-height: 10
+
+data.dictionary <-
+  structure(list(
+    LABEL = c("tractid","pnhwht12","pnhblk12","phisp12",
+              "pntv12","pfb12","polang12","phs12","pcol12","punemp12",
+              "pflabf12","pprof12","pmanuf12","pvet12","psemp12","hinc12",
+              "incpc12","ppov12","pown12","pvac12","pmulti12","mrent12",
+              "mhmval12","p30old12","p10yrs12","p18und12","p60up12","p75up12",
+              "pmar12","pwds12","pfhh12"),
+    VARIABLE = c("GEOID","Percent white, non-Hispanic",
+                 "Percent black, non-Hispanic","Percent Hispanic",
+                 "Percent Native American race","Percent foreign born",
+                 "Percent speaking other language at home, age 5 plus",
+                 "Percent with high school degree or less",
+                 "Percent with 4-year college degree or more",
+                 "Percent unemployed","Percent female labor force participation",
+                 "Percent professional employees","Percent manufacturing employees",
+                 "Percent veteran","Percent self-employed",
+                 "Median HH income, total","Per capita income",
+                 "Percent in poverty, total","Percent owner-occupied units",
+                 "Percent vacant units","Percent multi-family units",
+                 "Median rent","Median home value",
+                 "Percent structures more than 30 years old",
+                 "Percent HH in neighborhood 10 years or less",
+                 "Percent 17 and under, total","Percent 60 and older, total",
+                 "Percent 75 and older, total",
+                 "Percent currently married, not separated",
+                 "Percent widowed, divorced and separated",
+                 "Percent female-headed families with children")),
+    class = "data.frame", row.names = c(NA, -31L))
+
+# Convert raw values to percentile ranks for interpretable profiles
+df.pct <- sapply(d2, ntile, 100)
+d4     <- as.data.frame(df.pct)
+d4$cluster <- as.factor(paste0("GROUP-", fit$classification))
+
+num.groups <- length(unique(fit$classification))
+
+# Compute mean percentile rank per cluster per variable
+# Uses across() instead of deprecated summarise_each(funs(mean))
+stats <-
+  d4 %>%
+  group_by(cluster) %>%
+  summarise(across(where(is.numeric), mean), .groups = "drop")
+
+t <- data.frame(t(stats), stringsAsFactors = FALSE)
+names(t) <- paste0("GROUP.", 1:num.groups)
+t <- t[-1, ]
+
+# Generate one profile chart per cluster
+par(mfrow = c(2, 3))
+
+for (i in 1:num.groups) {
+  z <- t[, i]
+  plot(rep(1, 30), 1:30, bty = "n", xlim = c(-75, 100),
+       type = "n", xaxt = "n", yaxt = "n",
+       xlab = "Percentile", ylab = "",
+       main = paste("GROUP", i))
+  abline(v = seq(0, 100, 25), lty = 3, lwd = 1.5, col = "gray90")
+  segments(y0 = 1:30, x0 = 0, x1 = 100, col = "gray70", lwd = 2)
+  text(-0.2, 1:30, data.dictionary$VARIABLE[-1], cex = 0.85, pos = 2)
+  points(z, 1:30, pch = 19, col = "firebrick", cex = 1.5)
+  axis(side = 1, at = c(0, 50, 100), col.axis = "gray", col = "gray")
+}
+
+par(mfrow = c(1, 1))
+```
+
+---
+
+# Part 01 Solutions -- Cluster Labels
+
+Labels are based on the percentile profiles above. Dots near 0 = very low rank; dots near 100 = very high rank relative to all San Diego tracts.
+
+> **Note for graders:** San Diego's Mclust typically finds 5-7 groups depending on seed and data version. The exact groups vary -- evaluate student labels based on whether they are grounded in the percentile chart patterns, not whether they match these exactly.
+
+| Group | Proposed Label | Key Characteristics |
+|-------|---------------|---------------------|
+| **Group 1** | **Affluent Coastal / High Human Capital** | Very high: college education, per capita income, home values, professional employment. Very low: poverty, manufacturing, female-headed households. |
+| **Group 2** | **Established Middle-Class Owners** | High: home ownership, married households, % white. Moderate income. Low: multi-family housing, unemployment. Long-tenure residents. |
+| **Group 3** | **Working-Class Latino Communities** | High: Hispanic population, foreign born, speaking another language. Low: college education, income, home ownership. Higher poverty. |
+| **Group 4** | **Military & Veteran Neighborhoods** | Distinctively high: veteran population, younger residents. Moderate income. Mix of renting and owning. Higher residential turnover. |
+| **Group 5** | **Urban Renters / Multi-Family** | High: multi-family housing, recent movers, unemployment. Low: home ownership, married households. Mixed race. |
+| **Group 6** | **Senior Communities** | High: residents 60+, 75+, widowed/divorced. High owner-occupancy, older housing stock. Low: youth, female labor force participation. |
+
+---
+
+# Part 02 Solutions
+
+## Build Neighborhood Indices
+
+```{r}
+#| label: build-indices
+
+d3 <- as.data.frame(d3)
+
+# --- Stability Index ---
+# High = stable community (high ownership, low turnover, low divorce/separation)
+df.dim1 <- select(d3, pown12, pmulti12, p10yrs12, pwds12, pfhh12)
+
+# Flip signs so all variables go in same direction (positive = more stable)
+df.dim1$pmulti12 <- -df.dim1$pmulti12
+df.dim1$p10yrs12 <- -df.dim1$p10yrs12
+df.dim1$pwds12   <- -df.dim1$pwds12
+df.dim1$pfhh12   <- -df.dim1$pfhh12
+
+# --- Diversity Index ---
+# High = more diverse (higher minority %, higher foreign-born, lower white %)
+df.dim2 <- d3[c("pnhwht12","pnhblk12","phisp12","pfb12","polang12")]
+
+# --- Human Capital Index ---
+# High = more education, higher income, higher professional employment
+df.dim3 <- select(d3, pcol12, phs12, pprof12, hinc12, mhmval12)
+
+# Construct composite indices using z-scored variables
+# Signs match the cardinality checks above
+dim1 <- d3$pown12 - d3$pmulti12 - d3$p10yrs12 - d3$pwds12 - d3$pfhh12
+dim2 <- -d3$pnhwht12 + d3$pnhblk12 + d3$phisp12 + d3$pfb12 + d3$polang12
+dim3 <- d3$pcol12 - d3$phs12 + d3$pprof12 + d3$hinc12 + d3$mhmval12
+
+df.nhood.metrics <- data.frame(dim1, dim2, dim3)
+summary(df.nhood.metrics)
+```
+
+## Model 2 -- Index Model
+
+```{r}
+#| label: model2
+
+# Cluster using 3 composite indices instead of 30 raw variables
+fit2 <- Mclust(df.nhood.metrics)
+summary(fit2)
+sd_dorling_sf$cluster2 <- as.factor(fit2$classification)
+```
+
+> The index model found `r length(unique(fit2$classification))` groups compared to `r length(unique(fit$classification))` in the full model. Fewer groups is expected because three composite scores cannot capture as much variance as 30 individual variables.
+
+## Model Comparison Maps
+
+```{r}
+#| label: compare-models
+#| fig-height: 8
+
+tmap_mode("plot")
+tmap_style("cobalt")
+
+tm1 <- tm_shape(sd_dorling_sf) +
+  tm_polygons(col = "cluster", palette = "Accent") +
+  tm_layout("Full Model (30 vars)")
+
+tm2 <- tm_shape(sd_dorling_sf) +
+  tm_polygons(col = "cluster2", palette = "Accent") +
+  tm_layout("Index Model (3 indices)")
+
+tmap_arrange(tm1, tm2)
+```
+
+## Model 3 -- Custom Three-Variable Model
+
+```{r}
+#| label: model3
+
+# Example variables: multi-family housing, seniors, veterans
+# These were chosen because they capture relatively independent dimensions:
+#   pmulti12 = housing density
+#   p60up12  = age structure
+#   pvet12   = military presence (distinctive for San Diego)
+d33 <- data.frame(d3$pmulti12, d3$p60up12, d3$pvet12)
+fit3 <- Mclust(d33)
+summary(fit3)
+sd_dorling_sf$cluster3 <- as.factor(fit3$classification)
+```
+
+```{r}
+#| label: compare-all-models
+#| fig-height: 8
+
+tmap_mode("plot")
+tmap_style("cobalt")
+
+tm1 <- tm_shape(sd_dorling_sf) +
+  tm_polygons(col = "cluster", palette = "Accent") +
+  tm_layout("Full Model (30 vars)")
+
+tm2 <- tm_shape(sd_dorling_sf) +
+  tm_polygons(col = "cluster2", palette = "Accent") +
+  tm_layout("Index Model (3 indices)")
+
+tm3 <- tm_shape(sd_dorling_sf) +
+  tm_polygons(col = "cluster3", palette = "Accent") +
+  tm_layout("Custom Model (3 vars)")
+
+tmap_arrange(tm1, tm2, tm3)
+```
+
+```{r}
+#| label: cross-tab
+# Cross-tabulation shows how clusters from different models overlap
+table(sd_dorling_sf$cluster, sd_dorling_sf$cluster3) %>% pander()
+```
+
+---
+
+# Part 02 -- Solutions
+
+## Question 1 -- Full Model vs. Index Model
+
+When comparing the full 30-variable model to the three-index model, the most immediate difference is that the index model produces fewer, broader groups. This is expected -- by compressing 30 variables into just three composite scores (stability, diversity, and human capital), we lose the fine-grained distinctions that the full model can detect.
+
+For example, in the full model, neighborhoods with high poverty might still be split into distinct groups based on racial composition, housing type, or employment sector. The index model collapses these into a single "low human capital / low stability" cluster because the underlying nuance is averaged away during index construction. Similarly, the full model may distinguish a predominantly Latino working-class neighborhood from a predominantly Black neighborhood even if both score low on income and education -- the index model is unlikely to make that distinction because diversity and human capital are treated as single numbers.
+
+The practical takeaway is that simpler models are easier to interpret and communicate, but they sacrifice the ability to identify meaningful subgroups that may require different policy responses. The full model is more appropriate when the goal is to understand the full texture of neighborhood variation rather than just broad categories.
+
+The full model identifies `r length(unique(fit$classification))` groups while the index model identifies `r length(unique(fit2$classification))` groups. The "missing" groups tend to be those defined by secondary characteristics (e.g., veteran concentration, senior populations) that are not captured by any of the three indices.
+
+---
+
+## Question 2 -- Custom Three-Variable Model
+
+The example solution uses **percent multi-family housing** (`pmulti12`), **percent residents 60 and older** (`p60up12`), and **percent veteran** (`pvet12`). These three variables were chosen because they each capture a relatively independent dimension of neighborhood character -- housing density, age structure, and military service history -- that together can produce meaningful geographic clusters without heavy overlap.
+
+With only three variables, Mclust typically identifies `r length(unique(fit3$classification))` groups for San Diego. The resulting clusters tend to be broadly defined: one group of dense, multi-family urban neighborhoods with younger residents; one group of suburban, owner-occupied areas with older residents; and a group of neighborhoods with notably high veteran populations, which in San Diego tend to cluster near military installations in areas like Chula Vista and El Cajon.
+
+Compared to the full 30-variable model, these clusters are much coarser. They say nothing about income, poverty, race, education, or employment -- all of which are highly relevant to neighborhood outcomes. A policymaker relying only on these three variables might misidentify which neighborhoods need economic intervention, or miss entirely the distinction between a high-income senior community and a low-income one. This illustrates that the variables we choose do not just describe neighborhoods -- they actively define what "a neighborhood type" means in our model.
+
+---
+
+# Session Info
+
+```{r}
+#| label: session-info
+sessionInfo()
+```

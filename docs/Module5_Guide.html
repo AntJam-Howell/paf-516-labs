@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAF 516 — Module 5: Temporal Change Analysis</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; color: #333; }
+h1, h2, h3, h4 { color: #8c1d40; }
+a { color: #8c1d40; }
+a:hover { color: #ffc627; }
+code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+img { max-width: 100%; height: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background-color: #8c1d40; color: white; }
+iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+<!-- REVISED: 2026-03-08 | See logs/module-5-log.md for change rationale -->
+<!-- DIFF: Compare against original ../CourseMaterials/Guides.1-6/Mod5/Module5_Guide.md -->
+
+<div style="background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px;">
+    <h2><strong><span style="color: #ffffff;">Module 5 &mdash; Visualizing Neighborhood Changes<br /></span></strong></h2>
+    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>PAF 516: Community Analytics<br /></strong></span></p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Module Overview</strong></h3>
+    <p>This module bridges the gap between descriptive spatial analysis (Modules 2&ndash;4) and predictive modeling. You will build a baseline regression model that predicts changes in median home value (MHV) between 2000 and 2010 using census-derived neighborhood characteristics. Along the way, you will learn principles of effective cartographic visualization.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Learning Objectives</strong></h3>
+    <p>After completing this module you will be able to:</p>
+    <ol>
+        <li>Explain why median home value is a useful proxy for neighborhood quality using hedonic pricing theory.</li>
+        <li>Prepare a panel dataset of census tracts by merging 2000 and 2010 variables, filtering rural tracts, and adjusting for inflation.</li>
+        <li>Diagnose variable skew, multicollinearity, and non-linearity before fitting a regression model.</li>
+        <li>Interpret regression coefficients and calculate standardized effect sizes to compare predictor importance.</li>
+        <li>Design choropleth maps that accurately convey spatial patterns using appropriate color scales and binning strategies.</li>
+        <li>Distinguish between neighborhood change (dollar amounts) and growth rates (percentages) as outcome measures.</li>
+    </ol>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i> <strong>Learning Materials</strong></h3>
+
+    <p><strong>Neighborhood Change</strong></p>
+    <p>For this project we will measure neighborhood change as a change in median home values in a community.</p>
+    <p>Home values are a reliable measure of qualitative changes to a neighborhood because the sales price of a home already takes into account all improvements to the home, as well as all improvements to the surrounding community like new parks, improved schools, and enhanced amenities like gyms and grocery stores. These are called &ldquo;hedonic pricing models&rdquo; in economics. Things like income levels or unemployment rates can change independently of improvements or decline in the community, so they are not great measures of neighborhood change. Home values, on the other hand, will typically increase only if demand for the neighborhood has increased, which typically occurs when the neighborhood or surrounding communities improve.</p>
+
+    <p>Read the tutorial on modeling changes in home value:</p>
+    <p><a class="Button Button--primary" href="https://watts-college.github.io/paf-516-template/LABS/lab-05-tutorial-v2.html" target="_blank" rel="noopener">NEIGHBORHOOD CHANGE TUTORIAL</a></p>
+
+    <p><strong>Neighborhood Change and Gentrification</strong></p>
+    <p>The video below provides a general overview of neighborhood change and gentrification, including: definitions, debates, policies, and a case study example. The lecture notes can be found <a href="https://watts-college.github.io/paf-516-template/lectures/Gentrification_and_affordable_housing_2016.pdf" target="_blank" rel="noopener">here (PDF)</a>.</p>
+    <iframe src="https://www.youtube.com/embed/b4GgKBhltu8" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+
+    <p><strong>Visualization</strong></p>
+    <hr />
+    <p><a class="Button Button--primary" href="https://watts-college.github.io/paf-516-template/LABS/lab-05-choropleth-tutorial.html" target="_blank" rel="noopener">CHOROPLETH TUTORIAL</a></p>
+    <p><a class="Button Button--primary" href="https://watts-college.github.io/paf-516-template/choropleth-color-scales/" target="_blank" rel="noopener">COLOR SCALE INTUITION</a></p>
+    <hr />
+    <p>The video below describes the importance of creating maps that accurately convey spatial information contained in the underlying data. Far too often, maps are used incorrectly to advocate a certain narrative that does not accurately reflect underlying data. As data scientists, it is important that we are careful about how we map spatial information. The lecture notes can be found <a href="https://github.com/watts-college/cpp-529-template/raw/main/lectures/p-05-visual-narrative.pdf" target="_blank" rel="noopener">here (PDF)</a>.</p>
+    <iframe src="https://www.youtube.com/embed/AWwOYNvxK-A" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Assignments</strong></h3>
+    <hr />
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong><i class="icon-solid icon-assignment" aria-hidden="true"><span class="dp-icon-content" style="display: none;">&nbsp;</span></i></strong><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Lab 05 &mdash; Predicting MHV Change</strong></span></h4>
+    <p>In Lab 05 you will build a baseline regression model predicting changes in median home value (MHV) from 2000 to 2010. You will select independent variables, check regression assumptions (skew, multicollinearity, linearity), fit models, and calculate effect sizes.</p>
+    <p>All instructions are embedded in the Lab 05 QMD template. Download the template, complete it, and render to HTML.</p>
+    <p><strong>Submit to Canvas</strong></p>
+    <p>Upload your QMD file and rendered HTML file to the Lab 05 submission link on Canvas.</p>
+    <hr />
+    <p><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong><i class="icon-line icon-quiz" aria-hidden="true"><span class="dp-icon-content" style="display: none;">&nbsp;</span></i> Yellowdig Topic</strong></span></p>
+    <p>Pick one of the following three articles to read:</p>
+    <p><em>Temkin, K., &amp; Rohe, W. (1996). Neighborhood change and urban policy. Journal of Planning Education and Research, 15(3), 159&ndash;170.</em>&nbsp;[&nbsp;<a id="73112315" class="instructure_file_link instructure_scribd_file inline_disabled" href="https://canvas.asu.edu/courses/220070/files/105139116?wrap=1" target="_blank" rel="noopener" data-canvas-previewable="true" data-api-endpoint="https://canvas.asu.edu/api/v1/courses/220070/files/105139116" data-api-returntype="File">pdf</a>&nbsp;]</p>
+    <p><em>Grigsby, W., Baratz, M., Galster, G., &amp; Maclennan, D. (1987). The dynamic of neighborhood change and decline. Progress in Planning, 28, 1.</em>&nbsp;[&nbsp;<a id="73112312" class="instructure_file_link instructure_scribd_file inline_disabled" href="https://canvas.asu.edu/courses/220070/files/105139117?wrap=1" target="_blank" rel="noopener" data-canvas-previewable="true" data-api-endpoint="https://canvas.asu.edu/api/v1/courses/220070/files/105139117" data-api-returntype="File">pdf</a>&nbsp;]</p>
+    <p><em>Schwirian, K. P. (1983). Models of neighborhood change. Annual Review of Sociology, 9(1), 83&ndash;102.</em>&nbsp;[&nbsp;<a id="73112317" class="instructure_file_link instructure_scribd_file inline_disabled" href="https://canvas.asu.edu/courses/220070/files/105139118?wrap=1" target="_blank" rel="noopener" data-canvas-previewable="true" data-api-endpoint="https://canvas.asu.edu/api/v1/courses/220070/files/105139118" data-api-returntype="File">pdf</a>&nbsp;]</p>
+    <p>Based upon the theory presented in the article, which variables do you think would be more important to include in a model of neighborhood change?</p>
+    <p>Do the census variables capture all of the data we would need, according to the article?</p>
+</div>
+
+<p>&nbsp;</p>
+</body>
+</html>

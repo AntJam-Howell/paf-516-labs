@@ -1,0 +1,532 @@
+---
+title: "Lab 04 — Lab Guide: Spatial Autocorrelation & Hot Spots"
+subtitle: "PAF 516 | M4 Assignment"
+date: today
+format:
+  html:
+    theme: readable
+    highlight-style: tango
+    toc: true
+    self-contained: true
+    number-sections: false
+execute:
+  echo: true
+  warning: false
+  message: false
+  fig-width: 10
+---
+
+---
+
+# Setup & Packages
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10)
+
+options(tigris_use_cache = TRUE)   # Cache shapefiles so re-runs are fast
+```
+
+```{r}
+#| label: packages
+#| eval: false
+
+library(tidyverse)    # Data wrangling and ggplot2
+library(tidycensus)   # Pull ACS data with geometry
+library(sf)           # Simple features for spatial data
+library(spdep)        # Spatial dependence: weights, Moran's I, LISA
+library(viridis)      # Perceptually uniform color scales
+library(patchwork)    # Combine multiple ggplots side-by-side
+```
+
+::: {.callout-note}
+## New package: `spdep`
+The `spdep` package (spatial dependence) provides the tools for this entire
+lab: building neighbor relationships, computing spatial weights, running
+Moran's I tests, and classifying local clusters. Install it with
+`install.packages("spdep")` if you have not already.
+:::
+
+---
+
+# Step 1: Pull Maricopa County CBG Data & Build Hardship Index
+
+By now you have done this four times. We pull the same five ACS hardship
+variables used in Lab 1, but this time at the **Census Block Group (CBG)**
+level for Maricopa County. CBGs are smaller than tracts (roughly 600--3,000
+people), giving us finer spatial resolution to detect local clustering.
+
+```{r}
+#| label: pull-data
+#| eval: false
+
+# Define the ACS variables for our economic hardship index.
+# Each pair is a numerator/denominator for computing a rate,
+# except median_income which is a single estimate.
+hardship_vars <- c(
+  pov_num      = "B17001_002",   # Population below poverty level
+  pov_den      = "B17001_001",   # Total population (poverty universe)
+  unemp_num    = "B23025_005",   # Unemployed population
+  unemp_den    = "B23025_002",   # Population in labor force
+  no_hs_num    = "B15003_002",   # No high school diploma (less than 9th grade)
+  no_hs_den    = "B15003_001",   # Total population 25+
+  no_ins_num   = "B27010_017",   # Without health insurance
+  no_ins_den   = "B27010_001",   # Total pop (insurance universe)
+  median_income = "B19013_001"   # Median household income
+)
+
+# Pull at block group level for Maricopa County, AZ
+cbg_raw <- get_acs(
+  geography = "block group",
+  variables = hardship_vars,
+  state     = "AZ",
+  county    = "Maricopa",
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE
+)
+```
+
+```{r}
+#| label: build-index
+#| eval: false
+
+# Reshape from long to wide: one row per CBG, one column per variable
+cbg_wide <- cbg_raw %>%
+  select(-moe) %>%
+  pivot_wider(names_from = variable, values_from = estimate)
+
+# Compute rates from numerator/denominator pairs
+cbg_wide <- cbg_wide %>%
+  mutate(
+    poverty_rate = pov_num / pov_den,
+    unemp_rate   = unemp_num / unemp_den,
+    no_hs_rate   = no_hs_num / no_hs_den,
+    no_ins_rate  = no_ins_num / no_ins_den
+  )
+
+# Standardize all five indicators to z-scores, then reverse median income
+# (high income = LOW hardship, so we flip the sign)
+cbg_index <- cbg_wide %>%
+  filter(!is.na(poverty_rate),
+         !is.na(unemp_rate),
+         !is.na(no_hs_rate),
+         !is.na(no_ins_rate),
+         !is.na(median_income)) %>%
+  mutate(
+    z_poverty  = as.numeric(scale(poverty_rate)),
+    z_unemp   = as.numeric(scale(unemp_rate)),
+    z_no_hs   = as.numeric(scale(no_hs_rate)),
+    z_no_ins  = as.numeric(scale(no_ins_rate)),
+    z_income  = -1 * as.numeric(scale(median_income))
+  ) %>%
+  mutate(
+    hardship_index = (z_poverty + z_unemp + z_no_hs + z_no_ins + z_income) / 5
+  )
+```
+
+```{r}
+#| label: map-hardship-index
+#| eval: false
+#| fig-height: 8
+
+# Quick choropleth to see the spatial pattern before we test it statistically
+ggplot(cbg_index) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(option = "inferno", name = "Hardship\nIndex") +
+  labs(
+    title    = "Economic Hardship Index — Maricopa County CBGs",
+    subtitle = "Higher values = greater hardship (z-score composite)",
+    caption  = "Source: ACS 2019-2023 5-Year Estimates"
+  ) +
+  theme_void()
+```
+
+The map shows a clear visual pattern: high-hardship CBGs appear to cluster
+together in certain parts of the county, particularly in south Phoenix and
+parts of the west valley. But is this clustering statistically significant,
+or could it be random? That is the question spatial autocorrelation answers.
+
+---
+
+# Step 2: Build Spatial Weights
+
+Before we can test for spatial clustering, we need to define what "neighbor"
+means. We use **queen contiguity**: two CBGs are neighbors if they share any
+boundary point (including corners), similar to how a queen moves in chess.
+The alternative is **rook contiguity**, which only counts shared edges (not
+corners). Queen is the standard default because it captures more neighbor
+relationships.
+
+```{r}
+#| label: spatial-weights
+#| eval: false
+
+# CRITICAL: st_make_valid() fixes any geometry errors (self-intersections,
+# invalid rings) in the shapefile. Without this, poly2nb() will often fail
+# or produce incorrect neighbor lists.
+cbg_index <- st_make_valid(cbg_index)
+
+# poly2nb() — "polygons to neighbors"
+# Identifies which CBGs share a boundary. Returns a "nb" (neighbor) object:
+# a list where element i contains the indices of all neighbors of polygon i.
+# queen=TRUE means corners count as shared boundaries (the default).
+nb <- poly2nb(cbg_index, queen = TRUE)
+
+# nb2listw() — "neighbors to list of weights"
+# Converts the neighbor list into a spatial weights object that Moran's I needs.
+# style="W" means ROW-STANDARDIZED weights: each neighbor gets weight 1/n
+# where n is the number of neighbors for that polygon. This means each CBG's
+# neighbors collectively contribute a weight of 1.0, regardless of how many
+# neighbors it has.
+# zero.policy=TRUE: some CBGs may be "islands" with no contiguous neighbors
+# (e.g., disconnected polygons). Without this flag, the function would error.
+# With it, islands are allowed but excluded from calculations.
+lw <- nb2listw(nb, style = "W", zero.policy = TRUE)
+```
+
+::: {.callout-tip}
+## Row-standardization explained
+If CBG A has 3 neighbors, each gets weight 1/3. If CBG B has 6 neighbors,
+each gets weight 1/6. This way, the **spatial lag** (weighted average of
+neighbors) is a true average regardless of how many neighbors a polygon has.
+Without row-standardization, CBGs with more neighbors would have
+disproportionate influence.
+:::
+
+---
+
+# Step 3: Global Moran's I
+
+Global Moran's I is a single summary statistic for the **entire study area**.
+It answers: "Overall, is the hardship index spatially clustered, randomly
+distributed, or dispersed?"
+
+- **I near +1** = strong positive spatial autocorrelation (clustering: similar
+  values near each other)
+- **I near 0** = spatial randomness (no pattern)
+- **I near -1** = spatial dispersion (checkerboard: dissimilar values near
+  each other)
+
+```{r}
+#| label: global-morans-i
+#| eval: false
+
+# moran.test() computes Global Moran's I and tests significance.
+# The null hypothesis is spatial randomness (CSR = complete spatial randomness).
+# zero.policy=TRUE handles any island CBGs.
+moran_global <- moran.test(
+  cbg_index$hardship_index,
+  lw,
+  zero.policy = TRUE
+)
+
+moran_global
+```
+
+```{r}
+#| label: interpret-global
+#| eval: false
+
+# Extract key values for interpretation
+cat("Moran's I statistic:", round(moran_global$estimate["Moran I statistic"], 4), "\n")
+cat("Expected I under randomness:", round(moran_global$estimate["Expectation"], 4), "\n")
+cat("p-value:", format.pval(moran_global$p.value, digits = 3), "\n")
+```
+
+**Interpretation:** The Global Moran's I is positive and the p-value is
+extremely small (well below 0.05), meaning we reject the null hypothesis of
+spatial randomness. Hardship values are **significantly clustered** in
+Maricopa County --- CBGs with high hardship tend to be surrounded by other
+high-hardship CBGs, and vice versa.
+
+---
+
+# Step 4: Moran Scatter Plot
+
+The Moran scatter plot visualizes the relationship between each CBG's
+hardship value (x-axis) and the average hardship of its neighbors --- the
+**spatial lag** (y-axis). The slope of the fitted line equals Global Moran's I.
+
+The four quadrants define the type of spatial association for each observation:
+
+- **HH (upper-right):** High value surrounded by high neighbors (hot spot)
+- **LL (lower-left):** Low value surrounded by low neighbors (cold spot)
+- **HL (lower-right):** High value surrounded by low neighbors (spatial outlier)
+- **LH (upper-left):** Low value surrounded by high neighbors (spatial outlier)
+
+```{r}
+#| label: moran-scatter-plot
+#| eval: false
+#| fig-height: 7
+
+# moran.plot() creates the scatter plot with quadrant lines at the means.
+# Points in the upper-right (HH) and lower-left (LL) quadrants drive
+# positive spatial autocorrelation. Points in HL and LH work against it.
+moran.plot(
+  cbg_index$hardship_index,
+  lw,
+  zero.policy = TRUE,
+  xlab = "Hardship Index (standardized)",
+  ylab = "Spatial Lag of Hardship Index",
+  main = "Moran Scatter Plot — Economic Hardship",
+  pch  = 20,
+  col  = "steelblue"
+)
+```
+
+Most points fall in the HH and LL quadrants, confirming positive spatial
+autocorrelation. The relatively few points in the HL and LH quadrants are
+spatial outliers --- CBGs that differ markedly from their neighbors.
+
+---
+
+# Step 5: Local Moran's I (LISA)
+
+Global Moran's I tells us clustering exists *overall*, but not *where*.
+**Local Indicators of Spatial Association (LISA)** decompose the global
+statistic into a value for **each CBG**, telling us:
+
+1. Whether that specific CBG is part of a significant cluster
+2. What *type* of cluster it belongs to (HH, LL, HL, or LH)
+
+```{r}
+#| label: lisa-analysis
+#| eval: false
+
+# localmoran() returns a matrix with one row per CBG and columns:
+#   Ii      = local Moran's I for that CBG
+#   E.Ii    = expected value under randomness
+#   Var.Ii  = variance
+#   Z.Ii    = z-score
+#   Pr(z != E(Ii)) = p-value (two-sided test)
+lisa <- localmoran(
+  cbg_index$hardship_index,
+  lw,
+  zero.policy = TRUE
+)
+
+# Attach LISA results to the spatial data frame
+cbg_index$lisa_i     <- lisa[, "Ii"]
+cbg_index$lisa_z     <- lisa[, "Z.Ii"]
+cbg_index$lisa_p     <- lisa[, "Pr(z != E(Ii))"]
+
+# Compute the spatial lag (average of neighbors' values) for quadrant classification
+cbg_index$lag_hardship <- lag.listw(lw, cbg_index$hardship_index, zero.policy = TRUE)
+```
+
+```{r}
+#| label: lisa-classify
+#| eval: false
+
+# Classify each CBG into a LISA category based on two criteria:
+# 1. Statistical significance: p-value <= 0.05
+# 2. Quadrant: determined by the signs of the value and its spatial lag
+#
+# The logic:
+#   - Center the variable and its lag at their means
+#   - If both are above mean: HH (hot spot)
+#   - If both are below mean: LL (cold spot)
+#   - If value above but lag below: HL (high outlier surrounded by low)
+#   - If value below but lag above: LH (low outlier surrounded by high)
+#   - If p > 0.05: Not Significant regardless of quadrant
+
+cbg_index <- cbg_index %>%
+  mutate(
+    # Center at the mean
+    val_centered = hardship_index - mean(hardship_index, na.rm = TRUE),
+    lag_centered = lag_hardship   - mean(lag_hardship, na.rm = TRUE),
+
+    # Assign quadrant labels
+    quadrant = case_when(
+      val_centered > 0 & lag_centered > 0 ~ "HH",
+      val_centered < 0 & lag_centered < 0 ~ "LL",
+      val_centered > 0 & lag_centered < 0 ~ "HL",
+      val_centered < 0 & lag_centered > 0 ~ "LH",
+      TRUE ~ "NS"
+    ),
+
+    # Apply significance filter: only keep label if p <= 0.05
+    lisa_cluster = if_else(lisa_p <= 0.05, quadrant, "NS")
+  )
+
+# How many CBGs fall into each category?
+table(cbg_index$lisa_cluster)
+```
+
+---
+
+# Step 6: LISA Cluster Map
+
+This is the payoff map. Each CBG is colored by its LISA classification:
+
+- **Red (HH):** Hot spots --- high-hardship CBGs surrounded by high-hardship neighbors
+- **Blue (LL):** Cold spots --- low-hardship CBGs surrounded by low-hardship neighbors
+- **Light coral (HL):** High-hardship outliers in low-hardship areas
+- **Light blue (LH):** Low-hardship outliers in high-hardship areas
+- **Grey (NS):** Not statistically significant at p <= 0.05
+
+```{r}
+#| label: lisa-cluster-map
+#| eval: false
+#| fig-height: 9
+
+# Define the color scheme for LISA categories
+lisa_colors <- c(
+  "HH" = "red",
+  "LL" = "blue",
+  "HL" = "#F08080",    # light coral
+  "LH" = "#ADD8E6",    # light blue
+  "NS" = "grey90"
+)
+
+# Convert to factor with explicit levels so the legend is ordered correctly
+cbg_index$lisa_cluster <- factor(
+  cbg_index$lisa_cluster,
+  levels = c("HH", "LL", "HL", "LH", "NS")
+)
+
+ggplot(cbg_index) +
+  geom_sf(aes(fill = lisa_cluster), color = "white", linewidth = 0.05) +
+  scale_fill_manual(
+    values = lisa_colors,
+    labels = c("HH (Hot Spot)",
+               "LL (Cold Spot)",
+               "HL (High-Low Outlier)",
+               "LH (Low-High Outlier)",
+               "NS (Not Significant)"),
+    name   = "LISA Cluster"
+  ) +
+  labs(
+    title    = "LISA Cluster Map — Economic Hardship Index",
+    subtitle = "Maricopa County CBGs | Queen contiguity, p <= 0.05",
+    caption  = "Source: ACS 2019-2023 5-Year Estimates"
+  ) +
+  theme_void() +
+  theme(legend.position = "right")
+```
+
+```{r}
+#| label: side-by-side
+#| eval: false
+#| fig-height: 8
+
+# Side-by-side comparison: raw hardship index vs. LISA clusters
+p1 <- ggplot(cbg_index) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(option = "inferno", name = "Hardship\nIndex") +
+  labs(title = "Hardship Index (Raw Values)") +
+  theme_void()
+
+p2 <- ggplot(cbg_index) +
+  geom_sf(aes(fill = lisa_cluster), color = "white", linewidth = 0.05) +
+  scale_fill_manual(values = lisa_colors, name = "LISA\nCluster") +
+  labs(title = "LISA Clusters (Significant Only)") +
+  theme_void()
+
+# patchwork: the + operator places plots side by side
+p1 + p2
+```
+
+The side-by-side comparison shows the power of LISA analysis: the left map
+shows the raw pattern (which we could see visually), while the right map
+tells us which parts of that pattern are **statistically significant**. Many
+areas that *look* like they might be clusters turn out to be not significant
+at the 0.05 level.
+
+---
+
+# Q1 --- Interpret the Global Moran's I and LISA Results
+
+::: {.callout-important}
+## Question 1
+
+What is the Global Moran's I value and is it statistically significant?
+What does this tell you about the spatial distribution of hardship in
+Maricopa County? Identify 2--3 specific hot spot areas from the LISA map.
+:::
+
+> [YOUR ANSWER HERE]
+
+---
+
+# Q2 --- Modify: LISA Analysis on Poverty Rate Alone
+
+::: {.callout-important}
+## Question 2
+
+Rerun the entire LISA analysis on a **single component variable** ---
+poverty rate alone --- instead of the composite hardship index. Show
+complete code for spatial weights, Global Moran's I, LISA classification,
+and the cluster map.
+:::
+
+```{r}
+#| label: q2-poverty-morans
+#| eval: false
+
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-poverty-lisa
+#| eval: false
+
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-poverty-lisa-map
+#| eval: false
+#| fig-height: 9
+
+# YOUR CODE HERE
+```
+
+---
+
+# Q3 --- Compare Poverty Hot Spots vs. Composite Index Hot Spots
+
+::: {.callout-important}
+## Question 3
+
+Compare the hot spot map for poverty alone vs. the composite hardship index.
+Do the hot spots shift? What does this tell you about whether the composite
+index captures spatial patterns differently than individual variables?
+:::
+
+> [YOUR ANSWER HERE]
+
+---
+
+# Common Errors & Troubleshooting
+
+::: {.callout-warning}
+## Frequently encountered issues
+
+**1. `poly2nb()` fails with topology errors**
+Always run `st_make_valid()` before building neighbor lists. Invalid
+geometries (self-intersections, ring errors) are common in Census
+shapefiles and will cause `poly2nb()` to crash or produce wrong results.
+
+**2. `Error: empty neighbour sets found`**
+Some CBGs may be "islands" (no shared boundary with any other CBG). Use
+`zero.policy=TRUE` in `nb2listw()`, `moran.test()`, and `localmoran()` to
+handle these. Islands are excluded from spatial calculations rather than
+causing errors.
+
+**3. All LISA clusters show as NS (Not Significant)**
+Check that you are using the correct variable. If the variable has very
+little spatial variation (e.g., nearly all CBGs have the same value),
+Moran's I will be near zero and no local clusters will be significant.
+
+**4. Colors do not match the legend**
+Make sure the `lisa_cluster` column is a factor with levels in the same
+order as your color vector: `c("HH", "LL", "HL", "LH", "NS")`.
+
+**5. `lag.listw()` returns NA values**
+This happens for island CBGs when `zero.policy=TRUE`. These CBGs have no
+neighbors, so no spatial lag can be computed. They will be classified as
+NS in the LISA analysis.
+:::

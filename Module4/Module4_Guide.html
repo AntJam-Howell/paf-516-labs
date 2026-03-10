@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAF 516 — Module 4: Spatial Autocorrelation & Hot Spots</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; color: #333; }
+h1, h2, h3, h4 { color: #8c1d40; }
+a { color: #8c1d40; }
+a:hover { color: #ffc627; }
+code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+img { max-width: 100%; height: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background-color: #8c1d40; color: white; }
+iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+<!-- REVISED: 2026-03-08 | See logs/module-4-log.md for change rationale -->
+<!-- DIFF: Compare against original ../CourseMaterials/Guides.1-6/Mod4/Module4_Guide.md -->
+<!-- NOTE: Mod4_Instruct.md is marked for DELETION — its content has been merged here -->
+<div style="background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px;">
+    <h2><strong><span style="color: #ffffff;">M4 Overview &amp; Learning Materials<br /></span></strong></h2>
+    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Build a City Dataset &amp; Practice Clustering<br /></strong></span></p>
+</div>
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Module Overview</strong></h3>
+    <p>We are interested in understanding neighborhood change. These data-driven approaches to the phenomenon use machine-learning algorithms to &ldquo;discover&rdquo; coherent communities within the city by grouping census tracts into groups that minimize within-group differences and maximize between-group differences.</p>
+    <p>In Lab 3 you applied clustering techniques to Phoenix data provided for you. In this module you will <strong>build your own city dataset from scratch</strong> using Census data and the <code>tidycensus</code> API, construct a Dorling cartogram, and then apply the same clustering methods to your chosen city. This lab is the foundation for your final project.</p>
+</div>
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Learning Objectives</strong></h3>
+    <p>After completing this module, you will be able to:</p>
+    <ol>
+        <li>Use the CBSA-to-FIPS crosswalk to identify counties in a Metropolitan Statistical Area (MSA).</li>
+        <li>Download census tract shapefiles and population data using the <code>tidycensus</code> API.</li>
+        <li>Merge spatial data with harmonized Longitudinal Tract Database (LTDB) census variables.</li>
+        <li>Transform a shapefile into a Dorling cartogram that corrects for tract size bias.</li>
+        <li>Apply Gaussian mixture model clustering (<code>mclust</code>) to identify neighborhood typologies.</li>
+        <li>Compare clustering results across different variable sets and composite indices.</li>
+        <li>Assign interpretive labels to clusters based on percentile profile charts.</li>
+    </ol>
+</div>
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i> <strong>Learning Materials</strong></h3>
+    <p><strong>Saving Your Cartogram for Future Use</strong></p>
+    <p>You will re-use your cartogram in future labs and in the final project. You can create your cartogram from scratch each time, or save it as a GeoJSON file and re-load it when needed.</p>
+    <p><strong>Save your cartogram (sf pipeline):</strong></p>
+    <div style="background: #ffffff; overflow: auto; width: auto; border: solid gray; border-width: .1em .1em .1em .8em; padding: .2em .6em;">
+        <pre style="margin: 0; line-height: 125%;">library( sf )
+
+<span style="color: #888888;"># project to standard lat-lon coordinate system</span>
+my_dorling_sf &lt;- st_transform( my_dorling_sf, crs = 4326 )
+
+<span style="color: #888888;"># write to file</span>
+st_write( my_dorling_sf, <span style="background-color: #fff0f0;">"my_dorling.geojson"</span>, delete_dsn = TRUE )
+</pre>
+    </div>
+    <p>Load your cartogram:</p>
+    <div style="background: #ffffff; overflow: auto; width: auto; border: solid gray; border-width: .1em .1em .1em .8em; padding: .2em .6em;">
+        <pre style="margin: 0; line-height: 125%;">library( sf )
+
+<span style="color: #888888;"># load from local file path</span>
+my_dorling_sf &lt;- st_read( <span style="background-color: #fff0f0;">"my_dorling.geojson"</span> )
+
+plot( st_geometry( my_dorling_sf ) )
+</pre>
+    </div>
+    <p>&nbsp;</p>
+    <p><strong>Locator Tutorial</strong></p>
+    <p>The <code>locator()</code> function in R lets you click on a plot to get coordinates, which is useful for defining bounding boxes for your maps. Watch this short tutorial:</p>
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/jx5y0EdIUT4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    <p>&nbsp;</p>
+    <p><strong>Important Technical Notes:</strong></p>
+    <ul>
+        <li>Do <strong>NOT</strong> load <code>library(maptools)</code> &mdash; it has been retired from CRAN and is no longer available.</li>
+        <li>Use <code>st_transform()</code> (from the <code>sf</code> package) instead of <code>spTransform()</code> (from the retired <code>rgdal</code> package).</li>
+        <li>Use <code>st_crs(3395)</code> instead of <code>CRS("+init=epsg:3395")</code>.</li>
+        <li>Use <code>st_drop_geometry()</code> instead of <code>@data</code> to extract data from spatial objects.</li>
+        <li>The lab template (<code>Lab4_Assignment.qmd</code>) contains all instructions and code &mdash; everything you need is in that single file.</li>
+    </ul>
+</div>
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Assignments</strong></h3>
+    <hr />
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong><i class="icon-solid icon-assignment" aria-hidden="true"><span class="dp-icon-content" style="display: none;">&nbsp;</span></i></strong><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Lab 04 &mdash; Build a City Dataset</strong></span></h4>
+    <p>The purpose of Lab 4 is to replicate the clustering work you did in Lab 3, but for a new city. You will use <strong>San Diego</strong> as your city for this lab and the final project. San Diego is a single-county MSA, which simplifies the Census API calls.</p>
+    <p>If there is a compelling reason to pick a different city, you are free to do so, but be mindful that the instructor may be of limited use troubleshooting city-specific data issues. If you choose a multi-county or multi-state MSA, you will need to make separate API calls for each state (the template demonstrates this with Minneapolis as an example).</p>
+    <p>All instructions are embedded in the Quarto template. Download <strong>Lab4_Assignment.qmd</strong> from Canvas and work through it step by step.</p>
+    <p><strong>You will save the Dorling cartogram you create in this lab &mdash; you will need it for the final project.</strong></p>
+    <hr />
+    <p><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong><i class="icon-line icon-quiz" aria-hidden="true"><span class="dp-icon-content" style="display: none;">&nbsp;</span></i> Yellowdig Topic</strong></span></p>
+    <p>Reflect on how the variables you use in clustering models define the neighborhoods (groups) your model identifies. Are these clusters valid constructs? Would knowing a tract's cluster help predict outcomes for residents, or how the neighborhood might change over time? How do we know which set of variables produces the &ldquo;right&rdquo; groups?</p>
+    <hr />
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Submission Instructions</strong></h4>
+    <p>After completing the lab, submit via Canvas. Upload your <strong>.qmd</strong> and rendered <strong>.html</strong> files. Name your files: <code>Lab-04-LastName.qmd</code> and <code>Lab-04-LastName.html</code>.</p>
+</div>
+<p>&nbsp;</p>
+</body>
+</html>

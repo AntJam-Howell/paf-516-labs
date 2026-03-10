@@ -1,0 +1,591 @@
+---
+title: "Lab 03 — Solutions: Identifying Neighborhood Clusters"
+subtitle: "PAF 516"
+format:
+  html:
+    theme: readable
+    highlight-style: tango
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    number-sections: false
+    self-contained: true
+    code-fold: true
+    code-tools: true
+execute:
+  echo: true
+  warning: false
+  message: false
+  fig-width: 10
+  fig-height: 6
+---
+
+---
+
+```{r}
+#| label: tmap-reset
+#| include: false
+
+# Force tmap into static plot mode at the start of every render.
+# This prevents errors when tmap tries to create interactive Leaflet
+# maps inside a non-interactive rendering context.
+library(tmap)
+tmap_mode("plot")
+```
+
+> **Solutions File:** This document contains the fully executed tutorial code
+> with all outputs rendered, plus completed responses for Part 01 (cluster
+> labels) and Part 02 (reading questions). Code annotations explain every
+> function and step.
+
+---
+
+# Setup & Packages
+
+```{r}
+#| label: load-packages
+
+# --- Core spatial packages ---
+library(geojsonio)   # reads GeoJSON shapefiles from URLs into sp objects
+library(sp)          # classes and methods for legacy spatial (sp) objects
+library(sf)          # modern simple-features spatial format (replacing sp)
+
+# --- Clustering ---
+library(mclust)      # model-based clustering via Gaussian mixture models
+                     # Key function: Mclust() — auto-selects best model & k
+
+# --- Visualization ---
+library(tmap)        # thematic map creation (static + interactive modes)
+library(ggplot2)     # grammar-of-graphics visualization
+library(ggthemes)    # additional themes and color scales for ggplot2
+
+# --- Data wrangling ---
+library(dplyr)       # data manipulation: select, filter, group_by, summarise
+library(pander)      # renders R objects as clean markdown/HTML tables
+```
+
+::: {.callout-note}
+## Common installation errors
+- `mclust` requires a Fortran compiler on some systems. On Mac, install Xcode
+  Command Line Tools (`xcode-select --install`).
+- `geojsonio` depends on `V8`; if installation fails, try
+  `install.packages("V8")` first.
+- If `tmap` fails to render, ensure you are in "plot" mode:
+  `tmap_mode("plot")`.
+:::
+
+---
+
+# Data Dictionary
+
+```{r}
+#| label: data-dictionary
+#| echo: false
+
+# Hard-coded data dictionary matching the 30 ACS Census variables used in this lab.
+# These variable names follow the Diversity and Disparities Project naming convention.
+data.dictionary <-
+  structure(list(
+    LABEL = c("tractid", "pnhwht12", "pnhblk12", "phisp12",
+              "pntv12", "pfb12", "polang12", "phs12", "pcol12", "punemp12",
+              "pflabf12", "pprof12", "pmanuf12", "pvet12", "psemp12", "hinc12",
+              "incpc12", "ppov12", "pown12", "pvac12", "pmulti12", "mrent12",
+              "mhmval12", "p30old12", "p10yrs12", "p18und12", "p60up12", "p75up12",
+              "pmar12", "pwds12", "pfhh12"),
+    VARIABLE = c("GEOID", "Percent white, non-Hispanic",
+                 "Percent black, non-Hispanic", "Percent Hispanic",
+                 "Percent Native American race", "Percent foreign born",
+                 "Percent speaking other language at home, age 5 plus",
+                 "Percent with high school degree or less",
+                 "Percent with 4-year college degree or more",
+                 "Percent unemployed", "Percent female labor force participation",
+                 "Percent professional employees", "Percent manufacturing employees",
+                 "Percent veteran", "Percent self-employed", "Median HH income, total",
+                 "Per capita income", "Percent in poverty, total",
+                 "Percent owner-occupied units", "Percent vacant units",
+                 "Percent multi-family units", "Median rent", "Median home value",
+                 "Percent structures more than 30 years old",
+                 "Percent HH in neighborhood 10 years or less",
+                 "Percent 17 and under, total", "Percent 60 and older, total",
+                 "Percent 75 and older, total",
+                 "Percent currently married, not separated",
+                 "Percent widowed, divorced and separated",
+                 "Percent female-headed families with children")),
+    class = "data.frame", row.names = c(NA, -31L))
+
+data.dictionary %>% pander()
+```
+
+---
+
+# Load & Map Phoenix Shapefile
+
+```{r}
+#| label: load-shapefile
+
+# Load the Dorling Cartogram GeoJSON from GitHub as an sp object.
+# A Dorling Cartogram sizes each polygon proportional to population,
+# which removes the visual dominance of large, sparsely populated tracts.
+github.url <- "https://raw.githubusercontent.com/DS4PS/cpp-529-master/master/data/phx_dorling.geojson"
+phx <- geojson_read(x = github.url, what = "sp")
+
+# Basic plot to verify data loaded correctly
+print(plot(phx))
+```
+
+```{r}
+#| label: tmap-static
+#| fig-height: 8
+
+# Switch to static plotting mode for reproducible rendering
+tmap_mode("plot")
+
+# Convert legacy sp object to modern sf format, then reproject.
+# EPSG:3395 is World Mercator — good for the Phoenix metro extent.
+# NOTE: This replaces the deprecated spTransform(phx, CRS("+init=epsg:3395"))
+phx_sf <- st_as_sf(phx)
+phx_sf <- st_transform(phx_sf, crs = 3395)
+
+# Define bounding box in EPSG:3395 projected coordinates
+# to zoom the map to just the Phoenix metro area
+bb <- st_bbox(c(xmin = -12519146, xmax = -12421368,
+                ymax = 3965924,  ymin = 3899074),
+              crs = st_crs(3395))
+
+# Choropleth by Median Household Income using quantile breaks
+tm_shape(phx_sf, bbox = bb) +
+  tm_polygons(col = "MHHI", n = 10, style = "quantile", palette = "Spectral") +
+  tm_layout("PHX Dorling Cartogram", title.position = c("right", "top"))
+```
+
+```{r}
+#| label: tmap-interactive
+#| fig-height: 8
+#| eval: false
+
+# INTERACTIVE MAP — Disabled for knitting (requires browser context).
+# Run manually in RStudio to explore: zoom, pan, click tracts for values.
+tmap_mode("view")
+tm_basemap("HikeBike.HillShading") +
+  tm_shape(phx, bbox = bb) +
+  tm_polygons(col = "phisp12", n = 7, style = "quantile", palette = "-inferno")
+```
+
+```{r}
+#| label: tmap-watercolor
+#| fig-height: 8
+#| eval: false
+
+# ALTERNATIVE INTERACTIVE MAP — Watercolor basemap style.
+# Also disabled for knitting; run manually if desired.
+tm_basemap("Stamen.Watercolor") +
+  tm_shape(phx, bbox = bb) +
+  tm_polygons(col = "MHHI", n = 7, style = "quantile", palette = "RdYlBu") +
+  tm_legend(show = FALSE)
+```
+
+---
+
+# Prepare Data & Run Clustering
+
+```{r}
+#| label: prepare-and-cluster
+
+# The 30 Census variable names to use for clustering.
+# These span demographics, economics, housing, and age structure.
+keep.these <- c("pnhwht12", "pnhblk12", "phisp12", "pntv12", "pfb12", "polang12",
+                "phs12", "pcol12", "punemp12", "pflabf12", "pprof12", "pmanuf12",
+                "pvet12", "psemp12", "hinc12", "incpc12", "ppov12", "pown12",
+                "pvac12", "pmulti12", "mrent12", "mhmval12", "p30old12", "p10yrs12",
+                "p18und12", "p60up12", "p75up12", "pmar12", "pwds12", "pfhh12")
+
+# Extract attribute data from the sp object
+# NOTE: phx@data uses S4 slot access; a fully modernized version would use
+# st_drop_geometry(phx_sf), but we keep this for consistency with the tutorial
+d1 <- phx@data
+
+# Subset to just the 30 clustering variables
+d2 <- select(d1, keep.these)
+
+# Standardize all variables to z-scores (mean=0, sd=1).
+# This is CRITICAL: without standardization, variables measured in dollars
+# (e.g., hinc12 ~ $50,000) would completely dominate variables measured
+# in percentages (e.g., punemp12 ~ 8%).
+d3 <- apply(d2, 2, scale)
+
+# Fit Gaussian Mixture Model — automatically selects:
+#   - Best model shape (spherical, diagonal, ellipsoidal, etc.)
+#   - Optimal number of clusters (using BIC)
+# set.seed() ensures every student gets the same result
+set.seed(1234)
+fit <- Mclust(d3)
+
+# Store cluster assignments in the spatial object for mapping
+phx$cluster <- as.factor(fit$classification)
+
+# Display model summary:
+#   - Model type (e.g., VVE = ellipsoidal, equal orientation)
+#   - Number of components = number of clusters found
+#   - BIC = model selection criterion (higher = better fit)
+#   - Clustering table = how many tracts per cluster
+summary(fit)
+```
+
+::: {.callout-note}
+## Why Mclust finds 8 groups
+The algorithm tested models with 1 through 9 clusters (the default range)
+and multiple covariance structures. The combination of 8 clusters with
+VVE (variable volume, variable shape, equal orientation) produced the
+highest BIC, meaning it best balanced model fit against complexity.
+:::
+
+```{r}
+#| label: cluster-map
+#| fig-height: 8
+
+# Exclude two tracts that visually overlap the legend in the cartogram
+phx2 <- phx[!(phx$GEOID %in% c("04013723308", "04013723304")), ]
+
+# Convert to sf for tmap 3.x compatibility
+phx2_sf <- st_as_sf(phx2)
+
+# Map with cobalt theme and Accent color palette
+tmap_mode("plot")
+tmap_style("cobalt")
+tm_shape(phx2_sf, bbox = bb) +
+  tm_polygons(col = "cluster", palette = "Accent")
+```
+
+---
+
+# Cluster Exploration
+
+## Density Plots
+
+```{r}
+#| label: density-hispanic
+
+# Assign human-readable cluster labels to the working data frame
+d2$cluster <- as.factor(paste0("GROUP-", fit$classification))
+
+# Density distributions of % Hispanic by cluster.
+# Each facet is one cluster; if the distribution is far right,
+# that cluster has high Hispanic population.
+ggplot(d2, aes(x = phisp12)) +
+  geom_density(alpha = 0.5, fill = "blue") +
+  xlab("Percent Hispanic") +
+  facet_wrap(~cluster, nrow = 2) +
+  theme_minimal()
+```
+
+Some groups have high Hispanic populations (distribution shifted right),
+while others have almost none (distribution piled at zero). This is evidence
+that the clustering is capturing meaningful demographic differences.
+
+```{r}
+#| label: density-college
+
+# Density distributions of % College Educated by cluster
+ggplot(d2, aes(x = pcol12)) +
+  geom_density(alpha = 0.5, fill = "blue") +
+  xlab("Percent with a College Degree") +
+  facet_wrap(~cluster, nrow = 2) +
+  theme_minimal()
+```
+
+Most clusters have between 20--40% college educated. Group 1 stands out
+with a very high proportion (distribution shifted right), while Group 7
+has very few college-educated residents.
+
+---
+
+# Percentile Profile Charts
+
+```{r}
+#| label: percentile-all-groups
+#| fig-height: 10
+#| fig-width: 8
+
+# Convert all variables to percentile ranks (1-100) across all tracts.
+# ntile(x, 100) assigns each value a rank from 1 to 100 based on where
+# it falls in the overall distribution.
+df.pct <- sapply(d2[, keep.these], ntile, 100)
+d3 <- as.data.frame(df.pct)
+d3$cluster <- as.factor(paste0("GROUP-", fit$classification))
+
+# Compute mean percentile rank per variable per cluster.
+# NOTE: summarise(across(...)) replaces the deprecated summarise_each(funs(mean)).
+# across(everything(), mean) applies mean() to every non-grouping column.
+stats <-
+  d3 %>%
+  group_by(cluster) %>%
+  summarise(across(everything(), mean))
+
+# Transpose: rows = variables, columns = groups
+t <- data.frame(t(stats), stringsAsFactors = F)
+names(t) <- paste0("GROUP.", 1:8)
+t <- t[-1, ]
+
+# Plot Groups 1-4: each chart shows 30 variables as dots on a 0-100 scale.
+# Shaded bands at 0-20, 40-60, 80-100 help visual interpretation.
+for (i in 1:4) {
+  z <- t[, i]
+  plot(rep(1, 30), 1:30, bty = "n", xlim = c(-75, 100),
+       type = "n", xaxt = "n", yaxt = "n",
+       xlab = "                                         Percentile",
+       ylab = "", col.lab = "gray40",
+       main = paste("GROUP", i))
+  rect(xleft = 0,  ybottom = 0, xright = 20,  ytop = 31, col = gray(0.75, 0.5), border = "gray80")
+  rect(xleft = 40, ybottom = 0, xright = 60,  ytop = 31, col = gray(0.75, 0.5), border = "gray80")
+  rect(xleft = 80, ybottom = 0, xright = 100, ytop = 31, col = gray(0.75, 0.5), border = "gray80")
+  segments(y0 = 1:30, x0 = 0, x1 = 100, col = "gray70", lwd = 2)
+  text(-0.2, 1:30, data.dictionary$VARIABLE[-1], cex = 0.85, pos = 2)
+  points(z, 1:30, pch = 19, col = "firebrick", cex = 1.5)
+  axis(side = 1, at = c(0, 50, 100), col.axis = "gray", col = "gray")
+}
+```
+
+```{r}
+#| label: percentile-groups-5-8
+#| fig-height: 10
+#| fig-width: 8
+
+# Plot Groups 5-8 (same approach as Groups 1-4)
+for (i in 5:8) {
+  z <- t[, i]
+  plot(rep(1, 30), 1:30, bty = "n", xlim = c(-75, 100),
+       type = "n", xaxt = "n", yaxt = "n",
+       xlab = "                                         Percentile",
+       ylab = "", col.lab = "gray40",
+       main = paste("GROUP", i))
+  rect(xleft = 0,  ybottom = 0, xright = 20,  ytop = 31, col = gray(0.75, 0.5), border = "gray80")
+  rect(xleft = 40, ybottom = 0, xright = 60,  ytop = 31, col = gray(0.75, 0.5), border = "gray80")
+  rect(xleft = 80, ybottom = 0, xright = 100, ytop = 31, col = gray(0.75, 0.5), border = "gray80")
+  abline(v = seq(0, 100, 25), lty = 3, lwd = 1.5, col = "gray90")
+  segments(y0 = 1:30, x0 = 0, x1 = 100, col = "gray70", lwd = 2)
+  text(-0.2, 1:30, data.dictionary$VARIABLE[-1], cex = 0.85, pos = 2)
+  points(z, 1:30, pch = 19, col = "firebrick", cex = 1.5)
+  axis(side = 1, at = c(0, 50, 100), col.axis = "gray", col = "gray")
+}
+```
+
+---
+
+# Part 01 Solutions — Cluster Labels
+
+Labels are derived by inspecting each group's percentile dot plot. Variables with
+dots near **0--20** indicate the group ranks very low on that measure; dots near
+**80--100** indicate it ranks very high relative to all Phoenix tracts.
+
+::: {.callout-tip}
+## How to read these profiles
+For each group, look for the most extreme dots (farthest left or right).
+These are the **defining variables** for that cluster. Variables clustered
+near 50 are not distinctive -- the group is average on those measures.
+:::
+
+| Group | Proposed Label | Key Characteristics from Percentile Charts |
+|-------|---------------|--------------------------------------------|
+| **Group 1** | **Affluent White Suburbs** | Very high: college education, per capita income, home values, married households, professional employees. Very low: poverty, Hispanic population, foreign born, high school only. |
+| **Group 2** | **Established Middle-Class Families** | High: home ownership, married households, percent white. Moderate income and education. Low: multi-family units, unemployment, poverty. Stable, long-tenure residents. |
+| **Group 3** | **Working-Class Renters** | Low-to-mid income and education. Higher share of renters and multi-family housing. Moderate unemployment. Mixed racial composition with some Hispanic presence. |
+| **Group 4** | **Immigrant & Latino Communities** | Very high: Hispanic population, foreign born, speaking other language at home. Low: college education, income, home ownership. High: female-headed households, poverty. |
+| **Group 5** | **Native American & Tribal Neighborhoods** | Distinctively high: Native American population. High: poverty, unemployment, female-headed households. Low: income, home values, college education. |
+| **Group 6** | **Black Urban Neighborhoods** | High: Black non-Hispanic population, poverty, unemployment, female-headed households. Low: home ownership, income, college education, married households. High vacancy rates. |
+| **Group 7** | **Senior & Retirement Communities** | Very high: residents 60+, 75+, widowed/divorced. High: veteran population, owner-occupied units, older housing structures. Low: youth population, female labor force participation. |
+| **Group 8** | **Young Urban Renters** | High: multi-family units, recent movers (in neighborhood < 10 years), unemployment. Low: married households, home ownership, seniors. Mixed education -- some college, some high school only. |
+
+> **Note:** These labels are informed interpretations based on the relative
+> percentile positions of Census variables within each cluster. Student labels
+> may differ -- what matters is that each label is grounded in the data patterns
+> observed and is respectful and descriptive.
+
+---
+
+# Part 02 Solutions — Reading Comparison Questions
+
+## Q1: MVA Paper — Data and Variables
+
+The Market Value Analysis (MVA) paper uses a combination of administrative
+and Census data to classify neighborhoods. The variables include housing
+market indicators such as:
+
+- Median home sale price
+- Percentage of sales financed with conventional mortgages
+- Percentage of homes with building permit activity
+- Vacancy rates
+- Owner-occupancy rates
+- Foreclosure filings
+
+The MVA typically uses **8--10 variables** that are specifically chosen to
+reflect housing market conditions rather than demographic characteristics.
+The key distinction from our lab is that the MVA focuses on **market
+behavior** (sales, lending, permits) rather than **population characteristics**
+(race, education, income).
+
+## Q2: Delmelle Paper — Data and Variables
+
+Delmelle (2017) uses Census data from 1980--2010 across 50 US metropolitan
+areas. The study uses approximately **16 socioeconomic variables** measured
+at the census tract level, including:
+
+- Racial composition (percent white, Black, Hispanic)
+- Educational attainment
+- Income and poverty rates
+- Housing tenure (owner vs. renter)
+- Age structure (percent elderly, percent youth)
+- Housing characteristics (vacancy, age of structures)
+
+The variables are very similar to the 30 variables we used in our lab,
+though Delmelle uses fewer and tracks them across **four decades** to
+identify temporal pathways of neighborhood change, not just a single
+cross-sectional snapshot.
+
+## Q3: Comparison of Neighborhood Types
+
+Table 1 in Delmelle (page 2412) presents 12 neighborhood types using a
+colored heatmap where darker colors indicate higher values. Delmelle's
+**"Affluent" cluster** closely resembles our **Group 1 (Affluent White
+Suburbs)**:
+
+- Both show very high values for income, education (college degree),
+  home values, and professional employment
+- Both show very low values for poverty, unemployment, and minority
+  populations
+- Both show high rates of married households and home ownership
+
+The key difference is that Delmelle's analysis spans 50 metro areas and
+four time periods, while ours is a single snapshot of Phoenix. Delmelle
+can therefore track how neighborhoods *transition* between types over time
+(e.g., from "working class" to "gentrifying"), which our single-period
+analysis cannot do.
+
+---
+
+# Auxiliary: Full Cluster Profile Function
+
+```{r}
+#| label: aux-full-profile
+#| fig-height: 16
+
+# This reusable function generates percentile dot-plot profiles for any
+# clustering solution. It takes raw data, cluster IDs, and a data dictionary
+# and produces one chart per cluster.
+
+use.these <- c("pnhwht12", "pnhblk12", "phisp12", "pntv12", "pfb12", "polang12",
+               "phs12", "pcol12", "punemp12", "pflabf12", "pprof12", "pmanuf12",
+               "pvet12", "psemp12", "hinc12", "incpc12", "ppov12", "pown12",
+               "pvac12", "pmulti12", "mrent12", "mhmval12", "p30old12", "p10yrs12",
+               "p18und12", "p60up12", "p75up12", "pmar12", "pwds12", "pfhh12")
+
+# Extract data from spatial object
+df             <- phx@data
+model.dat      <- select(df, use.these)
+model.dat.scaled <- apply(model.dat, 2, scale)
+
+# Re-run Mclust on the full data (same result due to set.seed above)
+fit       <- Mclust(model.dat.scaled)
+group.ids <- as.character(fit$classification)
+
+# view_cluster_data: generates a dot-plot percentile profile for each cluster
+# Arguments:
+#   model.dat       -- raw (unscaled) data frame of Census variables
+#   group.ids       -- character vector of cluster assignments (one per tract)
+#   data.dictionary -- data frame with LABEL and VARIABLE columns
+view_cluster_data <- function(model.dat, group.ids, data.dictionary) {
+
+  num.groups <- length(unique(as.character(group.ids)))
+  num.vars   <- ncol(model.dat)
+  data.dictionary <- data.dictionary[data.dictionary$LABEL %in% use.these, ]
+
+  # Convert raw values to percentile ranks (1-100) for easier interpretation
+  df.ntile <- sapply(model.dat, ntile, 100)
+  df.ntile <- as.data.frame(df.ntile)
+  df.ntile$cluster <- as.factor(paste0("GROUP-", group.ids))
+
+  # Compute mean percentile per variable per cluster
+  # NOTE: across(everything(), mean) replaces deprecated summarise_each(funs(mean))
+  stats <-
+    df.ntile %>%
+    group_by(cluster) %>%
+    summarise(across(everything(), mean))
+
+  # Transpose for plotting: rows = variables, columns = groups
+  df.stats <- data.frame(t(stats), stringsAsFactors = F)
+  names(df.stats) <- paste0("GROUP.", 1:num.groups)
+  df.stats <- df.stats[-1, ]
+
+  # Generate one dot-plot per cluster
+  for (i in 1:num.groups) {
+    z <- df.stats[, i]
+
+    print({
+      plot(rep(1, num.vars), 1:num.vars, bty = "n", xlim = c(-75, 100),
+           type = "n", xaxt = "n", yaxt = "n",
+           xlab = "Percentile", ylab = "", col.lab = "gray40",
+           main = paste("GROUP", i))
+      # Shaded bands for visual reference
+      rect(xleft = 0,  ybottom = 0, xright = 20,  ytop = (num.vars + 1), col = gray(0.75, 0.5), border = "gray80")
+      rect(xleft = 40, ybottom = 0, xright = 60,  ytop = (num.vars + 1), col = gray(0.75, 0.5), border = "gray80")
+      rect(xleft = 80, ybottom = 0, xright = 100, ytop = (num.vars + 1), col = gray(0.75, 0.5), border = "gray80")
+      abline(v = seq(0, 100, 25), lty = 3, lwd = 1.5, col = "gray90")
+      segments(y0 = 1:num.vars, x0 = 0, x1 = 100, col = "gray70", lwd = 2)
+      text(-0.2, 1:num.vars, data.dictionary$VARIABLE, cex = 0.85, pos = 2)
+      points(z, 1:num.vars, pch = 19, col = "firebrick", cex = 1.5)
+      axis(side = 1, at = c(0, 50, 100), col.axis = "gray", col = "gray")
+    })
+  }
+}
+
+# Arrange plots in a 4x2 grid and run the function
+par(mfrow = c(4, 2))
+view_cluster_data(model.dat       = model.dat,
+                  group.ids       = group.ids,
+                  data.dictionary = data.dictionary)
+```
+
+---
+
+# Auxiliary: Data Dictionary (Remote)
+
+```{r}
+#| label: aux-data-dictionary-remote
+
+# Load full data dictionary from the course GitHub repository.
+# This provides human-readable variable descriptions for the 30 Census
+# measures stored in the shapefile.
+dd.URL <- "https://raw.githubusercontent.com/DS4PS/cpp-529-master/master/data/data-dictionary.csv"
+data.dictionary <- read.csv(dd.URL, stringsAsFactors = F)
+data.dictionary %>% pander()
+```
+
+---
+
+# Common Errors & Troubleshooting
+
+::: {.callout-warning}
+## Frequently encountered issues
+
+**1. `Error in spTransform: package rgdal is required`**
+This occurs because `spTransform()` from the `sp` package depends on the
+now-retired `rgdal` package. The fix used in this lab is to convert to `sf`
+format first: `phx_sf <- st_as_sf(phx)` then `st_transform(phx_sf, crs = 3395)`.
+
+**2. `Error in summarise_each: Column 'cluster' ...' must be grouped`**
+The function `summarise_each()` was deprecated in dplyr 0.8.0. Replace with
+`summarise(across(everything(), mean))`.
+
+**3. tmap rendering errors in knitted output**
+If you see errors about "mode not initialized" or "leaflet widget," make sure
+you have `tmap_mode("plot")` at the top of your document (not "view").
+Interactive maps only work in RStudio, not in knitted HTML.
+
+**4. `Mclust` returns fewer than 8 clusters**
+If you forget `set.seed(1234)`, the stochastic initialization may converge to
+a different solution. Always set the seed before calling `Mclust()`.
+
+**5. Data dictionary has 31 rows but only 30 variables**
+The first row is `tractid` / `GEOID`, which is an identifier, not a clustering
+variable. That is why `data.dictionary$VARIABLE[-1]` is used in the plots
+(dropping the first row).
+:::

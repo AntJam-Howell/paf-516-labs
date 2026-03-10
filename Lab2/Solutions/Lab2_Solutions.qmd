@@ -1,0 +1,308 @@
+<!-- REVISED: 2026-03-08 | See logs/module-2-log.md for change rationale -->
+<!-- DIFF: Compare against original ../CourseMaterials/Labs.1-6/Lab 2/Lab2_Solutions/Lab2_Solutions.qmd -->
+---
+title: "Lab 02 — Solutions: Intro to Census Data"
+subtitle: "PAF 516"
+format:
+  html:
+    theme: readable
+    highlight-style: tango
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+  message: false
+  fig-width: 10
+---
+
+
+---
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set( echo = TRUE, message=F, warning=F, fig.width=10 )
+```
+
+```{r}
+#| label: packages
+# Core packages for this lab
+library( tidycensus )
+library( tidyverse )   # includes ggplot2, dplyr, tidyr
+library( viridis )     # color scales for maps
+```
+
+```{r}
+#| label: api-key
+# Uncomment and add your Census API key
+# census_api_key("YOUR KEY GOES HERE")
+```
+
+# Step 1: Getting the Data
+
+```{r}
+#| label: var-search
+#| echo: true
+#| eval: true
+
+# Search for variable names in the ACS 5-year data
+VarSearch <- load_variables( 2017, "acs5", cache=TRUE )
+
+# Convert all labels to upper case for easier searching
+VarSearch$label <- toupper( VarSearch$label )
+
+# Search for median house value variables
+medianvalue <- VarSearch %>%
+  mutate( contains.medianvalue = grepl( "MEDIAN VALUE", label ) ) %>%
+  filter( contains.medianvalue )
+
+# Search for median household income variables
+medianincome <- VarSearch %>%
+  mutate( contains.medianincome = grepl( "MEDIAN HOUSEHOLD INCOME", label ) ) %>%
+  filter( contains.medianincome )
+```
+
+Now that these objects are created, we can take a look at what the variable search rendered:
+
+```{r}
+#| label: view-vars
+#| echo: true
+#| eval: false
+
+# View interactively to identify the correct variable codes
+View( medianvalue )
+View( medianincome )
+```
+
+After looking through the objects, we can see that `B19049_001` corresponds to the total median household income and `B25077_001` corresponds to the median house value.
+
+```{r}
+#| label: get-acs-2017
+#| echo: true
+#| eval: true
+
+# Define variables with readable names using a named vector
+vars.to.use <- c( HHIncome   = "B19049_001",
+                  HouseValue = "B25077_001" )
+
+# Retrieve county-level data with spatial geometry for mapping
+CenDF <- get_acs( geography = "county",
+                  year      = 2017,
+                  survey    = "acs5",
+                  variables = vars.to.use,
+                  geometry  = TRUE )
+```
+
+
+# Step 2: Transforming the Data
+
+```{r}
+#| label: transform-2017
+#| echo: true
+#| eval: true
+
+# Transform from long to wide format and compute the ratio
+# NOTE: Using pivot_wider() instead of deprecated spread()
+CenDF <- CenDF %>%
+  select( -moe ) %>%
+  pivot_wider( names_from = variable, values_from = estimate ) %>%
+  mutate( HHInc_HousePrice_Ratio = HouseValue / HHIncome )
+```
+
+# Step 3: Data Exploration
+
+```{r}
+#| label: explore-2017
+#| echo: true
+#| eval: true
+
+# Sort by ratio: lowest to highest (most affordable counties)
+CenDF.lh <- CenDF %>%
+  select( NAME, HHInc_HousePrice_Ratio ) %>%
+  arrange( HHInc_HousePrice_Ratio )
+head( CenDF.lh, 10 )
+
+# Sort by ratio: highest to lowest (least affordable counties)
+CenDF.hl <- CenDF %>%
+  select( NAME, HHInc_HousePrice_Ratio ) %>%
+  arrange( desc( HHInc_HousePrice_Ratio ) )
+head( CenDF.hl, 10 )
+```
+
+# Step 4: Map the Data
+
+```{r}
+#| label: map-2017
+#| echo: true
+#| eval: true
+
+# Create a choropleth map of the house-price-to-income ratio
+ggplot( CenDF ) +
+  geom_sf( aes( fill = HHInc_HousePrice_Ratio ), color = NA ) +
+  coord_sf( datum = NA ) +
+  labs( title    = "House-price-to-income ratio by county",
+        subtitle = "Alaska and Hawaii are shifted and not to scale",
+        caption  = "Source: ACS 5-year, 2017",
+        fill     = "House-price-\nto-income ratio" ) +
+  scale_fill_viridis( direction = -1 )
+```
+
+
+# Questions
+
+### Question 1: Exploration.
+
+1a. In step 3 above, what is the county with the highest (and lowest) house-price-to-income ratio? What is the average house-price-to-income ratio across all US counties over the time period?
+
+   - Answer: The county with the highest house-price-to-income ratio is `r CenDF.hl$NAME[1]` and the county with the lowest is `r CenDF.lh$NAME[1]`. The average ratio across all US counties is `r round( mean( CenDF$HHInc_HousePrice_Ratio, na.rm = TRUE ), 2 )`.
+
+1b. Where is Maricopa County on the list? How many years of median income will it take to buy a home in Maricopa County?
+
+   - Answer: When looking from highest house-price-to-income to lowest, Maricopa County is `r which( CenDF.hl$NAME == "Maricopa County, Arizona" )` on the list and it will take `r round( CenDF$HHInc_HousePrice_Ratio[CenDF$NAME == "Maricopa County, Arizona"], 2 )` years of median income to buy a house.
+
+1c. Where is Los Angeles on the list and how does its ranking compare to the list reported in the Citylab report?
+
+   - Answer: Los Angeles is `r which( CenDF.hl$NAME == "Los Angeles County, California" )` on the list from high to low. This departs from the article which lists LA as first.
+
+
+### Question 2: Temporal analysis.
+
+2a. Go back to Step 1 above, and enter in 2012 as the year value. Repeat Steps 2-4.
+
+```{r}
+#| label: get-acs-2012
+#| echo: true
+#| eval: true
+
+# Retrieve 2008-2012 ACS data for temporal comparison
+CenDF.12 <- get_acs( geography = "county",
+                     year      = 2012,
+                     survey    = "acs5",
+                     variables = vars.to.use,
+                     geometry  = TRUE )
+
+# Transform and compute ratio (using pivot_wider, not spread)
+CenDF.12 <- CenDF.12 %>%
+  select( -moe ) %>%
+  pivot_wider( names_from = variable, values_from = estimate ) %>%
+  mutate( HHInc_HousePrice_Ratio = HouseValue / HHIncome )
+
+# Sort for exploration
+CenDF.12.lh <- CenDF.12 %>%
+  select( NAME, HHInc_HousePrice_Ratio ) %>%
+  arrange( HHInc_HousePrice_Ratio )
+
+CenDF.12.hl <- CenDF.12 %>%
+  select( NAME, HHInc_HousePrice_Ratio ) %>%
+  arrange( desc( HHInc_HousePrice_Ratio ) )
+
+# Map the 2012 data
+ggplot( CenDF.12 ) +
+  geom_sf( aes( fill = HHInc_HousePrice_Ratio ), color = NA ) +
+  coord_sf( datum = NA ) +
+  labs( title    = "House-price-to-income ratio by county",
+        subtitle = "Alaska and Hawaii are shifted and not to scale",
+        caption  = "Source: ACS 5-year, 2012",
+        fill     = "House-price-\nto-income ratio" ) +
+  scale_fill_viridis( direction = -1 )
+```
+
+   - Answer: The county with the highest house-price-to-income ratio in 2012 is `r CenDF.12.hl$NAME[1]` and the county with the lowest is `r CenDF.12.lh$NAME[1]`.
+
+
+2b. Compare and contrast the findings over the different time periods.
+
+```{r}
+#| label: compare-years
+#| echo: true
+#| eval: true
+
+# Prepare 2017 data for joining (drop geometry to join as data frames)
+df.17 <- CenDF %>%
+  sf::st_drop_geometry() %>%
+  select( GEOID, HHInc_HousePrice_Ratio, NAME ) %>%
+  rename( HHInc_HousePrice_Ratio.17 = HHInc_HousePrice_Ratio )
+
+# Prepare 2012 data for joining
+df.12 <- CenDF.12 %>%
+  sf::st_drop_geometry() %>%
+  select( GEOID, HHInc_HousePrice_Ratio ) %>%
+  rename( HHInc_HousePrice_Ratio.12 = HHInc_HousePrice_Ratio )
+
+# Join the two time periods
+both.year <- full_join( df.17, df.12, by = "GEOID" )
+
+# Compute the change score (2017 minus 2012)
+both.year$HHInc_HousePrice_Ratio.d <-
+  both.year$HHInc_HousePrice_Ratio.17 - both.year$HHInc_HousePrice_Ratio.12
+
+# Summary statistics of the change
+summary( both.year$HHInc_HousePrice_Ratio.d )
+
+# Histogram of the change in ratio
+ggplot( both.year, aes( x = HHInc_HousePrice_Ratio.d ) ) +
+  geom_histogram( color = "black", fill = "lightblue", bins = 40 ) +
+  theme_minimal() +
+  labs( title = "Change in House-Price-to-Income Ratio by County\n(ACS 2017 vs. ACS 2012)",
+        x     = "Change in Ratio (2017 - 2012)",
+        y     = "Count" )
+```
+
+   - Answer: The overall change is close to zero, although the average decreased slightly. For Maricopa County, the change was `r round( both.year$HHInc_HousePrice_Ratio.d[both.year$NAME == "Maricopa County, Arizona"][1], 2 )`, showing an increase from 2012 to 2017. As for Los Angeles county, there was an increase of `r round( both.year$HHInc_HousePrice_Ratio.d[both.year$NAME == "Los Angeles County, California"][1], 2 )`.
+
+### Question 3: High-Resolution Analysis.
+
+3a. Change geography from `county` to `tract` for Maricopa County.
+
+```{r}
+#| label: get-acs-az
+#| echo: true
+#| eval: true
+#| results: hide
+
+# Retrieve tract-level data for Maricopa County only
+CenDF.az <- get_acs( geography = "tract",
+                     year      = 2017,
+                     state     = "AZ",
+                     county    = "Maricopa County",
+                     survey    = "acs5",
+                     variables = vars.to.use,
+                     geometry  = TRUE )
+
+# Transform and compute ratio (using pivot_wider, not spread)
+CenDF.az <- CenDF.az %>%
+  select( -moe ) %>%
+  pivot_wider( names_from = variable, values_from = estimate ) %>%
+  mutate( HHInc_HousePrice_Ratio = HouseValue / HHIncome )
+
+# Summary statistics
+summary( CenDF.az$HHInc_HousePrice_Ratio )
+```
+
+   - Answer: Here are the summary statistics:
+     the min is `r round( min( CenDF.az$HHInc_HousePrice_Ratio, na.rm = TRUE ), 2 )`, the max is `r round( max( CenDF.az$HHInc_HousePrice_Ratio, na.rm = TRUE ), 2 )`, the median is `r round( median( CenDF.az$HHInc_HousePrice_Ratio, na.rm = TRUE ), 2 )`, the mean is `r round( mean( CenDF.az$HHInc_HousePrice_Ratio, na.rm = TRUE ), 2 )`, and the sd is `r round( sd( CenDF.az$HHInc_HousePrice_Ratio, na.rm = TRUE ), 2 )`.
+
+
+3b. Compare and contrast the findings for the different levels of geography.
+
+```{r}
+#| label: compare-geography
+
+# Build a comparison table: county-level vs tract-level statistics
+compare.table <-
+  rbind(
+    # County-level info for Maricopa
+    c( summary(
+      CenDF$HHInc_HousePrice_Ratio[CenDF$NAME == "Maricopa County, Arizona"]
+    ), 0 ),
+    # Tract-level info for Maricopa
+    summary( CenDF.az$HHInc_HousePrice_Ratio )
+  )
+
+rownames( compare.table ) <- c( "county", "tract" )
+colnames( compare.table )[7] <- "NAs"
+
+round( compare.table, 2 )
+```
+
+   - Answer: We can see that the measures of central tendency are similar. However, a major difference is with the ends of the distribution. The variation in the distributions is considerable when we compare the min/max for each level — tract-level data reveals much more heterogeneity within Maricopa County than the single county-level value suggests.

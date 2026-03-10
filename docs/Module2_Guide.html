@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAF 516 — Module 2: Cartographic Design & Visual Analytics</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; color: #333; }
+h1, h2, h3, h4 { color: #8c1d40; }
+a { color: #8c1d40; }
+a:hover { color: #ffc627; }
+code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+img { max-width: 100%; height: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background-color: #8c1d40; color: white; }
+iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+<!-- REVISED: 2026-03-08 | See logs/module-2-log.md for change rationale -->
+<!-- DIFF: Compare against original ../CourseMaterials/Guides.1-6/Mod2/Module2_Guide.md -->
+
+<div style="background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px;">
+    <h2><strong><span style="color: #ffffff;">M2 Overview &amp; Learning Materials<br /></span></strong></h2>
+    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Intro to Census Data and Mapping<br /></strong></span></p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Module Overview and Objectives</strong></h3>
+    <p>This module covers two core data science topics: (1) <strong>Working with Census Data</strong>; and (2) <strong>Creating choropleth (color-coded) maps</strong>. The U.S. Census Bureau is the premier source of data about US people, places, and economy, making it a natural source of information for community analytics.</p>
+    <p>Working with census data in R involves two challenges: finding the right variables among thousands of options, and using the right R packages to efficiently retrieve and analyze them. This module teaches you to resolve both problems using <code>tidycensus</code>, and to transform raw census data into visually informative maps.</p>
+    <hr />
+    <p>After completing this module, you will be able to:</p>
+    <ul>
+        <li>Navigate Census Bureau data products (Decennial Census, ACS 1-year, ACS 5-year)</li>
+        <li>Use <code>tidycensus::get_acs()</code> to retrieve census variables at different geographic levels</li>
+        <li>Use <code>load_variables()</code> to search for and identify relevant census variables</li>
+        <li>Transform data from long to wide format using <code>pivot_wider()</code></li>
+        <li>Compute derived variables (e.g., house-price-to-income ratio)</li>
+        <li>Create choropleth maps using <code>ggplot2</code> and <code>viridis</code></li>
+        <li>Compare data across time periods and geographic scales</li>
+    </ul>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i> <strong>Learning Materials</strong></h3>
+    <p>To successfully complete the assignments, study the materials below, which present the important concepts of this module.</p>
+    <hr />
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Read and Review</strong></h4>
+    <p><strong>REQUIRED:</strong></p>
+    <p>Florida, R. (2018). Where the House-Price-to-Income Ratio Is Most Out of Whack. <a href="https://www.citylab.com/equity/2018/05/where-the-house-price-to-income-ratio-is-most-out-of-whack/561404/">Citylab report</a></p>
+    <hr />
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Lecture Videos</strong></h4>
+    <p><a class="Button Button--primary" href="https://ds4ps.org/cpp-529-spr-2021/lectures/MappingIntro.html" target="_blank" rel="noopener">Slides</a>&nbsp;</p>
+    <p><strong>Introduction to Census Data</strong></p>
+    <iframe src="https://www.youtube.com/embed/9722ZtZ1v1g" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <p><strong>Introduction to Mapping</strong></p>
+    <iframe src="https://www.youtube.com/embed/peSI3dQ1Bbg" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <p><strong>Mapping Census Data in R</strong></p>
+    <iframe src="https://www.youtube.com/embed/Jys5nZFRf28" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <p><strong>Mapping Census Data in R w/ TidyCensus</strong></p>
+    <iframe src="https://www.youtube.com/embed/qScoFj5ifTY" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Assignments</strong></h3>
+    <hr />
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Lab 02</strong></h4>
+    <p><strong>Lab Walkthrough Video</strong></p>
+    <p><iframe src="https://www.youtube.com/embed/CLMEqpf_3Xo" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
+    <p>Download the Lab 02 Quarto template (.qmd) from Canvas. The template contains all instructions and code placeholders. Complete Steps 1–4 by entering your R code in the areas marked <code>#Edit me</code>. Then answer Questions 1–3.</p>
+    <p><strong>Submit both the .qmd file and rendered .html file to Canvas.</strong></p>
+    <hr />
+    <p><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Yellowdig Topic</strong></span></p>
+    <p><strong>How local governments ensure an accurate census</strong></p>
+    <p>Every 10 years, the U.S. Census Bureau conducts a census to determine the number of people living in the United States. The data collected by the decennial census are used to determine the number of seats each state has in the U.S. House of Representatives as well as inform federal spending and other important federal and state functions.</p>
+    <blockquote>
+        <p>For your discussion topic this week, please read and provide general reflection based on the following <a href="https://www.amacad.org/news/2020-census-unprecedented-challenges-their-implications">article</a>. Discuss also what are some of the challenges faced and new innovations adopted by federal and state governments to ensure an accurate census.</p>
+    </blockquote>
+    <p>Please post your reflection as a new pin on Yellowdig.</p>
+</div>
+
+<p>&nbsp;</p>
+</body>
+</html>

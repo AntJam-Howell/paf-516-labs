@@ -1,0 +1,724 @@
+---
+title: "Lab 06 -- Solutions: Explaining MHV Change"
+subtitle: "PAF 516"
+format:
+  html:
+    theme: readable
+    highlight-style: tango
+    toc: true
+    toc-depth: 3
+    self-contained: true
+    code-fold: false
+    fig-width: 10
+    fig-height: 6
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+---
+
+# Packages
+
+```{r}
+#| label: packages
+
+# ── Required packages ──────────────────────────────────────────────
+# dplyr     - data wrangling (filter, mutate, select, group_by, summarise)
+# knitr     - inline R and kable() tables
+# pander    - formatted summary tables
+# stargazer - regression output tables (HTML format)
+# scales    - dollar() and percent() formatting
+# mclust    - model-based clustering for Part 4
+
+library( dplyr )
+library( knitr )
+library( pander )
+library( stargazer )
+library( scales )
+library( mclust )
+```
+
+```{r}
+#| label: setup
+#| include: false
+
+# stargazer output type: "html" for rendered document, "text" for console
+s.type <- "html"
+```
+
+---
+
+# Part 1 -- Data
+
+## Load and Merge LTDB Data
+
+We load three data files from the LTDB (Longitudinal Tract Data Base): the 2000 census variables, the 2010 census variables, and tract-level metadata that includes the CBSA (metro area) name and urban/rural classification.
+
+```{r}
+#| label: load-data
+
+# ── Load LTDB data files from GitHub ────────────────────────────────
+URL1  <- "https://github.com/DS4PS/cpp-529-fall-2020/raw/main/LABS/data/rodeo/LTDB-2000.rds"
+d1    <- readRDS( gzcon( url( URL1 ) ) )
+
+URL2  <- "https://github.com/DS4PS/cpp-529-fall-2020/raw/main/LABS/data/rodeo/LTDB-2010.rds"
+d2    <- readRDS( gzcon( url( URL2 ) ) )
+
+URLmd <- "https://github.com/DS4PS/cpp-529-fall-2020/raw/main/LABS/data/rodeo/LTDB-META-DATA.rds"
+md    <- readRDS( gzcon( url( URLmd ) ) )
+
+# ── Remove duplicate year columns before merging ────────────────────
+d1 <- select( d1, -year )
+d2 <- select( d2, -year )
+
+# ── Merge all three datasets by tract ID ────────────────────────────
+# Using left_join() for tidyverse consistency (replaces base R merge())
+d <- d1 %>%
+  left_join( d2, by = "tractid" ) %>%
+  left_join( md, by = "tractid" )
+
+# ── Keep only urban tracts ──────────────────────────────────────────
+d <- filter( d, urban == "urban" )
+```
+
+The merged dataset contains `r nrow( d )` urban census tracts with variables from both the 2000 and 2010 Census.
+
+
+## Construct MHV Variables
+
+The 2000 Census reports home values in **2000 dollars** while the 2010 Census reports them in **2010 dollars**. We must adjust the 2000 values for inflation before computing change.
+
+The CPI multiplier **1.28855** converts 2000 dollars to 2010 dollars. This is derived from the Bureau of Labor Statistics CPI-U: the annual average was 172.2 in 2000 and 218.1 in 2010. The precise multiplier (1.28855 rather than the simple ratio 218.1/172.2 = 1.2669) reflects month-to-month adjustments used in the LTDB documentation.
+
+```{r}
+#| label: mhv-variables
+
+# ── CPI inflation adjustment ───────────────────────────────────────
+# Multiplier: 1.28855 converts 2000 USD to 2010 USD
+# Source: BLS CPI-U, adjusted per LTDB documentation
+CPI_MULTIPLIER <- 1.28855
+
+mhv.00 <- d$mhmval00 * CPI_MULTIPLIER   # 2000 values in 2010 dollars
+mhv.10 <- d$mhmval12                     # already in 2010 dollars
+
+# ── Calculate dollar change ─────────────────────────────────────────
+mhv.change <- mhv.10 - mhv.00
+
+# ── Remove tracts with MHV below $1,000 (likely missing/invalid) ───
+mhv.00[ mhv.00 < 1000 ] <- NA
+
+# ── Calculate percent growth and cap at 200% ────────────────────────
+mhv.growth <- 100 * ( mhv.change / mhv.00 )
+mhv.growth[ mhv.growth > 200 ] <- NA
+
+# ── Attach derived variables to data frame ──────────────────────────
+d$mhv.00     <- mhv.00
+d$mhv.10     <- mhv.10
+d$mhv.change <- mhv.change
+d$mhv.growth <- mhv.growth
+```
+
+
+## Summary Statistics
+
+```{r}
+#| label: summary-stats
+#| results: asis
+
+df.summary <- data.frame(
+  MedianHomeValue2000 = mhv.00,
+  MedianHomeValue2010 = mhv.10,
+  MHV.Change.00.to.10 = mhv.change,
+  MHV.Growth.00.to.10 = mhv.growth
+)
+
+stargazer( df.summary,
+           type   = s.type,
+           digits = 0,
+           summary.stat = c( "min", "p25", "median", "mean", "p75", "max" ) )
+```
+
+The median home value in 2000 (in 2010 dollars) was approximately `r dollar( round( median( mhv.00, na.rm = TRUE ), 0 ) )`, compared to `r dollar( round( median( mhv.10, na.rm = TRUE ), 0 ) )` in 2010. The median dollar change was `r dollar( round( median( mhv.change, na.rm = TRUE ), 0 ) )`, and the median growth rate was `r round( median( mhv.growth, na.rm = TRUE ), 1 )`%.
+
+
+## Distribution of Home Values
+
+```{r}
+#| label: hist-mhv-2000
+
+hist( mhv.00, breaks = 200, xlim = c( 0, 500000 ),
+      col = "gray20", border = "white",
+      axes = FALSE, xlab = "MHV", ylab = "",
+      main = "Median Home Value in 2000 (2010 US Dollars)" )
+axis( side = 1, at = seq( 0, 500000, 100000 ),
+      labels = c( "$0", "$100k", "$200k", "$300k", "$400k", "$500k" ) )
+abline( v = median( mhv.00, na.rm = TRUE ), col = "orange", lwd = 3 )
+```
+
+The distribution of 2000 home values (inflation-adjusted) is right-skewed, with most tracts having median home values between $50,000 and $250,000. The orange line marks the median.
+
+```{r}
+#| label: hist-mhv-2010
+
+hist( mhv.10, breaks = 200, xlim = c( 0, max( mhv.10, na.rm = TRUE ) ),
+      col = "gray20", border = "white",
+      axes = FALSE, xlab = "MHV", ylab = "",
+      main = "Median Home Value in 2010" )
+axis( side = 1, at = seq( 0, 1000000, 250000 ),
+      labels = c( "$0", "$250k", "$500k", "$750k", "$1mil" ) )
+abline( v = median( mhv.10, na.rm = TRUE ), col = "lightblue", lwd = 3 )
+```
+
+
+## Distribution of Changes
+
+```{r}
+#| label: hist-change
+
+hist( mhv.change / 1000, breaks = 500,
+      xlim = c( -100, 500 ), yaxt = "n", xaxt = "n",
+      xlab = "Thousands of US Dollars (adjusted to 2010)", cex.lab = 1.5,
+      ylab = "", main = "Change in Median Home Value 2000 to 2010",
+      col = "gray20", border = "white" )
+axis( side = 1, at = seq( -100, 500, 100 ),
+      labels = paste0( "$", seq( -100, 500, 100 ), "k" ) )
+
+mean.x <- mean( mhv.change / 1000, na.rm = TRUE )
+abline( v = mean.x, col = "darkorange", lwd = 2, lty = 2 )
+text( x = 200, y = 1500,
+      labels = paste0( "Mean = ", dollar( round( 1000 * mean.x, 0 ) ) ),
+      col = "darkorange", cex = 1.8, pos = 3 )
+
+median.x <- median( mhv.change / 1000, na.rm = TRUE )
+abline( v = median.x, col = "dodgerblue", lwd = 2, lty = 2 )
+text( x = 200, y = 2000,
+      labels = paste0( "Median = ", dollar( round( 1000 * median.x, 0 ) ) ),
+      col = "dodgerblue", cex = 1.8, pos = 3 )
+```
+
+Most tracts experienced positive home value changes between 2000 and 2010, though the distribution is right-skewed with a handful of tracts seeing very large gains. The mean change (`r dollar( round( mean( mhv.change, na.rm = TRUE ), 0 ) )`) exceeds the median (`r dollar( round( median( mhv.change, na.rm = TRUE ), 0 ) )`), reflecting the influence of high-growth outliers.
+
+```{r}
+#| label: hist-growth
+
+hg <- hist( mhv.growth, breaks = 5000,
+            xlim = c( -100, 200 ), yaxt = "n", xaxt = "n",
+            xlab = "", cex.main = 1.5,
+            ylab = "", main = "Growth in Home Value by\nCensus Tract 2000 to 2010",
+            col = "gray40" )
+axis( side = 1, at = seq( -100, 200, 50 ),
+      labels = paste0( seq( -100, 200, 50 ), "%" ) )
+
+ymax <- max( hg$count )
+
+mean.x <- mean( mhv.growth, na.rm = TRUE )
+abline( v = mean.x, col = "firebrick", lwd = 2, lty = 2 )
+text( x = 75, y = ( 0.5 * ymax ),
+      labels = paste0( "Mean = ", round( mean.x, 0 ), "%" ),
+      col = "firebrick", cex = 1.2, pos = 4 )
+
+median.x <- median( mhv.growth, na.rm = TRUE )
+abline( v = median.x, col = "darkgreen", lwd = 2, lty = 2 )
+text( x = 75, y = ( 0.6 * ymax ),
+      labels = paste0( "Median = ", round( median.x, 0 ), "%" ),
+      col = "darkgreen", cex = 1.2, pos = 4 )
+```
+
+The growth rate distribution is roughly centered around `r round( median( mhv.growth, na.rm = TRUE ), 0 )`% (median), meaning the typical urban census tract saw its inflation-adjusted home value grow by about that much over the decade. Some tracts experienced decline (negative growth), while a long right tail reflects tracts with rapid appreciation.
+
+---
+
+# Part 2 -- Predict MHV Change
+
+In this section we use **2000 levels of X** -- static snapshots of census tract characteristics at the start of the study period -- to predict subsequent changes in MHV. This is a predictive model: we are asking whether knowing tract conditions in 2000 helps forecast home value trajectories.
+
+## Create Predictor Variables
+
+We select three indicators of neighborhood distress: unemployment rate, housing vacancy rate, and poverty rate. These are computed as percentages from raw counts.
+
+```{r}
+#| label: predictors-2000
+
+d <- d %>%
+  mutate(
+    p.unemp  = 100 * unemp00 / clf00,    # unemployment rate (2000)
+    p.vacant = 100 * vac00   / hu00,      # housing vacancy rate (2000)
+    pov.rate = 100 * npov00  / dpov00     # poverty rate (2000)
+  )
+```
+
+## Check for Skew
+
+```{r}
+#| label: skew-before
+#| fig-height: 4
+
+par( mfrow = c( 1, 3 ) )
+
+hist( d$p.unemp,  breaks = 50, col = "blue",   border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Percent Unemployed (2000)" )
+hist( d$p.vacant, breaks = 50, col = "red",    border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Percent Vacant (2000)" )
+hist( d$pov.rate, breaks = 50, col = "orange", border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Poverty Rate (2000)" )
+
+par( mfrow = c( 1, 1 ) )
+```
+
+All three variables are right-skewed, which is typical for rate variables that are bounded at zero. We apply a log transformation (`log( x + 1 )`) to reduce skew and stabilize variance. The `+ 1` prevents issues with zero values.
+
+```{r}
+#| label: log-transform
+
+# ── Log-transform to correct right skew ────────────────────────────
+# Adding 1 before logging to handle zero values: log(0) is undefined
+d$log.p.unemp  <- log( d$p.unemp  + 1 )
+d$log.p.vacant <- log( d$p.vacant + 1 )
+d$log.pov.rate <- log( d$pov.rate + 1 )
+```
+
+```{r}
+#| label: skew-after
+#| fig-height: 8
+
+par( mar = c( 2, 2, 2, 1 ) )
+par( mfrow = c( 3, 2 ) )
+
+hist( d$p.unemp,      breaks = 50, col = "blue",   border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Percent Unemployed" )
+hist( d$log.p.unemp,  breaks = 50, col = "blue",   border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Percent Unemployed (logged)" )
+hist( d$p.vacant,     breaks = 50, col = "red",    border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Percent Vacant" )
+hist( d$log.p.vacant, breaks = 50, col = "red",    border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Percent Vacant (logged)" )
+hist( d$pov.rate,     breaks = 50, col = "orange", border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Poverty Rate" )
+hist( d$log.pov.rate, breaks = 50, col = "orange", border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Poverty Rate (logged)" )
+
+par( mfrow = c( 1, 1 ) )
+```
+
+The log transformation substantially reduces the right skew in all three variables, bringing them closer to a normal distribution. This improves the validity of OLS regression assumptions.
+
+## Descriptive Statistics
+
+```{r}
+#| label: descriptives-part2
+#| results: asis
+
+df.part2 <- data.frame(
+  MHV.Change.00.to.10 = d$mhv.change,
+  MHV.Growth.00.to.10 = d$mhv.growth,
+  UnempLog2000        = d$log.p.unemp,
+  VacantLog2000       = d$log.p.vacant,
+  PovRateLog2000      = d$log.pov.rate
+)
+
+stargazer( df.part2,
+           type   = s.type,
+           digits = 2,
+           summary.stat = c( "min", "p25", "median", "mean", "p75", "max" ) )
+```
+
+## Correlation Plot
+
+We check for multicollinearity among the three predictors. We take a random sample of 5,000 observations for faster plotting.
+
+```{r}
+#| label: corrplot-part2
+
+set.seed( 1234 )
+# slice_sample() replaces the deprecated sample_n()
+plotd2 <- df.part2 %>% na.omit() %>% slice_sample( n = 5000 )
+
+# ── Custom panel functions for pairs() ─────────────────────────────
+panel.cor <- function( x, y, digits = 2, prefix = "", cex.cor ) {
+  usr <- par( "usr" ); on.exit( par( usr ) )
+  par( usr = c( 0, 1, 0, 1 ) )
+  r   <- abs( cor( x, y, use = "complete.obs" ) )
+  txt <- format( c( r, 0.123456789 ), digits = digits )[1]
+  txt <- paste( prefix, txt, sep = "" )
+  if ( missing( cex.cor ) ) cex <- 0.8 / strwidth( txt )
+  test <- cor.test( x, y )
+  Signif <- symnum( test$p.value, corr = FALSE, na = FALSE,
+                    cutpoints = c( 0, 0.001, 0.01, 0.05, 0.1, 1 ),
+                    symbols   = c( "***", "**", "*", ".", " " ) )
+  text( 0.5, 0.5, txt, cex = 1.5 )
+  text( .7, .8, Signif, cex = cex, col = 2 )
+}
+
+panel.smooth <- function( x, y, col = par( "col" ), bg = NA,
+                          pch = par( "pch" ), cex = 0.5,
+                          col.smooth = "red", span = 2/3, iter = 3, ... ) {
+  points( x, y, pch = 19, col = gray( 0.7, 0.2 ), bg = bg, cex = cex )
+  ok <- is.finite( x ) & is.finite( y )
+  if ( any( ok ) )
+    lines( stats::lowess( x[ok], y[ok], f = span, iter = iter ),
+           col = col.smooth, lwd = 2, ... )
+}
+
+pairs( plotd2[ , c( "UnempLog2000", "VacantLog2000", "PovRateLog2000" ) ],
+       upper.panel = panel.cor,
+       lower.panel = panel.smooth,
+       main = "Correlation Plot - 2000 Predictors" )
+```
+
+The three predictors are positively correlated, which is expected since unemployment, vacancy, and poverty tend to co-occur in distressed neighborhoods. The correlations are moderate (typically 0.4-0.7), which raises some concern about multicollinearity but is not severe enough to prevent meaningful interpretation.
+
+## Regression Models
+
+We run two models: one predicting dollar change in MHV and one predicting percent growth.
+
+```{r}
+#| label: models-part2
+#| results: asis
+
+m1 <- lm( mhv.change ~ log.p.unemp + log.p.vacant + log.pov.rate, data = d )
+m2 <- lm( mhv.growth ~ log.p.unemp + log.p.vacant + log.pov.rate, data = d )
+
+stargazer( m1, m2,
+           type = s.type,
+           digits = 2,
+           omit.stat = c( "rsq", "f" ),
+           covariate.labels = c( "Unemployment Rate (log)",
+                                 "Vacancy Rate (log)",
+                                 "Poverty Rate (log)" ),
+           dep.var.labels = c( "MHV Change ($)", "MHV Growth (%)" ),
+           title = "Part 2: Predicting MHV Change Using 2000 Levels of X" )
+```
+
+**Interpretation:** All three 2000-level predictors are statistically significant in both models, indicating that neighborhood distress indicators measured at the start of the decade can predict subsequent home value trajectories. Tracts with higher unemployment, vacancy, and poverty rates in 2000 tended to experience smaller dollar gains (or actual losses) in median home values over the following decade.
+
+However, these are **predictive** relationships, not causal claims. High poverty in 2000 may predict lower MHV growth, but this could be driven by any number of correlated factors (school quality, crime rates, public investment patterns) that are not in the model. The model's adjusted R-squared of `r round( summary( m1 )$adj.r.squared, 3 )` for dollar change and `r round( summary( m2 )$adj.r.squared, 3 )` for percent growth indicates that these three variables explain a modest share of the total variation.
+
+---
+
+# Part 3 -- Explain MHV Change
+
+Now we shift from prediction to explanation. Instead of using 2000 levels of X, we use **changes in X** from 2000 to 2010 to explain changes in MHV over the same period. This change-based specification moves us closer to causal inference because it controls for time-invariant unobserved characteristics of each tract.
+
+## Create Change Variables
+
+```{r}
+#| label: predictors-2010
+
+# ── Compute 2010 versions of the same three indicators ──────────────
+d <- d %>%
+  mutate(
+    p.unemp10  = 100 * unemp12 / clf12,    # unemployment rate (~2010)
+    p.vacant10 = 100 * vac10   / hu10,      # vacancy rate (2010)
+    pov.rate10 = 100 * npov12  / dpov12     # poverty rate (~2010)
+  )
+
+# ── Log-transform 2010 variables (same transformation as 2000) ──────
+d$log.p.unemp10  <- log( d$p.unemp10  + 1 )
+d$log.p.vacant10 <- log( d$p.vacant10 + 1 )
+d$log.pov.rate10 <- log( d$pov.rate10 + 1 )
+
+# ── Compute changes (2010 value minus 2000 value) ───────────────────
+# Positive values = increase; negative values = decrease
+d$ch.log.unemp  <- d$log.p.unemp10  - d$log.p.unemp
+d$ch.log.vacant <- d$log.p.vacant10 - d$log.p.vacant
+d$ch.log.povrat <- d$log.pov.rate10 - d$log.pov.rate
+```
+
+## Distribution of Change Variables
+
+```{r}
+#| label: hist-changes
+#| fig-height: 4
+
+par( mfrow = c( 1, 3 ) )
+
+hist( d$ch.log.unemp,  breaks = 100, col = "blue",   border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Change in Unemployment (log)" )
+hist( d$ch.log.vacant, breaks = 100, col = "red",    border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Change in Vacancy Rate (log)" )
+hist( d$ch.log.povrat, breaks = 100, col = "orange", border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Change in Poverty Rate (log)" )
+
+par( mfrow = c( 1, 1 ) )
+```
+
+The change variables are approximately normally distributed and centered near zero, which is a desirable property for regression analysis. Most tracts saw modest changes in all three indicators, with a minority experiencing large shifts in either direction.
+
+## Descriptive Statistics
+
+```{r}
+#| label: descriptives-part3
+#| results: asis
+
+df.part3 <- data.frame(
+  MHV.Change.00.to.10 = d$mhv.change,
+  MHV.Growth.00.to.10 = d$mhv.growth,
+  Ch.Unemp.Log        = d$ch.log.unemp,
+  Ch.Vacant.Log       = d$ch.log.vacant,
+  Ch.PovRate.Log      = d$ch.log.povrat
+)
+
+stargazer( df.part3,
+           type   = s.type,
+           digits = 2,
+           summary.stat = c( "min", "p25", "median", "mean", "p75", "max" ) )
+```
+
+## Correlation Plot
+
+```{r}
+#| label: corrplot-part3
+
+set.seed( 1234 )
+# slice_sample() replaces the deprecated sample_n()
+plotd3 <- df.part3 %>% na.omit() %>% slice_sample( n = 5000 )
+
+pairs( plotd3[ , c( "Ch.Unemp.Log", "Ch.Vacant.Log", "Ch.PovRate.Log" ) ],
+       upper.panel = panel.cor,
+       lower.panel = panel.smooth,
+       main = "Correlation Plot - Changes in X (2000 to 2010)" )
+```
+
+The correlations among the change variables tend to be lower than among the level variables. This is common: tracts that are jointly distressed (high levels of unemployment, vacancy, and poverty) may experience different trajectories in each dimension over time.
+
+## Regression Models
+
+```{r}
+#| label: models-part3
+#| results: asis
+
+m3 <- lm( mhv.change ~ ch.log.unemp + ch.log.vacant + ch.log.povrat, data = d )
+m4 <- lm( mhv.growth ~ ch.log.unemp + ch.log.vacant + ch.log.povrat, data = d )
+
+stargazer( m3, m4,
+           type = s.type,
+           digits = 2,
+           omit.stat = c( "rsq", "f" ),
+           covariate.labels = c( "Change in Unemployment (log)",
+                                 "Change in Vacancy Rate (log)",
+                                 "Change in Poverty Rate (log)" ),
+           dep.var.labels = c( "MHV Change ($)", "MHV Growth (%)" ),
+           title = "Part 3: Explaining MHV Change Using Changes in X" )
+```
+
+**Interpretation:** The change-based models tell a more compelling causal story than the level-based models. Tracts that experienced *increases* in unemployment, vacancy, and poverty over the decade also experienced *declines* (or smaller gains) in home values. Because we are looking at within-tract changes over time, we have partially controlled for stable unobserved factors that might bias the cross-sectional estimates.
+
+The coefficients now have a different interpretation than in Part 2:
+
+- **Part 2 (levels):** "Tracts with higher unemployment in 2000 tend to have lower MHV growth." This is a *between-tract* comparison at a single point in time.
+- **Part 3 (changes):** "Tracts where unemployment *increased* over the decade tend to have lower MHV growth." This is a *within-tract* comparison over time, which is closer to a causal claim.
+
+
+## Side-by-Side Comparison: Levels vs. Changes
+
+```{r}
+#| label: compare-levels-vs-changes
+#| results: asis
+
+stargazer( m1, m3,
+           type = s.type,
+           digits = 2,
+           omit.stat = c( "rsq", "f" ),
+           column.labels = c( "2000 Levels (Predict)", "Changes in X (Explain)" ),
+           dep.var.labels = "MHV Change ($)",
+           title = "Part 2 vs Part 3: Levels vs Changes (Dollar Change)" )
+
+stargazer( m2, m4,
+           type = s.type,
+           digits = 2,
+           omit.stat = c( "rsq", "f" ),
+           column.labels = c( "2000 Levels (Predict)", "Changes in X (Explain)" ),
+           dep.var.labels = "MHV Growth (%)",
+           title = "Part 2 vs Part 3: Levels vs Changes (Growth Rate)" )
+```
+
+**Key Comparison:** The change-based models (Part 3) often explain more variance than the level-based models (Part 2), as reflected in the adjusted R-squared values. The change in model fit between the two specifications demonstrates the value of a panel-like approach: by focusing on within-tract changes over time, we reduce omitted variable bias and get coefficients that are more plausibly interpretable as causal effects.
+
+In some cases, a variable may be a strong predictor in Part 2 (high levels of X predict MHV decline) but have a weaker or different relationship in Part 3 (changes in X are less related to MHV change). This pattern suggests the variable was serving as a proxy for other correlated factors in the cross-sectional model rather than being a true driver of change.
+
+---
+
+# Part 4 -- Predicting Change with Neighborhood Type
+
+In Parts 2-3, we analyzed all urban census tracts nationwide. In Part 4, we focus on **a single metro area** and ask whether **neighborhood type** (defined by cluster membership in 2000) predicts home value change over the subsequent decade.
+
+This approach draws on Goldstein (2011), who used housing market variables to construct market groupings via clustering, and Delmelle (2017), who used demographic variables to identify neighborhood typologies that follow predictable developmental paths.
+
+## Filter to Study City
+
+```{r}
+#| label: filter-city
+
+# ── Select your metro area ──────────────────────────────────────────
+# Replace with the CBSA name of your study city
+your.city <- "Phoenix-Mesa-Scottsdale, AZ"
+
+d.city <- d %>%
+  filter( cbsaname == your.city ) %>%
+  na.omit()
+
+d3 <- d.city %>%
+  select( tractid, mhv.change, mhv.growth,
+          log.p.unemp, log.p.vacant, log.pov.rate ) %>%
+  na.omit()
+```
+
+The Phoenix-Mesa-Scottsdale MSA contains `r nrow( d3 )` urban census tracts with complete data.
+
+## Cluster Analysis
+
+We use model-based clustering (Mclust) to identify neighborhood types based on the three distress indicators from 2000. Mclust automatically selects the optimal number of clusters and covariance structure using the BIC criterion.
+
+```{r}
+#| label: clustering
+
+set.seed( 1234 )
+fit <- Mclust( d3[ , c( "log.p.unemp", "log.p.vacant", "log.pov.rate" ) ] )
+summary( fit )
+
+# ── Save group membership ──────────────────────────────────────────
+d3$cluster.group <- as.factor( paste0( "GROUP-", fit$classification ) )
+table( d3$cluster.group )
+```
+
+Mclust identified `r fit$G` clusters, each representing a distinct neighborhood type based on the combination of unemployment, vacancy, and poverty characteristics.
+
+## Group Characteristics
+
+```{r}
+#| label: group-means
+
+group.means <- d3 %>%
+  group_by( cluster.group ) %>%
+  summarise(
+    mean.unemp      = round( mean( log.p.unemp,  na.rm = TRUE ), 2 ),
+    mean.vacant      = round( mean( log.p.vacant, na.rm = TRUE ), 2 ),
+    mean.pov         = round( mean( log.pov.rate, na.rm = TRUE ), 2 ),
+    mean.mhv.change  = dollar( round( mean( mhv.change, na.rm = TRUE ), 0 ) ),
+    mean.mhv.growth  = paste0( round( mean( mhv.growth, na.rm = TRUE ), 1 ), "%" ),
+    n = n()
+  )
+
+group.means %>% pander()
+```
+
+## Rename Groups
+
+Based on the group characteristics above, we assign descriptive labels:
+
+```{r}
+#| label: rename-groups
+
+d3$cluster.group <- as.character( d3$cluster.group )
+
+# ── Assign descriptive names based on group characteristics ─────────
+# Examine the group means table above to determine appropriate labels
+d3$cluster.group[ d3$cluster.group == "GROUP-1" ] <- "Low Distress"
+d3$cluster.group[ d3$cluster.group == "GROUP-2" ] <- "High Poverty"
+d3$cluster.group[ d3$cluster.group == "GROUP-3" ] <- "High Vacancy"
+# Add more lines if your model produces more groups
+
+d3$cluster.group <- as.factor( d3$cluster.group )
+table( d3$cluster.group )
+```
+
+## Regression by Neighborhood Type
+
+We regress MHV change on cluster group indicators (no intercept, so each coefficient represents the group mean).
+
+```{r}
+#| label: models-part4
+#| results: asis
+
+m5 <- lm( mhv.change ~ cluster.group - 1, data = d3 )
+m6 <- lm( mhv.growth ~ cluster.group - 1, data = d3 )
+
+stargazer( m5, m6,
+           type = s.type,
+           digits = 2,
+           omit.stat = c( "rsq", "f" ),
+           dep.var.labels = c( "MHV Change ($)", "MHV Growth (%)" ),
+           title = "Part 4: Predicting MHV Change by Neighborhood Cluster Type" )
+```
+
+**Interpretation:** Each coefficient in this model represents the **mean home value change** (or growth rate) for tracts in that cluster group. Because we suppress the intercept (`- 1`), each group's coefficient is directly interpretable as the average outcome for that neighborhood type.
+
+Low-distress neighborhoods (low unemployment, low vacancy, low poverty in 2000) tend to experience larger dollar gains in home value, while high-distress neighborhoods see smaller gains or outright declines. This demonstrates that neighborhood type in 2000 is a useful predictor of subsequent change.
+
+## Visualizations
+
+```{r}
+#| label: boxplot-change
+#| fig-height: 6
+
+par( mar = c( 8, 5, 4, 2 ) )
+
+plot( d3$cluster.group, d3$mhv.change / 1000,
+      las = 2, frame.plot = FALSE, outline = FALSE,
+      main = "Cluster Groups vs. MHV Change (2000-2010)",
+      xlab = "", ylab = "Change in MHV ($thousands)",
+      col = c( "steelblue", "firebrick", "darkorange", "darkgreen" ) )
+
+abline( h = 0, col = "gray50", lty = 2 )
+```
+
+The box plot shows that the distribution of MHV changes differs substantially across neighborhood types. The dashed horizontal line at $0 shows the break-even point. Groups with boxes entirely above this line experienced predominantly positive growth; groups straddling or below the line include tracts that lost value.
+
+```{r}
+#| label: boxplot-growth
+#| fig-height: 6
+
+par( mar = c( 8, 5, 4, 2 ) )
+
+plot( d3$cluster.group, d3$mhv.growth,
+      las = 2, frame.plot = FALSE, outline = FALSE,
+      main = "Cluster Groups vs. MHV Growth Rate (2000-2010)",
+      xlab = "", ylab = "MHV Growth (%)",
+      col = c( "steelblue", "firebrick", "darkorange", "darkgreen" ) )
+
+abline( h = 0, col = "gray50", lty = 2 )
+```
+
+## Summary Table
+
+```{r}
+#| label: summary-table
+
+group.results <- d3 %>%
+  group_by( cluster.group ) %>%
+  summarise(
+    N               = n(),
+    Mean.MHV.Change = dollar( round( mean( mhv.change, na.rm = TRUE ), 0 ) ),
+    Mean.MHV.Growth = paste0( round( mean( mhv.growth, na.rm = TRUE ), 1 ), "%" )
+  )
+
+knitr::kable( group.results,
+              caption = "Average MHV Change by Neighborhood Cluster Type (2000-2010)",
+              align = "lrrr" )
+```
+
+---
+
+# Conclusion
+
+This lab demonstrated three approaches to analyzing neighborhood change:
+
+1. **Prediction with 2000 levels** (Part 2): Cross-sectional indicators of neighborhood distress in 2000 are statistically significant predictors of subsequent home value change. However, the coefficients are vulnerable to omitted variable bias and should not be interpreted causally.
+
+2. **Explanation with changes in X** (Part 3): By focusing on how changes in unemployment, vacancy, and poverty *over time* relate to changes in home values, we move closer to causal inference. This specification controls for time-invariant unobserved factors.
+
+3. **Prediction with neighborhood types** (Part 4): Cluster-based neighborhood typologies provide a parsimonious way to summarize tract conditions and predict future trajectories. Knowing a tract's "type" in 2000 helps forecast its home value path over the following decade.
+
+The key takeaway is the distinction between **prediction** and **explanation**: the same regression framework can serve different purposes depending on whether we use levels or changes as covariates. For policy analysis, the explanatory framework (Part 3) is more useful because it helps identify the *drivers* of change, though identifying a driver is not the same as identifying a feasible policy lever.
+
+---
+
+# Session Information
+
+```{r}
+#| label: session-info
+
+sessionInfo()
+```

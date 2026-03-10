@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAF 516 — Module 3: Spatial Data Integration & Overlay</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; color: #333; }
+h1, h2, h3, h4 { color: #8c1d40; }
+a { color: #8c1d40; }
+a:hover { color: #ffc627; }
+code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+img { max-width: 100%; height: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background-color: #8c1d40; color: white; }
+iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+<!-- REVISED: 2026-03-08 | See logs/module-3-log.md for change rationale -->
+<!-- DIFF: Compare against original ../CourseMaterials/Guides.1-6/Mod3/Module3_Guide.md -->
+
+<div style="background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px;">
+    <h2><strong><span style="color: #ffffff;">M3 Overview &amp; Learning Materials<br /></span></strong></h2>
+    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Identifying Neighborhood Types with Cluster Analysis<br /></strong></span></p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Module Overview and Objectives</strong></h3>
+
+    <h4 style="color: #8c1d40;">Learning Objectives</h4>
+    <p>After completing this module, you will be able to:</p>
+    <ol>
+        <li><strong>Explain</strong> why data-driven classification (cluster analysis) is useful for defining "neighborhoods" from census data.</li>
+        <li><strong>Prepare</strong> census variables for clustering by standardizing them to z-scores.</li>
+        <li><strong>Apply</strong> model-based clustering (Gaussian mixture models via the <code>mclust</code> package) to assign census tracts into distinct groups.</li>
+        <li><strong>Interpret</strong> cluster profiles by reading percentile dot-charts and assigning meaningful labels to each group.</li>
+        <li><strong>Compare</strong> data-driven neighborhood typologies across published research studies.</li>
+    </ol>
+
+    <h4 style="color: #8c1d40;">Conceptual Overview</h4>
+    <p>Neighborhood change is a complicated concept with a lot of loaded terminology. We might think about neighborhoods that are "revitalized", "gentrified", that are "stable", or that "decline". For the labels to be meaningful each group should be mutually exclusive and sufficiently distinct from other groups in the taxonomy.</p>
+    <p>These labels are a bit loaded because they come with tacit value-judgments. Stable is desirable, revitalization is good, but gentrification is often considered bad.</p>
+    <p>This example is just one way that we can think about classifying census tracts by assigning similar ones into coherent groups.</p>
+    <p>In this unit, we will be learning how to implement cluster analysis in R as a data reduction technique. We will classify census tracts in the Phoenix area into groups (or neighborhoods) that can be defined on the basis of certain characteristics.</p>
+    <p>A data-driven approach to understanding neighborhood change requires us to (1) define "neighborhoods", or groups of census tracts in the data that are very similar, and (2) use those group characteristics at a point in time to predict how the "neighborhood" might change in the future. This unit focuses on Step (1) &mdash; identifying clusters.</p>
+    <p>Later on we will see how we might use group membership to make predictions with the data. For example, can a city forecast how its current neighborhoods are likely to change over the next decade? Does the current group status of a community give us reliable information about how it might change over time? These sorts of insights can help with urban planning processes.</p>
+
+    <h4 style="color: #8c1d40;">A Note on the Data</h4>
+    <p>In previous modules you used <code>tidycensus</code> to pull Census data directly from the API. In this module we use a pre-built Phoenix Dorling Cartogram with 2012 ACS data from the <a href="https://s4.ad.brown.edu/projects/diversity/Researcher/Bridging.htm">Diversity and Disparities Project</a>. This is a deliberate choice: the pre-built cartogram lets you focus on the clustering workflow itself without worrying about data retrieval or spatial transformations. You will return to <code>tidycensus</code>-based workflows in later modules.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i> <strong>Learning Materials</strong></h3>
+    <p>To successfully complete the assignments, study the materials below, which present the important concepts of this module.</p>
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Read and Review</strong></h4>
+    <p>Skim the article &mdash; you are not expected to understand all of the technical details. Instead, focus on the general framework of identifying groups and then using group membership to forecast how neighborhoods are likely to change in the future.</p>
+    <p>Spend time on pages 2412&ndash;2413. See if you can make sense of how groups are being defined within this study.</p>
+    <p>Delmelle, E. C. (2017). Differentiating pathways of neighborhood change in 50 US metropolitan areas. <em>Environment and Planning A</em>, 49(10), 2402&ndash;2424. [&nbsp;<a href="https://github.com/DS4PS/paf-586-summer-2019/raw/master/Reading/differentiating-pathways-of-neighborhood-change.pdf"><strong>PDF</strong></a>&nbsp;]</p>
+    <p>Also skim this paper, which you will need for Part 02 of the lab assignment:</p>
+    <p><em>Market Value Analysis: A Data-Based Approach to Understanding Urban Housing Markets.</em> pp 49&ndash;59. [&nbsp;<a href="https://github.com/DS4PS/paf-586-summer-2019/raw/master/Reading/MVA-DD-App-to-Strengthening-Neighborhoods.pdf"><strong>PDF</strong></a>&nbsp;]</p>
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lecture</strong></h4>
+    <p><strong>An Overview of Cluster Analysis</strong></p>
+    <p>The first video introduces cluster analysis and a simple partitioning algorithm used to segment data into specific partitions or groups.</p>
+    <iframe src="https://www.youtube.com/embed/U8zHi32KnJo" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <p>&nbsp;</p>
+    <p>The second video introduces other popular clustering methods &ndash; Hierarchical and model-based clustering. Model-based clustering is the method we will use in R with the <code>mclust</code> package.</p>
+    <iframe src="https://www.youtube.com/embed/-_oPRGATOBw" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Assignments</strong></h3>
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lab 03: Identifying Neighborhood Clusters</strong></h4>
+
+    <p>The purpose of Lab 3 is to show you how to apply model-based clustering to classify Phoenix neighborhoods into meaningful groups. The lab has two parts:</p>
+
+    <p><strong>PART 01: Labeling Phoenix Neighborhood Types</strong></p>
+    <p>Work through the Lab 3 Quarto file (<code>Lab3_Assignment.qmd</code>), which contains the complete tutorial and assignment template in a single document. Execute each code chunk step-by-step to understand each stage of the process. By the end, you will have assigned Phoenix census tracts into 8 unique groups using model-based clustering.</p>
+    <p>You are then ready for the fun part &mdash; giving a meaningful label to each group. To do this, you need to visually inspect which census variables are prominent in each group (using the percentile dot-charts your code produces) and make an informed opinion about what type of label to apply.</p>
+    <p>Labels should be informative. There will always be a trade-off between precision labels (literal and dry but unambiguous) and colorful labels (metaphors, playful, easy to remember). Your task is to create a set of labels that balances these two considerations without offending anyone with stereotypes (please be respectful).</p>
+
+    <p><strong>PART 02: Other Neighborhood Cluster Models</strong></p>
+    <p>Using the two papers from the reading list above (the MVA paper and the Delmelle paper), answer the three comparison questions in the lab template. This part asks you to compare the clustering approaches in these papers to the clustering you performed in Part 01.</p>
+
+    <p><strong>Submission:</strong> Write up your responses (Part 01 labels + Part 02 answers) in a Word document or PDF. Name your file according to the convention: <strong>Lab-03-LastName.xxx</strong></p>
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Yellowdig Topic</strong></h4>
+    <p>Post your reflection as a new pin:</p>
+    <p>Think back to the lab on creating latent construct measures.</p>
+    <p>What is the relationship between a latent construct and a group identified by clustering?</p>
+    <p>Do you think the groups that the model found are valid?</p>
+    <p>Do you think they are reliable?</p>
+    <p><em>With those ideas in mind, discuss the strengths and weaknesses of these data-driven approaches to identifying neighborhoods. When do you think they work well, and when do you think they will be misleading?</em></p>
+</div>
+<p>&nbsp;</p>
+</body>
+</html>

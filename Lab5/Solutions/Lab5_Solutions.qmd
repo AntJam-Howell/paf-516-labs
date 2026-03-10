@@ -1,0 +1,444 @@
+---
+title: "Lab 05 — Solutions: Predicting Median Home Value Change"
+subtitle: "PAF 516"
+format:
+  html:
+    theme: readable
+    highlight-style: tango
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    number-sections: false
+    self-contained: true
+    code-fold: false
+execute:
+  echo: true
+  warning: false
+  message: false
+  fig-width: 10
+  fig-height: 6
+---
+
+---
+
+# Packages
+
+```{r}
+#| label: packages
+
+# ---- Required packages ----
+# dplyr:     data wrangling (filter, select, mutate, group_by)
+# pander:    formatted markdown tables
+# stargazer: regression output tables (HTML format)
+
+library( dplyr )
+library( pander )
+library( stargazer )
+```
+
+---
+
+# Helper Functions
+
+```{r}
+#| label: helper-functions
+
+# ---- panel.cor: upper-panel correlation values for pairs() ----
+# Displays absolute correlation coefficient with significance stars.
+panel.cor <- function( x, y, digits = 2, prefix = "", cex.cor )
+{
+  usr <- par( "usr" ); on.exit( par( usr ) )
+  par( usr = c( 0, 1, 0, 1 ) )
+  r   <- abs( cor( x, y, use = "complete.obs" ) )
+  txt <- format( c( r, 0.123456789 ), digits = digits )[1]
+  txt <- paste( prefix, txt, sep = "" )
+  if( missing( cex.cor ) ) cex <- 0.8 / strwidth( txt )
+  test <- cor.test( x, y )
+  Signif <- symnum( test$p.value, corr = FALSE, na = FALSE,
+                    cutpoints = c( 0, 0.001, 0.01, 0.05, 0.1, 1 ),
+                    symbols   = c( "***", "**", "*", ".", " " ) )
+  text( 0.5, 0.5, txt, cex = 1.5 )
+  text( 0.7, 0.8, Signif, cex = cex, col = 2 )
+}
+
+# ---- panel.smooth: lower-panel scatterplot with lowess line for pairs() ----
+panel.smooth <- function( x, y, col = par( "col" ), bg = NA, pch = par( "pch" ),
+                          cex = 0.5, col.smooth = "red", span = 2/3, iter = 3, ... )
+{
+  points( x, y, pch = 19, col = gray( 0.7, 0.2 ), bg = bg, cex = cex )
+  ok <- is.finite( x ) & is.finite( y )
+  if( any( ok ) )
+    lines( stats::lowess( x[ok], y[ok], f = span, iter = iter ),
+           col = col.smooth, lwd = 2, ... )
+}
+
+# ---- jplot: custom scatterplot with lowess regression line ----
+# Useful for visually assessing linearity between X and Y.
+jplot <- function( x1, x2, lab1 = "", lab2 = "", draw.line = TRUE, ... )
+{
+  plot( x1, x2,
+        pch = 19,
+        col = gray( 0.6, alpha = 0.2 ),
+        cex = 0.5,
+        bty = "n",
+        xlab = lab1,
+        ylab = lab2, cex.lab = 1.5,
+        ... )
+  if( draw.line == TRUE ){
+    ok <- is.finite( x1 ) & is.finite( x2 )
+    lines( lowess( x2[ok] ~ x1[ok] ), col = "red", lwd = 3 )
+  }
+}
+```
+
+---
+
+# Data Steps
+
+```{r}
+#| label: load-data
+
+# ---- Reproducibility ----
+set.seed( 1234 )
+
+# ---- Stargazer output format ----
+# Set to "html" for rendered output; change to "text" for console testing.
+s.type <- "html"
+
+# ---- Load LTDB census data from GitHub ----
+# LTDB = Longitudinal Tract Database (Brown University)
+# These files contain harmonized census variables for 2000 and 2010
+# at the tract level, plus metadata for urban/rural classification.
+
+URL1  <- "https://github.com/DS4PS/cpp-529-fall-2020/raw/main/LABS/data/rodeo/LTDB-2000.rds"
+d1    <- readRDS( gzcon( url( URL1 ) ) )
+
+URL2  <- "https://github.com/DS4PS/cpp-529-fall-2020/raw/main/LABS/data/rodeo/LTDB-2010.rds"
+d2    <- readRDS( gzcon( url( URL2 ) ) )
+
+URLmd <- "https://github.com/DS4PS/cpp-529-fall-2020/raw/main/LABS/data/rodeo/LTDB-META-DATA.rds"
+md    <- readRDS( gzcon( url( URLmd ) ) )
+
+# ---- Merge 2000 + 2010 + metadata on tract ID ----
+d1 <- select( d1, -year )
+d2 <- select( d2, -year )
+
+d <- merge( d1, d2, by = "tractid" )
+d <- merge( d, md, by = "tractid" )
+
+# ---- Keep only urban tracts ----
+# Rural tracts have very different housing dynamics and sparse data.
+d <- filter( d, urban == "urban" )
+
+# ---- Select variables for analysis ----
+d <- select( d, tractid,
+             mhmval00, mhmval12,
+             unemp00, clf00,
+             vac00, hu00,
+             npov00, dpov00,
+             cbsa, cbsaname )
+
+# ---- Compute percentage versions of predictor variables ----
+# Raw counts are not comparable across tracts of different population sizes.
+# Converting to percentages or rates makes them scale-invariant.
+d <-
+  d %>%
+  mutate(
+    p.unemp  = 100 * unemp00 / clf00,    # unemployment rate (%)
+    p.vacant = 100 * vac00   / hu00,      # housing vacancy rate (%)
+    pov.rate = 100 * npov00  / dpov00     # poverty rate (%)
+  )
+
+# ---- Inflation adjustment ----
+# CPI adjustment factor: 1.28855
+# Converts year-2000 nominal dollars to approximately 2010 dollars
+# so that mhv.00 and mhv.10 are in comparable real terms.
+# Source: BLS CPI Inflation Calculator
+#   $1.00 in January 2000 = $1.29 in January 2010
+#   (rounded: 1.28855)
+# This adjustment is necessary because the 2000 Census reports
+# home values in year-2000 dollars, while the ACS 2008-2012
+# (used for 2010 values) reports in approximate 2010 dollars.
+
+mhv.00 <- d$mhmval00 * 1.28855   # inflation-adjusted 2000 MHV
+mhv.10 <- d$mhmval12             # already in ~2010 dollars
+
+# ---- IMPORTANT: Filter sub-$1000 values BEFORE computing change ----
+# Tracts with MHV < $1,000 are typically data errors, group quarters,
+# or non-residential tracts. Setting them to NA first prevents these
+# values from distorting the mhv.change calculation.
+# (In the original code, mhv.change was computed before this filter,
+#  which meant those tracts had a computed change value but NA growth.)
+
+mhv.00[ mhv.00 < 1000 ] <- NA
+
+# ---- Compute change and growth AFTER filtering ----
+mhv.change <- mhv.10 - mhv.00
+mhv.growth <- 100 * ( mhv.change / mhv.00 )
+
+# ---- Cap extreme growth rates ----
+# Growth rates above 200% are likely data artifacts or represent
+# tracts transitioning from near-zero values. They would dominate
+# the regression as extreme outliers.
+mhv.growth[ mhv.growth > 200 ] <- NA
+
+# ---- Add computed variables to data frame ----
+d$mhv.00     <- mhv.00
+d$mhv.10     <- mhv.10
+d$mhv.change <- mhv.change
+d$mhv.growth <- mhv.growth
+
+# ---- Metro-level summary statistics ----
+# Useful for comparing a tract's change to its metro area's median.
+d <-
+  d %>%
+  group_by( cbsaname ) %>%
+  mutate(
+    metro.mhv.change = median( mhv.change, na.rm = TRUE ),
+    metro.mhv.growth = 100 * median( mhv.growth, na.rm = TRUE )
+  ) %>%
+  ungroup()
+```
+
+---
+
+# Part 01 — Variable Selection
+
+The three predictors used in this solution are **percent unemployed**, **percent vacant housing**, and **poverty rate** -- all measured in 2000. These were chosen because they each capture a distinct dimension of neighborhood disadvantage that prior research consistently links to stagnant or declining home values.
+
+**Unemployment:** Tracts with high unemployment in 2000 are likely to have lower purchasing power and reduced demand for housing, leading to slower home value appreciation. Hypothesis: higher unemployment in 2000 will predict *smaller* MHV growth 2000--2010 (negative relationship).
+
+**Vacant housing:** High vacancy rates signal disinvestment -- owners leaving, properties deteriorating, and reduced neighborhood desirability. Hypothesis: higher vacancy in 2000 will predict *smaller* MHV growth (negative relationship).
+
+**Poverty rate:** Poverty concentrations suppress local investment, reduce school quality, and increase crime risk -- all of which depress home values. Hypothesis: higher poverty in 2000 will predict *smaller* MHV growth (negative relationship).
+
+All three predictors are expected to have **negative** coefficients in the regression.
+
+---
+
+# Part 02 — Variable Skew
+
+```{r}
+#| label: skew-raw
+#| fig-height: 5
+
+# ---- Raw distributions ----
+# All three variables show strong right skew: most tracts cluster
+# at low values but a minority have extreme values (high unemployment,
+# vacancy, or poverty). Right skew can violate regression assumptions
+# and give undue influence to outliers.
+
+par( mfrow = c( 1, 3 ) )
+hist( d$p.unemp,  xlim = c( 0, 80 ), breaks = 50, col = "blue",   border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Percent Unemployed" )
+hist( d$p.vacant, xlim = c( 0, 80 ), breaks = 50, col = "red",    border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Percent Vacant" )
+hist( d$pov.rate, xlim = c( 0, 80 ), breaks = 50, col = "orange", border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Poverty Rate" )
+par( mfrow = c( 1, 1 ) )
+```
+
+All three variables show strong right skew -- most tracts have low values but a small number have extreme values. A log transformation (`log(x + 1)`) compresses the long right tail and produces approximately normal distributions more suitable for linear regression. Adding 1 before logging ensures that zero values are handled without producing `-Inf`.
+
+```{r}
+#| label: log-transform
+
+# ---- Log transformation to reduce skew ----
+# log(x + 1) because some tracts have zero unemployment/vacancy/poverty.
+d$log.p.unemp  <- log( d$p.unemp  + 1 )
+d$log.p.vacant <- log( d$p.vacant + 1 )
+d$log.pov.rate <- log( d$pov.rate + 1 )
+```
+
+```{r}
+#| label: skew-logged
+#| fig-height: 8
+
+# ---- Side-by-side comparison: raw vs. logged ----
+par( mar = c( 2, 2, 2, 1 ) )
+par( mfrow = c( 3, 2 ) )
+
+hist( d$p.unemp,      xlim = c( 0, 80 ), breaks = 50, col = "blue",   border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Percent Unemployed" )
+hist( d$log.p.unemp,  breaks = 50,                    col = "blue",   border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Percent Unemployed (logged)" )
+hist( d$p.vacant,     xlim = c( 0, 80 ), breaks = 50, col = "red",    border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Percent Vacant" )
+hist( d$log.p.vacant, breaks = 50,                    col = "red",    border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Percent Vacant (logged)" )
+hist( d$pov.rate,     xlim = c( 0, 80 ), breaks = 50, col = "orange", border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Poverty Rate" )
+hist( d$log.pov.rate, breaks = 50,                    col = "orange", border = "white",
+      yaxt = "n", xlab = "", ylab = "", main = "Poverty Rate (logged)" )
+
+par( mfrow = c( 1, 1 ) )
+```
+
+---
+
+# Part 03 — Multicollinearity
+
+```{r}
+#| label: correlation-plot
+
+# ---- Pairs plot with correlation coefficients ----
+# Upper panel: correlation magnitude + significance stars
+# Lower panel: scatterplot with lowess trend line
+# Diagonal: default histograms
+
+plotd <-
+  d %>%
+  select( mhv.growth, log.p.unemp, log.p.vacant, log.pov.rate )
+
+# ---- Subsample for readability ----
+# 5,000 points is enough to see patterns without overplotting.
+set.seed( 1234 )
+plotd <- sample_n( plotd, 5000 ) %>% na.omit()
+
+pairs( plotd, upper.panel = panel.cor, lower.panel = panel.smooth )
+```
+
+Multicollinearity occurs when two or more predictors in a regression model are highly correlated with each other. When this happens, the model struggles to isolate the unique contribution of each variable -- the coefficient estimates become unstable, standard errors inflate, and it becomes difficult to determine which variable is actually driving the outcome. In extreme cases, the model cannot distinguish the effects of the collinear variables at all.
+
+In this case, unemployment, vacancy, and poverty are all moderately correlated with each other (correlations in the `r round( cor( d$log.p.unemp, d$log.pov.rate, use = "complete.obs" ), 1 )`--0.6 range), which is expected since they all measure aspects of neighborhood disadvantage. The correlations are meaningful but not severe enough to invalidate the model. Students should note that coefficients may shift or lose significance compared to bivariate relationships precisely because the three variables share explanatory variance.
+
+---
+
+# Part 04 — Linearity
+
+```{r}
+#| label: linearity-plots
+#| fig-height: 8
+
+# ---- Lowess plots to check linearity assumption ----
+# A straight lowess line suggests a linear relationship.
+# Curvature suggests a non-linear relationship that might benefit
+# from a quadratic term or alternative transformation.
+
+par( mfrow = c( 2, 2 ) )
+
+jplot( plotd$log.p.unemp,  plotd$mhv.growth, ylim = c( -50, 100 ),
+       lab1 = "Percent Unemployed (logged)", lab2 = "MHV Growth (%)" )
+jplot( plotd$log.p.vacant, plotd$mhv.growth, ylim = c( -50, 100 ),
+       lab1 = "Percent Vacant (logged)",     lab2 = "MHV Growth (%)" )
+jplot( plotd$log.pov.rate, plotd$mhv.growth, ylim = c( -50, 100 ),
+       lab1 = "Poverty Rate (logged)",       lab2 = "MHV Growth (%)" )
+
+par( mfrow = c( 1, 1 ) )
+```
+
+The lowess lines for all three variables suggest broadly linear negative relationships with MHV growth -- tracts with higher unemployment, vacancy, and poverty in 2000 tended to experience smaller gains (or losses) in home value by 2010. The relationships are not perfectly linear -- there is notable flattening at the higher end of each predictor -- but for the purposes of this baseline model, linear terms are a reasonable approximation. A quadratic term could be added to capture the flattening if precision is important.
+
+---
+
+# Part 05 — Descriptive Statistics
+
+```{r}
+#| label: descriptives
+#| results: asis
+
+# ---- Descriptive statistics for all key variables ----
+df <- data.frame(
+  MedianHomeValue2000  = d$mhv.00,
+  MedianHomeValue2010  = d$mhv.10,
+  MHV.Change.00.to.10  = d$mhv.change,
+  MHV.Growth.00.to.10  = d$mhv.growth,
+  UnempLog2000         = d$log.p.unemp,
+  VacantLog2000        = d$log.p.vacant,
+  PovRate2000          = d$log.pov.rate
+)
+
+stargazer( df,
+           type = s.type,
+           digits = 0,
+           summary.stat = c( "min", "p25", "median", "mean", "p75", "max" ) )
+```
+
+The typical (median) change in home value between 2000 and 2010 was a modest gain in inflation-adjusted dollars. The largest gains exceeded several hundred thousand dollars in high-cost metros. MHV change (dollars) and MHV growth (percent) are related but measure different things -- a $50,000 gain means very different things for a $100,000 tract versus a $500,000 tract. Their correlation is positive but far from perfect, confirming they capture distinct aspects of neighborhood appreciation.
+
+```{r}
+#| label: change-vs-growth
+
+# ---- Relationship between dollar change and percent growth ----
+# These are two different ways to operationalize the same concept
+# (neighborhood appreciation). Dollar change favors high-value tracts;
+# percent growth favors low-value tracts. Neither is "better" --
+# they answer different questions.
+
+jplot( df$MHV.Change.00.to.10, df$MHV.Growth.00.to.10,
+       ylim = c( -50, 100 ),
+       lab1 = "MHV Change ($)", lab2 = "MHV Growth (%)" )
+```
+
+The correlation between dollar change and percent growth is `r round( cor( df$MHV.Change.00.to.10, df$MHV.Growth.00.to.10, use = "complete.obs" ), 2 )`. While positive, this moderate correlation confirms the two measures capture different aspects of neighborhood change and may lead to different conclusions about which neighborhoods "changed the most."
+
+---
+
+# Part 06 — Regression Models
+
+```{r}
+#| label: regression-models
+#| results: asis
+
+# ---- Model 1: DV = dollar change in MHV ----
+# ---- Model 2: DV = percent growth in MHV ----
+# Both models use the same three log-transformed predictors.
+
+m1 <- lm( MHV.Change.00.to.10 ~ UnempLog2000 + VacantLog2000 + PovRate2000, data = df )
+m2 <- lm( MHV.Growth.00.to.10 ~ UnempLog2000 + VacantLog2000 + PovRate2000, data = df )
+
+stargazer( m1, m2,
+           type = s.type,
+           digits = 2,
+           omit.stat = c( "rsq", "f" ) )
+```
+
+All three variables are statistically significant in both models and carry negative signs, consistent with the hypotheses. Higher unemployment, vacancy, and poverty in 2000 are each associated with smaller gains in home value over the following decade. The overall explanatory power of the models is moderate -- neighborhood disadvantage explains a meaningful portion of MHV change, but many other factors (local economic conditions, housing supply, gentrification pressures) also play important roles not captured here.
+
+The adjusted R-squared for Model 1 (dollar change) is `r round( summary( m1 )$adj.r.squared, 3 )` and for Model 2 (percent growth) is `r round( summary( m2 )$adj.r.squared, 3 )`.
+
+---
+
+# Part 07 — Effect Sizes
+
+```{r}
+#| label: effect-sizes
+
+# ---- IQR-based effect sizes ----
+# Effect sizes standardize the comparison across predictors.
+# Instead of asking "what happens with a 1-unit change in X?"
+# (which is arbitrary and non-comparable across variables),
+# we ask "what happens when X increases from its 25th to 75th
+# percentile?" -- a consistently defined "large change."
+
+predictors <- cbind( df$UnempLog2000, df$VacantLog2000, df$PovRate2000 )
+
+x.75 <- NULL
+x.25 <- NULL
+
+for( i in 1:3 ){
+  x.75[i] <- quantile( predictors[, i], p = 0.75, na.rm = TRUE )
+  x.25[i] <- quantile( predictors[, i], p = 0.25, na.rm = TRUE )
+}
+
+# ---- Extract coefficients (positions 2:4 = the three predictors) ----
+beta.x.m1 <- m1$coefficients[2:4]
+beta.x.m2 <- m2$coefficients[2:4]
+
+# ---- Compute effect sizes ----
+effect.size.x.m1 <- ( x.75 - x.25 ) * beta.x.m1
+effect.size.x.m2 <- ( x.75 - x.25 ) * beta.x.m2
+
+# ---- Display as formatted table ----
+data.frame(
+  Variable             = c( "Unemployment (log)", "Vacancy (log)", "Poverty Rate (log)" ),
+  EffectSize_DollarChange  = round( effect.size.x.m1, 2 ),
+  EffectSize_GrowthPercent = round( effect.size.x.m2, 2 )
+) %>% pander()
+```
+
+Effect sizes allow fair comparison across variables because they are scaled to a consistently defined "large change" -- moving from the 25th to 75th percentile of each predictor. The variable with the largest effect size in the dollar-change model is the most important predictor of absolute neighborhood appreciation, while the variable with the largest effect in the growth model is the most important predictor of relative appreciation.
+
+The ranking of variables can shift between the two outcome measures, illustrating why the choice of dependent variable matters when drawing policy conclusions about what drives neighborhood change. For example, poverty rate may have the largest effect on dollar change (because high-poverty tracts in expensive metros have the most room to gain in absolute terms), while unemployment may dominate the growth model (because even modest dollar gains in cheap tracts translate to large percentage increases).
+
+---

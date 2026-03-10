@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAF 516 — Module 6: Integration & Policy Brief</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; color: #333; }
+h1, h2, h3, h4 { color: #8c1d40; }
+a { color: #8c1d40; }
+a:hover { color: #ffc627; }
+code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+img { max-width: 100%; height: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background-color: #8c1d40; color: white; }
+iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+<!-- REVISED: 2026-03-08 | See logs/module-6-log.md for change rationale -->
+<!-- DIFF: Compare against original ../CourseMaterials/Guides.1-6/Mod6/Module6_Guide.md -->
+
+<div style="background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px;">
+    <h2><strong><span style="color: #ffffff;">M6 Overview &amp; Learning Materials<br /></span></strong></h2>
+    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Models of Neighborhood Change<br /></strong></span></p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Module Overview</strong></h3>
+    <p>This module uses regression analysis to explore how changes in demographic variables influence changes in house prices over time. You will learn to distinguish between <strong>predictive</strong> and <strong>explanatory</strong> regression models &mdash; a foundational distinction for policy analysis.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Learning Objectives</strong></h3>
+    <p>After completing this module, you will be able to:</p>
+    <ol>
+        <li>Explain the difference between <strong>prediction</strong> (using 2000 levels of X to forecast Y) and <strong>explanation</strong> (using changes in X to explain changes in Y).</li>
+        <li>Articulate why cross-sectional models are vulnerable to <strong>omitted variable bias</strong> and how change-based models partially address this.</li>
+        <li>Distinguish between <strong>explanatory factors</strong> (drivers of change) and <strong>policy variables</strong> (levers that planners can actually manipulate).</li>
+        <li>Run and interpret OLS regression models predicting change in median home value.</li>
+        <li>Use cluster analysis to predict neighborhood change by neighborhood type.</li>
+        <li>Adjust home values for inflation using a CPI multiplier.</li>
+    </ol>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Key Concepts: Prediction vs. Explanation</strong></h3>
+
+    <p>This module introduces two regression frameworks that look similar but serve very different purposes:</p>
+
+    <h4 style="color: #8c1d40;"><strong>Model 1: Predicting Change</strong></h4>
+    <p><em>( Y<sub>2010</sub> &minus; Y<sub>2000</sub> ) = b<sub>0</sub> + b<sub>1</sub> &middot; X<sub>2000</sub></em></p>
+    <p>This model uses <strong>levels of X at the start of the study period</strong> to predict subsequent changes. It is a <strong>prospector model</strong> &mdash; it only uses data available at the beginning to forecast the future. This is useful for investors or planners who want to predict which neighborhoods will appreciate, but the coefficients should not be interpreted causally because of omitted variable bias.</p>
+
+    <h4 style="color: #8c1d40;"><strong>Model 2: Explaining Change</strong></h4>
+    <p><em>( Y<sub>2010</sub> &minus; Y<sub>2000</sub> ) = b<sub>0</sub> + b<sub>1</sub> &middot; ( X<sub>2010</sub> &minus; X<sub>2000</sub> )</em></p>
+    <p>This model uses <strong>changes in X over the study period</strong> to explain changes in Y over the same period. By looking at changes rather than levels, we move closer to causal inference. If unemployment rates rise in a tract and home values fall, we have stronger evidence that unemployment <em>drives</em> home value decline, not merely that it is correlated with other factors.</p>
+
+    <h4 style="color: #8c1d40;"><strong>Why This Matters for Policy</strong></h4>
+    <p>Identifying a variable as a <em>driver</em> of change does not automatically make it a <strong>policy lever</strong>. We can mandate smaller class sizes, but we cannot mandate that college graduates move to a specific city. An influx of graduates may raise home prices, but migration patterns are outside the typical planner&rsquo;s control. The lab asks you to think critically about which factors are actionable.</p>
+
+    <p>This basic insight &mdash; that levels predict but changes explain &mdash; is the foundation of <strong>fixed effects models</strong> and <strong>difference-in-difference designs</strong> that you will encounter in more advanced coursework.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i> <strong>Learning Materials</strong></h3>
+    <p><strong>Regression Review</strong></p>
+    <p>The notes used in the videos below can be found&nbsp;<a href="https://watts-college.github.io/paf-516-template/lectures/OLS.html" target="_blank" rel="noopener">here (HTML)</a>.</p>
+    <p><strong>OLS Introduction</strong></p>
+    <iframe src="https://www.youtube.com/embed/3nQrCvJun-4" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <p><strong>OLS Graphical Example</strong></p>
+    <iframe src="https://www.youtube.com/embed/o9VrJtKScE4" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <p><strong>OLS Assumptions</strong></p>
+    <iframe src="https://www.youtube.com/embed/laq6rDlq6S4" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <p><strong>Manual OLS with Matrix Algebra</strong></p>
+    <iframe src="https://www.youtube.com/embed/2BN_23cFh2E" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <p><strong>OLS Example using Crime Data</strong></p>
+    <iframe src="https://www.youtube.com/embed/jPUd5xiVSqo" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i> <strong>Recommended Readings</strong></h3>
+    <p>The following readings provide additional context on predicting and explaining neighborhood change:</p>
+    <ul>
+        <li><em>Predicting gentrification using longitudinal census data</em>&nbsp;<a href="http://urbanspatialanalysis.com/portfolio/predicting-gentrification-using-longitudinal-census-data/" target="_blank" rel="noopener">(Urban Spatial Analysis)</a> &mdash; demonstrates how housing market data and spatial attributes can build accurate neighborhood change models.</li>
+        <li>Goldstein, I. (2011). <em>Market value analysis: A data-based approach to understanding urban housing markets.</em> Putting Data to Work: Data-Driven Approaches to Strengthening Neighborhoods, 49.&nbsp;<a href="https://github.com/DS4PS/cpp-529-master/raw/master/articles/data-driven-models/MVA-DD-App-to-Strengthening-Neighborhoods.pdf" target="_blank" rel="noopener">(PDF)</a></li>
+        <li>Delmelle, E. C. (2017). <em>Differentiating pathways of neighborhood change in 50 US metropolitan areas.</em> Environment and Planning A, 49(10), 2402-2424.&nbsp;<a href="https://github.com/DS4PS/cpp-529-master/raw/master/articles/data-driven-models/differentiating_pathways_to_neighborhood_change.pdf" target="_blank" rel="noopener">(PDF)</a></li>
+    </ul>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Assignments</strong></h3>
+    <hr />
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong><i class="icon-solid icon-assignment" aria-hidden="true"><span class="dp-icon-content" style="display: none;">&nbsp;</span></i></strong><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Lab 06</strong></span></h4>
+    <p>All lab instructions are included directly in the Lab 06 QMD template file. Download the template, follow the embedded instructions, and complete each section.</p>
+    <p><strong>Submit Solutions to Canvas</strong></p>
+    <p>Upload your QMD source file and your rendered HTML file to the Lab 06 submission link.</p>
+    <p><em>Note:</em> This lab will become one chapter in your final report. You will save time by drafting the lab as if it is an external report chapter rather than a regular lab.</p>
+    <hr />
+    <p><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong><i class="icon-line icon-quiz" aria-hidden="true"><span class="dp-icon-content" style="display: none;">&nbsp;</span></i> Yellowdig Topic</strong></span></p>
+    <p>You will answer the questions below using the following article:</p>
+    <p><em>Predicting gentrification using longitudinal census data</em>&nbsp;<a href="http://urbanspatialanalysis.com/portfolio/predicting-gentrification-using-longitudinal-census-data/" target="_blank" rel="noopener">(LINK)</a></p>
+    <p>These background articles will be helpful:</p>
+    <p><em>Using Algorithms To Predict Gentrification</em>&nbsp;<a href="https://www.citylab.com/solutions/2017/02/algorithms-that-predict-gentrification/516945/" target="_blank" rel="noopener">(LINK)</a></p>
+    <p><em>How Machine Learning and AI Can Predict Gentrification</em>&nbsp;<a href="https://www.citylab.com/life/2018/12/gentrification-london-ai-machine-learning/578329/" target="_blank" rel="noopener">(LINK)</a></p>
+    <p><em>Discuss the differences in the types of data that are used in this predictive model versus the type of data that was used in the Differentiating Pathways article. Specifically, which features are &ldquo;engineered&rdquo; as part of this gentrification model, and how do the new variables that are created differ from the regular census data we used for the lab?</em></p>
+</div>
+
+<p>&nbsp;</p>
+</body>
+</html>

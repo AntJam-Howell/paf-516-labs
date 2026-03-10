@@ -1,0 +1,300 @@
+---
+title: "Lab 01 — Solutions: Measurement & Indexing"
+subtitle: "PAF 516"
+format:
+  html:
+    theme: readable
+    highlight-style: tango
+    toc: true
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+  message: false
+  fig-width: 10
+---
+
+
+---
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set( echo = TRUE, message=F, warning=F, fig.width=10 )
+```
+
+
+```{r}
+#| label: packages
+# Load all required packages
+library( tidyverse )
+library( tidycensus )
+library( psych )       # For Cronbach's alpha
+library( corrplot )    # For correlation matrix visualization
+library( viridis )     # For color scales on maps
+library( ggplot2 )
+```
+
+```{r}
+#| label: api-key
+# Uncomment and add your Census API key
+# census_api_key("YOUR KEY GOES HERE")
+```
+
+
+# Step 1: Retrieve Census Variables
+
+We build an **economic hardship index** using 5 census variables at the tract level for Maricopa County, AZ. Each variable captures a different dimension of economic disadvantage.
+
+```{r}
+#| label: browse-variables
+#| eval: false
+
+# Browse available ACS variables to find relevant indicators
+vars_available <- load_variables( 2021, "acs5", cache = TRUE )
+# View(vars_available)  # Use this interactively to search
+```
+
+```{r}
+#| label: step.01
+#| echo: true
+#| eval: true
+
+# Define our indicator variables for an "economic hardship" construct
+# Each variable name is given a readable alias
+hardship_vars <- c(
+  pct_poverty    = "B17001_002",   # Population below poverty level
+  pop_total_pov  = "B17001_001",   # Total population (poverty universe) - for denominator
+  median_income  = "B19013_001",   # Median household income
+  pct_unemp_num  = "B23025_005",   # Unemployed population
+  pct_unemp_den  = "B23025_002",   # In labor force (denominator for unemployment)
+  pct_no_hs_num  = "B15003_002",   # Population with less than high school
+  pct_no_hs_den  = "B15003_001",   # Total population 25+ (denominator for education)
+  pct_no_ins_num = "B27010_017",   # Population without health insurance (18-34)
+  pct_no_ins_den = "B27010_001"    # Total population (insurance universe)
+)
+
+# Retrieve data with geometry for mapping later
+CenDF <- get_acs(
+  geography = "tract",
+  variables = hardship_vars,
+  state     = "AZ",
+  county    = "Maricopa",
+  year      = 2021,
+  survey    = "acs5",
+  geometry  = TRUE
+)
+```
+
+**Common error note:** If you get an API key error, make sure you have run `census_api_key("YOUR_KEY", install = TRUE)` at least once and restarted R.
+
+
+# Step 2: Select and Justify Variables
+
+We now reshape the data from long to wide format, compute percentages from numerator/denominator pairs, and standardize all variables to z-scores.
+
+```{r}
+#| label: step.02
+#| echo: true
+#| eval: true
+
+# Reshape from long to wide format using pivot_wider (not deprecated spread)
+CenDF_wide <- CenDF %>%
+  select( -moe ) %>%
+  pivot_wider( names_from = variable, values_from = estimate )
+
+# Compute derived percentage variables
+CenDF_wide <- CenDF_wide %>%
+  mutate(
+    # Poverty rate: people below poverty / poverty universe
+    poverty_rate = pct_poverty / pop_total_pov,
+    # Unemployment rate: unemployed / in labor force
+    unemp_rate   = pct_unemp_num / pct_unemp_den,
+    # Percent without high school diploma
+    no_hs_rate   = pct_no_hs_num / pct_no_hs_den,
+    # Percent without health insurance
+    no_ins_rate  = pct_no_ins_num / pct_no_ins_den
+  )
+
+# Select just the indicator variables for our index
+# Note: median_income is REVERSE CODED — high income = LOW hardship
+index_vars <- CenDF_wide %>%
+  as.data.frame() %>%  # drop sf geometry for psych::alpha
+  select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
+  drop_na()  # alpha() requires complete cases
+
+# Standardize to z-scores
+index_z <- index_vars %>%
+  mutate( across( everything(), ~ as.numeric( scale(.) ) ) )
+
+# Reverse-code median_income: high income should contribute LOW hardship
+# So we flip the sign
+index_z <- index_z %>%
+  mutate( median_income = -1 * median_income )
+
+# Verify: all variables should now be positively correlated
+# (higher values = more hardship for all items)
+```
+
+**Variable justification:**
+
+| Variable | Census Code | Why Included |
+|----------|------------|--------------|
+| Poverty rate | B17001_002 / B17001_001 | Direct measure of economic deprivation |
+| Unemployment rate | B23025_005 / B23025_002 | Reflects labor market hardship |
+| No high school diploma | B15003_002 / B15003_001 | Education is a strong predictor of economic outcomes |
+| No health insurance | B27010_017 / B27010_001 | Lack of insurance reflects economic vulnerability |
+| Median household income | B19013_001 | Core income measure (reverse coded) |
+
+
+# Step 3: Assess Reliability with Cronbach's Alpha
+
+```{r}
+#| label: step.03
+#| echo: true
+#| eval: true
+
+# Calculate Cronbach's alpha
+alpha_result <- psych::alpha( index_z )
+
+# Print the main results
+print( alpha_result )
+```
+
+**Interpreting the output:**
+
+- The overall `raw_alpha` is our Cronbach's alpha value
+- The "Reliability if an item is dropped" section shows what alpha would be without each item
+- If dropping an item *increases* alpha, that item may not fit the construct well
+
+```{r}
+#| label: alpha-summary
+#| echo: true
+#| eval: true
+
+# Extract the key alpha value for inline reporting
+alpha_value <- alpha_result$total$raw_alpha
+cat( "Cronbach's alpha:", round( alpha_value, 3 ), "\n" )
+```
+
+
+# Step 4: Build the Index and Visualize
+
+```{r}
+#| label: step.04a
+#| echo: true
+#| eval: true
+
+# Correlation matrix of indicator variables
+cor_matrix <- cor( index_z, use = "complete.obs" )
+
+# Visualize the correlation matrix
+corrplot(
+  cor_matrix,
+  method  = "color",
+  type    = "upper",
+  addCoef.col = "black",
+  tl.col  = "black",
+  tl.srt  = 45,
+  title   = "Inter-Item Correlation Matrix: Economic Hardship Index",
+  mar     = c(0, 0, 2, 0)
+)
+```
+
+All items should show positive correlations (after reverse-coding income), confirming they measure a common construct.
+
+```{r}
+#| label: step.04b
+#| echo: true
+#| eval: true
+
+# Create the composite index as the row mean of z-scores
+index_z$hardship_index <- rowMeans( index_z, na.rm = TRUE )
+
+# Histogram of the hardship index
+ggplot( index_z, aes( x = hardship_index ) ) +
+  geom_histogram( bins = 40, fill = "#8c1d40", color = "white", alpha = 0.8 ) +
+  geom_vline( xintercept = mean( index_z$hardship_index, na.rm = TRUE ),
+              linetype = "dashed", color = "#ffc627", linewidth = 1 ) +
+  theme_minimal() +
+  labs(
+    title    = "Distribution of Economic Hardship Index",
+    subtitle = "Maricopa County Census Tracts (ACS 2021)",
+    x        = "Hardship Index (z-score scale)",
+    y        = "Number of Tracts",
+    caption  = "Dashed line = mean"
+  )
+```
+
+```{r}
+#| label: step.04c
+#| echo: true
+#| eval: true
+
+# Add the index back to the spatial data for mapping
+# First, get the GEOID from the complete-case subset
+CenDF_complete <- CenDF_wide %>%
+  drop_na( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income )
+
+CenDF_complete$hardship_index <- index_z$hardship_index
+
+# Map the hardship index across tracts
+ggplot( CenDF_complete ) +
+  geom_sf( aes( fill = hardship_index ), color = NA ) +
+  scale_fill_viridis( option = "inferno", direction = -1,
+                      name = "Hardship\nIndex" ) +
+  theme_void() +
+  labs(
+    title    = "Economic Hardship Index by Census Tract",
+    subtitle = "Maricopa County, AZ — ACS 5-Year (2021)",
+    caption  = "Higher values = greater economic hardship"
+  )
+```
+
+
+# Questions
+
+### Question 1: Interpreting Alpha
+
+1a. What is the Cronbach's alpha for your index? Is it acceptable (> 0.7)?
+
+   - Answer: The Cronbach's alpha for our 5-item economic hardship index is `r round( alpha_value, 2 )`. This is `r ifelse( alpha_value > 0.7, "above the 0.7 threshold, indicating acceptable internal consistency", "below the 0.7 threshold, suggesting the items may not consistently measure the same construct" )`.
+
+1b. Were there any items that, if dropped, would substantially improve alpha? Did you choose to drop them? Why or why not?
+
+   - Answer: Looking at the "alpha if item dropped" output, we can evaluate each item. If all items contribute positively to alpha (dropping any item decreases alpha), then all items are good candidates for the index. If one item's removal increases alpha, we would consider dropping it — but only if the improvement is meaningful and the item doesn't add important conceptual coverage.
+
+1c. What does a high (or low) alpha tell you about the relationship between your chosen census variables?
+
+   - Answer: A high alpha tells us that the census variables we selected are internally consistent — they tend to move together across census tracts. Tracts with high poverty also tend to have high unemployment, low education, and low income. This provides evidence that these variables collectively measure a single underlying construct (economic hardship). A low alpha would suggest the variables measure different, unrelated things.
+
+
+### Question 2: Variable Selection
+
+2a. List the census variables you included in your final index:
+
+   - Answer:
+     - **Poverty rate** (B17001): Directly measures the proportion of residents below the federal poverty line
+     - **Unemployment rate** (B23025): Reflects labor market hardship and inability to earn income
+     - **No high school diploma** (B15003): Education level predicts economic outcomes and access to opportunity
+     - **No health insurance** (B27010): Lack of insurance reflects both poverty and vulnerability
+     - **Median household income** (B19013, reverse-coded): Core measure of economic resources in a tract
+
+2b. Are there variables you considered but excluded? Why?
+
+   - Answer: We could have included percent receiving SNAP/food stamps (B22010), percent of female-headed households with children (B11001), or housing cost burden (B25070). These were excluded to keep the index parsimonious and because they had higher rates of missing data at the tract level.
+
+2c. If you reversed the sign of any variables, explain which ones and why.
+
+   - Answer: We reversed **median household income**. All other variables are coded so that higher values = more hardship (higher poverty rate, higher unemployment, etc.). But higher income = *less* hardship, so we multiplied the z-score by -1 to align its direction with the other items.
+
+
+### Question 3: Connecting to Module 2
+
+3a. How might the index be used in a regression model?
+
+   - Answer: The hardship index could serve as an independent variable predicting outcomes like home values (Module 2's house-price-to-income ratio), health outcomes, or crime rates. Alternatively, it could be the dependent variable in a model asking: what community-level factors predict higher economic hardship?
+
+3b. Do you see spatial patterns in your map?
+
+   - Answer: Looking at the map, there are clear spatial clusters of high hardship tracts, particularly in `r "south Phoenix and parts of central Mesa/Tempe"`. This spatial clustering suggests that economic hardship is not randomly distributed — it is concentrated geographically, likely due to historical patterns of segregation, investment, and infrastructure. This spatial pattern will be important when we conduct cluster analysis in Module 3.
