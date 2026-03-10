@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PAF 516 — Module 4: Spatial Autocorrelation & Hot Spots</title>
+<title>PAF 516 — Module 4: Spatial Autocorrelation & Hot Spot Analysis</title>
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; color: #333; }
 h1, h2, h3, h4 { color: #8c1d40; }
@@ -19,85 +19,197 @@ iframe { max-width: 100%; }
 </style>
 </head>
 <body>
-<!-- REVISED: 2026-03-08 | See logs/module-4-log.md for change rationale -->
-<!-- DIFF: Compare against original ../CourseMaterials/Guides.1-6/Mod4/Module4_Guide.md -->
-<!-- NOTE: Mod4_Instruct.md is marked for DELETION — its content has been merged here -->
+<!-- NEW: 2026-03-09 | Updated for redesigned curriculum -->
+<!-- This is a Canvas page — paste into Canvas HTML editor -->
+
 <div style="background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px;">
     <h2><strong><span style="color: #ffffff;">M4 Overview &amp; Learning Materials<br /></span></strong></h2>
-    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Build a City Dataset &amp; Practice Clustering<br /></strong></span></p>
+    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Spatial Autocorrelation &amp; Hot Spot Analysis<br /></strong></span></p>
 </div>
+
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Module Overview</strong></h3>
-    <p>We are interested in understanding neighborhood change. These data-driven approaches to the phenomenon use machine-learning algorithms to &ldquo;discover&rdquo; coherent communities within the city by grouping census tracts into groups that minimize within-group differences and maximize between-group differences.</p>
-    <p>In Lab 3 you applied clustering techniques to Phoenix data provided for you. In this module you will <strong>build your own city dataset from scratch</strong> using Census data and the <code>tidycensus</code> API, construct a Dorling cartogram, and then apply the same clustering methods to your chosen city. This lab is the foundation for your final project.</p>
-</div>
-<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Learning Objectives</strong></h3>
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Module Overview and Objectives</strong></h3>
+
+    <p>In Modules 1-3, you built and mapped a hardship index. You probably noticed clusters — groups of nearby block groups with similarly high or low values. But are those clusters <strong>statistically significant</strong>, or could they have occurred by chance? This module gives you the tools to answer that question.</p>
+
+    <p><strong>Spatial autocorrelation</strong> is the tendency for nearby locations to have similar values — a formalization of <strong>Tobler's First Law of Geography</strong>: "Everything is related to everything else, but near things are more related than distant things." This module teaches you to measure spatial autocorrelation globally (across the entire study area) and locally (at each individual location), enabling you to identify statistically significant <strong>hot spots</strong>, <strong>cold spots</strong>, and <strong>spatial outliers</strong>.</p>
+
+    <hr />
+
     <p>After completing this module, you will be able to:</p>
-    <ol>
-        <li>Use the CBSA-to-FIPS crosswalk to identify counties in a Metropolitan Statistical Area (MSA).</li>
-        <li>Download census tract shapefiles and population data using the <code>tidycensus</code> API.</li>
-        <li>Merge spatial data with harmonized Longitudinal Tract Database (LTDB) census variables.</li>
-        <li>Transform a shapefile into a Dorling cartogram that corrects for tract size bias.</li>
-        <li>Apply Gaussian mixture model clustering (<code>mclust</code>) to identify neighborhood typologies.</li>
-        <li>Compare clustering results across different variable sets and composite indices.</li>
-        <li>Assign interpretive labels to clusters based on percentile profile charts.</li>
-    </ol>
-</div>
-<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i> <strong>Learning Materials</strong></h3>
-    <p><strong>Saving Your Cartogram for Future Use</strong></p>
-    <p>You will re-use your cartogram in future labs and in the final project. You can create your cartogram from scratch each time, or save it as a GeoJSON file and re-load it when needed.</p>
-    <p><strong>Save your cartogram (sf pipeline):</strong></p>
-    <div style="background: #ffffff; overflow: auto; width: auto; border: solid gray; border-width: .1em .1em .1em .8em; padding: .2em .6em;">
-        <pre style="margin: 0; line-height: 125%;">library( sf )
-
-<span style="color: #888888;"># project to standard lat-lon coordinate system</span>
-my_dorling_sf &lt;- st_transform( my_dorling_sf, crs = 4326 )
-
-<span style="color: #888888;"># write to file</span>
-st_write( my_dorling_sf, <span style="background-color: #fff0f0;">"my_dorling.geojson"</span>, delete_dsn = TRUE )
-</pre>
-    </div>
-    <p>Load your cartogram:</p>
-    <div style="background: #ffffff; overflow: auto; width: auto; border: solid gray; border-width: .1em .1em .1em .8em; padding: .2em .6em;">
-        <pre style="margin: 0; line-height: 125%;">library( sf )
-
-<span style="color: #888888;"># load from local file path</span>
-my_dorling_sf &lt;- st_read( <span style="background-color: #fff0f0;">"my_dorling.geojson"</span> )
-
-plot( st_geometry( my_dorling_sf ) )
-</pre>
-    </div>
-    <p>&nbsp;</p>
-    <p><strong>Locator Tutorial</strong></p>
-    <p>The <code>locator()</code> function in R lets you click on a plot to get coordinates, which is useful for defining bounding boxes for your maps. Watch this short tutorial:</p>
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/jx5y0EdIUT4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-    <p>&nbsp;</p>
-    <p><strong>Important Technical Notes:</strong></p>
     <ul>
-        <li>Do <strong>NOT</strong> load <code>library(maptools)</code> &mdash; it has been retired from CRAN and is no longer available.</li>
-        <li>Use <code>st_transform()</code> (from the <code>sf</code> package) instead of <code>spTransform()</code> (from the retired <code>rgdal</code> package).</li>
-        <li>Use <code>st_crs(3395)</code> instead of <code>CRS("+init=epsg:3395")</code>.</li>
-        <li>Use <code>st_drop_geometry()</code> instead of <code>@data</code> to extract data from spatial objects.</li>
-        <li>The lab template (<code>Lab4_Assignment.qmd</code>) contains all instructions and code &mdash; everything you need is in that single file.</li>
+        <li>Explain <strong>Tobler's First Law of Geography</strong> and its relationship to spatial autocorrelation</li>
+        <li>Construct <strong>spatial weights matrices</strong> using queen contiguity, rook contiguity, and distance-based approaches</li>
+        <li>Calculate and interpret <strong>Global Moran's I</strong> as a measure of overall spatial clustering</li>
+        <li>Calculate and interpret <strong>Local Moran's I (LISA)</strong> to identify local clusters and outliers</li>
+        <li>Classify locations as <strong>hot spots (HH)</strong>, <strong>cold spots (LL)</strong>, or <strong>spatial outliers (HL, LH)</strong></li>
+        <li>Create LISA cluster maps with appropriate symbology</li>
+        <li>Evaluate statistical significance using permutation-based pseudo p-values</li>
     </ul>
 </div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 1: Tobler's First Law and Spatial Autocorrelation</strong></h3>
+
+    <p>Most standard statistical methods assume that observations are <strong>independent</strong>. But spatial data almost always violates this assumption — poverty in one census tract is correlated with poverty in neighboring tracts. This is not a nuisance to be corrected; it is a <strong>substantive phenomenon</strong> that reveals how social and economic processes operate across space.</p>
+
+    <h4 style="color: #8c1d40;">Three Types of Spatial Patterns</h4>
+    <ul>
+        <li><strong>Positive spatial autocorrelation (clustered)</strong>: Similar values tend to be near each other. High-poverty tracts cluster together; affluent tracts cluster together. This is the most common pattern in social data</li>
+        <li><strong>Negative spatial autocorrelation (dispersed)</strong>: Dissimilar values tend to be near each other (a checkerboard pattern). Rare in practice for social variables</li>
+        <li><strong>Spatial randomness</strong>: No relationship between location and value. The null hypothesis against which we test</li>
+    </ul>
+
+    <p><strong>Why it matters for policy:</strong> If hardship is spatially clustered, then place-based interventions (targeting specific neighborhoods) make sense. If hardship is spatially random, then people-based interventions (targeting individuals regardless of location) may be more efficient.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 2: Spatial Weights Matrices</strong></h3>
+
+    <p>To measure spatial autocorrelation, we first need to define <strong>"neighbor"</strong> — which locations are considered near each other? This definition is encoded in a <strong>spatial weights matrix (W)</strong>, where each cell w<sub>ij</sub> represents the spatial relationship between locations i and j.</p>
+
+    <h4 style="color: #8c1d40;">Common Neighbor Definitions</h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 98%;">
+        <tr style="background-color: #8c1d40; color: white;">
+            <th>Type</th><th>Definition</th><th>R Function</th>
+        </tr>
+        <tr><td><strong>Queen contiguity</strong></td><td>Polygons that share any boundary point (edge or vertex) are neighbors</td><td><code>poly2nb(sf_obj, queen = TRUE)</code></td></tr>
+        <tr><td><strong>Rook contiguity</strong></td><td>Polygons that share an edge (not just a point) are neighbors</td><td><code>poly2nb(sf_obj, queen = FALSE)</code></td></tr>
+        <tr><td><strong>Distance-based</strong></td><td>All locations within a specified distance are neighbors</td><td><code>dnearneigh(coords, d1, d2)</code></td></tr>
+        <tr><td><strong>K-nearest neighbors</strong></td><td>The k closest locations are neighbors</td><td><code>knearneigh(coords, k)</code></td></tr>
+    </table>
+
+    <p>After defining neighbors, you convert to a weights list object using <code>nb2listw()</code>. The <strong>row-standardized</strong> version (style = "W") is most common — each neighbor's weight sums to 1, so the spatial lag of a variable is the mean of its neighbors' values.</p>
+
+    <p><strong>Choice matters:</strong> The neighbor definition affects your results. Queen contiguity is the standard default for polygon data, but always check that every observation has at least one neighbor (island polygons cause errors).</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 3: Global Moran's I</strong></h3>
+
+    <p><strong>Global Moran's I</strong> is a single summary statistic that measures the degree of spatial autocorrelation across the entire study area. It answers: "Is there a statistically significant spatial pattern overall?"</p>
+
+    <h4 style="color: #8c1d40;">Interpretation</h4>
+    <ul>
+        <li><strong>I &gt; 0</strong>: Positive spatial autocorrelation — similar values cluster together</li>
+        <li><strong>I &approx; 0</strong>: Spatial randomness (technically, the expected value under the null is -1/(n-1), close to 0 for large n)</li>
+        <li><strong>I &lt; 0</strong>: Negative spatial autocorrelation — dissimilar values are adjacent</li>
+    </ul>
+
+    <p>In R, the <code>spdep</code> package computes Global Moran's I with <code>moran.test()</code>. The function returns the I statistic, expected value, variance, and a p-value. You can also use <code>moran.mc()</code> for a permutation-based test that does not rely on normality assumptions.</p>
+
+    <p><strong>Limitation:</strong> Global Moran's I tells you that clustering exists, but not <em>where</em>. A study area could have both hot spots and cold spots that produce the same global statistic. This is why we need local indicators.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 4: Local Moran's I (LISA) and Cluster Maps</strong></h3>
+
+    <p><strong>Local Indicators of Spatial Association (LISA)</strong> decompose the global statistic into a contribution from each individual location. Each location receives its own Local Moran's I value and significance level, which classifies it into one of four categories:</p>
+
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 98%;">
+        <tr style="background-color: #8c1d40; color: white;">
+            <th>Category</th><th>Interpretation</th><th>Typical Map Color</th>
+        </tr>
+        <tr><td><strong>High-High (HH)</strong></td><td>A high-value location surrounded by high-value neighbors — a <strong>hot spot</strong></td><td>Red</td></tr>
+        <tr><td><strong>Low-Low (LL)</strong></td><td>A low-value location surrounded by low-value neighbors — a <strong>cold spot</strong></td><td>Blue</td></tr>
+        <tr><td><strong>High-Low (HL)</strong></td><td>A high-value location surrounded by low-value neighbors — a <strong>spatial outlier</strong></td><td>Light red / pink</td></tr>
+        <tr><td><strong>Low-High (LH)</strong></td><td>A low-value location surrounded by high-value neighbors — a <strong>spatial outlier</strong></td><td>Light blue</td></tr>
+        <tr><td><strong>Not significant</strong></td><td>No statistically significant local spatial pattern</td><td>Gray</td></tr>
+    </table>
+
+    <p>In R, use <code>localmoran()</code> from the <code>spdep</code> package. The output includes the local I value, expected value, variance, z-score, and p-value for each observation. You then classify each observation into the four quadrants of the Moran scatterplot based on the sign of the standardized value and the sign of its spatial lag.</p>
+
+    <h4 style="color: #8c1d40;">The Moran Scatterplot</h4>
+    <p>A Moran scatterplot places the standardized variable on the x-axis and its spatial lag (average of neighbors) on the y-axis. The four quadrants correspond directly to the HH, LL, HL, and LH categories. The slope of the best-fit line through the scatterplot equals Global Moran's I.</p>
+
+    <h4 style="color: #8c1d40;">Multiple Testing Caution</h4>
+    <p>When testing hundreds of locations simultaneously, some will appear significant by chance alone. Consider applying a <strong>Bonferroni correction</strong> or using a stricter significance threshold (e.g., p &lt; 0.01 instead of p &lt; 0.05) to reduce false positives.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Learning Materials</strong></h3>
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Read and Review</strong></h4>
+
+    <p><strong>Spatial Autocorrelation Foundations</strong></p>
+    <ul>
+        <li>Anselin, L. (1995). Local indicators of spatial association — LISA. <em>Geographical Analysis</em>, 27(2), 93-115. — The original LISA paper.</li>
+        <li>Anselin, L. (2020). <a href="https://geodacenter.github.io/workbook/5a_global_auto/lab5a.html" target="_blank" rel="noopener">GeoDa Workbook: Global Spatial Autocorrelation</a>. — Excellent conceptual tutorial with interactive examples.</li>
+        <li>Anselin, L. (2020). <a href="https://geodacenter.github.io/workbook/6a_local_auto/lab6a.html" target="_blank" rel="noopener">GeoDa Workbook: Local Spatial Autocorrelation</a>. — Companion tutorial for LISA.</li>
+    </ul>
+
+    <p><strong>Spatial Statistics in Practice</strong></p>
+    <ul>
+        <li>Griffith, D. A. (2009). Spatial autocorrelation. In <em>International Encyclopedia of Human Geography</em> (pp. 308-316). Elsevier.</li>
+        <li>Chi, G., &amp; Zhu, J. (2019). <em>Spatial Regression Models for the Social Sciences</em>. SAGE. Chapter 2.</li>
+    </ul>
+
+    <p><strong>R Package Documentation</strong></p>
+    <ul>
+        <li><a href="https://r-spatial.github.io/spdep/" target="_blank" rel="noopener">spdep package documentation</a> — spatial dependence: weighting schemes, statistics, and models</li>
+        <li><a href="https://r-spatial.github.io/spdep/articles/nb.html" target="_blank" rel="noopener">spdep: Creating Neighbours</a> — vignette on neighbor definitions</li>
+    </ul>
+
+    <hr />
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lecture</strong></h4>
+    <!-- PLACEHOLDER: Record lecture on spatial autocorrelation, Moran's I, and LISA cluster interpretation -->
+    <p><iframe src="" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
+</div>
+
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
     <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Assignments</strong></h3>
     <hr />
-    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong><i class="icon-solid icon-assignment" aria-hidden="true"><span class="dp-icon-content" style="display: none;">&nbsp;</span></i></strong><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Lab 04 &mdash; Build a City Dataset</strong></span></h4>
-    <p>The purpose of Lab 4 is to replicate the clustering work you did in Lab 3, but for a new city. You will use <strong>San Diego</strong> as your city for this lab and the final project. San Diego is a single-county MSA, which simplifies the Census API calls.</p>
-    <p>If there is a compelling reason to pick a different city, you are free to do so, but be mindful that the instructor may be of limited use troubleshooting city-specific data issues. If you choose a multi-county or multi-state MSA, you will need to make separate API calls for each state (the template demonstrates this with Minneapolis as an example).</p>
-    <p>All instructions are embedded in the Quarto template. Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/Assignment/Lab4_Assignment.qmd" target="_blank" rel="noopener">Lab 04 Quarto template (.qmd)</a>, complete the exercises, and submit both the .qmd and rendered .html to Canvas.</p>
-    <p><strong>You will save the Dorling cartogram you create in this lab &mdash; you will need it for the final project.</strong></p>
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lab 04</strong></h4>
+    <!-- PLACEHOLDER: Record lab walkthrough for Lab 04 -->
+    <p><iframe src="" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
+
+    <p>In Lab 04, you will apply spatial statistics to your hardship index to identify where high- and low-hardship neighborhoods cluster. Specifically, you will:</p>
+    <ol>
+        <li><strong>Build a spatial weights matrix</strong>: Construct queen contiguity neighbors from your CBG boundaries and convert to a row-standardized weights list</li>
+        <li><strong>Test Global Moran's I</strong>: Compute the global statistic and interpret whether your hardship index is significantly spatially clustered</li>
+        <li><strong>Compute Local Moran's I (LISA)</strong>: Calculate local statistics for each block group and classify them into HH, LL, HL, LH, or not significant</li>
+        <li><strong>Create a LISA cluster map</strong>: Map the four cluster types using the conventional color scheme (red = HH hot spots, blue = LL cold spots, pink = HL outliers, light blue = LH outliers, gray = not significant)</li>
+        <li><strong>Interpret the results</strong>: Write a brief analysis identifying where hot spots and cold spots occur and what demographic or geographic factors might explain them</li>
+    </ol>
+
+    <p><strong>Connection to previous labs:</strong> This module statistically validates the spatial patterns you observed visually in Labs 1-3. The hot spots you identify here will be tested for temporal stability in Lab 05.</p>
+
+    <p>Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/Assignment/Lab4_Assignment.qmd" target="_blank" rel="noopener">Lab 04 Quarto template (.qmd)</a>, complete the exercises, and submit both the .qmd and rendered .html to Canvas.</p>
+
+    <p><strong>Download:</strong> <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/Assignment/Lab4_Assignment.qmd" target="_blank">Lab4_Assignment.qmd</a></p>
+
     <hr />
-    <p><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong><i class="icon-line icon-quiz" aria-hidden="true"><span class="dp-icon-content" style="display: none;">&nbsp;</span></i> Yellowdig Topic</strong></span></p>
-    <p>Reflect on how the variables you use in clustering models define the neighborhoods (groups) your model identifies. Are these clusters valid constructs? Would knowing a tract's cluster help predict outcomes for residents, or how the neighborhood might change over time? How do we know which set of variables produces the &ldquo;right&rdquo; groups?</p>
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Key Terms</strong></h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 98%;">
+        <tr style="background-color: #8c1d40; color: white;">
+            <th>Term</th><th>Definition</th>
+        </tr>
+        <tr><td><strong>Spatial Autocorrelation</strong></td><td>The correlation of a variable with itself through space — nearby locations tend to have similar values</td></tr>
+        <tr><td><strong>Tobler's First Law</strong></td><td>"Everything is related to everything else, but near things are more related than distant things"</td></tr>
+        <tr><td><strong>Spatial Weights Matrix (W)</strong></td><td>A matrix encoding the neighbor relationships between all spatial observations</td></tr>
+        <tr><td><strong>Queen Contiguity</strong></td><td>Two polygons are neighbors if they share any boundary point (edge or corner)</td></tr>
+        <tr><td><strong>Global Moran's I</strong></td><td>A single statistic measuring overall spatial autocorrelation across the study area</td></tr>
+        <tr><td><strong>Local Moran's I (LISA)</strong></td><td>A statistic computed for each location measuring its contribution to the global spatial pattern</td></tr>
+        <tr><td><strong>Hot Spot (HH)</strong></td><td>A high-value location surrounded by high-value neighbors — a cluster of high values</td></tr>
+        <tr><td><strong>Cold Spot (LL)</strong></td><td>A low-value location surrounded by low-value neighbors — a cluster of low values</td></tr>
+        <tr><td><strong>Spatial Outlier (HL/LH)</strong></td><td>A location whose value differs markedly from its neighbors</td></tr>
+        <tr><td><strong>Moran Scatterplot</strong></td><td>A plot of standardized values vs. their spatial lag; quadrants correspond to HH, LL, HL, LH</td></tr>
+    </table>
+
     <hr />
-    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Submission Instructions</strong></h4>
-    <p>After completing the lab, submit via Canvas. Upload your <strong>.qmd</strong> and rendered <strong>.html</strong> files. Name your files: <code>Lab-04-LastName.qmd</code> and <code>Lab-04-LastName.html</code>.</p>
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Yellowdig Topic</strong></h4>
+    <p>Spatial autocorrelation reveals clustering, but it does not explain it. Consider the hot spots (HH clusters) in your LISA map:</p>
+    <ol>
+        <li>What structural or historical factors might explain why hardship clusters in those specific locations?</li>
+        <li>If you were a city planner, how would you use a LISA cluster map to allocate resources? Would you target hot spots, cold spots, or spatial outliers?</li>
+        <li>A spatial outlier (e.g., a high-hardship block group surrounded by low-hardship neighbors) is an interesting anomaly. What might cause this pattern?</li>
+    </ol>
 </div>
+
 <p>&nbsp;</p>
 </body>
 </html>

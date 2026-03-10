@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PAF 516 — Module 2: Cartographic Design & Visual Analytics</title>
+<title>PAF 516 — Module 2: Cartographic Design & Multi-Scale Visual Analytics</title>
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; color: #333; }
 h1, h2, h3, h4 { color: #8c1d40; }
@@ -19,66 +19,196 @@ iframe { max-width: 100%; }
 </style>
 </head>
 <body>
-<!-- REVISED: 2026-03-08 | See logs/module-2-log.md for change rationale -->
-<!-- DIFF: Compare against original ../CourseMaterials/Guides.1-6/Mod2/Module2_Guide.md -->
+<!-- NEW: 2026-03-09 | Updated for redesigned curriculum -->
+<!-- This is a Canvas page — paste into Canvas HTML editor -->
 
 <div style="background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px;">
     <h2><strong><span style="color: #ffffff;">M2 Overview &amp; Learning Materials<br /></span></strong></h2>
-    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Intro to Census Data and Mapping<br /></strong></span></p>
+    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Cartographic Design &amp; Multi-Scale Visual Analytics<br /></strong></span></p>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Module Overview and Objectives</strong></h3>
-    <p>This module covers two core data science topics: (1) <strong>Working with Census Data</strong>; and (2) <strong>Creating choropleth (color-coded) maps</strong>. The U.S. Census Bureau is the premier source of data about US people, places, and economy, making it a natural source of information for community analytics.</p>
-    <p>Working with census data in R involves two challenges: finding the right variables among thousands of options, and using the right R packages to efficiently retrieve and analyze them. This module teaches you to resolve both problems using <code>tidycensus</code>, and to transform raw census data into visually informative maps.</p>
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Module Overview and Objectives</strong></h3>
+
+    <p>In Module 1, you built a composite hardship index and mapped it with a basic choropleth. This module asks a deceptively important question: <strong>does the story your map tells change depending on how you classify the data?</strong> The answer is yes — and the differences can be dramatic. A map using equal intervals may hide inequality that a quantile map reveals. A Jenks natural breaks map emphasizes clusters that a standard deviation map smooths away.</p>
+
+    <p>Beyond classification, this module introduces <strong>bivariate choropleth maps</strong> that display two variables simultaneously, <strong>interactive web maps</strong> with mapgl + freestiler that let users explore data on demand, and cartographic design principles that separate professional-quality maps from default output. You will move from "making a map" to <em>designing a visual argument</em>.</p>
+
     <hr />
+
     <p>After completing this module, you will be able to:</p>
     <ul>
-        <li>Navigate Census Bureau data products (Decennial Census, ACS 1-year, ACS 5-year)</li>
-        <li>Use <code>tidycensus::get_acs()</code> to retrieve census variables at different geographic levels</li>
-        <li>Use <code>load_variables()</code> to search for and identify relevant census variables</li>
-        <li>Transform data from long to wide format using <code>pivot_wider()</code></li>
-        <li>Compute derived variables (e.g., house-price-to-income ratio)</li>
-        <li>Create choropleth maps using <code>ggplot2</code> and <code>viridis</code></li>
-        <li>Compare data across time periods and geographic scales</li>
+        <li>Apply and compare four classification methods: <strong>quantile, Jenks natural breaks, equal interval,</strong> and <strong>standard deviation</strong></li>
+        <li>Explain how classification method choice affects map interpretation and policy conclusions</li>
+        <li>Create a <strong>bivariate choropleth map</strong> using the <code>biscale</code> package to visualize two variables simultaneously</li>
+        <li>Build an <strong>interactive mapgl map</strong> with tooltips, hover effects, and GPU-rendered vector tiles</li>
+        <li>Apply cartographic design principles: visual hierarchy, figure-ground, appropriate color ramps</li>
+        <li>Use <code>ggspatial</code> to add scale bars, north arrows, and annotation to static maps</li>
+        <li>Construct <strong>small multiple</strong> map panels for side-by-side comparison</li>
     </ul>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i> <strong>Learning Materials</strong></h3>
-    <p>To successfully complete the assignments, study the materials below, which present the important concepts of this module.</p>
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 1: Classification Methods and Why They Matter</strong></h3>
+
+    <p>Every choropleth map requires a decision: how do we divide a continuous variable into discrete color bins? This is not a neutral technical choice — it is an <strong>editorial decision</strong> that shapes what patterns viewers perceive.</p>
+
+    <h4 style="color: #8c1d40;">Four Common Classification Methods</h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 98%;">
+        <tr style="background-color: #8c1d40; color: white;">
+            <th>Method</th><th>How It Works</th><th>Best For</th><th>Watch Out For</th>
+        </tr>
+        <tr><td><strong>Equal Interval</strong></td><td>Divides the data range into bins of equal width</td><td>Data with uniform distributions</td><td>Skewed data concentrates most observations in one or two bins</td></tr>
+        <tr><td><strong>Quantile</strong></td><td>Places an equal number of observations in each bin</td><td>Ensuring visual variation across the map</td><td>Can place very different values in the same bin; may exaggerate small differences</td></tr>
+        <tr><td><strong>Jenks Natural Breaks</strong></td><td>Minimizes within-class variance and maximizes between-class variance</td><td>Data with natural clusters or gaps</td><td>Breaks are data-specific — not comparable across maps with different data</td></tr>
+        <tr><td><strong>Standard Deviation</strong></td><td>Bins centered on the mean, each one standard deviation wide</td><td>Showing how far observations deviate from the average</td><td>Assumes roughly normal distribution; outliers dominate the visual</td></tr>
+    </table>
+
+    <p>The <code>classInt</code> package in R provides functions for all four methods. The key function is <code>classIntervals()</code>, which accepts a <code>style</code> argument: <code>"equal"</code>, <code>"quantile"</code>, <code>"jenks"</code>, or <code>"sd"</code>.</p>
+
+    <p><strong>Critical insight:</strong> When you present a choropleth map in a policy setting, you should be able to justify your classification choice. "I used the default" is not a justification.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 2: Bivariate Choropleth Mapping</strong></h3>
+
+    <p>A standard choropleth shows one variable. But policy questions often involve relationships between two variables: Is poverty concentrated where educational attainment is low? Do areas with high hardship also have high unemployment?</p>
+
+    <p>A <strong>bivariate choropleth</strong> maps two variables simultaneously using a two-dimensional color legend. Each variable is classified into categories (typically 3x3), and the combinations produce a grid of 9 colors. For example, one axis might represent hardship index values and the other might represent the percentage of residents without a high school diploma.</p>
+
+    <h4 style="color: #8c1d40;">The biscale Package</h4>
+    <p>The <code>biscale</code> package streamlines bivariate mapping in R:</p>
+    <ol>
+        <li><code>bi_class()</code> — classifies two variables into a combined bivariate class</li>
+        <li><code>bi_scale_fill()</code> — applies the appropriate 2D color palette to ggplot</li>
+        <li><code>bi_legend()</code> — generates the 3x3 legend</li>
+    </ol>
+    <p>The legend is created separately and composed with the map using <code>cowplot</code> or <code>patchwork</code>.</p>
+
+    <p><strong>Design consideration:</strong> Bivariate choropleths are powerful but cognitively demanding. Always include a clear legend and limit the classification to 3x3 (not 4x4 or 5x5) to keep the map interpretable.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 3: Interactive Maps with mapgl + freestiler</strong></h3>
+
+    <p>Static maps are essential for reports and publications, but <strong>interactive maps</strong> let users explore data at their own pace — zooming in on neighborhoods, hovering over polygons for details, and experiencing smooth GPU-rendered performance.</p>
+
+    <p>The <code>mapgl</code> package renders interactive maps via MapLibre GL JS, and <code>freestiler</code> converts sf objects to PMTiles vector tiles for efficient loading. Key features include:</p>
+    <ul>
+        <li><strong>Basemap styles</strong>: Choose from OpenFreeMap styles (positron, bright, dark) via <code>openfreemap_style()</code></li>
+        <li><strong>Vector tile layers</strong>: Create PMTiles with <code>freestile()</code> and add them with <code>add_pmtiles_source()</code></li>
+        <li><strong>Fill layers</strong>: Color polygons by variable values using <code>add_fill_layer()</code> with <code>interpolate()</code></li>
+        <li><strong>Tooltips and hover</strong>: Display data values on hover using <code>tooltip</code> and <code>hover_options</code></li>
+        <li><strong>GPU acceleration</strong>: Handles block-group-level data (thousands of polygons) smoothly</li>
+    </ul>
+
+    <p>Interactive maps produced by <code>mapgl</code> are HTML widgets — they can be embedded directly in Quarto documents and dashboards, making them ideal for the policy briefs and final project you will produce later in the course.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 4: Cartographic Design Principles</strong></h3>
+
+    <p>Good cartography is not decoration — it is <strong>communication</strong>. A well-designed map directs attention to the data story; a poorly designed map obscures it.</p>
+
+    <h4 style="color: #8c1d40;">Core Principles</h4>
+    <ul>
+        <li><strong>Visual hierarchy</strong>: The most important information (the thematic data) should be the most visually prominent. Basemap labels and borders should recede</li>
+        <li><strong>Figure-ground</strong>: The study area should stand out from the surrounding context. Use a subtle background or outline to frame the area of interest</li>
+        <li><strong>Color choice</strong>: Use sequential palettes for ordinal data, diverging palettes for data with a meaningful midpoint, and qualitative palettes for categorical data. Colorblind-safe palettes (e.g., viridis) are essential for accessibility</li>
+        <li><strong>Map elements</strong>: Every thematic map should include a title, legend, scale bar, north arrow, and data source citation</li>
+    </ul>
+
+    <p>The <code>ggspatial</code> package adds professional cartographic elements to ggplot maps: <code>annotation_scale()</code> for scale bars and <code>annotation_north_arrow()</code> for orientation.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Learning Materials</strong></h3>
     <hr />
-    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Read and Review</strong></h4>
-    <p><strong>REQUIRED:</strong></p>
-    <p>Florida, R. (2018). Where the House-Price-to-Income Ratio Is Most Out of Whack. <a href="https://www.citylab.com/equity/2018/05/where-the-house-price-to-income-ratio-is-most-out-of-whack/561404/">Citylab report</a></p>
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Read and Review</strong></h4>
+
+    <p><strong>Classification and Map Perception</strong></p>
+    <ul>
+        <li>Brewer, C. A., &amp; Pickle, L. (2002). Evaluation of methods for classifying epidemiological data on choropleth maps in series. <em>Annals of the Association of American Geographers</em>, 92(4), 662-681.</li>
+        <li>Cromley, R. G. (1996). A comparison of optimal classification strategies for choroplethic displays of spatially aggregated data. <em>International Journal of Geographical Information Systems</em>, 10(4), 405-424.</li>
+    </ul>
+
+    <p><strong>Bivariate Mapping</strong></p>
+    <ul>
+        <li>Stevens, J. (2015). <a href="http://www.joshuastevens.net/cartography/make-a-bivariate-choropleth-map/" target="_blank" rel="noopener">Bivariate Choropleth Maps: A How-to Guide</a>. — Excellent practical introduction with design guidance.</li>
+    </ul>
+
+    <p><strong>Cartographic Design</strong></p>
+    <ul>
+        <li>Axis Maps. <a href="https://www.axismaps.com/guide" target="_blank" rel="noopener">Cartography Guide</a>. — Practical reference covering color, classification, and layout.</li>
+        <li>Brewer, C. A. <a href="https://colorbrewer2.org/" target="_blank" rel="noopener">ColorBrewer 2.0</a>. — Interactive tool for choosing map color schemes.</li>
+    </ul>
+
+    <p><strong>R Package Documentation</strong></p>
+    <ul>
+        <li><a href="https://cran.r-project.org/web/packages/classInt/vignettes/classInt.html" target="_blank" rel="noopener">classInt package vignette</a></li>
+        <li><a href="https://chris-prener.github.io/biscale/" target="_blank" rel="noopener">biscale package documentation</a></li>
+        <li><a href="https://walker-data.com/mapgl/" target="_blank" rel="noopener">mapgl package documentation</a></li>
+        <li><a href="https://walker-data.com/freestiler/" target="_blank" rel="noopener">freestiler package documentation</a></li>
+        <li><a href="https://paleolimbot.github.io/ggspatial/" target="_blank" rel="noopener">ggspatial package documentation</a></li>
+    </ul>
+
     <hr />
-    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Lecture Videos</strong></h4>
-    <p><a class="Button Button--primary" href="https://ds4ps.org/cpp-529-spr-2021/lectures/MappingIntro.html" target="_blank" rel="noopener">Slides</a>&nbsp;</p>
-    <p><strong>Introduction to Census Data</strong></p>
-    <iframe src="https://www.youtube.com/embed/9722ZtZ1v1g" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-    <p><strong>Introduction to Mapping</strong></p>
-    <iframe src="https://www.youtube.com/embed/peSI3dQ1Bbg" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-    <p><strong>Mapping Census Data in R</strong></p>
-    <iframe src="https://www.youtube.com/embed/Jys5nZFRf28" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-    <p><strong>Mapping Census Data in R w/ TidyCensus</strong></p>
-    <iframe src="https://www.youtube.com/embed/qScoFj5ifTY" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lecture</strong></h4>
+    <!-- PLACEHOLDER: Record lecture on classification methods and cartographic design principles -->
+    <p><iframe src="" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
     <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Assignments</strong></h3>
     <hr />
-    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Lab 02</strong></h4>
-    <p><strong>Lab Walkthrough Video</strong></p>
-    <p><iframe src="https://www.youtube.com/embed/CLMEqpf_3Xo" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
-    <p>Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/Assignment/Lab2_Assignment.qmd" target="_blank" rel="noopener">Lab 02 Quarto template (.qmd)</a>, complete the exercises, and submit both the .qmd and rendered .html to Canvas. The template contains all instructions and code placeholders. Complete Steps 1–4 by entering your R code in the areas marked <code>#Edit me</code>. Then answer Questions 1–3.</p>
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lab 02</strong></h4>
+    <!-- PLACEHOLDER: Record lab walkthrough for Lab 02 -->
+    <p><iframe src="" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
+
+    <p>In Lab 02, you will take the hardship index you built in Lab 01 and apply advanced cartographic techniques to visualize it. Specifically, you will:</p>
+    <ol>
+        <li><strong>Compare classification methods</strong>: Map the hardship index using all four methods (equal interval, quantile, Jenks, standard deviation) as small multiples and write a brief analysis of how each changes the visual story</li>
+        <li><strong>Create a bivariate choropleth</strong>: Use <code>biscale</code> to map the relationship between two variables from your index (e.g., poverty rate and unemployment) in a single visualization</li>
+        <li><strong>Build an interactive mapgl map</strong>: Create a GPU-rendered interactive map of your hardship index with tooltips showing CBG-level data and hover effects</li>
+        <li><strong>Apply cartographic best practices</strong>: Add scale bars, north arrows, titles, and source annotations using <code>ggspatial</code></li>
+    </ol>
+
+    <p><strong>Connection to Lab 01:</strong> You will load the hardship index data from Lab 01. If you have not completed Lab 01, you will not be able to proceed.</p>
+
+    <p>Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/Assignment/Lab2_Assignment.qmd" target="_blank" rel="noopener">Lab 02 Quarto template (.qmd)</a>, complete the exercises, and submit both the .qmd and rendered .html to Canvas.</p>
+
+    <p><strong>Download:</strong> <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/Assignment/Lab2_Assignment.qmd" target="_blank">Lab2_Assignment.qmd</a></p>
+
     <hr />
-    <p><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Yellowdig Topic</strong></span></p>
-    <p><strong>How local governments ensure an accurate census</strong></p>
-    <p>Every 10 years, the U.S. Census Bureau conducts a census to determine the number of people living in the United States. The data collected by the decennial census are used to determine the number of seats each state has in the U.S. House of Representatives as well as inform federal spending and other important federal and state functions.</p>
-    <blockquote>
-        <p>For your discussion topic this week, please read and provide general reflection based on the following <a href="https://www.amacad.org/news/2020-census-unprecedented-challenges-their-implications">article</a>. Discuss also what are some of the challenges faced and new innovations adopted by federal and state governments to ensure an accurate census.</p>
-    </blockquote>
-    <p>Please post your reflection as a new pin on Yellowdig.</p>
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Key Terms</strong></h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 98%;">
+        <tr style="background-color: #8c1d40; color: white;">
+            <th>Term</th><th>Definition</th>
+        </tr>
+        <tr><td><strong>Classification Method</strong></td><td>An algorithm for dividing continuous data into discrete bins for choropleth mapping</td></tr>
+        <tr><td><strong>Quantile Classification</strong></td><td>Places an equal number of observations in each class; maximizes visual variation</td></tr>
+        <tr><td><strong>Jenks Natural Breaks</strong></td><td>Optimizes class boundaries to minimize within-class variance (Goodness of Variance Fit)</td></tr>
+        <tr><td><strong>Equal Interval</strong></td><td>Divides the data range into classes of equal width</td></tr>
+        <tr><td><strong>Standard Deviation</strong></td><td>Centers bins on the mean; each bin spans one standard deviation</td></tr>
+        <tr><td><strong>Bivariate Choropleth</strong></td><td>A map that encodes two variables simultaneously using a two-dimensional color grid</td></tr>
+        <tr><td><strong>Small Multiples</strong></td><td>A series of similar maps or charts displayed together to facilitate comparison</td></tr>
+        <tr><td><strong>Visual Hierarchy</strong></td><td>The arrangement of map elements so the most important data draws the most attention</td></tr>
+        <tr><td><strong>Sequential Palette</strong></td><td>A color ramp from light to dark representing low-to-high values</td></tr>
+        <tr><td><strong>Diverging Palette</strong></td><td>A color ramp with two hues diverging from a neutral midpoint (e.g., blue-white-red)</td></tr>
+    </table>
+
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Yellowdig Topic</strong></h4>
+    <p>Find a published choropleth map from a news outlet, government report, or academic paper. Post the map (or a link to it) and answer:</p>
+    <ol>
+        <li>What classification method was used? Can you tell? If not, why is that a problem?</li>
+        <li>Would a different classification method change the story the map tells? How?</li>
+        <li>What cartographic design choices strengthen or weaken the map's message?</li>
+    </ol>
 </div>
 
 <p>&nbsp;</p>

@@ -130,12 +130,12 @@ iframe { max-width: 100%; }
 
     <p>The index you build in this module's lab becomes an <strong>input</strong> for all subsequent analyses:</p>
     <ul>
-        <li><strong>Module 2 — Cartographic Design &amp; Multi-Scale Visual Analytics</strong>: You will classify and map the hardship index using multiple cartographic methods (quantile breaks, natural breaks, bivariate choropleth) and create interactive Leaflet maps</li>
+        <li><strong>Module 2 — Cartographic Design &amp; Multi-Scale Visual Analytics</strong>: You will classify and map the hardship index using multiple cartographic methods (quantile breaks, natural breaks, bivariate choropleth) and create interactive mapgl maps</li>
         <li><strong>Module 3 — Spatial Data Integration &amp; Overlay Analysis</strong>: You will overlay external data (environmental, infrastructure) onto your index using spatial joins and buffer analysis</li>
         <li><strong>Module 4 — Spatial Autocorrelation &amp; Hot Spots</strong>: You will test whether high- and low-hardship neighborhoods cluster spatially using Moran's I and LISA maps</li>
         <li><strong>Module 5 — Temporal Change Analysis</strong>: You will compare hardship index values across two time periods (2015 vs 2023) to identify neighborhoods experiencing the most change</li>
         <li><strong>Module 6 — Integration &amp; Policy Brief</strong>: You will combine multi-scale analysis into a professional Quarto document with callouts, tabsets, and policy recommendations</li>
-        <li><strong>Module 7 — Interactive Dashboard (Final Project)</strong>: You will build a Flexdashboard or Shiny app that brings together all analyses from the course</li>
+        <li><strong>Module 7 — Interactive Dashboard (Final Project)</strong>: You will build an interactive Quarto Dashboard with mapgl maps that brings together all analyses from the course</li>
     </ul>
 
     <p><strong>The quality of your downstream analysis depends on the quality of your measurement.</strong> A poorly constructed index will produce misleading maps, flawed spatial statistics, and uninformative policy recommendations.</p>
@@ -187,6 +187,85 @@ iframe { max-width: 100%; }
     <p>In Lab 01, you will use R to retrieve census variables with <code>tidycensus</code>, assess their reliability with <code>psych::alpha()</code>, build a composite index of neighborhood quality, and visualize the results.</p>
 
     <p>Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/Assignment/Lab1_Assignment.qmd" target="_blank" rel="noopener">Lab 01 Quarto template (.qmd)</a>, complete the exercises, and submit both the .qmd and rendered .html to Canvas.</p>
+
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Extra: Interactive Mapping with freestiler + mapgl</strong></h4>
+
+    <p>Throughout this course you will create two types of maps:</p>
+    <ul>
+        <li><strong>Static maps</strong> — built with <code>ggplot2::geom_sf()</code>. These render as images, are reproducible, and embed easily in PDF and Canvas submissions. Labs 1–6 use static maps for graded assignments.</li>
+        <li><strong>Interactive maps</strong> — built with <code>mapgl</code> (powered by MapLibre GL JS). These render in a web browser, support zoom, pan, hover tooltips, and click interactivity. The Final Project dashboard uses interactive maps.</li>
+    </ul>
+
+    <p><strong>Why mapgl?</strong> mapgl is GPU-accelerated and can smoothly render tens of thousands of census block groups — something that slows down older packages. It pairs with <code>freestiler</code>, which converts <code>sf</code> objects into PMTiles vector tiles for efficient delivery.</p>
+
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 98%;">
+        <tr style="background-color: #8c1d40; color: white;">
+            <th>Feature</th><th>Static (<code>geom_sf</code>)</th><th>Interactive (<code>mapgl</code>)</th>
+        </tr>
+        <tr><td>Rendering</td><td>PNG/PDF image</td><td>GPU-rendered in browser</td></tr>
+        <tr><td>Interactivity</td><td>None</td><td>Zoom, pan, hover, click</td></tr>
+        <tr><td>File size</td><td>Small (KB)</td><td>Larger (MB, depends on data)</td></tr>
+        <tr><td>Canvas compatible</td><td>Yes (renders in .html)</td><td>Yes (self-contained .html)</td></tr>
+        <tr><td>Best for</td><td>Graded labs, policy briefs, print</td><td>Dashboards, exploratory analysis</td></tr>
+        <tr><td>Required packages</td><td><code>ggplot2</code>, <code>sf</code></td><td><code>mapgl</code>, <code>freestiler</code>, <code>sf</code></td></tr>
+    </table>
+
+    <h4 style="color: #8c1d40;">Side-by-Side Code Example</h4>
+    <p><strong>Static map with geom_sf:</strong></p>
+    <pre><code>ggplot(county_data) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis_c(option = "inferno") +
+  theme_void() +
+  labs(title = "National Hardship Index",
+       fill = "Hardship")</code></pre>
+
+    <p><strong>Interactive map with freestiler + mapgl:</strong></p>
+    <pre><code># Step 1: Create vector tiles from sf object
+freestile(county_data, "hardship.pmtiles",
+          layer_name = "hardship",
+          min_zoom = 3, max_zoom = 10)
+serve_tiles("hardship.pmtiles")
+
+# Step 2: Build the interactive map
+maplibre(
+  style = openfreemap_style("positron"),
+  bounds = st_bbox(county_data)
+) |&gt;
+  add_pmtiles_source(
+    id = "hardship-src",
+    url = "http://localhost:8080/hardship.pmtiles",
+    promote_id = "GEOID"
+  ) |&gt;
+  add_fill_layer(
+    id = "hardship-fill",
+    source = "hardship-src",
+    source_layer = "hardship",
+    fill_color = interpolate(
+      column = "hardship_index",
+      values = c(-1, 0, 1, 2),
+      stops  = c("#1a9850", "#fee08b",
+                 "#d73027", "#67001f")
+    ),
+    fill_opacity = 0.7,
+    hover_options = list(fill_opacity = 1),
+    tooltip = concat(
+      "GEOID: ", get_column("GEOID"),
+      " | Hardship: ",
+      number_format(get_column("hardship_index"))
+    )
+  )
+
+# When finished: stop_server()</code></pre>
+
+    <p><strong>Note:</strong> Labs 2–6 use <code>geom_sf()</code> for Canvas-compatible static maps. The <code>mapgl</code> + <code>freestiler</code> stack is available for the Final Project dashboard and for your own exploratory work.</p>
+
+    <p><strong>Package documentation:</strong></p>
+    <ul>
+        <li><a href="https://walker-data.com/mapgl/" target="_blank" rel="noopener">mapgl documentation</a> — interactive maps via MapLibre GL JS</li>
+        <li><a href="https://walker-data.com/freestiler/" target="_blank" rel="noopener">freestiler documentation</a> — convert sf objects to PMTiles vector tiles</li>
+    </ul>
 
     <hr />
 

@@ -19,91 +19,253 @@ iframe { max-width: 100%; }
 </style>
 </head>
 <body>
-<!-- REVISED: 2026-03-08 | See logs/module-6-log.md for change rationale -->
-<!-- DIFF: Compare against original ../CourseMaterials/Guides.1-6/Mod6/Module6_Guide.md -->
+<!-- NEW: 2026-03-09 | Updated for redesigned curriculum -->
+<!-- This is a Canvas page — paste into Canvas HTML editor -->
 
 <div style="background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px;">
     <h2><strong><span style="color: #ffffff;">M6 Overview &amp; Learning Materials<br /></span></strong></h2>
-    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Models of Neighborhood Change<br /></strong></span></p>
+    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Integration &amp; Policy Brief<br /></strong></span></p>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Module Overview</strong></h3>
-    <p>This module uses regression analysis to explore how changes in demographic variables influence changes in house prices over time. You will learn to distinguish between <strong>predictive</strong> and <strong>explanatory</strong> regression models &mdash; a foundational distinction for policy analysis.</p>
-</div>
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Module Overview and Objectives</strong></h3>
 
-<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Learning Objectives</strong></h3>
+    <p>You have spent five modules building a progressively richer analysis: measuring neighborhood hardship (Lab 1), visualizing it with professional cartography (Lab 2), enriching it with spatial data (Lab 3), testing for statistically significant clusters (Lab 4), and tracking change over time (Lab 5). Now you must do the hardest part: <strong>translate all of that analysis into a document that a non-technical decision-maker can understand and act on</strong>.</p>
+
+    <p>This capstone module focuses on <strong>policy communication</strong>. You will produce a professional policy brief using Quarto that synthesizes your findings into a coherent narrative with an executive summary, multi-scale maps, data-driven recommendations, and polished formatting. The audience is a city council member, county manager, or community development director — someone who needs to understand what your analysis means, not how you coded it.</p>
+
+    <hr />
+
     <p>After completing this module, you will be able to:</p>
-    <ol>
-        <li>Explain the difference between <strong>prediction</strong> (using 2000 levels of X to forecast Y) and <strong>explanation</strong> (using changes in X to explain changes in Y).</li>
-        <li>Articulate why cross-sectional models are vulnerable to <strong>omitted variable bias</strong> and how change-based models partially address this.</li>
-        <li>Distinguish between <strong>explanatory factors</strong> (drivers of change) and <strong>policy variables</strong> (levers that planners can actually manipulate).</li>
-        <li>Run and interpret OLS regression models predicting change in median home value.</li>
-        <li>Use cluster analysis to predict neighborhood change by neighborhood type.</li>
-        <li>Adjust home values for inflation using a CPI multiplier.</li>
-    </ol>
-</div>
-
-<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Key Concepts: Prediction vs. Explanation</strong></h3>
-
-    <p>This module introduces two regression frameworks that look similar but serve very different purposes:</p>
-
-    <h4 style="color: #8c1d40;"><strong>Model 1: Predicting Change</strong></h4>
-    <p><em>( Y<sub>2010</sub> &minus; Y<sub>2000</sub> ) = b<sub>0</sub> + b<sub>1</sub> &middot; X<sub>2000</sub></em></p>
-    <p>This model uses <strong>levels of X at the start of the study period</strong> to predict subsequent changes. It is a <strong>prospector model</strong> &mdash; it only uses data available at the beginning to forecast the future. This is useful for investors or planners who want to predict which neighborhoods will appreciate, but the coefficients should not be interpreted causally because of omitted variable bias.</p>
-
-    <h4 style="color: #8c1d40;"><strong>Model 2: Explaining Change</strong></h4>
-    <p><em>( Y<sub>2010</sub> &minus; Y<sub>2000</sub> ) = b<sub>0</sub> + b<sub>1</sub> &middot; ( X<sub>2010</sub> &minus; X<sub>2000</sub> )</em></p>
-    <p>This model uses <strong>changes in X over the study period</strong> to explain changes in Y over the same period. By looking at changes rather than levels, we move closer to causal inference. If unemployment rates rise in a tract and home values fall, we have stronger evidence that unemployment <em>drives</em> home value decline, not merely that it is correlated with other factors.</p>
-
-    <h4 style="color: #8c1d40;"><strong>Why This Matters for Policy</strong></h4>
-    <p>Identifying a variable as a <em>driver</em> of change does not automatically make it a <strong>policy lever</strong>. We can mandate smaller class sizes, but we cannot mandate that college graduates move to a specific city. An influx of graduates may raise home prices, but migration patterns are outside the typical planner&rsquo;s control. The lab asks you to think critically about which factors are actionable.</p>
-
-    <p>This basic insight &mdash; that levels predict but changes explain &mdash; is the foundation of <strong>fixed effects models</strong> and <strong>difference-in-difference designs</strong> that you will encounter in more advanced coursework.</p>
-</div>
-
-<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i> <strong>Learning Materials</strong></h3>
-    <p><strong>Regression Review</strong></p>
-    <p>The notes used in the videos below can be found&nbsp;<a href="https://watts-college.github.io/paf-516-template/lectures/OLS.html" target="_blank" rel="noopener">here (HTML)</a>.</p>
-    <p><strong>OLS Introduction</strong></p>
-    <iframe src="https://www.youtube.com/embed/3nQrCvJun-4" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-    <p><strong>OLS Graphical Example</strong></p>
-    <iframe src="https://www.youtube.com/embed/o9VrJtKScE4" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-    <p><strong>OLS Assumptions</strong></p>
-    <iframe src="https://www.youtube.com/embed/laq6rDlq6S4" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-    <p><strong>Manual OLS with Matrix Algebra</strong></p>
-    <iframe src="https://www.youtube.com/embed/2BN_23cFh2E" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-    <p><strong>OLS Example using Crime Data</strong></p>
-    <iframe src="https://www.youtube.com/embed/jPUd5xiVSqo" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-</div>
-
-<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i> <strong>Recommended Readings</strong></h3>
-    <p>The following readings provide additional context on predicting and explaining neighborhood change:</p>
     <ul>
-        <li><em>Predicting gentrification using longitudinal census data</em>&nbsp;<a href="http://urbanspatialanalysis.com/portfolio/predicting-gentrification-using-longitudinal-census-data/" target="_blank" rel="noopener">(Urban Spatial Analysis)</a> &mdash; demonstrates how housing market data and spatial attributes can build accurate neighborhood change models.</li>
-        <li>Goldstein, I. (2011). <em>Market value analysis: A data-based approach to understanding urban housing markets.</em> Putting Data to Work: Data-Driven Approaches to Strengthening Neighborhoods, 49.&nbsp;<a href="https://github.com/DS4PS/cpp-529-master/raw/master/articles/data-driven-models/MVA-DD-App-to-Strengthening-Neighborhoods.pdf" target="_blank" rel="noopener">(PDF)</a></li>
-        <li>Delmelle, E. C. (2017). <em>Differentiating pathways of neighborhood change in 50 US metropolitan areas.</em> Environment and Planning A, 49(10), 2402-2424.&nbsp;<a href="https://github.com/DS4PS/cpp-529-master/raw/master/articles/data-driven-models/differentiating_pathways_to_neighborhood_change.pdf" target="_blank" rel="noopener">(PDF)</a></li>
+        <li>Structure a <strong>policy brief</strong> with executive summary, background, findings, and recommendations</li>
+        <li>Write for a <strong>non-technical audience</strong> — translating statistical findings into actionable insights</li>
+        <li>Use Quarto document features: <strong>callout blocks</strong>, <strong>tabsets</strong>, <strong>cross-references</strong>, and <strong>figure captions</strong></li>
+        <li>Create <strong>multi-scale visualizations</strong> that provide both overview and detail</li>
+        <li>Formulate <strong>evidence-based policy recommendations</strong> grounded in your spatial analysis</li>
+        <li>Produce a publication-ready HTML document with professional formatting</li>
+        <li>Critically evaluate the <strong>limitations</strong> of your analysis and communicate uncertainty honestly</li>
     </ul>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 1: Writing for Policy Audiences</strong></h3>
+
+    <p>Academic writing and policy writing are fundamentally different. Academic writing explains methodology in detail and hedges conclusions carefully. Policy writing <strong>leads with the answer</strong>, provides just enough evidence to be credible, and ends with concrete actions.</p>
+
+    <h4 style="color: #8c1d40;">The Inverted Pyramid</h4>
+    <p>Policy documents follow an <strong>inverted pyramid</strong> structure — the most important information comes first:</p>
+    <ol>
+        <li><strong>Executive Summary</strong> (1 paragraph): What did you find? What should be done? A busy decision-maker may read only this</li>
+        <li><strong>Key Findings</strong> (2-3 paragraphs with maps): The spatial patterns, hot spots, and temporal trends with visualizations</li>
+        <li><strong>Recommendations</strong> (bulleted list): Specific, actionable steps tied directly to the evidence</li>
+        <li><strong>Methods and Limitations</strong> (brief): Enough for credibility, not a tutorial</li>
+    </ol>
+
+    <h4 style="color: #8c1d40;">Common Mistakes to Avoid</h4>
+    <ul>
+        <li><strong>Leading with methods</strong>: "We used tidycensus to retrieve ACS 5-year estimates..." — No. Lead with findings</li>
+        <li><strong>Jargon without translation</strong>: "Global Moran's I = 0.45 (p &lt; 0.001)" means nothing to a city manager. Instead: "Hardship is strongly concentrated in specific neighborhoods rather than spread evenly across the city"</li>
+        <li><strong>Maps without interpretation</strong>: Every map must be accompanied by a sentence that tells the reader what to see</li>
+        <li><strong>Vague recommendations</strong>: "The city should address inequality" is not actionable. "The city should prioritize the 12 block groups in south Phoenix identified as persistent hot spots for targeted infrastructure investment" is</li>
+    </ul>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 2: Quarto Document Features for Professional Output</strong></h3>
+
+    <p>Quarto extends standard R Markdown with features designed for professional documents. Your policy brief should use these features to improve readability and navigation.</p>
+
+    <h4 style="color: #8c1d40;">Callout Blocks</h4>
+    <p>Callout blocks highlight important information. Use them for key findings, warnings, or recommendations:</p>
+    <pre>::: {.callout-note}
+## Key Finding
+Hardship hot spots in south Phoenix have persisted across both ACS vintages,
+suggesting entrenched structural disadvantage rather than temporary fluctuation.
+:::</pre>
+    <p>Available types: <code>.callout-note</code>, <code>.callout-warning</code>, <code>.callout-important</code>, <code>.callout-tip</code></p>
+
+    <h4 style="color: #8c1d40;">Tabsets</h4>
+    <p>Tabsets let readers switch between views without scrolling. Ideal for showing the same geography mapped with different variables or time periods:</p>
+    <pre>::: {.panel-tabset}
+## 2015 Hardship
+[map code]
+
+## 2023 Hardship
+[map code]
+
+## Change
+[map code]
+:::</pre>
+
+    <h4 style="color: #8c1d40;">Cross-References and Figure Captions</h4>
+    <p>Label figures and tables so you can reference them in text:</p>
+    <pre>#| label: fig-lisa-clusters
+#| fig-cap: "LISA cluster map of hardship index, 2019-2023 ACS"</pre>
+    <p>Then reference in text with <code>@fig-lisa-clusters</code>, which renders as "Figure 1" with a hyperlink.</p>
+
+    <h4 style="color: #8c1d40;">YAML Header for Policy Briefs</h4>
+    <p>Set up your document header for professional output:</p>
+    <pre>---
+title: "Neighborhood Hardship in [Your County]"
+subtitle: "A Spatial Analysis and Policy Brief"
+author: "[Your Name]"
+date: today
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 2
+    code-fold: true
+    embed-resources: true
+---</pre>
+    <p>The <code>code-fold: true</code> option hides code by default but lets technical readers expand it. The <code>embed-resources: true</code> option creates a standalone HTML file with no external dependencies.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 3: Multi-Scale Synthesis</strong></h3>
+
+    <p>Your policy brief should present findings at <strong>multiple scales</strong> — from the county-wide overview to the neighborhood-level detail. This serves different readers and different purposes:</p>
+
+    <h4 style="color: #8c1d40;">Scale Hierarchy for Your Brief</h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 98%;">
+        <tr style="background-color: #8c1d40; color: white;">
+            <th>Scale</th><th>What It Shows</th><th>Map Type</th><th>From Which Lab</th>
+        </tr>
+        <tr><td><strong>County overview</strong></td><td>Overall spatial distribution of hardship</td><td>Choropleth with Jenks classification</td><td>Lab 2</td></tr>
+        <tr><td><strong>Enriched context</strong></td><td>How spatial access variables modify the picture</td><td>Bivariate choropleth or side-by-side comparison</td><td>Labs 2-3</td></tr>
+        <tr><td><strong>Hot spot analysis</strong></td><td>Statistically significant clusters</td><td>LISA cluster map</td><td>Lab 4</td></tr>
+        <tr><td><strong>Temporal change</strong></td><td>Where hardship is increasing or decreasing</td><td>Diverging change map</td><td>Lab 5</td></tr>
+        <tr><td><strong>Neighborhood detail</strong></td><td>Deep dive into specific hot spots</td><td>Interactive mapgl map with tooltips</td><td>Lab 2</td></tr>
+    </table>
+
+    <p>Each map should build on the previous one, creating a narrative arc: "Here is the overall picture. Here is where it is worst. Here is where it is changing. Here is what we should do about it."</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 4: Formulating Evidence-Based Recommendations</strong></h3>
+
+    <p>The recommendations section is where your analysis becomes <strong>actionable</strong>. Each recommendation should follow this pattern:</p>
+
+    <ol>
+        <li><strong>State the finding</strong>: What did the data show?</li>
+        <li><strong>Explain the implication</strong>: Why does this matter for the community?</li>
+        <li><strong>Propose the action</strong>: What specifically should be done, by whom, and where?</li>
+    </ol>
+
+    <h4 style="color: #8c1d40;">Example</h4>
+    <p><em>"Our LISA analysis identified 14 block groups in the southeast quadrant of the county as persistent hardship hot spots across both ACS vintages. These areas contain 23% of the county's population living below poverty but only 8% of its public transit stops. <strong>We recommend that the county transit authority prioritize route expansion in these 14 block groups</strong>, starting with connections to the three nearest employment centers identified in our spatial access analysis."</em></p>
+
+    <p>Notice how this recommendation is <strong>specific</strong> (14 block groups, southeast quadrant), <strong>evidence-based</strong> (LISA hot spots, persistent over time), and <strong>actionable</strong> (transit authority, route expansion, specific connections).</p>
+
+    <h4 style="color: #8c1d40;">Limitations and Honest Uncertainty</h4>
+    <p>Every analysis has limitations. Acknowledge them briefly but directly:</p>
+    <ul>
+        <li>ACS data has margins of error, especially at the block group level</li>
+        <li>The hardship index captures only the dimensions you measured — other factors matter</li>
+        <li>Spatial patterns describe where hardship clusters, not why</li>
+        <li>Boundary changes between census vintages may affect temporal comparisons</li>
+    </ul>
+    <p>Acknowledging limitations builds credibility. Ignoring them undermines it.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Learning Materials</strong></h3>
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Read and Review</strong></h4>
+
+    <p><strong>Policy Brief Writing</strong></p>
+    <ul>
+        <li>Young, E., &amp; Quinn, L. (2002). <em>Writing Effective Public Policy Papers: A Guide to Policy Advisers in Central and Eastern Europe</em>. Open Society Institute. — Chapter 6 on policy briefs is particularly useful. <a href="https://www.icpolicyadvocacy.org/sites/icpa/files/downloads/writing_effective_public_policy_papers_young_quinn.pdf" target="_blank" rel="noopener">[free PDF]</a></li>
+        <li>Herman, L. (2013). Tips for writing policy papers. Stanford Law School. — Concise, practical guidance.</li>
+    </ul>
+
+    <p><strong>Data Communication and Visualization</strong></p>
+    <ul>
+        <li>Schwabish, J. A. (2014). An economist's guide to visualizing data. <em>Journal of Economic Perspectives</em>, 28(1), 209-234. — Excellent guidance on designing figures for policy audiences.</li>
+        <li>Cairo, A. (2016). <em>The Truthful Art: Data, Charts, and Maps for Communication</em>. New Riders. — Comprehensive reference on ethical and effective data visualization.</li>
+    </ul>
+
+    <p><strong>Geographic Analysis for Policy</strong></p>
+    <ul>
+        <li>Pendall, R., Hayes, C., George, A., et al. (2014). <em>Connecting the Dots: Understanding the Flow of Funds to Low-Income Neighborhoods</em>. Urban Institute. — Example of spatial analysis translated into policy recommendations.</li>
+        <li>Kneebone, E., &amp; Berube, A. (2013). <em>Confronting Suburban Poverty in America</em>. Brookings Institution Press. — Example of using census data to frame a policy problem.</li>
+    </ul>
+
+    <p><strong>Quarto Documentation</strong></p>
+    <ul>
+        <li><a href="https://quarto.org/docs/authoring/callouts.html" target="_blank" rel="noopener">Quarto: Callout Blocks</a></li>
+        <li><a href="https://quarto.org/docs/interactive/layout.html#tabset-panel" target="_blank" rel="noopener">Quarto: Tabset Panels</a></li>
+        <li><a href="https://quarto.org/docs/authoring/cross-references.html" target="_blank" rel="noopener">Quarto: Cross-References</a></li>
+        <li><a href="https://quarto.org/docs/output-formats/html-basics.html" target="_blank" rel="noopener">Quarto: HTML Output Options</a></li>
+    </ul>
+
+    <hr />
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lecture</strong></h4>
+    <!-- PLACEHOLDER: Record lecture on policy brief writing, audience-aware communication, and Quarto features -->
+    <p><iframe src="" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
     <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Assignments</strong></h3>
     <hr />
-    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong><i class="icon-solid icon-assignment" aria-hidden="true"><span class="dp-icon-content" style="display: none;">&nbsp;</span></i></strong><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Lab 06</strong></span></h4>
-    <p>Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab6/Assignment/Lab6_Assignment.qmd" target="_blank" rel="noopener">Lab 06 Quarto template (.qmd)</a>, complete the exercises, and submit both the .qmd and rendered .html to Canvas. All instructions are included directly in the template.</p>
-    <p><em>Note:</em> This lab will become one chapter in your final report. You will save time by drafting the lab as if it is an external report chapter rather than a regular lab.</p>
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lab 06: Policy Brief</strong></h4>
+    <!-- PLACEHOLDER: Record lab walkthrough for Lab 06 policy brief -->
+    <p><iframe src="" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
+
+    <p>In Lab 06, you will synthesize all previous analyses into a professional policy brief. Your deliverable is a single Quarto document that includes:</p>
+    <ol>
+        <li><strong>Executive Summary</strong> (1 paragraph): The most important finding and primary recommendation — written so a busy reader can get the message in 30 seconds</li>
+        <li><strong>Background</strong>: Brief context on your study area and why neighborhood hardship matters for policy</li>
+        <li><strong>Findings</strong>: Multi-scale maps and analysis drawn from Labs 1-5, organized as a narrative (not a chronological lab report). Use <strong>tabsets</strong> for comparative views and <strong>callout blocks</strong> for key findings</li>
+        <li><strong>Recommendations</strong> (3-5 specific items): Each recommendation must be tied to a specific finding from your analysis, name a responsible entity, and identify a target geography</li>
+        <li><strong>Limitations</strong>: Honest assessment of what the analysis can and cannot tell us</li>
+    </ol>
+
+    <h4 style="color: #8c1d40;">Formatting Requirements</h4>
+    <ul>
+        <li>Use <code>code-fold: true</code> to hide code by default</li>
+        <li>Include at least one <strong>callout block</strong> highlighting a key finding</li>
+        <li>Include at least one <strong>tabset</strong> comparing maps (e.g., 2015 vs. 2023, or original vs. enriched index)</li>
+        <li>Use <strong>cross-references</strong> for at least two figures</li>
+        <li>Include an <strong>interactive mapgl map</strong> so readers can explore neighborhoods</li>
+        <li>Use <code>embed-resources: true</code> so the HTML file is self-contained</li>
+    </ul>
+
+    <p><strong>Connection to all previous labs:</strong> This is the capstone. You are assembling the measurement (Lab 1), cartography (Lab 2), spatial integration (Lab 3), hot spot analysis (Lab 4), and temporal analysis (Lab 5) into a single coherent document. The quality of your brief depends on the quality of all prior work.</p>
+
+    <p>Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab6/Assignment/Lab6_Assignment.qmd" target="_blank" rel="noopener">Lab 06 Quarto template (.qmd)</a> and submit both the .qmd source file and the rendered .html to Canvas.</p>
+
+    <p><strong>Download:</strong> <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab6/Assignment/Lab6_Assignment.qmd" target="_blank">Lab6_Assignment.qmd</a></p>
+
     <hr />
-    <p><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong><i class="icon-line icon-quiz" aria-hidden="true"><span class="dp-icon-content" style="display: none;">&nbsp;</span></i> Yellowdig Topic</strong></span></p>
-    <p>You will answer the questions below using the following article:</p>
-    <p><em>Predicting gentrification using longitudinal census data</em>&nbsp;<a href="http://urbanspatialanalysis.com/portfolio/predicting-gentrification-using-longitudinal-census-data/" target="_blank" rel="noopener">(LINK)</a></p>
-    <p>These background articles will be helpful:</p>
-    <p><em>Using Algorithms To Predict Gentrification</em>&nbsp;<a href="https://www.citylab.com/solutions/2017/02/algorithms-that-predict-gentrification/516945/" target="_blank" rel="noopener">(LINK)</a></p>
-    <p><em>How Machine Learning and AI Can Predict Gentrification</em>&nbsp;<a href="https://www.citylab.com/life/2018/12/gentrification-london-ai-machine-learning/578329/" target="_blank" rel="noopener">(LINK)</a></p>
-    <p><em>Discuss the differences in the types of data that are used in this predictive model versus the type of data that was used in the Differentiating Pathways article. Specifically, which features are &ldquo;engineered&rdquo; as part of this gentrification model, and how do the new variables that are created differ from the regular census data we used for the lab?</em></p>
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Key Terms</strong></h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 98%;">
+        <tr style="background-color: #8c1d40; color: white;">
+            <th>Term</th><th>Definition</th>
+        </tr>
+        <tr><td><strong>Policy Brief</strong></td><td>A concise document that presents research findings and recommendations to a non-technical decision-making audience</td></tr>
+        <tr><td><strong>Executive Summary</strong></td><td>A brief overview (1-2 paragraphs) capturing the most important findings and recommendations</td></tr>
+        <tr><td><strong>Inverted Pyramid</strong></td><td>A writing structure that places the most important information first</td></tr>
+        <tr><td><strong>Callout Block</strong></td><td>A Quarto feature that visually highlights important content (notes, warnings, tips)</td></tr>
+        <tr><td><strong>Tabset</strong></td><td>A Quarto layout that organizes content into clickable tabs within a single page section</td></tr>
+        <tr><td><strong>Cross-Reference</strong></td><td>A labeled reference to a figure, table, or section that auto-numbers and hyperlinks</td></tr>
+        <tr><td><strong>Evidence-Based Recommendation</strong></td><td>A proposed action grounded in specific empirical findings rather than general intuition</td></tr>
+        <tr><td><strong>Code-Fold</strong></td><td>A Quarto option that hides source code by default while allowing readers to expand it</td></tr>
+    </table>
+
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Yellowdig Topic</strong></h4>
+    <p>Find a real policy brief or data-driven report from a government agency, think tank, or nonprofit (e.g., Urban Institute, Brookings, your city's planning department). Post a link and answer:</p>
+    <ol>
+        <li>Who is the intended audience? How can you tell from the writing style and format?</li>
+        <li>How effectively does the document translate data into actionable recommendations? Pick one recommendation and evaluate it using the finding-implication-action framework from this module</li>
+        <li>What would you change to make the document more effective? Consider both the writing and the visualizations</li>
+    </ol>
 </div>
 
 <p>&nbsp;</p>

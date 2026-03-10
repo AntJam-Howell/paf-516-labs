@@ -19,69 +19,190 @@ iframe { max-width: 100%; }
 </style>
 </head>
 <body>
-<!-- REVISED: 2026-03-08 | See logs/module-5-log.md for change rationale -->
-<!-- DIFF: Compare against original ../CourseMaterials/Guides.1-6/Mod5/Module5_Guide.md -->
+<!-- NEW: 2026-03-09 | Updated for redesigned curriculum -->
+<!-- This is a Canvas page — paste into Canvas HTML editor -->
 
 <div style="background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px;">
-    <h2><strong><span style="color: #ffffff;">Module 5 &mdash; Visualizing Neighborhood Changes<br /></span></strong></h2>
-    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>PAF 516: Community Analytics<br /></strong></span></p>
+    <h2><strong><span style="color: #ffffff;">M5 Overview &amp; Learning Materials<br /></span></strong></h2>
+    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Temporal Change Analysis<br /></strong></span></p>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Module Overview</strong></h3>
-    <p>This module bridges the gap between descriptive spatial analysis (Modules 2&ndash;4) and predictive modeling. You will build a baseline regression model that predicts changes in median home value (MHV) between 2000 and 2010 using census-derived neighborhood characteristics. Along the way, you will learn principles of effective cartographic visualization.</p>
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Module Overview and Objectives</strong></h3>
+
+    <p>Modules 1-4 analyzed your study area at a single point in time. But neighborhoods are not static — they gentrify, decline, stabilize, or fluctuate over years and decades. This module adds the <strong>time dimension</strong> to your analysis. You will compare hardship index values across two American Community Survey (ACS) vintages to identify neighborhoods that are <strong>improving</strong>, <strong>deteriorating</strong>, or <strong>stable</strong>.</p>
+
+    <p>Temporal analysis with census data introduces unique methodological challenges. Census boundaries can change between years. Margins of error can make small changes statistically meaningless. Diverging color palettes must be chosen carefully to communicate the direction and magnitude of change. This module addresses all of these issues while building directly on the index and spatial analysis skills from previous labs.</p>
+
+    <hr />
+
+    <p>After completing this module, you will be able to:</p>
+    <ul>
+        <li>Retrieve and compare ACS data from <strong>two different vintages</strong> (e.g., 2011-2015 vs. 2019-2023) using <code>tidycensus</code></li>
+        <li>Compute <strong>change scores</strong> for individual variables and composite indices</li>
+        <li>Address <strong>boundary changes</strong> between census vintages and understand when direct comparison is valid</li>
+        <li>Apply <strong>diverging color scales</strong> to effectively communicate positive and negative change</li>
+        <li>Assess whether observed changes exceed ACS <strong>margins of error</strong></li>
+        <li>Evaluate the <strong>temporal stability</strong> of spatial patterns identified in Module 4</li>
+        <li>Connect neighborhood change to theories of <strong>gentrification, disinvestment, and neighborhood succession</strong></li>
+    </ul>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Learning Objectives</strong></h3>
-    <p>After completing this module you will be able to:</p>
-    <ol>
-        <li>Explain why median home value is a useful proxy for neighborhood quality using hedonic pricing theory.</li>
-        <li>Prepare a panel dataset of census tracts by merging 2000 and 2010 variables, filtering rural tracts, and adjusting for inflation.</li>
-        <li>Diagnose variable skew, multicollinearity, and non-linearity before fitting a regression model.</li>
-        <li>Interpret regression coefficients and calculate standardized effect sizes to compare predictor importance.</li>
-        <li>Design choropleth maps that accurately convey spatial patterns using appropriate color scales and binning strategies.</li>
-        <li>Distinguish between neighborhood change (dollar amounts) and growth rates (percentages) as outcome measures.</li>
-    </ol>
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 1: Multi-Year Census Comparison</strong></h3>
+
+    <p>The American Community Survey (ACS) provides rolling 5-year estimates. The <code>tidycensus</code> package lets you pull data from any available vintage by setting the <code>year</code> argument in <code>get_acs()</code>. For temporal comparison, you will retrieve the same variables for two different periods — for example, the 2011-2015 ACS and the 2019-2023 ACS.</p>
+
+    <h4 style="color: #8c1d40;">Computing Change Scores</h4>
+    <p>The simplest approach is a <strong>raw change score</strong>: the value at time 2 minus the value at time 1. For the hardship index:</p>
+    <pre>change = hardship_2023 - hardship_2015</pre>
+    <ul>
+        <li><strong>Positive change</strong>: Hardship increased (neighborhood deteriorated)</li>
+        <li><strong>Negative change</strong>: Hardship decreased (neighborhood improved)</li>
+        <li><strong>Near zero</strong>: Neighborhood was stable</li>
+    </ul>
+
+    <p>You can also compute <strong>percentage change</strong> for individual variables, but be cautious with variables that have small denominators — percentage change can be unstable when the baseline is small.</p>
+
+    <h4 style="color: #8c1d40;">Important: Index Comparability</h4>
+    <p>When comparing z-score-based indices across time, you must decide: do you standardize each year's data using <em>that year's</em> mean and standard deviation, or using a <em>pooled</em> mean and standard deviation? If each year is standardized separately, a z-score of 1.0 in 2015 and 1.0 in 2023 both mean "one standard deviation above that year's average" — but the absolute level of hardship could be very different. For valid change scores, consider standardizing both years against a common baseline.</p>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i> <strong>Learning Materials</strong></h3>
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 2: Boundary Changes and Data Comparability</strong></h3>
+
+    <p>Census geographies are not permanent. The Census Bureau <strong>redraws tract and block group boundaries</strong> with each decennial census (2010, 2020). This means:</p>
+    <ul>
+        <li>ACS 2011-2015 data uses <strong>2010 census boundaries</strong></li>
+        <li>ACS 2019-2023 data uses <strong>2020 census boundaries</strong></li>
+    </ul>
+    <p>If boundaries changed in your study area, you cannot directly subtract one year's value from another for affected geographies — the areas are literally different shapes containing different populations.</p>
+
+    <h4 style="color: #8c1d40;">Strategies for Handling Boundary Changes</h4>
+    <ul>
+        <li><strong>Compare within the same boundary vintage</strong>: Use two ACS years that share the same boundaries (e.g., 2015 and 2019, both on 2010 boundaries). This is the simplest and most defensible approach</li>
+        <li><strong>Crosswalk files</strong>: The Census Bureau and NHGIS provide relationship files that map old boundaries to new ones, allowing approximate comparison</li>
+        <li><strong>Visual comparison only</strong>: Map both years side by side without computing change scores — readers can see the broad patterns without relying on unit-level subtraction</li>
+    </ul>
+
+    <p>In the lab, you will use the approach that best fits your study area, but you must <strong>explicitly acknowledge</strong> the boundary issue in your analysis.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 3: Diverging Color Scales for Change Maps</strong></h3>
+
+    <p>Change data has a meaningful midpoint (zero = no change), which calls for a <strong>diverging color palette</strong> rather than a sequential one. Diverging palettes use two distinct hues radiating from a neutral center:</p>
+    <ul>
+        <li><strong>Blue-to-Red</strong>: Common convention where red signals "alarm" (increasing hardship) and blue signals improvement</li>
+        <li><strong>Purple-to-Orange</strong>: A colorblind-friendly alternative</li>
+        <li><strong>Brown-to-Teal</strong>: Another accessible option from ColorBrewer</li>
+    </ul>
+
+    <h4 style="color: #8c1d40;">Design Decisions</h4>
+    <ul>
+        <li><strong>Center the midpoint on zero</strong>: The neutral color must correspond to "no change," not the median of your data. In ggplot2, use <code>scale_fill_gradient2(midpoint = 0)</code> or <code>scale_fill_distiller(type = "div")</code></li>
+        <li><strong>Symmetric limits</strong>: Set the minimum and maximum of the color scale to equal absolute values (e.g., -2 to +2) so that the visual weight of positive and negative changes is balanced</li>
+        <li><strong>Handle outliers</strong>: Extreme values can compress the rest of the scale. Consider winsorizing (capping extreme values) or using a discrete classification</li>
+    </ul>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 4: Margins of Error and Statistical Significance of Change</strong></h3>
+
+    <p>ACS estimates come with <strong>margins of error (MOE)</strong>, and these margins can be substantial for small geographies like block groups. A change from 15% to 18% poverty may look meaningful on a map, but if both estimates have MOEs of +/- 5 percentage points, the "change" is well within sampling noise.</p>
+
+    <h4 style="color: #8c1d40;">Testing Whether Change Is Significant</h4>
+    <p>The Census Bureau provides guidance for computing a z-test for the difference between two ACS estimates:</p>
+    <pre>z = (estimate_2 - estimate_1) / sqrt(SE_1^2 + SE_2^2)</pre>
+    <p>where SE = MOE / 1.645 for 90% confidence intervals. If |z| &gt; 1.645, the change is statistically significant at the 90% level.</p>
+
+    <p><strong>Practical implication:</strong> Your change map should distinguish between statistically significant changes and noise. Consider using hatching, transparency, or a separate significance layer to flag block groups where the observed change exceeds the margin of error.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Learning Materials</strong></h3>
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Read and Review</strong></h4>
 
     <p><strong>Neighborhood Change</strong></p>
-    <p>For this project we will measure neighborhood change as a change in median home values in a community.</p>
-    <p>Home values are a reliable measure of qualitative changes to a neighborhood because the sales price of a home already takes into account all improvements to the home, as well as all improvements to the surrounding community like new parks, improved schools, and enhanced amenities like gyms and grocery stores. These are called &ldquo;hedonic pricing models&rdquo; in economics. Things like income levels or unemployment rates can change independently of improvements or decline in the community, so they are not great measures of neighborhood change. Home values, on the other hand, will typically increase only if demand for the neighborhood has increased, which typically occurs when the neighborhood or surrounding communities improve.</p>
+    <ul>
+        <li>Owens, A. (2012). Neighborhoods on the rise: A typology of neighborhoods experiencing socioeconomic ascent. <em>City &amp; Community</em>, 11(4), 345-369.</li>
+        <li>Landis, J. D. (2016). Tracking and explaining neighborhood socioeconomic change in U.S. metropolitan areas between 1990 and 2010. <em>Housing Policy Debate</em>, 26(1), 2-52.</li>
+    </ul>
 
-    <p>Read the tutorial on modeling changes in home value:</p>
-    <p><a class="Button Button--primary" href="https://watts-college.github.io/paf-516-template/LABS/lab-05-tutorial-v2.html" target="_blank" rel="noopener">NEIGHBORHOOD CHANGE TUTORIAL</a></p>
+    <p><strong>Temporal Analysis Methods</strong></p>
+    <ul>
+        <li>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. Chapter 4: Exploring US Census Data over Time. <a href="https://walker-data.com/census-r/exploring-us-census-data-over-time.html" target="_blank" rel="noopener">[free online]</a></li>
+        <li>U.S. Census Bureau. <a href="https://www.census.gov/programs-surveys/acs/guidance/comparing-acs-data.html" target="_blank" rel="noopener">Comparing ACS Data</a>. — Official guidance on making valid comparisons across ACS vintages.</li>
+    </ul>
 
-    <p><strong>Neighborhood Change and Gentrification</strong></p>
-    <p>The video below provides a general overview of neighborhood change and gentrification, including: definitions, debates, policies, and a case study example. The lecture notes can be found <a href="https://watts-college.github.io/paf-516-template/lectures/Gentrification_and_affordable_housing_2016.pdf" target="_blank" rel="noopener">here (PDF)</a>.</p>
-    <iframe src="https://www.youtube.com/embed/b4GgKBhltu8" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <p><strong>Gentrification and Displacement</strong></p>
+    <ul>
+        <li>Freeman, L. (2005). Displacement or succession? Residential mobility in gentrifying neighborhoods. <em>Urban Affairs Review</em>, 40(4), 463-491.</li>
+        <li>Ding, L., Hwang, J., &amp; Divringi, E. (2016). Gentrification and residential mobility in Philadelphia. <em>Regional Science and Urban Economics</em>, 61, 38-51.</li>
+    </ul>
 
-    <p><strong>Visualization</strong></p>
+    <p><strong>R Package Documentation</strong></p>
+    <ul>
+        <li><a href="https://walker-data.com/tidycensus/articles/other-datasets.html" target="_blank" rel="noopener">tidycensus: Working with multiple years</a></li>
+    </ul>
+
     <hr />
-    <p><a class="Button Button--primary" href="https://watts-college.github.io/paf-516-template/LABS/lab-05-choropleth-tutorial.html" target="_blank" rel="noopener">CHOROPLETH TUTORIAL</a></p>
-    <p><a class="Button Button--primary" href="https://watts-college.github.io/paf-516-template/choropleth-color-scales/" target="_blank" rel="noopener">COLOR SCALE INTUITION</a></p>
-    <hr />
-    <p>The video below describes the importance of creating maps that accurately convey spatial information contained in the underlying data. Far too often, maps are used incorrectly to advocate a certain narrative that does not accurately reflect underlying data. As data scientists, it is important that we are careful about how we map spatial information. The lecture notes can be found <a href="https://github.com/watts-college/cpp-529-template/raw/main/lectures/p-05-visual-narrative.pdf" target="_blank" rel="noopener">here (PDF)</a>.</p>
-    <iframe src="https://www.youtube.com/embed/AWwOYNvxK-A" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lecture</strong></h4>
+    <!-- PLACEHOLDER: Record lecture on temporal change analysis, boundary changes, and diverging palettes -->
+    <p><iframe src="" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
     <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Assignments</strong></h3>
     <hr />
-    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong><i class="icon-solid icon-assignment" aria-hidden="true"><span class="dp-icon-content" style="display: none;">&nbsp;</span></i></strong><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong> Lab 05 &mdash; Predicting MHV Change</strong></span></h4>
-    <p>In Lab 05 you will build a baseline regression model predicting changes in median home value (MHV) from 2000 to 2010. You will select independent variables, check regression assumptions (skew, multicollinearity, linearity), fit models, and calculate effect sizes.</p>
-    <p>Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/Assignment/Lab5_Assignment.qmd" target="_blank" rel="noopener">Lab 05 Quarto template (.qmd)</a>, complete the exercises, and submit both the .qmd and rendered .html to Canvas. All instructions are embedded in the template.</p>
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lab 05</strong></h4>
+    <!-- PLACEHOLDER: Record lab walkthrough for Lab 05 -->
+    <p><iframe src="" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
+
+    <p>In Lab 05, you will add a temporal dimension to your hardship analysis. Specifically, you will:</p>
+    <ol>
+        <li><strong>Retrieve multi-year data</strong>: Pull the same census variables for two ACS vintages (e.g., 2011-2015 and 2019-2023) using <code>tidycensus</code></li>
+        <li><strong>Compute change scores</strong>: Calculate the change in hardship index between the two periods, addressing standardization decisions explicitly</li>
+        <li><strong>Map change with diverging palettes</strong>: Create a change map using a diverging color scale centered on zero, with symmetric limits</li>
+        <li><strong>Assess statistical significance</strong>: Use margins of error to identify which block groups experienced statistically significant change</li>
+        <li><strong>Compare to Lab 04 hot spots</strong>: Overlay or juxtapose your LISA clusters with your change map — are the hot spots stable, growing, or shrinking?</li>
+    </ol>
+
+    <p><strong>Connection to previous labs:</strong> This lab directly extends Lab 04. The question is: are the spatial clusters you identified persistent features of the urban landscape, or are they shifting over time? Persistent hot spots may require different policy interventions than emerging ones.</p>
+
+    <p>Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/Assignment/Lab5_Assignment.qmd" target="_blank" rel="noopener">Lab 05 Quarto template (.qmd)</a>, complete the exercises, and submit both the .qmd and rendered .html to Canvas.</p>
+
+    <p><strong>Download:</strong> <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/Assignment/Lab5_Assignment.qmd" target="_blank">Lab5_Assignment.qmd</a></p>
+
     <hr />
-    <p><span style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong><i class="icon-line icon-quiz" aria-hidden="true"><span class="dp-icon-content" style="display: none;">&nbsp;</span></i> Yellowdig Topic</strong></span></p>
-    <p>Pick one of the following three articles to read:</p>
-    <p><em>Temkin, K., &amp; Rohe, W. (1996). Neighborhood change and urban policy. Journal of Planning Education and Research, 15(3), 159&ndash;170.</em>&nbsp;[&nbsp;<a id="73112315" class="instructure_file_link instructure_scribd_file inline_disabled" href="https://canvas.asu.edu/courses/220070/files/105139116?wrap=1" target="_blank" rel="noopener" data-canvas-previewable="true" data-api-endpoint="https://canvas.asu.edu/api/v1/courses/220070/files/105139116" data-api-returntype="File">pdf</a>&nbsp;]</p>
-    <p><em>Grigsby, W., Baratz, M., Galster, G., &amp; Maclennan, D. (1987). The dynamic of neighborhood change and decline. Progress in Planning, 28, 1.</em>&nbsp;[&nbsp;<a id="73112312" class="instructure_file_link instructure_scribd_file inline_disabled" href="https://canvas.asu.edu/courses/220070/files/105139117?wrap=1" target="_blank" rel="noopener" data-canvas-previewable="true" data-api-endpoint="https://canvas.asu.edu/api/v1/courses/220070/files/105139117" data-api-returntype="File">pdf</a>&nbsp;]</p>
-    <p><em>Schwirian, K. P. (1983). Models of neighborhood change. Annual Review of Sociology, 9(1), 83&ndash;102.</em>&nbsp;[&nbsp;<a id="73112317" class="instructure_file_link instructure_scribd_file inline_disabled" href="https://canvas.asu.edu/courses/220070/files/105139118?wrap=1" target="_blank" rel="noopener" data-canvas-previewable="true" data-api-endpoint="https://canvas.asu.edu/api/v1/courses/220070/files/105139118" data-api-returntype="File">pdf</a>&nbsp;]</p>
-    <p>Based upon the theory presented in the article, which variables do you think would be more important to include in a model of neighborhood change?</p>
-    <p>Do the census variables capture all of the data we would need, according to the article?</p>
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Key Terms</strong></h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 98%;">
+        <tr style="background-color: #8c1d40; color: white;">
+            <th>Term</th><th>Definition</th>
+        </tr>
+        <tr><td><strong>Change Score</strong></td><td>The difference between a variable's value at two time points (time 2 minus time 1)</td></tr>
+        <tr><td><strong>ACS Vintage</strong></td><td>A specific 5-year period of American Community Survey data (e.g., 2019-2023)</td></tr>
+        <tr><td><strong>Diverging Color Scale</strong></td><td>A color palette with two hues radiating from a neutral midpoint, used for data with a meaningful center</td></tr>
+        <tr><td><strong>Margin of Error (MOE)</strong></td><td>The range around an ACS estimate within which the true value likely falls (90% confidence)</td></tr>
+        <tr><td><strong>Boundary Change</strong></td><td>Redrawing of census geographic boundaries between decennial censuses, complicating temporal comparison</td></tr>
+        <tr><td><strong>Temporal Stability</strong></td><td>The degree to which spatial patterns persist over time</td></tr>
+        <tr><td><strong>Gentrification</strong></td><td>Neighborhood change characterized by rising incomes, property values, and demographic shifts</td></tr>
+        <tr><td><strong>Winsorizing</strong></td><td>Capping extreme values at a specified percentile to prevent outliers from dominating visualizations</td></tr>
+    </table>
+
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Yellowdig Topic</strong></h4>
+    <p>Neighborhood change is often framed as either "improvement" or "decline," but whose perspective defines which is which? Consider:</p>
+    <ol>
+        <li>A block group's poverty rate dropped from 35% to 15% over 8 years. Is this good news? For whom? What might be happening that the numbers do not show?</li>
+        <li>How would you distinguish gentrification (displacement of existing residents) from genuine neighborhood improvement (existing residents benefiting) using census data alone?</li>
+        <li>Should policy target neighborhoods that are <em>currently</em> high-hardship, or neighborhoods where hardship is <em>increasing fastest</em>? What are the trade-offs?</li>
+    </ol>
 </div>
 
 <p>&nbsp;</p>

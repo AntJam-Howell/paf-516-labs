@@ -16,9 +16,6 @@ execute:
   fig-width: 10
 ---
 
-
----
-
 ```{r}
 #| label: setup
 #| include: false

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PAF 516 — Module 3: Spatial Data Integration & Overlay</title>
+<title>PAF 516 — Module 3: Spatial Data Integration & Overlay Analysis</title>
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; color: #333; }
 h1, h2, h3, h4 { color: #8c1d40; }
@@ -19,90 +19,178 @@ iframe { max-width: 100%; }
 </style>
 </head>
 <body>
-<!-- REVISED: 2026-03-08 | See logs/module-3-log.md for change rationale -->
-<!-- DIFF: Compare against original ../CourseMaterials/Guides.1-6/Mod3/Module3_Guide.md -->
+<!-- NEW: 2026-03-09 | Updated for redesigned curriculum -->
+<!-- This is a Canvas page — paste into Canvas HTML editor -->
 
 <div style="background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px;">
     <h2><strong><span style="color: #ffffff;">M3 Overview &amp; Learning Materials<br /></span></strong></h2>
-    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Identifying Neighborhood Types with Cluster Analysis<br /></strong></span></p>
+    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Spatial Data Integration &amp; Overlay Analysis<br /></strong></span></p>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i><strong> Module Overview and Objectives</strong></h3>
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Module Overview and Objectives</strong></h3>
 
-    <h4 style="color: #8c1d40;">Learning Objectives</h4>
+    <p>So far, your hardship index is built entirely from census variables — measures of who lives in a place. But neighborhood quality is also shaped by <strong>what is near</strong> a place. Proximity to environmental hazards, grocery stores, transit stops, or health clinics matters as much as demographic composition. This module teaches you to combine <strong>tabular census data</strong> with <strong>external point data</strong> using spatial operations.</p>
+
+    <p>The central challenge is that these data sources live in different formats, different coordinate reference systems, and different geographic units. You will learn to align them using <strong>spatial joins</strong>, <strong>buffer analysis</strong>, and <strong>coordinate transformations</strong> — the core operations of spatial data integration. Along the way, you will confront the <strong>Modifiable Areal Unit Problem (MAUP)</strong>, one of the most important methodological issues in spatial analysis.</p>
+
+    <hr />
+
     <p>After completing this module, you will be able to:</p>
-    <ol>
-        <li><strong>Explain</strong> why data-driven classification (cluster analysis) is useful for defining "neighborhoods" from census data.</li>
-        <li><strong>Prepare</strong> census variables for clustering by standardizing them to z-scores.</li>
-        <li><strong>Apply</strong> model-based clustering (Gaussian mixture models via the <code>mclust</code> package) to assign census tracts into distinct groups.</li>
-        <li><strong>Interpret</strong> cluster profiles by reading percentile dot-charts and assigning meaningful labels to each group.</li>
-        <li><strong>Compare</strong> data-driven neighborhood typologies across published research studies.</li>
-    </ol>
-
-    <h4 style="color: #8c1d40;">Conceptual Overview</h4>
-    <p>Neighborhood change is a complicated concept with a lot of loaded terminology. We might think about neighborhoods that are "revitalized", "gentrified", that are "stable", or that "decline". For the labels to be meaningful each group should be mutually exclusive and sufficiently distinct from other groups in the taxonomy.</p>
-    <p>These labels are a bit loaded because they come with tacit value-judgments. Stable is desirable, revitalization is good, but gentrification is often considered bad.</p>
-    <p>This example is just one way that we can think about classifying census tracts by assigning similar ones into coherent groups.</p>
-    <p>In this unit, we will be learning how to implement cluster analysis in R as a data reduction technique. We will classify census tracts in the Phoenix area into groups (or neighborhoods) that can be defined on the basis of certain characteristics.</p>
-    <p>A data-driven approach to understanding neighborhood change requires us to (1) define "neighborhoods", or groups of census tracts in the data that are very similar, and (2) use those group characteristics at a point in time to predict how the "neighborhood" might change in the future. This unit focuses on Step (1) &mdash; identifying clusters.</p>
-    <p>Later on we will see how we might use group membership to make predictions with the data. For example, can a city forecast how its current neighborhoods are likely to change over the next decade? Does the current group status of a community give us reliable information about how it might change over time? These sorts of insights can help with urban planning processes.</p>
-
-    <h4 style="color: #8c1d40;">A Note on the Data</h4>
-    <p>In previous modules you used <code>tidycensus</code> to pull Census data directly from the API. In this module we use a pre-built Phoenix Dorling Cartogram with 2012 ACS data from the <a href="https://s4.ad.brown.edu/projects/diversity/Researcher/Bridging.htm">Diversity and Disparities Project</a>. This is a deliberate choice: the pre-built cartogram lets you focus on the clustering workflow itself without worrying about data retrieval or spatial transformations. You will return to <code>tidycensus</code>-based workflows in later modules.</p>
+    <ul>
+        <li>Explain the role of <strong>coordinate reference systems (CRS)</strong> and transform data between projections using <code>st_transform()</code></li>
+        <li>Perform <strong>point-in-polygon spatial joins</strong> using <code>st_join()</code> to count point features within census boundaries</li>
+        <li>Conduct <strong>buffer analysis</strong> using <code>st_buffer()</code> to measure proximity to spatial features</li>
+        <li>Use <code>st_intersection()</code> to clip and combine spatial layers</li>
+        <li>Describe the <strong>Modifiable Areal Unit Problem</strong> and its implications for spatial analysis</li>
+        <li>Create an <strong>enriched hardship index</strong> that incorporates spatial access variables alongside census demographics</li>
+        <li>Integrate external data sources (e.g., EPA facility data, USDA food access data) with census geographies</li>
+    </ul>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
-    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><i aria-hidden="true"></i> <strong>Learning Materials</strong></h3>
-    <p>To successfully complete the assignments, study the materials below, which present the important concepts of this module.</p>
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 1: Coordinate Reference Systems</strong></h3>
+
+    <p>Before you can combine spatial datasets, they must share the same <strong>coordinate reference system (CRS)</strong>. A CRS defines how locations on the curved Earth are represented on a flat surface. Two data layers that appear to be in the same location but use different CRS definitions will not align — your spatial joins will produce nonsense results.</p>
+
+    <h4 style="color: #8c1d40;">Geographic vs. Projected CRS</h4>
+    <ul>
+        <li><strong>Geographic CRS</strong> (e.g., WGS 84 / EPSG:4326): Uses latitude and longitude in degrees. Good for global data and web mapping. Distances and areas are distorted because degrees are not constant-length units</li>
+        <li><strong>Projected CRS</strong> (e.g., NAD83 UTM Zone 12N / EPSG:26912): Projects the globe onto a flat surface. Distances and areas are accurate within the projection's valid zone. Essential for buffer analysis and area calculations</li>
+    </ul>
+
+    <h4 style="color: #8c1d40;">Practical Rule</h4>
+    <p>Always check CRS with <code>st_crs()</code> before performing any spatial operation. If your layers have different CRS values, use <code>st_transform()</code> to reproject one to match the other. For operations that require accurate distances (buffers, area calculations), use a projected CRS appropriate for your study area.</p>
+
+    <p><strong>Common mistake:</strong> Creating a buffer of "1000" on data in EPSG:4326. This produces a buffer of 1000 <em>degrees</em>, not 1000 meters. Always project first.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 2: Spatial Joins and Overlay Operations</strong></h3>
+
+    <p>A <strong>spatial join</strong> attaches attributes from one spatial layer to another based on their geographic relationship — analogous to a table join in SQL, but using location instead of a key column.</p>
+
+    <h4 style="color: #8c1d40;">Point-in-Polygon Joins</h4>
+    <p>The most common spatial join in community analytics: "How many [facilities/events/resources] fall within each [census tract/block group]?" The <code>st_join()</code> function in the <code>sf</code> package performs this operation:</p>
+    <pre>joined &lt;- st_join(polygons, points, join = st_intersects)</pre>
+    <p>After joining, you typically group by the polygon ID and count the number of matched points.</p>
+
+    <h4 style="color: #8c1d40;">Buffer Analysis</h4>
+    <p>Buffers create a zone of specified distance around a feature. Common uses include:</p>
+    <ul>
+        <li>Identifying census tracts within 1 mile of a hazardous facility</li>
+        <li>Counting the number of grocery stores within 0.5 miles of each neighborhood centroid</li>
+        <li>Measuring overlap between service areas and target populations</li>
+    </ul>
+    <p>In R: <code>st_buffer(points, dist = 1609)</code> creates a 1-mile (1609 meter) buffer around each point (assuming a projected CRS in meters).</p>
+
+    <h4 style="color: #8c1d40;">Intersection and Clipping</h4>
+    <p><code>st_intersection()</code> returns only the portions of features that overlap between two layers. This is useful for clipping a statewide dataset to your study area or computing the area of overlap between buffers and census geographies.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 3: The Modifiable Areal Unit Problem (MAUP)</strong></h3>
+
+    <p>The <strong>MAUP</strong> is a fundamental issue in spatial analysis: the results of statistical analyses can change depending on <em>how</em> geographic areas are defined. It has two components:</p>
+
+    <ul>
+        <li><strong>Scale effect</strong>: Aggregating data to larger units (e.g., from block groups to tracts to counties) changes summary statistics. Correlations that appear at one scale may vanish at another</li>
+        <li><strong>Zoning effect</strong>: Even at the same scale, different boundary configurations can produce different results. Congressional districts drawn two different ways yield different demographic profiles</li>
+    </ul>
+
+    <p><strong>Why it matters for this course:</strong> When you count environmental facilities per census block group, the result depends entirely on where the Census Bureau drew the block group boundaries. A facility sitting right on a boundary could be counted in either unit. The hardship index values themselves are sensitive to the choice of geographic unit.</p>
+
+    <p>There is no perfect solution to the MAUP, but awareness is the first defense. Best practices include: analyzing at multiple scales, using the finest available geography, and being transparent about the units used.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Learning Materials</strong></h3>
     <hr />
 
     <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Read and Review</strong></h4>
-    <p>Skim the article &mdash; you are not expected to understand all of the technical details. Instead, focus on the general framework of identifying groups and then using group membership to forecast how neighborhoods are likely to change in the future.</p>
-    <p>Spend time on pages 2412&ndash;2413. See if you can make sense of how groups are being defined within this study.</p>
-    <p>Delmelle, E. C. (2017). Differentiating pathways of neighborhood change in 50 US metropolitan areas. <em>Environment and Planning A</em>, 49(10), 2402&ndash;2424. [&nbsp;<a href="https://github.com/DS4PS/paf-586-summer-2019/raw/master/Reading/differentiating-pathways-of-neighborhood-change.pdf"><strong>PDF</strong></a>&nbsp;]</p>
-    <p>Also skim this paper, which you will need for Part 02 of the lab assignment:</p>
-    <p><em>Market Value Analysis: A Data-Based Approach to Understanding Urban Housing Markets.</em> pp 49&ndash;59. [&nbsp;<a href="https://github.com/DS4PS/paf-586-summer-2019/raw/master/Reading/MVA-DD-App-to-Strengthening-Neighborhoods.pdf"><strong>PDF</strong></a>&nbsp;]</p>
-    <hr />
 
+    <p><strong>Spatial Data Integration</strong></p>
+    <ul>
+        <li>Pebesma, E. (2018). Simple features for R: Standardized support for spatial vector data. <em>The R Journal</em>, 10(1), 439-446. <a href="https://journal.r-project.org/archive/2018/RJ-2018-009/" target="_blank" rel="noopener">[open access]</a></li>
+        <li>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. Chapter 6: Spatial Analysis with US Census Data. <a href="https://walker-data.com/census-r/spatial-analysis-with-us-census-data.html" target="_blank" rel="noopener">[free online]</a></li>
+    </ul>
+
+    <p><strong>MAUP and Spatial Units</strong></p>
+    <ul>
+        <li>Openshaw, S. (1984). The modifiable areal unit problem. <em>Concepts and Techniques in Modern Geography</em>, 38. — The foundational text on MAUP (short monograph).</li>
+        <li>Dark, S. J., &amp; Bram, D. (2007). The modifiable areal unit problem (MAUP) in physical geography. <em>Progress in Physical Geography</em>, 31(5), 471-479.</li>
+    </ul>
+
+    <p><strong>Environmental Justice and Spatial Access</strong></p>
+    <ul>
+        <li>Mohai, P., &amp; Saha, R. (2015). Which came first, people or pollution? A review of theory and evidence from longitudinal environmental justice studies. <em>Environmental Research Letters</em>, 10(12), 125011.</li>
+        <li>EPA EJScreen: <a href="https://www.epa.gov/ejscreen" target="_blank" rel="noopener">Environmental Justice Screening and Mapping Tool</a></li>
+    </ul>
+
+    <p><strong>R Package Documentation</strong></p>
+    <ul>
+        <li><a href="https://r-spatial.github.io/sf/" target="_blank" rel="noopener">sf package documentation</a> — especially the spatial operations vignette</li>
+        <li><a href="https://walker-data.com/tidycensus/" target="_blank" rel="noopener">tidycensus package</a> — for retrieving census data with geometry</li>
+    </ul>
+
+    <hr />
     <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lecture</strong></h4>
-    <p><strong>An Overview of Cluster Analysis</strong></p>
-    <p>The first video introduces cluster analysis and a simple partitioning algorithm used to segment data into specific partitions or groups.</p>
-    <iframe src="https://www.youtube.com/embed/U8zHi32KnJo" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-    <p>&nbsp;</p>
-    <p>The second video introduces other popular clustering methods &ndash; Hierarchical and model-based clustering. Model-based clustering is the method we will use in R with the <code>mclust</code> package.</p>
-    <iframe src="https://www.youtube.com/embed/-_oPRGATOBw" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <!-- PLACEHOLDER: Record lecture on spatial joins, CRS, buffer analysis, and MAUP -->
+    <p><iframe src="" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
     <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Assignments</strong></h3>
     <hr />
 
-    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lab 03: Identifying Neighborhood Clusters</strong></h4>
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lab 03</strong></h4>
+    <!-- PLACEHOLDER: Record lab walkthrough for Lab 03 -->
+    <p><iframe src="" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
 
-    <p>The purpose of Lab 3 is to show you how to apply model-based clustering to classify Phoenix neighborhoods into meaningful groups. The lab has two parts:</p>
+    <p>In Lab 03, you will extend your hardship index by integrating external spatial data. Specifically, you will:</p>
+    <ol>
+        <li><strong>Load and project external point data</strong>: Import a dataset of environmental facilities (e.g., EPA-regulated sites or food retailers) and ensure it shares a CRS with your census boundaries</li>
+        <li><strong>Perform point-in-polygon spatial joins</strong>: Use <code>st_join()</code> to count how many facilities fall within each census block group</li>
+        <li><strong>Conduct buffer analysis</strong>: Create 1-mile buffers around facilities and identify which block groups intersect these buffers</li>
+        <li><strong>Build an enriched hardship index</strong>: Add your new spatial access variables (facility counts, buffer proximity) to the original index from Lab 01</li>
+        <li><strong>Map and compare</strong>: Visualize the original vs. enriched index side by side to see how spatial access changes the picture</li>
+    </ol>
+
+    <p><strong>Connection to previous labs:</strong> You will load your Lab 01 hardship index data and apply the cartographic techniques learned in Lab 02 to visualize the results.</p>
 
     <p>Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/Assignment/Lab3_Assignment.qmd" target="_blank" rel="noopener">Lab 03 Quarto template (.qmd)</a>, complete the exercises, and submit both the .qmd and rendered .html to Canvas.</p>
 
-    <p><strong>PART 01: Labeling Phoenix Neighborhood Types</strong></p>
-    <p>Work through the Lab 3 Quarto file (<code>Lab3_Assignment.qmd</code>), which contains the complete tutorial and assignment template in a single document. Execute each code chunk step-by-step to understand each stage of the process. By the end, you will have assigned Phoenix census tracts into 8 unique groups using model-based clustering.</p>
-    <p>You are then ready for the fun part &mdash; giving a meaningful label to each group. To do this, you need to visually inspect which census variables are prominent in each group (using the percentile dot-charts your code produces) and make an informed opinion about what type of label to apply.</p>
-    <p>Labels should be informative. There will always be a trade-off between precision labels (literal and dry but unambiguous) and colorful labels (metaphors, playful, easy to remember). Your task is to create a set of labels that balances these two considerations without offending anyone with stereotypes (please be respectful).</p>
+    <p><strong>Download:</strong> <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/Assignment/Lab3_Assignment.qmd" target="_blank">Lab3_Assignment.qmd</a></p>
 
-    <p><strong>PART 02: Other Neighborhood Cluster Models</strong></p>
-    <p>Using the two papers from the reading list above (the MVA paper and the Delmelle paper), answer the three comparison questions in the lab template. This part asks you to compare the clustering approaches in these papers to the clustering you performed in Part 01.</p>
+    <hr />
 
-    <p><strong>Submission:</strong> Write up your responses (Part 01 labels + Part 02 answers) in a Word document or PDF. Name your file according to the convention: <strong>Lab-03-LastName.xxx</strong></p>
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Key Terms</strong></h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 98%;">
+        <tr style="background-color: #8c1d40; color: white;">
+            <th>Term</th><th>Definition</th>
+        </tr>
+        <tr><td><strong>Coordinate Reference System (CRS)</strong></td><td>A system that defines how spatial coordinates relate to locations on the Earth</td></tr>
+        <tr><td><strong>Geographic CRS</strong></td><td>CRS using latitude/longitude in angular degrees (e.g., WGS 84 / EPSG:4326)</td></tr>
+        <tr><td><strong>Projected CRS</strong></td><td>CRS that maps the Earth onto a flat surface with linear distance units (e.g., UTM)</td></tr>
+        <tr><td><strong>Spatial Join</strong></td><td>Combining attributes from two spatial layers based on their geographic relationship</td></tr>
+        <tr><td><strong>Point-in-Polygon</strong></td><td>A spatial operation that identifies which polygon contains each point</td></tr>
+        <tr><td><strong>Buffer</strong></td><td>A zone of specified distance around a spatial feature</td></tr>
+        <tr><td><strong>MAUP</strong></td><td>Modifiable Areal Unit Problem — the sensitivity of spatial analysis results to the definition of geographic boundaries</td></tr>
+        <tr><td><strong>Scale Effect</strong></td><td>Changes in analysis results when data is aggregated to larger or smaller geographic units</td></tr>
+        <tr><td><strong>Enriched Index</strong></td><td>A composite index that combines demographic variables with spatial access or proximity variables</td></tr>
+    </table>
+
     <hr />
 
     <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Yellowdig Topic</strong></h4>
-    <p>Post your reflection as a new pin:</p>
-    <p>Think back to the lab on creating latent construct measures.</p>
-    <p>What is the relationship between a latent construct and a group identified by clustering?</p>
-    <p>Do you think the groups that the model found are valid?</p>
-    <p>Do you think they are reliable?</p>
-    <p><em>With those ideas in mind, discuss the strengths and weaknesses of these data-driven approaches to identifying neighborhoods. When do you think they work well, and when do you think they will be misleading?</em></p>
+    <p>Environmental justice analysis often relies on spatial proximity — "communities near hazardous facilities bear disproportionate health burdens." Consider:</p>
+    <ol>
+        <li>What distance threshold would you use to define "near" a hazardous facility? How would you justify that choice?</li>
+        <li>Is counting facilities within a boundary a good measure of exposure, or can you think of a better spatial measure?</li>
+        <li>How might the MAUP affect environmental justice conclusions? Give a concrete example.</li>
+    </ol>
 </div>
+
 <p>&nbsp;</p>
 </body>
 </html>
