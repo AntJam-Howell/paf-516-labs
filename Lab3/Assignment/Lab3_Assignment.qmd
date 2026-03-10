@@ -1,5 +1,5 @@
 ---
-title: "Lab 03 — Spatial Data Integration & Overlay Analysis"
+title: "Lab 03 — Lab Guide: Spatial Data Integration & Overlay Analysis"
 subtitle: "PAF 516 | M3 Assignment"
 date: today
 format:
@@ -22,20 +22,13 @@ execute:
 ```{r}
 #| label: setup
 #| include: false
-#| eval: true
-#| results: hide
-#| message: false
-#| warning: false
 knitr::opts_chunk$set( echo = TRUE, message=F, warning=F, fig.width=10 )
 options( tigris_use_cache = TRUE )
 ```
 
 ```{r}
 #| label: packages
-#| eval: true
-#| results: hide
-#| message: false
-#| warning: false
+#| eval: false
 # Core packages for this lab
 library( tidyverse )
 library( tidycensus )
@@ -53,13 +46,12 @@ library( psych )       # Cronbach's alpha
 ```
 
 
-# ── Step 1: Pull Maricopa County CBG Data ──────────────────────
+# -- Step 1: Pull Maricopa County CBG Data ──────────────────────
 
 In Labs 1 and 2 we worked at the tract and county level. Here we move to **census block groups (CBGs)** — the finest geography for which ACS data are published — and pull the same five hardship variables from Lab 1.
 
 ```{r}
 #| label: step.01-vars
-#| echo: true
 #| eval: false
 
 # Define our 5-variable economic hardship indicator set (same as Lab 1)
@@ -78,9 +70,7 @@ hardship_vars <- c(
 
 ```{r}
 #| label: step.01-pull
-#| echo: true
 #| eval: false
-#| results: hide
 
 # Pull CBG-level data with geometry for Maricopa County
 cbg_raw <- get_acs(
@@ -94,30 +84,15 @@ cbg_raw <- get_acs(
 )
 ```
 
-We now have long-format data covering all Maricopa County CBGs.
-
-```{r}
-#| label: local-data-fallback
-#| eval: false
-
-# ── Local Data Fallback ────────────────────────────────────
-# If the Census API is unavailable or your API key isn't working,
-# uncomment the line below to load the same data from a local CSV file:
-#
-# cbg_raw <- read_csv("data/Lab3/maricopa_cbgs_acs2023.csv")
-#
-# Note: CSV files do not include geometry. To map the data, you'll
-# need to join it with a shapefile or use tigris::block_groups()
-```
+We now have ___ rows of long-format data covering all Maricopa County CBGs.
 
 
-# ── Step 2: Build the 5-Variable Hardship Index ──────────────────────
+# -- Step 2: Build the 5-Variable Hardship Index ──────────────────────
 
 This mirrors Lab 1: pivot to wide format, compute rates, standardize to z-scores, reverse-code income, and average into a composite index.
 
 ```{r}
 #| label: step.02-wrangle
-#| echo: true
 #| eval: false
 
 # Pivot from long to wide
@@ -158,7 +133,6 @@ cat( "Original 5-variable alpha:", round( alpha_val_orig, 3 ), "\n" )
 
 ```{r}
 #| label: step.02-index
-#| echo: true
 #| eval: false
 
 # Create the composite hardship index (row mean of z-scores)
@@ -172,13 +146,12 @@ summary( cbg_complete$hardship_index )
 ```
 
 
-# ── Step 3: Load External Point Data (Environmental Facilities) ──────────────────────
+# -- Step 3: Load External Point Data (Environmental Facilities) ──────────────────────
 
 This is the **new skill** in Lab 3. We bring in data from outside the Census — specifically, locations of major environmental facilities in Maricopa County drawn from EPA's Toxic Release Inventory (TRI) and Superfund programs. These are real facilities with known latitude/longitude coordinates.
 
 ```{r}
 #| label: step.03-facilities
-#| echo: true
 #| eval: false
 
 # Create a tibble of known environmental facilities in Maricopa County
@@ -244,13 +217,12 @@ cat( "Facility records loaded:", nrow( facilities ), "\n" )
 ```
 
 
-# ── Step 4: Convert to sf and Align CRS ──────────────────────
+# -- Step 4: Convert to sf and Align CRS ──────────────────────
 
 The geometry column is the key that allows us to **join** data from completely different sources. First, we convert our facility table to an `sf` point object. Then we project both layers to **EPSG:2868** (NAD83 / Arizona Central, units in feet) so that distance calculations are accurate.
 
 ```{r}
 #| label: step.04-crs
-#| echo: true
 #| eval: false
 
 # Convert facility tibble to sf point layer
@@ -276,13 +248,12 @@ cat( "Facility CRS:", st_crs( facil_proj )$input, "\n" )
 **Why EPSG:2868?** Geographic coordinates (lat/lon) use degrees — computing a 1-mile buffer in degrees gives distorted ellipses that vary with latitude. A projected CRS uses linear units (feet for 2868), so `st_buffer( x, dist = 5280 )` gives a true 1-mile circle.
 
 
-# ── Step 5: Point-in-Polygon Spatial Join ──────────────────────
+# -- Step 5: Point-in-Polygon Spatial Join ──────────────────────
 
 A **spatial join** works just like `left_join()` or `inner_join()`, except the key is geometry rather than a shared column name. `st_join()` matches each CBG polygon to any facility points that fall inside it.
 
 ```{r}
 #| label: step.05-spatial-join
-#| echo: true
 #| eval: false
 
 # Spatial join: attach facility info to CBGs that contain them
@@ -306,13 +277,12 @@ cat( "Total facilities matched:",
 ```
 
 
-# ── Step 6: Buffer Analysis (1-Mile Proximity Zone) ──────────────────────
+# -- Step 6: Buffer Analysis (1-Mile Proximity Zone) ──────────────────────
 
 Not all impacts stop at a polygon boundary. Pollution, noise, and truck traffic extend outward. We draw a **1-mile buffer** (5280 feet in EPSG:2868) around every facility, then identify which CBGs intersect those buffers.
 
 ```{r}
 #| label: step.06-buffer
-#| echo: true
 #| eval: false
 
 # 1 mile = 5280 feet (EPSG:2868 units are US survey feet)
@@ -335,7 +305,6 @@ cat( "CBGs within 1-mile buffer zone:",
 
 ```{r}
 #| label: step.06-buffer-map
-#| echo: true
 #| eval: false
 
 # Visualize the buffer zones with facilities and CBGs
@@ -352,7 +321,7 @@ ggplot() +
 ```
 
 
-# ── Step 7: Enriched Hardship Index ──────────────────────
+# -- Step 7: Enriched Hardship Index ──────────────────────
 
 We now add two spatially-derived variables to the original 5-variable index:
 
@@ -363,7 +332,6 @@ Both are standardized and added to the index. We then recompute Cronbach's alpha
 
 ```{r}
 #| label: step.07-enriched
-#| echo: true
 #| eval: false
 
 # Build the enriched index with 7 variables
@@ -389,7 +357,6 @@ cat( "Enriched 7-variable alpha:", round( alpha_val_enr, 3 ), "\n" )
 
 ```{r}
 #| label: step.07-alpha-detail
-#| echo: true
 #| eval: false
 
 # Print full alpha output to see item-level diagnostics
@@ -398,7 +365,6 @@ print( alpha_enriched )
 
 ```{r}
 #| label: step.07-compute-enriched
-#| echo: true
 #| eval: false
 
 # Create the enriched composite index
@@ -411,13 +377,12 @@ summary( cbg_proj$enriched_index )
 ```
 
 
-# ── Step 8: Comparative Maps ──────────────────────
+# -- Step 8: Comparative Maps ──────────────────────
 
 Side-by-side comparison of the original census-only hardship index vs. the spatially enriched index. We use `patchwork` to compose the two maps.
 
 ```{r}
 #| label: step.08-maps
-#| echo: true
 #| eval: false
 #| fig-width: 14
 #| fig-height: 7
@@ -457,7 +422,6 @@ p1 + p2 +
 
 ```{r}
 #| label: step.08-difference
-#| echo: true
 #| eval: false
 
 # Compute and map the difference: enriched minus original
@@ -481,13 +445,13 @@ ggplot( cbg_proj ) +
 ```
 
 
-# ── Questions ──────────────────────
+# -- Questions ──────────────────────
 
 ### Question 1: Interpret the Comparative Maps
 
 **Compare the original hardship index map to the enriched index map. Where do they disagree? What does spatial integration reveal that census-only analysis missed?**
 
-> **Answer:** [YOUR ANSWER HERE]
+> [YOUR ANSWER HERE]
 
 
 ### Question 2: Modify — Change Buffer Distance to 0.5 Miles
@@ -496,82 +460,18 @@ ggplot( cbg_proj ) +
 
 ```{r}
 #| label: q2-half-mile-buffer
-#| echo: true
 #| eval: false
 
-# --- Q2: Complete code for 0.5-mile buffer analysis ---
-
-# 0.5 miles = 2640 feet
-buffer_dist_half <- 2640
-
-# Create 0.5-mile buffers around each facility
-facil_buffers_half <- st_buffer( facil_proj, dist = buffer_dist_half )
-
-# Dissolve into a single zone
-buffer_zone_half <- st_union( facil_buffers_half )
-
-# Identify CBGs that intersect the 0.5-mile buffer zone
-cbg_proj$in_buffer_half <- as.integer(
-  st_intersects( cbg_proj, buffer_zone_half, sparse = FALSE )[ , 1 ]
-)
-
-cat( "CBGs within 0.5-mile buffer zone:",
-     sum( cbg_proj$in_buffer_half == 1 ), "of", nrow( cbg_proj ), "\n" )
-
-# Build the enriched index with 0.5-mile buffer
-enriched_half_vars <- cbg_proj %>%
-  as.data.frame() %>%
-  select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate,
-          median_income, facility_count, in_buffer_half )
-
-enriched_half_z <- enriched_half_vars %>%
-  mutate( across( everything(), ~ as.numeric( scale(.) ) ) )
-
-# Reverse-code median income
-enriched_half_z <- enriched_half_z %>%
-  mutate( median_income = -1 * median_income )
-
-# Cronbach's alpha for the 0.5-mile enriched index
-alpha_half <- psych::alpha( enriched_half_z )
-cat( "Enriched alpha (0.5-mi buffer):", round( alpha_half$total$raw_alpha, 3 ), "\n" )
-
-# Compute the enriched index
-enriched_half_z$enriched_half <- rowMeans( enriched_half_z[ , 1:7 ], na.rm = TRUE )
-cbg_proj$enriched_half <- enriched_half_z$enriched_half
+# YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-half-mile-maps
-#| echo: true
 #| eval: false
 #| fig-width: 14
 #| fig-height: 7
 
-# Side-by-side: 1-mile enriched vs 0.5-mile enriched
-p_1mi <- ggplot( cbg_proj ) +
-  geom_sf( aes( fill = enriched_index ), color = NA ) +
-  scale_fill_viridis( option = "inferno", direction = -1,
-                      name = "Index" ) +
-  theme_void() +
-  labs( title = "Enriched Index (1-Mile Buffer)",
-        caption = paste0( "CBGs in buffer: ",
-                          sum( cbg_proj$in_buffer == 1 ) ) )
-
-p_half <- ggplot( cbg_proj ) +
-  geom_sf( aes( fill = enriched_half ), color = NA ) +
-  scale_fill_viridis( option = "inferno", direction = -1,
-                      name = "Index" ) +
-  theme_void() +
-  labs( title = "Enriched Index (0.5-Mile Buffer)",
-        caption = paste0( "CBGs in buffer: ",
-                          sum( cbg_proj$in_buffer_half == 1 ) ) )
-
-p_1mi + p_half +
-  plot_annotation(
-    title = "Sensitivity of Enriched Index to Buffer Distance",
-    subtitle = "Maricopa County CBGs | ACS 2023",
-    theme = theme( plot.title = element_text( size = 16, face = "bold" ) )
-  )
+# YOUR CODE HERE
 ```
 
 
@@ -579,4 +479,4 @@ p_1mi + p_half +
 
 **How sensitive are the results to buffer distance? What does this tell you about the Modifiable Areal Unit Problem (MAUP)?**
 
-> **Answer:** [YOUR ANSWER HERE]
+> [YOUR ANSWER HERE]

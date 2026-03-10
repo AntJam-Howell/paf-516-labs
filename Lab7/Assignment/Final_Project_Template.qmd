@@ -26,7 +26,8 @@ library( tidycensus )
 library( sf )
 library( spdep )
 library( viridis )
-library( leaflet )
+library( mapgl )
+library( freestiler )
 library( DT )
 library( crosstalk )
 library( bslib )
@@ -75,24 +76,27 @@ build_hardship_index <- function( df ) {
       no_ins_rate  = no_ins_num / no_ins_den
     )
 
-  index_vars <- wide %>%
-    as.data.frame() %>%
-    select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
-    drop_na()
+  # Filter to complete cases FIRST (keeping geometry intact)
+  complete <- wide %>%
+    filter( !is.na( poverty_rate ) & !is.na( unemp_rate ) &
+            !is.na( no_hs_rate )   & !is.na( no_ins_rate ) &
+            !is.na( median_income ) )
 
-  index_z <- index_vars %>%
+  if ( nrow( complete ) == 0 ) stop( "No complete cases — check variable codes" )
+
+  # Z-score standardize (drop geometry temporarily for scale())
+  nums <- complete %>%
+    st_drop_geometry() %>%
+    select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
     mutate( across( everything(), ~ as.numeric( scale(.) ) ) )
 
-  index_z <- index_z %>%
-    mutate( median_income = -1 * median_income )
+  # Reverse-code income
+  nums$median_income <- -1 * nums$median_income
 
-  index_z$hardship_index <- rowMeans( index_z, na.rm = TRUE )
+  # Composite index
+  complete$hardship_index <- rowMeans( nums, na.rm = TRUE )
 
-  result <- wide %>%
-    drop_na( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income )
-  result$hardship_index <- index_z$hardship_index
-
-  return( result )
+  return( complete )  # Returns sf object with geometry intact
 }
 ```
 
@@ -232,17 +236,19 @@ build_hardship_index <- function( df ) {
 ### Interactive Map
 
 ```{r}
-#| label: local-leaflet
+#| label: local-mapgl
 
-# TODO: Create a crosstalk-linked leaflet map of your CBG hardship data.
+# TODO: Create a crosstalk-linked mapgl map of your CBG hardship data.
 #
 # Steps:
 # 1. Transform CBG data to WGS84: st_transform( cbg_complete, 4326 )
-# 2. Round values for clean display in popups
+# 2. Round values for clean tooltip display
 # 3. Wrap in SharedData: crosstalk::SharedData$new( data, key = ~GEOID )
-# 4. Create color palette: colorNumeric( viridis(...), domain = ... )
-# 5. Build leaflet map with addPolygons() and popup text
-# 6. Add legend with addLegend()
+# 4. Create PMTiles: freestile( data, "hardship.pmtiles", layer_name = "hardship" )
+# 5. Serve tiles: serve_tiles( "hardship.pmtiles" )
+# 6. Build map: maplibre( style = openfreemap_style("positron"), bounds = ... )
+# 7. Add source: add_pmtiles_source( id = "hardship-src", url = ... )
+# 8. Add fill layer: add_fill_layer( id = "hardship-fill", ... )
 ```
 
 ## Column {width=40%}
@@ -253,7 +259,7 @@ build_hardship_index <- function( df ) {
 #| label: local-table
 
 # TODO: Create a DT::datatable using the SAME SharedData object
-# from the leaflet map above. This links selections between
+# from the mapgl map above. This links selections between
 # the map and the table via crosstalk.
 #
 # DT::datatable(

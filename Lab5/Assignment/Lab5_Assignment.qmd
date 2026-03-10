@@ -1,5 +1,5 @@
 ---
-title: "Lab 05 — Temporal Change Analysis"
+title: "Lab 05 — Lab Guide: Temporal Change Analysis"
 subtitle: "PAF 516 | M5 Assignment"
 date: today
 format:
@@ -20,10 +20,6 @@ execute:
 ```{r}
 #| label: setup
 #| include: false
-#| eval: true
-#| results: hide
-#| message: false
-#| warning: false
 knitr::opts_chunk$set( echo = TRUE, message=F, warning=F, fig.width=10 )
 options( tigris_use_cache = TRUE )
 ```
@@ -31,11 +27,8 @@ options( tigris_use_cache = TRUE )
 
 ```{r}
 #| label: packages
-#| eval: true
-#| results: hide
-#| message: false
-#| warning: false
-# ── Packages ─────────────────────────────────────────
+#| eval: false
+# -- Packages -----------------------------------------
 library( tidyverse )
 library( tidycensus )
 library( sf )
@@ -51,9 +44,9 @@ library( patchwork )
 ```
 
 
-# ── Overview ─────────────────────────────────────────
+# -- Overview -----------------------------------------
 
-In Labs 1–4 we built, mapped, and analyzed our economic hardship index at a single point in time. But neighborhoods change. In this lab we introduce **temporal change analysis** — pulling the same hardship variables for two different ACS periods, computing change scores, and mapping where hardship is worsening or improving.
+In Labs 1--4 we built, mapped, and analyzed our economic hardship index at a single point in time. But neighborhoods change. In this lab we introduce **temporal change analysis** --- pulling the same hardship variables for two different ACS periods, computing change scores, and mapping where hardship is worsening or improving.
 
 **New skill**: Multi-year census comparison and change mapping with diverging color palettes.
 
@@ -65,7 +58,7 @@ In Labs 1–4 we built, mapped, and analyzed our economic hardship index at a si
 This gives us an approximately **8-year gap** between the midpoints of the two survey windows.
 
 
-# ── Step 1: Define Variables and Pull Period 1 Data ──
+# -- Step 1: Define Variables and Pull Period 1 Data --
 
 We use the same 5 economic hardship variables from Lab 1. One important note: the health insurance table B27010 changed structure between ACS vintages. We use B27010_017 (no insurance, ages 18-34) for both periods because it exists in both the 2015 and 2023 5-year ACS.
 
@@ -73,7 +66,7 @@ We use the same 5 economic hardship variables from Lab 1. One important note: th
 #| label: step.01-vars
 #| eval: false
 
-# ── Define hardship variables ──────────────────────────
+# -- Define hardship variables -------------------------
 # These are the SAME 5 indicators from Lab 1.
 # Each rate variable needs a numerator and denominator.
 hardship_vars <- c(
@@ -91,10 +84,9 @@ hardship_vars <- c(
 
 ```{r}
 #| label: step.01-pull-p1
-#| results: hide
 #| eval: false
 
-# ── Pull Period 1: 2011-2015 ACS ──────────────────────
+# -- Pull Period 1: 2011-2015 ACS ----------------------
 # We pull Maricopa County block group (CBG) data for the earlier period.
 # geometry = TRUE gives us spatial boundaries for mapping.
 cbg_2015 <- get_acs(
@@ -110,10 +102,9 @@ cbg_2015 <- get_acs(
 
 ```{r}
 #| label: step.01-pull-p2
-#| results: hide
 #| eval: false
 
-# ── Pull Period 2: 2019-2023 ACS ──────────────────────
+# -- Pull Period 2: 2019-2023 ACS ----------------------
 # Same variables, same geography, different time period.
 cbg_2023 <- get_acs(
   geography = "block group",
@@ -127,23 +118,7 @@ cbg_2023 <- get_acs(
 ```
 
 
-```{r}
-#| label: local-data-fallback
-#| eval: false
-
-# ── Local Data Fallback ────────────────────────────────────
-# If the Census API is unavailable or your API key isn't working,
-# uncomment the lines below to load the same data from local CSV files:
-#
-# cbg_2015 <- read_csv("data/Lab5/maricopa_cbgs_acs2015.csv")
-# cbg_2023 <- read_csv("data/Lab5/maricopa_cbgs_acs2023.csv")
-#
-# Note: CSV files do not include geometry. To map the data, you'll
-# need to join it with a shapefile or use tigris::block_groups()
-```
-
-
-# ── Step 2: Build Hardship Index for Each Period ─────
+# -- Step 2: Build Hardship Index for Each Period -----
 
 We now reshape each dataset from long to wide, compute rates, standardize to z-scores, reverse-code median income, and create the composite hardship index. This is the same pipeline from Lab 1, applied twice.
 
@@ -151,7 +126,7 @@ We now reshape each dataset from long to wide, compute rates, standardize to z-s
 #| label: step.02-function
 #| eval: false
 
-# ── Reusable function to build the hardship index ─────
+# -- Reusable function to build the hardship index -----
 # Rather than copy-pasting the same code twice, we write a function.
 # This takes the raw long-format tidycensus output and returns a
 # spatial data frame with the hardship index attached.
@@ -172,30 +147,27 @@ build_hardship_index <- function( df ) {
       no_ins_rate  = no_ins_num / no_ins_den
     )
 
-  # Extract the 5 indicator columns and drop incomplete cases
-  # We need complete cases to compute z-scores
-  index_vars <- wide %>%
-    as.data.frame() %>%
-    select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
-    drop_na()
+  # Filter to complete cases FIRST (keeping geometry intact)
+  complete <- wide %>%
+    filter( !is.na( poverty_rate ) & !is.na( unemp_rate ) &
+            !is.na( no_hs_rate )   & !is.na( no_ins_rate ) &
+            !is.na( median_income ) )
 
-  # Standardize all variables to z-scores (mean=0, sd=1)
-  index_z <- index_vars %>%
+  if ( nrow( complete ) == 0 ) stop( "No complete cases — check variable codes" )
+
+  # Z-score standardize (drop geometry temporarily for scale())
+  nums <- complete %>%
+    st_drop_geometry() %>%
+    select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
     mutate( across( everything(), ~ as.numeric( scale(.) ) ) )
 
   # Reverse-code median income: high income = LOW hardship
-  index_z <- index_z %>%
-    mutate( median_income = -1 * median_income )
+  nums$median_income <- -1 * nums$median_income
 
   # Composite index: row mean of the 5 z-scores
-  index_z$hardship_index <- rowMeans( index_z, na.rm = TRUE )
+  complete$hardship_index <- rowMeans( nums, na.rm = TRUE )
 
-  # Attach the index back to the spatial data (complete cases only)
-  result <- wide %>%
-    drop_na( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income )
-  result$hardship_index <- index_z$hardship_index
-
-  return( result )
+  return( complete )  # Returns sf object with geometry intact
 }
 ```
 
@@ -203,7 +175,7 @@ build_hardship_index <- function( df ) {
 #| label: step.02-build
 #| eval: false
 
-# ── Build index for both periods ──────────────────────
+# -- Build index for both periods ----------------------
 cbg_2015_idx <- build_hardship_index( cbg_2015 )
 cbg_2023_idx <- build_hardship_index( cbg_2023 )
 
@@ -212,15 +184,15 @@ cat( "Period 2 (2023) CBGs with valid index:", nrow( cbg_2023_idx ), "\n" )
 ```
 
 
-# ── Step 3: Join on GEOID ────────────────────────────
+# -- Step 3: Join on GEOID ----------------------------
 
-Census block group boundaries can change between decennial censuses. The 2015 ACS uses 2010 Census boundaries while the 2023 ACS uses 2020 Census boundaries. Some CBGs were split, merged, or renumbered. We use `inner_join()` to keep only CBGs that exist in **both** periods — this ensures a clean apples-to-apples comparison.
+Census block group boundaries can change between decennial censuses. The 2015 ACS uses 2010 Census boundaries while the 2023 ACS uses 2020 Census boundaries. Some CBGs were split, merged, or renumbered. We use `inner_join()` to keep only CBGs that exist in **both** periods --- this ensures a clean apples-to-apples comparison.
 
 ```{r}
 #| label: step.03-join
 #| eval: false
 
-# ── Join the two periods by GEOID ─────────────────────
+# -- Join the two periods by GEOID ---------------------
 # We extract just the GEOID and hardship_index from each period,
 # then inner_join to keep only CBGs present in both time points.
 # We keep the 2023 geometry for mapping (more current boundaries).
@@ -242,7 +214,7 @@ cat( "CBGs lost (boundary changes):",
 ```
 
 
-# ── Step 4: Compute Change Scores ───────────────────
+# -- Step 4: Compute Change Scores --------------------
 
 The change score is simply the difference between the two period indices. A **positive** value means hardship **increased** (worsened); a **negative** value means hardship **decreased** (improved).
 
@@ -250,7 +222,7 @@ The change score is simply the difference between the two period indices. A **po
 #| label: step.04-change
 #| eval: false
 
-# ── Compute the change score ──────────────────────────
+# -- Compute the change score --------------------------
 # Positive change = hardship worsened over time
 # Negative change = hardship improved over time
 change_df <- change_df %>%
@@ -261,8 +233,8 @@ change_df <- change_df %>%
 #| label: step.04-summary
 #| eval: false
 
-# ── Summary statistics of the change distribution ─────
-cat( "── Summary of Hardship Change Scores ──\n" )
+# -- Summary statistics of the change distribution -----
+cat( "-- Summary of Hardship Change Scores --\n" )
 cat( "Mean change:    ", round( mean( change_df$hardship_change, na.rm = TRUE ), 3 ), "\n" )
 cat( "Median change:  ", round( median( change_df$hardship_change, na.rm = TRUE ), 3 ), "\n" )
 cat( "Std deviation:  ", round( sd( change_df$hardship_change, na.rm = TRUE ), 3 ), "\n" )
@@ -288,7 +260,7 @@ cat( "CBGs with no change:           ", n_stable, " (",
 #| label: step.04-histogram
 #| eval: false
 
-# ── Histogram of change scores ────────────────────────
+# -- Histogram of change scores ------------------------
 # The distribution shows whether change is symmetric or skewed.
 # A distribution centered above zero would mean hardship is
 # generally worsening; below zero means generally improving.
@@ -300,7 +272,7 @@ ggplot( change_df, aes( x = hardship_change ) ) +
               linetype = "solid", color = "blue", linewidth = 0.8 ) +
   theme_minimal() +
   labs(
-    title    = "Distribution of Hardship Change Scores (2015 → 2023)",
+    title    = "Distribution of Hardship Change Scores (2015 -> 2023)",
     subtitle = "Maricopa County CBGs | Positive = worsening, Negative = improving",
     x        = "Change in Hardship Index",
     y        = "Number of CBGs",
@@ -309,17 +281,17 @@ ggplot( change_df, aes( x = hardship_change ) ) +
 ```
 
 
-# ── Step 5: Map Change with Diverging Palette ───────
+# -- Step 5: Map Change with Diverging Palette --------
 
 For change maps, we use a **diverging color palette** centered at zero. Blue = improvement (hardship decreased), white = no change, red = worsening (hardship increased). This is different from the sequential viridis palette we used for level maps in prior labs, because change has a meaningful midpoint (zero).
 
 ```{r}
 #| label: step.05-change-map
+#| eval: false
 #| fig-width: 10
 #| fig-height: 8
-#| eval: false
 
-# ── Diverging change map ──────────────────────────────
+# -- Diverging change map ------------------------------
 # scale_fill_gradient2() creates a diverging palette with three anchors:
 #   low (blue) = negative change (improvement)
 #   mid (white) = zero change
@@ -337,7 +309,7 @@ map_change <- ggplot( change_df ) +
   ) +
   theme_void() +
   labs(
-    title    = "Change in Economic Hardship Index (2015 → 2023)",
+    title    = "Change in Economic Hardship Index (2015 -> 2023)",
     subtitle = "Maricopa County Block Groups",
     caption  = "Blue = improvement (hardship decreased) | Red = worsening (hardship increased)"
   )
@@ -346,17 +318,17 @@ map_change
 ```
 
 
-# ── Step 6: Side-by-Side Maps with Patchwork ────────
+# -- Step 6: Side-by-Side Maps with Patchwork ---------
 
 We create a three-panel figure: the hardship index for Period 1, the index for Period 2, and the change map. This lets us see not just *where* change occurred, but *what the starting and ending conditions looked like*.
 
 ```{r}
 #| label: step.06-sidebyside
+#| eval: false
 #| fig-width: 16
 #| fig-height: 6
-#| eval: false
 
-# ── Period 1 level map ────────────────────────────────
+# -- Period 1 level map --------------------------------
 # We use the joined data so all three maps show the same set of CBGs
 p1_map <- ggplot( change_df ) +
   geom_sf( aes( fill = hardship_2015 ), color = NA ) +
@@ -365,7 +337,7 @@ p1_map <- ggplot( change_df ) +
   theme_void() +
   labs( title = "Hardship Index 2015" )
 
-# ── Period 2 level map ────────────────────────────────
+# -- Period 2 level map --------------------------------
 p2_map <- ggplot( change_df ) +
   geom_sf( aes( fill = hardship_2023 ), color = NA ) +
   scale_fill_viridis( option = "inferno", direction = -1,
@@ -373,7 +345,7 @@ p2_map <- ggplot( change_df ) +
   theme_void() +
   labs( title = "Hardship Index 2023" )
 
-# ── Change map (compact version) ─────────────────────
+# -- Change map (compact version) ----------------------
 p_change <- ggplot( change_df ) +
   geom_sf( aes( fill = hardship_change ), color = NA ) +
   scale_fill_gradient2(
@@ -381,9 +353,9 @@ p_change <- ggplot( change_df ) +
     midpoint = 0, name = "Change"
   ) +
   theme_void() +
-  labs( title = "Change (2023 − 2015)" )
+  labs( title = "Change (2023 - 2015)" )
 
-# ── Combine with patchwork ───────────────────────────
+# -- Combine with patchwork ----------------------------
 # The + operator from patchwork places plots side by side.
 # plot_annotation() adds a shared title across all panels.
 p1_map + p2_map + p_change +
@@ -395,7 +367,7 @@ p1_map + p2_map + p_change +
 ```
 
 
-# ── Step 7 (Optional): Top-10 Changed CBGs ──────────
+# -- Step 7 (Optional): Top-10 Changed CBGs -----------
 
 To give concrete examples, we identify the CBGs with the largest increases and decreases in hardship.
 
@@ -403,8 +375,8 @@ To give concrete examples, we identify the CBGs with the largest increases and d
 #| label: step.07-top10
 #| eval: false
 
-# ── CBGs with the largest hardship INCREASES ──────────
-cat( "── Top 10 CBGs with Greatest Hardship INCREASE ──\n" )
+# -- CBGs with the largest hardship INCREASES ----------
+cat( "-- Top 10 CBGs with Greatest Hardship INCREASE --\n" )
 change_df %>%
   as.data.frame() %>%
   select( GEOID, NAME, hardship_2015, hardship_2023, hardship_change ) %>%
@@ -413,7 +385,7 @@ change_df %>%
   mutate( across( where( is.numeric ), ~ round( ., 3 ) ) ) %>%
   print()
 
-cat( "\n── Top 10 CBGs with Greatest Hardship DECREASE ──\n" )
+cat( "\n-- Top 10 CBGs with Greatest Hardship DECREASE --\n" )
 change_df %>%
   as.data.frame() %>%
   select( GEOID, NAME, hardship_2015, hardship_2023, hardship_change ) %>%
@@ -424,183 +396,75 @@ change_df %>%
 ```
 
 
-# ── Questions ──────────────────────────────────────────
+# -- Questions -----------------------------------------
 
-### Q1 — Interpret
+### Q1 --- Interpret
 
-**What is the overall direction of change — is hardship generally increasing or decreasing across Maricopa County CBGs? Are the patterns from Lab 4 (hot spots) worsening, improving, or stable?**
+**What is the overall direction of change --- is hardship generally increasing or decreasing across Maricopa County CBGs? Are the patterns from Lab 4 (hot spots) worsening, improving, or stable?**
 
-- **Overall direction**: [YOUR ANSWER HERE]
-
-- **Geographic patterns**: [YOUR ANSWER HERE]
-
-- **Relationship to Lab 4 hot spots**: [YOUR ANSWER HERE]
-
-- **Caveats**: [YOUR ANSWER HERE]
+> [YOUR ANSWER HERE]
 
 
-### Q2 — Modify (FULL CODE AND OUTPUT REQUIRED)
+### Q2 --- Modify (FULL CODE AND OUTPUT REQUIRED)
 
 **Rerun the temporal change analysis at the Arizona TRACT level (`geography = "tract"`, `state = "AZ"`) instead of Maricopa CBGs. Pull both periods, compute the change score, and map statewide. Show complete code and output.**
 
 ```{r}
 #| label: q2-pull-p1
-#| results: hide
 #| eval: false
 
-# ── Pull Period 1 at Arizona tract level ──────────────
-# Same variables, but now geography = "tract" and we pull
-# the entire state of Arizona (no county filter).
-tract_2015 <- get_acs(
-  geography = "tract",
-  variables = hardship_vars,
-  state     = "AZ",
-  year      = 2015,
-  survey    = "acs5",
-  geometry  = TRUE
-)
+# YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-pull-p2
-#| results: hide
 #| eval: false
 
-# ── Pull Period 2 at Arizona tract level ──────────────
-tract_2023 <- get_acs(
-  geography = "tract",
-  variables = hardship_vars,
-  state     = "AZ",
-  year      = 2023,
-  survey    = "acs5",
-  geometry  = TRUE
-)
+# YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-build-index
 #| eval: false
 
-# ── Build hardship index for both periods ─────────────
-# We reuse the build_hardship_index() function from Step 2.
-tract_2015_idx <- build_hardship_index( tract_2015 )
-tract_2023_idx <- build_hardship_index( tract_2023 )
-
-cat( "Period 1 (2015) AZ tracts:", nrow( tract_2015_idx ), "\n" )
-cat( "Period 2 (2023) AZ tracts:", nrow( tract_2023_idx ), "\n" )
+# YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-join
 #| eval: false
 
-# ── Join tracts by GEOID ─────────────────────────────
-# Same inner_join approach as Step 3. Some tracts may have
-# changed boundaries between 2010 and 2020 Census geographies.
-t1 <- tract_2015_idx %>%
-  as.data.frame() %>%
-  select( GEOID, hardship_2015 = hardship_index )
-
-t2 <- tract_2023_idx %>%
-  select( GEOID, hardship_2023 = hardship_index )
-
-tract_change <- inner_join( t2, t1, by = "GEOID" )
-
-# Compute change score
-tract_change <- tract_change %>%
-  mutate( hardship_change = hardship_2023 - hardship_2015 )
-
-cat( "AZ tracts matched in both periods:", nrow( tract_change ), "\n" )
+# YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-summary
 #| eval: false
 
-# ── Summary statistics for tract-level change ─────────
-cat( "── Summary of Tract-Level Hardship Change (Arizona) ──\n" )
-cat( "Mean change:   ", round( mean( tract_change$hardship_change, na.rm = TRUE ), 3 ), "\n" )
-cat( "Median change: ", round( median( tract_change$hardship_change, na.rm = TRUE ), 3 ), "\n" )
-cat( "Std deviation: ", round( sd( tract_change$hardship_change, na.rm = TRUE ), 3 ), "\n" )
-
-n_w <- sum( tract_change$hardship_change > 0, na.rm = TRUE )
-n_b <- sum( tract_change$hardship_change < 0, na.rm = TRUE )
-n_t <- n_w + n_b
-cat( "\nTracts worsened:  ", n_w, "(", round( 100 * n_w / n_t, 1 ), "%)\n" )
-cat( "Tracts improved:  ", n_b, "(", round( 100 * n_b / n_t, 1 ), "%)\n" )
+# YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-change-map
+#| eval: false
 #| fig-width: 10
 #| fig-height: 10
-#| eval: false
 
-# ── Statewide change map (Arizona tracts) ─────────────
-ggplot( tract_change ) +
-  geom_sf( aes( fill = hardship_change ), color = NA ) +
-  scale_fill_gradient2(
-    low      = "blue",
-    mid      = "white",
-    high     = "red",
-    midpoint = 0,
-    name     = "Change in\nHardship"
-  ) +
-  theme_void() +
-  labs(
-    title    = "Change in Economic Hardship Index (2015 → 2023)",
-    subtitle = "Arizona Census Tracts | ACS 5-Year Estimates",
-    caption  = "Blue = improvement | Red = worsening"
-  )
+# YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-sidebyside
+#| eval: false
 #| fig-width: 16
 #| fig-height: 7
-#| eval: false
 
-# ── Three-panel comparison for Arizona tracts ─────────
-t1_map <- ggplot( tract_change ) +
-  geom_sf( aes( fill = hardship_2015 ), color = NA ) +
-  scale_fill_viridis( option = "inferno", direction = -1, name = "Index" ) +
-  theme_void() +
-  labs( title = "Hardship 2015" )
-
-t2_map <- ggplot( tract_change ) +
-  geom_sf( aes( fill = hardship_2023 ), color = NA ) +
-  scale_fill_viridis( option = "inferno", direction = -1, name = "Index" ) +
-  theme_void() +
-  labs( title = "Hardship 2023" )
-
-t_change_map <- ggplot( tract_change ) +
-  geom_sf( aes( fill = hardship_change ), color = NA ) +
-  scale_fill_gradient2(
-    low = "blue", mid = "white", high = "red",
-    midpoint = 0, name = "Change"
-  ) +
-  theme_void() +
-  labs( title = "Change (2023 − 2015)" )
-
-t1_map + t2_map + t_change_map +
-  plot_annotation(
-    title    = "Economic Hardship Change: Arizona Census Tracts",
-    subtitle = "ACS 5-Year Estimates (2011-2015 vs 2019-2023)",
-    caption  = "Left/Center: viridis | Right: diverging blue-white-red"
-  )
+# YOUR CODE HERE
 ```
 
 
-### Q3 — Interpret Modified
+### Q3 --- Interpret Modified
 
 **Compare the statewide tract map to the Maricopa CBG map. Does the statewide view reveal different patterns? Where is change most concentrated? What does the scale comparison reveal?**
 
-- **Statewide patterns**: [YOUR ANSWER HERE]
-
-- **Urban vs. rural contrast**: [YOUR ANSWER HERE]
-
-- **Scale effects**: [YOUR ANSWER HERE]
-
-- **Practical implications**: [YOUR ANSWER HERE]
-
-- **Interpretation caution**: [YOUR ANSWER HERE]
+> [YOUR ANSWER HERE]
