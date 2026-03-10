@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAF 516 — Module 1: Measurement, Indexing & Reliability</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; color: #333; }
+h1, h2, h3, h4 { color: #8c1d40; }
+a { color: #8c1d40; }
+a:hover { color: #ffc627; }
+code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+img { max-width: 100%; height: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background-color: #8c1d40; color: white; }
+iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+<!-- NEW: 2026-03-08 | Module 1 created from scratch per lab1-specialist.md -->
+<!-- This is a Canvas page — paste into Canvas HTML editor -->
+
+<div style="background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px;">
+    <h2><strong><span style="color: #ffffff;">M1 Overview &amp; Learning Materials<br /></span></strong></h2>
+    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Measurement, Indexing &amp; Reliability<br /></strong></span></p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Module Overview and Objectives</strong></h3>
+
+    <p>This module introduces <strong>measurement theory</strong> as it applies to community analytics. Before we can analyze neighborhoods (Modules 2–6), we need a reliable way to <em>measure</em> neighborhood quality. Many of the things we care about — economic hardship, social vulnerability, community health — are <strong>latent constructs</strong> that cannot be directly observed. Instead, we combine multiple observable indicators (census variables) into a single composite <strong>index</strong>.</p>
+
+    <p>This module teaches you how to build such an index and how to evaluate whether it is <em>reliable</em> using <strong>Cronbach's alpha</strong>.</p>
+
+    <hr />
+
+    <p>After completing this module, you will be able to:</p>
+    <ul>
+        <li>Define a <strong>construct</strong> and distinguish it from directly measurable variables</li>
+        <li>Explain why multiple indicators are combined into a composite index</li>
+        <li>Apply <strong>z-score standardization</strong> before combining variables measured on different scales</li>
+        <li>Calculate and interpret <strong>Cronbach's alpha</strong> as a measure of internal consistency</li>
+        <li>Use <code>tidycensus</code> to retrieve census variables and <code>psych::alpha()</code> to assess reliability</li>
+        <li>Identify census variables that map to neighborhood constructs (e.g., economic hardship, social vulnerability)</li>
+        <li>Visualize inter-item correlations using <code>corrplot</code></li>
+    </ul>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 1: What Is Measurement?</strong></h3>
+
+    <p><em>Many variables studied by psychologists are straightforward and simple to measure. These include sex, age, height, weight, and birth order… Other variables — perhaps the majority — are not so straightforward or simple to measure. We cannot accurately assess people's level of intelligence by looking at them, and we certainly cannot put their self-esteem on a bathroom scale.</em></p>
+    <p>— <a href="https://opentextbc.ca/researchmethods/chapter/understanding-psychological-measurement/">Understanding Psychological Measurement</a></p>
+
+    <p><strong>These kinds of variables are called latent CONSTRUCTS</strong> and include personality traits (e.g., extraversion), emotional states (e.g., fear), attitudes (e.g., toward taxes), and abilities (e.g., athleticism).</p>
+
+    <p>In community analytics, we are less interested in psychological measures and more interested in constructs of <strong>neighborhood quality</strong>. But we use the same tools developed in psychometrics to build reliable measures.</p>
+
+    <h4 style="color: #8c1d40;">Key Concepts</h4>
+    <ul>
+        <li><strong>Construct</strong>: An abstract concept that cannot be directly measured (e.g., "economic hardship")</li>
+        <li><strong>Indicator</strong>: An observable, measurable variable that reflects some aspect of the construct (e.g., poverty rate, unemployment rate)</li>
+        <li><strong>Construct Validity</strong>: Are we measuring what we think we are measuring?</li>
+        <li><strong>Measurement Levels</strong>: Nominal, ordinal, interval, ratio — determines which operations are valid</li>
+    </ul>
+
+    <p><strong>Example:</strong> How does the Census measure "poverty"? The official poverty measure uses income thresholds that vary by family size and composition. But a single income variable may not capture the full experience of economic hardship. We might combine poverty rate, unemployment rate, median household income, and public assistance receipt into a composite index.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 2: Building Composite Indices</strong></h3>
+
+    <p>Why combine multiple variables into one index?</p>
+    <ul>
+        <li><strong>Dimensionality reduction</strong>: Summarize many variables into a single score</li>
+        <li><strong>Construct representation</strong>: No single variable fully captures a latent construct; multiple indicators triangulate it</li>
+        <li><strong>Noise reduction</strong>: Random measurement error in individual items averages out when combined</li>
+    </ul>
+
+    <h4 style="color: #8c1d40;">Measurement Theory</h4>
+    <p>Each item (variable) can be decomposed into signal and noise:</p>
+    <pre>item = X + e</pre>
+    <p>Where <strong>X</strong> is the true score component and <strong>e</strong> is measurement error. When we combine items into an index:</p>
+    <pre>index = T + e   where:  T = X1 + X2 + X3   e = e1 + e2 + e3</pre>
+    <p>The reliability of the index is: <em>alpha = var(T) / var(T + e)</em> — a "signal to noise" ratio.</p>
+
+    <h4 style="color: #8c1d40;">Z-Score Standardization</h4>
+    <p>Before combining variables measured on different scales (e.g., income in dollars vs. percentage in poverty), we standardize each to z-scores:</p>
+    <pre>z = (x - mean(x)) / sd(x)</pre>
+    <p>This puts all variables on the same scale (mean = 0, sd = 1) so they contribute equally to the index.</p>
+
+    <h4 style="color: #8c1d40;">Real-World Example: Social Vulnerability Index (SVI)</h4>
+    <p>The CDC's Social Vulnerability Index combines 16 census variables across 4 themes: socioeconomic status, household characteristics, racial/ethnic minority status, and housing type/transportation. Each variable is percentile-ranked and summed within themes. <a href="https://www.atsdr.cdc.gov/placeandhealth/svi/index.html">Learn more about the SVI</a>.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 3: Reliability — Cronbach's Alpha</strong></h3>
+
+    <p><strong>Internal consistency</strong> asks: do the items in our index "hang together"? If they all measure the same underlying construct, they should be correlated with each other.</p>
+
+    <h4 style="color: #8c1d40;">What Is Cronbach's Alpha?</h4>
+    <p>Alpha is the most common measure of internal consistency. Intuitively, it captures the average inter-item correlation, scaled by the number of items:</p>
+    <pre>alpha = var(T) / var(T + e)</pre>
+
+    <h4 style="color: #8c1d40;">Interpreting Alpha</h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 60%;">
+        <tr style="background-color: #8c1d40; color: white;">
+            <th>Alpha Range</th><th>Interpretation</th>
+        </tr>
+        <tr><td>&alpha; &gt; 0.9</td><td>Excellent</td></tr>
+        <tr><td>0.8 &lt; &alpha; &le; 0.9</td><td>Good</td></tr>
+        <tr><td>0.7 &lt; &alpha; &le; 0.8</td><td>Acceptable</td></tr>
+        <tr><td>0.6 &lt; &alpha; &le; 0.7</td><td>Questionable</td></tr>
+        <tr><td>&alpha; &le; 0.6</td><td>Poor — reconsider your items</td></tr>
+    </table>
+
+    <h4 style="color: #8c1d40;">What If Alpha Is Low?</h4>
+    <ul>
+        <li>Check the correlation matrix — are some items uncorrelated or negatively correlated with the rest?</li>
+        <li>Consider dropping poorly fitting items</li>
+        <li>Reconsider whether all items actually reflect the same construct</li>
+        <li>Use the <code>psych::alpha()</code> output's "alpha if item dropped" column to identify weak items</li>
+    </ul>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Section 4: From Measurement to Analysis</strong></h3>
+
+    <p>The index you build in this module's lab becomes an <strong>input</strong> for all subsequent analyses:</p>
+    <ul>
+        <li><strong>Module 2</strong>: You will use census data and ratios to compare communities — the same data retrieval skills from this lab carry forward</li>
+        <li><strong>Module 3</strong>: Cluster analysis groups neighborhoods by similar index values</li>
+        <li><strong>Module 4</strong>: Regression models use index scores as dependent or independent variables</li>
+        <li><strong>Module 5</strong>: Geospatial mapping visualizes index scores across census tracts</li>
+        <li><strong>Module 7</strong>: Your final dashboard brings all of these together</li>
+    </ul>
+
+    <p><strong>The quality of your downstream analysis depends on the quality of your measurement.</strong> A poorly constructed index will produce misleading clusters, biased regressions, and uninformative maps.</p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Learning Materials</strong></h3>
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Read and Review</strong></h4>
+
+    <p><strong>Measurement Theory</strong></p>
+    <p><a href="https://canvas.asu.edu/courses/220070/files/105139000?wrap=1" target="_blank" rel="noopener">LECTURE NOTES</a></p>
+
+    <p><strong>Assigned Reading</strong></p>
+    <p><em>Sch&auml;ffer, U. (2007). Management accounting &amp; control scales handbook.</em> Springer Science &amp; Business Media. [<a href="https://canvas.asu.edu/courses/220070/files/105139111?wrap=1" target="_blank" rel="noopener">2-page PDF</a>]</p>
+
+    <p><strong>For Reference:</strong></p>
+    <ul>
+        <li><em>Smith, F. (2002). Research methods in pharmacy practice.</em> Pharmaceutical Press. [<a href="https://canvas.asu.edu/courses/220070/files/105139113?wrap=1" target="_blank" rel="noopener">pdf</a>]</li>
+        <li><em>MacKenzie, S. B., Podsakoff, P. M., &amp; Podsakoff, N. P. (2011). Construct measurement and validation procedures in MIS and behavioral research.</em> MIS Quarterly, 35(2), 293-334. [<a href="https://canvas.asu.edu/courses/220070/files/105139114?wrap=1" target="_blank" rel="noopener">pdf</a>]</li>
+        <li><em>Kimberlin, C. L., &amp; Winterstein, A. G. (2008). Validity and reliability of measurement instruments used in research.</em> American Journal of Health-System Pharmacy, 65(23), 2276-2284. [<a href="https://canvas.asu.edu/courses/220070/files/105138694?wrap=1" target="_blank" rel="noopener">pdf</a>]</li>
+    </ul>
+
+    <p><strong>Neighborhood Change Background</strong></p>
+    <ul>
+        <li><em>Pitkin, B. (2001). Theories of neighborhood change: Implications for community development policy and practice.</em> UCLA Advanced Policy Institute, 28. [<a href="https://canvas.asu.edu/courses/220070/files/105139051?wrap=1" target="_blank" rel="noopener">pdf</a>]</li>
+        <li><em>Ellen, I. G., &amp; Turner, M. A. (1997). Does neighborhood matter? Assessing recent evidence.</em> Housing Policy Debate, 8(4), 833-866. [<a href="https://canvas.asu.edu/courses/220070/files/105139110?wrap=1" target="_blank" rel="noopener">pdf</a>]</li>
+    </ul>
+
+    <p><strong>R Package Documentation</strong></p>
+    <ul>
+        <li><a href="https://cran.r-project.org/web/packages/psych/vignettes/intro.html" target="_blank" rel="noopener">psych package vignette</a> — includes <code>alpha()</code> for reliability analysis</li>
+        <li><a href="https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html" target="_blank" rel="noopener">corrplot package vignette</a> — correlation matrix visualization</li>
+    </ul>
+
+    <hr />
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lecture</strong></h4>
+    <p><iframe src="https://www.youtube.com/embed/ra5rMqr00Ew?start=192" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40; background-color: #ffffff; border-bottom-color: #ffffff;"><strong>Assignments</strong></h3>
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Lab 01</strong></h4>
+    <p><iframe src="https://www.youtube.com/embed/xKV8QPtH52w?start=8" width="560" height="315" loading="lazy" allowfullscreen="allowfullscreen" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe></p>
+
+    <p>In Lab 01, you will use R to retrieve census variables with <code>tidycensus</code>, assess their reliability with <code>psych::alpha()</code>, build a composite index of neighborhood quality, and visualize the results.</p>
+
+    <p>Download the Lab 01 Quarto template (.qmd), complete the exercises, and submit both the .qmd and rendered .html to Canvas.</p>
+
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Key Terms</strong></h4>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 98%;">
+        <tr style="background-color: #8c1d40; color: white;">
+            <th>Term</th><th>Definition</th>
+        </tr>
+        <tr><td><strong>Construct</strong></td><td>An abstract concept that cannot be directly observed or measured (e.g., neighborhood quality)</td></tr>
+        <tr><td><strong>Indicator / Item</strong></td><td>An observable variable used to measure an aspect of a construct</td></tr>
+        <tr><td><strong>Composite Index</strong></td><td>A single score created by combining multiple indicators</td></tr>
+        <tr><td><strong>Z-Score</strong></td><td>A standardized value: (x - mean) / sd; puts variables on a common scale</td></tr>
+        <tr><td><strong>Cronbach's Alpha (&alpha;)</strong></td><td>A measure of internal consistency; how well items in an index correlate with each other</td></tr>
+        <tr><td><strong>Internal Consistency</strong></td><td>The degree to which items in a scale measure the same underlying construct</td></tr>
+        <tr><td><strong>Reliability</strong></td><td>The signal-to-noise ratio of a measurement: var(T) / var(T + e)</td></tr>
+        <tr><td><strong>Latent Variable</strong></td><td>An unobserved variable inferred from observed indicators</td></tr>
+    </table>
+
+    <hr />
+
+    <h4 style="color: #8c1d40; border-bottom-color: #d3d3d3;"><strong>Yellowdig Topic</strong></h4>
+    <p>Consider the "toxic neighborhood environment" scale developed by Manduca and Sampson:</p>
+    <p><em>Manduca, R., &amp; Sampson, R. J. (2019). Punishing and toxic neighborhood environments independently predict the intergenerational social mobility of black and white children. PNAS, 116(16), 7772-7777.</em> [<a href="https://canvas.asu.edu/courses/220070/files/105139036?wrap=1" target="_blank" rel="noopener">pdf</a>]</p>
+    <ol>
+        <li>Propose one variable not currently included in the metric that you believe would predict low social mobility for children in a neighborhood.</li>
+        <li>Can you think of a variable that would predict <em>high</em> social mobility that could be added by flipping its sign?</li>
+        <li>Should all factors have equal weight, or would you weight some more heavily? Explain.</li>
+    </ol>
+</div>
+
+<p>&nbsp;</p>
+</body>
+</html>
