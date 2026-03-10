@@ -1,5 +1,5 @@
 ---
-title: "Lab 04 — Lab Guide: Spatial Autocorrelation & Hot Spots"
+title: "Lab 04 — Spatial Autocorrelation & Hot Spots"
 subtitle: "PAF 516 | M4 Assignment"
 date: today
 format:
@@ -18,11 +18,17 @@ execute:
 
 ---
 
+---
+
 # Setup & Packages
 
 ```{r}
 #| label: setup
 #| include: false
+#| eval: true
+#| results: hide
+#| message: false
+#| warning: false
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10)
 
 options(tigris_use_cache = TRUE)   # Cache shapefiles so re-runs are fast
@@ -30,7 +36,10 @@ options(tigris_use_cache = TRUE)   # Cache shapefiles so re-runs are fast
 
 ```{r}
 #| label: packages
-#| eval: false
+#| eval: true
+#| results: hide
+#| message: false
+#| warning: false
 
 library(tidyverse)    # Data wrangling and ggplot2
 library(tidycensus)   # Pull ACS data with geometry
@@ -59,6 +68,7 @@ people), giving us finer spatial resolution to detect local clustering.
 
 ```{r}
 #| label: pull-data
+#| results: hide
 #| eval: false
 
 # Define the ACS variables for our economic hardship index.
@@ -86,6 +96,21 @@ cbg_raw <- get_acs(
   survey    = "acs5",
   geometry  = TRUE
 )
+```
+
+```{r}
+#| label: local-data-fallback
+#| eval: false
+
+# ── Local Data Fallback ────────────────────────────────────
+# If the Census API is unavailable or your API key isn't working,
+# uncomment the line below to load the same data from a local CSV file:
+#
+# cbg_raw <- read_csv("data/Lab4/maricopa_cbgs_acs2023.csv")
+#
+# Note: CSV files do not include geometry. To map the data and run
+# spatial autocorrelation, you'll need to join with a shapefile or
+# use tigris::block_groups("AZ", "Maricopa", year = 2023)
 ```
 
 ```{r}
@@ -128,8 +153,8 @@ cbg_index <- cbg_wide %>%
 
 ```{r}
 #| label: map-hardship-index
-#| eval: false
 #| fig-height: 8
+#| eval: false
 
 # Quick choropleth to see the spatial pattern before we test it statistically
 ggplot(cbg_index) +
@@ -258,8 +283,8 @@ The four quadrants define the type of spatial association for each observation:
 
 ```{r}
 #| label: moran-scatter-plot
-#| eval: false
 #| fig-height: 7
+#| eval: false
 
 # moran.plot() creates the scatter plot with quadrant lines at the means.
 # Points in the upper-right (HH) and lower-left (LL) quadrants drive
@@ -369,8 +394,8 @@ This is the payoff map. Each CBG is colored by its LISA classification:
 
 ```{r}
 #| label: lisa-cluster-map
-#| eval: false
 #| fig-height: 9
+#| eval: false
 
 # Define the color scheme for LISA categories
 lisa_colors <- c(
@@ -409,8 +434,8 @@ ggplot(cbg_index) +
 
 ```{r}
 #| label: side-by-side
-#| eval: false
 #| fig-height: 8
+#| eval: false
 
 # Side-by-side comparison: raw hardship index vs. LISA clusters
 p1 <- ggplot(cbg_index) +
@@ -437,7 +462,7 @@ at the 0.05 level.
 
 ---
 
-# Q1 --- Interpret the Global Moran's I and LISA Results
+# Q1 — Interpret the Global Moran's I and LISA Results
 
 ::: {.callout-important}
 ## Question 1
@@ -447,11 +472,14 @@ What does this tell you about the spatial distribution of hardship in
 Maricopa County? Identify 2--3 specific hot spot areas from the LISA map.
 :::
 
-> [YOUR ANSWER HERE]
+
+**Your Answer:**
+
+[YOUR ANSWER HERE]
 
 ---
 
-# Q2 --- Modify: LISA Analysis on Poverty Rate Alone
+# Q2 — Modify: LISA Analysis on Poverty Rate Alone
 
 ::: {.callout-important}
 ## Question 2
@@ -466,27 +494,89 @@ and the cluster map.
 #| label: q2-poverty-morans
 #| eval: false
 
-# YOUR CODE HERE
+# ── Global Moran's I for poverty rate ──
+# We reuse the same spatial weights (lw) since the geography hasn't changed.
+# We just swap the variable from hardship_index to poverty_rate.
+
+moran_poverty <- moran.test(
+  cbg_index$poverty_rate,
+  lw,
+  zero.policy = TRUE
+)
+
+moran_poverty
 ```
 
 ```{r}
 #| label: q2-poverty-lisa
 #| eval: false
 
-# YOUR CODE HERE
+# ── Local Moran's I (LISA) for poverty rate ──
+lisa_pov <- localmoran(
+  cbg_index$poverty_rate,
+  lw,
+  zero.policy = TRUE
+)
+
+# Attach results
+cbg_index$lisa_pov_i <- lisa_pov[, "Ii"]
+cbg_index$lisa_pov_p <- lisa_pov[, "Pr(z != E(Ii))"]
+
+# Compute spatial lag of poverty rate
+cbg_index$lag_poverty <- lag.listw(lw, cbg_index$poverty_rate, zero.policy = TRUE)
+
+# Classify LISA quadrants for poverty
+cbg_index <- cbg_index %>%
+  mutate(
+    pov_centered     = poverty_rate - mean(poverty_rate, na.rm = TRUE),
+    lag_pov_centered = lag_poverty  - mean(lag_poverty, na.rm = TRUE),
+
+    pov_quadrant = case_when(
+      pov_centered > 0 & lag_pov_centered > 0 ~ "HH",
+      pov_centered < 0 & lag_pov_centered < 0 ~ "LL",
+      pov_centered > 0 & lag_pov_centered < 0 ~ "HL",
+      pov_centered < 0 & lag_pov_centered > 0 ~ "LH",
+      TRUE ~ "NS"
+    ),
+
+    lisa_pov_cluster = factor(
+      if_else(lisa_pov_p <= 0.05, pov_quadrant, "NS"),
+      levels = c("HH", "LL", "HL", "LH", "NS")
+    )
+  )
+
+table(cbg_index$lisa_pov_cluster)
 ```
 
 ```{r}
 #| label: q2-poverty-lisa-map
-#| eval: false
 #| fig-height: 9
+#| eval: false
 
-# YOUR CODE HERE
+# ── LISA Cluster Map for Poverty Rate ──
+ggplot(cbg_index) +
+  geom_sf(aes(fill = lisa_pov_cluster), color = "white", linewidth = 0.05) +
+  scale_fill_manual(
+    values = lisa_colors,
+    labels = c("HH (Hot Spot)",
+               "LL (Cold Spot)",
+               "HL (High-Low Outlier)",
+               "LH (Low-High Outlier)",
+               "NS (Not Significant)"),
+    name   = "LISA Cluster"
+  ) +
+  labs(
+    title    = "LISA Cluster Map — Poverty Rate Only",
+    subtitle = "Maricopa County CBGs | Queen contiguity, p <= 0.05",
+    caption  = "Source: ACS 2019-2023 5-Year Estimates"
+  ) +
+  theme_void() +
+  theme(legend.position = "right")
 ```
 
 ---
 
-# Q3 --- Compare Poverty Hot Spots vs. Composite Index Hot Spots
+# Q3 — Compare Poverty Hot Spots vs. Composite Index Hot Spots
 
 ::: {.callout-important}
 ## Question 3
@@ -496,7 +586,44 @@ Do the hot spots shift? What does this tell you about whether the composite
 index captures spatial patterns differently than individual variables?
 :::
 
-> [YOUR ANSWER HERE]
+```{r}
+#| label: q3-comparison-maps
+#| fig-height: 8
+#| eval: false
+
+# Side-by-side LISA cluster maps for direct visual comparison
+p_composite <- ggplot(cbg_index) +
+  geom_sf(aes(fill = lisa_cluster), color = "white", linewidth = 0.05) +
+  scale_fill_manual(values = lisa_colors, name = "LISA") +
+  labs(title = "Composite Hardship Index") +
+  theme_void() +
+  theme(legend.position = "bottom")
+
+p_poverty <- ggplot(cbg_index) +
+  geom_sf(aes(fill = lisa_pov_cluster), color = "white", linewidth = 0.05) +
+  scale_fill_manual(values = lisa_colors, name = "LISA") +
+  labs(title = "Poverty Rate Only") +
+  theme_void() +
+  theme(legend.position = "bottom")
+
+p_composite + p_poverty
+```
+
+```{r}
+#| label: q3-cross-tabulation
+#| eval: false
+
+# Cross-tabulate the two cluster classifications to see overlap
+table(
+  Composite = cbg_index$lisa_cluster,
+  Poverty   = cbg_index$lisa_pov_cluster
+)
+```
+
+
+**Your Answer:**
+
+[YOUR ANSWER HERE]
 
 ---
 

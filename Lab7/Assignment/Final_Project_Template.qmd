@@ -1,0 +1,410 @@
+---
+title: "Economic Hardship Dashboard — [YOUR NAME]"
+format:
+  dashboard:
+    theme: readable
+    orientation: columns
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+knitr::opts_chunk$set( echo = FALSE, message = FALSE, warning = FALSE )
+options( tigris_use_cache = TRUE )
+```
+
+```{r}
+#| label: packages
+# ── Packages ─────────────────────────────────────────
+# All packages needed for the dashboard. Install any you
+# do not already have with install.packages("package_name").
+library( tidyverse )
+library( tidycensus )
+library( sf )
+library( spdep )
+library( viridis )
+library( leaflet )
+library( DT )
+library( crosstalk )
+library( bslib )
+```
+
+```{r}
+#| label: api-key
+# Uncomment and add your Census API key if not already installed
+# census_api_key("YOUR KEY GOES HERE", install = TRUE)
+```
+
+```{r}
+#| label: define-vars
+
+# ── Define the 5 hardship indicator variables ────────────────
+# These are the SAME variables from Labs 1-6.
+hardship_vars <- c(
+  pov_num      = "B17001_002",
+  pov_den      = "B17001_001",
+  unemp_num    = "B23025_005",
+  unemp_den    = "B23025_002",
+  no_hs_num    = "B15003_002",
+  no_hs_den    = "B15003_001",
+  no_ins_num   = "B27010_017",
+  no_ins_den   = "B27010_001",
+  median_income = "B19013_001"
+)
+```
+
+```{r}
+#| label: build-function
+
+# ── Reusable function to build the hardship index ────────────
+# This is the same build_hardship_index() function from Labs 5-6.
+# Copy it exactly — it works for any geography or time period.
+build_hardship_index <- function( df ) {
+  wide <- df %>%
+    select( -moe ) %>%
+    pivot_wider( names_from = variable, values_from = estimate )
+
+  wide <- wide %>%
+    mutate(
+      poverty_rate = pov_num / pov_den,
+      unemp_rate   = unemp_num / unemp_den,
+      no_hs_rate   = no_hs_num / no_hs_den,
+      no_ins_rate  = no_ins_num / no_ins_den
+    )
+
+  index_vars <- wide %>%
+    as.data.frame() %>%
+    select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
+    drop_na()
+
+  index_z <- index_vars %>%
+    mutate( across( everything(), ~ as.numeric( scale(.) ) ) )
+
+  index_z <- index_z %>%
+    mutate( median_income = -1 * median_income )
+
+  index_z$hardship_index <- rowMeans( index_z, na.rm = TRUE )
+
+  result <- wide %>%
+    drop_na( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income )
+  result$hardship_index <- index_z$hardship_index
+
+  return( result )
+}
+```
+
+```{r}
+#| label: pull-data
+#| results: hide
+
+# TODO: Pull your data for all three scales.
+# 1. US county data (for Tab 1 — National Context)
+# 2. Maricopa CBG data for 2023 (for Tabs 2, 3, 5)
+# 3. Maricopa CBG data for 2015 (for Tab 4 — Change Over Time)
+#
+# Example for county data:
+# county_raw <- get_acs(
+#   geography = "county",
+#   variables = hardship_vars,
+#   year      = 2023,
+#   survey    = "acs5",
+#   geometry  = TRUE
+# )
+#
+# Example for Maricopa CBG data:
+# cbg_raw <- get_acs(
+#   geography = "block group",
+#   variables = hardship_vars,
+#   state     = "AZ",
+#   county    = "Maricopa",
+#   year      = 2023,
+#   survey    = "acs5",
+#   geometry  = TRUE
+# )
+```
+
+```{r}
+#| label: build-indices
+
+# TODO: Build hardship indices using the function above.
+# county_complete    <- build_hardship_index( county_raw )
+# cbg_complete       <- build_hardship_index( cbg_raw )
+# cbg_2015_complete  <- build_hardship_index( cbg_2015_raw )
+```
+
+```{r}
+#| label: lisa-analysis
+
+# TODO: Run the LISA hot spot analysis from Lab 4.
+# 1. st_make_valid() on your CBG data
+# 2. poly2nb() to build neighbor list
+# 3. nb2listw() to create spatial weights
+# 4. localmoran() to compute local Moran's I
+# 5. Classify into HH/LL/HL/LH/NS using the centered-values method
+# 6. Apply the p <= 0.05 significance filter
+```
+
+```{r}
+#| label: temporal-change
+
+# TODO: Build the temporal change dataset from Lab 5.
+# 1. Extract GEOID + hardship_index from each period
+# 2. inner_join() by GEOID
+# 3. Compute hardship_change = hardship_2023 - hardship_2015
+```
+
+```{r}
+#| label: compute-stats
+
+# TODO: Precompute summary statistics for your value boxes.
+# These variables will be referenced in the value box chunks below.
+# Examples:
+# n_cbg       <- nrow( cbg_complete )
+# n_hotspot   <- sum( cbg_complete$lisa_cluster == "High-High", na.rm = TRUE )
+# n_coldspot  <- sum( cbg_complete$lisa_cluster == "Low-Low", na.rm = TRUE )
+# max_hardship <- round( max( cbg_complete$hardship_index, na.rm = TRUE ), 2 )
+# n_worsened  <- sum( change_df$hardship_change > 0, na.rm = TRUE )
+# pct_worsened <- round( 100 * n_worsened / nrow( change_df ), 1 )
+```
+
+
+# National Context
+
+## Column {width=65%}
+
+### US County Hardship Map
+
+```{r}
+#| label: national-map
+#| fig-width: 12
+#| fig-height: 7
+
+# TODO: Create a ggplot choropleth of the national county hardship index.
+# Use scale_fill_viridis(option = "inferno", direction = -1).
+# Include labs() with title, subtitle, and caption.
+```
+
+## Column {width=35%}
+
+### Summary Statistics
+
+```{r}
+#| label: national-vbox
+#| content: valuebox
+
+# TODO: Create a value box showing the number of counties analyzed.
+# list(
+#   title = "US Counties Analyzed",
+#   value = scales::comma( n_county ),
+#   icon  = "globe-americas",
+#   color = "primary"
+# )
+```
+
+### Block Groups
+
+```{r}
+#| label: cbg-vbox
+#| content: valuebox
+
+# TODO: Create a value box showing the number of local block groups.
+# list(
+#   title = "Maricopa Block Groups",
+#   value = scales::comma( n_cbg ),
+#   icon  = "geo-alt-fill",
+#   color = "info"
+# )
+```
+
+### About
+
+<!-- TODO: Write 2-3 sentences placing your study area in national context. -->
+<!-- What does the national map reveal? Where does your county fall? -->
+
+
+# Local Patterns
+
+## Column {width=60%}
+
+### Interactive Map
+
+```{r}
+#| label: local-leaflet
+
+# TODO: Create a crosstalk-linked leaflet map of your CBG hardship data.
+#
+# Steps:
+# 1. Transform CBG data to WGS84: st_transform( cbg_complete, 4326 )
+# 2. Round values for clean display in popups
+# 3. Wrap in SharedData: crosstalk::SharedData$new( data, key = ~GEOID )
+# 4. Create color palette: colorNumeric( viridis(...), domain = ... )
+# 5. Build leaflet map with addPolygons() and popup text
+# 6. Add legend with addLegend()
+```
+
+## Column {width=40%}
+
+### Block Group Details (linked to map)
+
+```{r}
+#| label: local-table
+
+# TODO: Create a DT::datatable using the SAME SharedData object
+# from the leaflet map above. This links selections between
+# the map and the table via crosstalk.
+#
+# DT::datatable(
+#   sd,
+#   options  = list( scrollY = 400, scroller = TRUE ),
+#   rownames = FALSE
+# )
+```
+
+
+# Hot Spots
+
+## Column {width=60%}
+
+### LISA Cluster Map
+
+```{r}
+#| label: lisa-map
+#| fig-width: 10
+#| fig-height: 9
+
+# TODO: Create the LISA cluster map from Lab 4.
+# Use scale_fill_manual() with the standard LISA colors:
+#   "High-High" = "#d7191c", "Low-Low" = "#2c7bb6",
+#   "High-Low" = "#fdae61", "Low-High" = "#abd9e9",
+#   "Not Significant" = "#eeeeee"
+```
+
+## Column {width=40%}
+
+### Hot Spot Count
+
+```{r}
+#| label: hotspot-vbox
+#| content: valuebox
+
+# TODO: Value box for the number of High-High hot spot CBGs.
+# list(
+#   title = "Hot Spot CBGs",
+#   value = n_hotspot,
+#   icon  = "fire",
+#   color = "danger"
+# )
+```
+
+### Cold Spot Count
+
+```{r}
+#| label: coldspot-vbox
+#| content: valuebox
+
+# TODO: Value box for the number of Low-Low cold spot CBGs.
+```
+
+### Cluster Table
+
+```{r}
+#| label: hotspot-table
+
+# TODO: Create a DT::datatable filtered to only HH and LL clusters.
+# Show GEOID, Cluster type, Hardship, and the 5 component rates.
+# Sort by descending hardship.
+```
+
+
+# Change Over Time
+
+## Column {width=60%}
+
+### Hardship Change Map (2015 to 2023)
+
+```{r}
+#| label: change-map
+#| fig-width: 10
+#| fig-height: 9
+
+# TODO: Create a diverging change map using scale_fill_gradient2().
+# Blue = improvement (hardship decreased)
+# White/yellow = no change
+# Red = worsening (hardship increased)
+# Set midpoint = 0.
+```
+
+## Column {width=40%}
+
+### Hardship Worsened
+
+```{r}
+#| label: worse-vbox
+#| content: valuebox
+
+# TODO: Value box showing % of CBGs where hardship increased.
+```
+
+### Hardship Improved
+
+```{r}
+#| label: improve-vbox
+#| content: valuebox
+
+# TODO: Value box showing % of CBGs where hardship decreased.
+```
+
+### Summary
+
+<!-- TODO: Write 2-3 sentences interpreting the temporal change patterns. -->
+<!-- Are the hot spots from Tab 3 getting better, worse, or staying the same? -->
+
+
+# Policy
+
+## Column {width=50%}
+
+### Key Metrics
+
+```{r}
+#| label: policy-vbox1
+#| content: valuebox
+
+# TODO: Value box for a key metric (e.g., number of persistent hot spots).
+```
+
+### Priority Areas for Intervention
+
+```{r}
+#| label: priority-table
+
+# TODO: Create a table of the top 15-20 highest-hardship hot spot CBGs.
+# These are the priority areas for policy intervention.
+# Filter to lisa_cluster == "High-High", sort by hardship_index descending.
+```
+
+## Column {width=50%}
+
+### Recommendations
+
+<!-- TODO: Write 3 policy recommendations. Each should: -->
+<!-- 1. Name a specific geographic area identified in your analysis -->
+<!-- 2. Reference the evidence (which tab/analysis supports it) -->
+<!-- 3. Propose a concrete, actionable intervention -->
+
+<!-- **Recommendation 1: [Title]** -->
+<!-- [Your recommendation text here] -->
+
+<!-- **Recommendation 2: [Title]** -->
+<!-- [Your recommendation text here] -->
+
+<!-- **Recommendation 3: [Title]** -->
+<!-- [Your recommendation text here] -->
+
+### Data Sources & Methods
+
+<!-- TODO: List your data sources, time periods, geography, index construction -->
+<!-- method, clustering approach, and tools used. -->

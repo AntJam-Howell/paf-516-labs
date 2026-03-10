@@ -56,6 +56,24 @@
       padding-bottom: 1px;
     }
     .card a:hover { color: #ffc627; }
+    .data-section {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      margin-top: 15px;
+    }
+    .data-section p { font-size: 0.95em; color: #555; margin-bottom: 12px; }
+    .data-section a {
+      color: #8c1d40;
+      font-weight: 600;
+      text-decoration: none;
+      border-bottom: 2px solid #ffc627;
+      padding-bottom: 1px;
+    }
+    .data-section a:hover { color: #ffc627; }
+    .data-section ul { margin-left: 20px; margin-top: 8px; color: #555; }
+    .data-section li { margin-bottom: 4px; }
     footer {
       text-align: center;
       padding: 30px 20px;
@@ -108,40 +126,64 @@
       <p>Integration &amp; Policy Brief &mdash; multi-scale synthesis, professional Quarto output, policy communication</p>
       <a href="Module6_Guide.html">Open Study Guide &rarr;</a>
     </div>
+    <div class="card">
+      <h3>Module 7</h3>
+      <p>Interactive Dashboard (Final Project) &mdash; Quarto Dashboard, crosstalk interactivity, RPubs publishing</p>
+      <a href="Module7_Guide.html">Open Study Guide &rarr;</a>
+    </div>
   </div>
 
   <h2>Lab Assignments</h2>
   <div class="card-grid">
     <div class="card">
       <h3>Lab 1</h3>
-      <p>Build a 5-variable economic hardship index, assess reliability, map at 3 geographic scales</p>
-      <a href="../Lab1/Solutions/Lab1_Solutions.html">Solutions &rarr;</a>
+      <p>Build a 5-variable economic hardship index, assess reliability with Cronbach&rsquo;s &alpha;, map at 3 geographic scales</p>
+      <a href="Lab1_Assignment.html">Assignment &rarr;</a>
     </div>
     <div class="card">
       <h3>Lab 2</h3>
       <p>Classification methods, bivariate choropleth, small multiples, interactive Leaflet map</p>
-      <a href="../Lab2/Solutions/Lab2_Solutions.html">Solutions &rarr;</a>
+      <a href="Lab2_Assignment.html">Assignment &rarr;</a>
     </div>
     <div class="card">
       <h3>Lab 3</h3>
       <p>Spatial joins, buffer analysis, external data integration, enriched hardship index</p>
-      <a href="../Lab3/Solutions/Lab3_Solutions.html">Solutions &rarr;</a>
+      <a href="Lab3_Assignment.html">Assignment &rarr;</a>
     </div>
     <div class="card">
       <h3>Lab 4</h3>
       <p>Spatial weights, Global Moran&rsquo;s I, LISA hot/cold spot detection</p>
-      <a href="../Lab4/Solutions/Lab4_Solutions.html">Solutions &rarr;</a>
+      <a href="Lab4_Assignment.html">Assignment &rarr;</a>
     </div>
     <div class="card">
       <h3>Lab 5</h3>
-      <p>Multi-year ACS comparison (2015 vs 2023), change mapping, diverging palettes</p>
-      <a href="../Lab5/Solutions/Lab5_Solutions.html">Solutions &rarr;</a>
+      <p>Multi-year ACS comparison (2015 vs. 2023), change mapping, diverging palettes</p>
+      <a href="Lab5_Assignment.html">Assignment &rarr;</a>
     </div>
     <div class="card">
       <h3>Lab 6</h3>
       <p>Multi-scale policy brief with Quarto callouts, tabsets, and cross-references</p>
-      <a href="../Lab6/Solutions/Lab6_Solutions.html">Solutions &rarr;</a>
+      <a href="Lab6_Assignment.html">Assignment &rarr;</a>
     </div>
+    <div class="card">
+      <h3>Final Project</h3>
+      <p>Interactive Economic Hardship Dashboard &mdash; 5-tab Quarto dashboard with crosstalk, published to RPubs</p>
+      <a href="Module7_Guide.html">Final Project Details &rarr;</a>
+    </div>
+  </div>
+
+  <h2>Data Downloads</h2>
+  <div class="data-section">
+    <p>Each lab uses Census ACS data pulled via the <code>tidycensus</code> R package. If you have trouble with the Census API or need offline access, local CSV backup files are available in the repository&rsquo;s <code>data/</code> folder, organized by lab.</p>
+    <p><a href="https://github.com/AntJam-Howell/paf-516-labs/tree/main/data" target="_blank">Browse Data Files on GitHub &rarr;</a></p>
+    <ul>
+      <li><strong>Lab 1 &amp; 2:</strong> US counties, AZ tracts, Maricopa block group hardship data</li>
+      <li><strong>Lab 3:</strong> Maricopa block groups + external overlay data (e.g., EPA TRI)</li>
+      <li><strong>Lab 4:</strong> Maricopa block group hardship data (for spatial weights &amp; LISA)</li>
+      <li><strong>Lab 5:</strong> Maricopa block groups for 2015 and 2023 (temporal comparison)</li>
+      <li><strong>Lab 6:</strong> Multi-scale datasets (counties, tracts, block groups, 2015 &amp; 2023)</li>
+    </ul>
+    <p><em>Note: CSV files do not include geometry. To map the data, join with shapefiles or use <code>tigris</code> to download boundaries.</em></p>
   </div>
 
 </div>

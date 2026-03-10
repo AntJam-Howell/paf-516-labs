@@ -92,7 +92,7 @@ iframe { max-width: 100%; }
     <p>This puts all variables on the same scale (mean = 0, sd = 1) so they contribute equally to the index.</p>
 
     <h4 style="color: #8c1d40;">Real-World Example: Social Vulnerability Index (SVI)</h4>
-    <p>The CDC's Social Vulnerability Index combines 16 census variables across 4 themes: socioeconomic status, household characteristics, racial/ethnic minority status, and housing type/transportation. Each variable is percentile-ranked and summed within themes. <a href="https://www.atsdr.cdc.gov/placeandhealth/svi/index.html">Learn more about the SVI</a>.</p>
+    <p>The CDC's Social Vulnerability Index combines 16 census variables across 4 themes: socioeconomic status, household characteristics, racial/ethnic minority status, and housing type/transportation. Each variable is percentile-ranked and summed within themes. <a href="https://www.atsdr.cdc.gov/place-health/php/svi/index.html">Learn more about the SVI</a>.</p>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
@@ -130,14 +130,15 @@ iframe { max-width: 100%; }
 
     <p>The index you build in this module's lab becomes an <strong>input</strong> for all subsequent analyses:</p>
     <ul>
-        <li><strong>Module 2</strong>: You will use census data and ratios to compare communities — the same data retrieval skills from this lab carry forward</li>
-        <li><strong>Module 3</strong>: Cluster analysis groups neighborhoods by similar index values</li>
-        <li><strong>Module 4</strong>: Regression models use index scores as dependent or independent variables</li>
-        <li><strong>Module 5</strong>: Geospatial mapping visualizes index scores across census tracts</li>
-        <li><strong>Module 7</strong>: Your final dashboard brings all of these together</li>
+        <li><strong>Module 2 — Cartographic Design &amp; Multi-Scale Visual Analytics</strong>: You will classify and map the hardship index using multiple cartographic methods (quantile breaks, natural breaks, bivariate choropleth) and create interactive Leaflet maps</li>
+        <li><strong>Module 3 — Spatial Data Integration &amp; Overlay Analysis</strong>: You will overlay external data (environmental, infrastructure) onto your index using spatial joins and buffer analysis</li>
+        <li><strong>Module 4 — Spatial Autocorrelation &amp; Hot Spots</strong>: You will test whether high- and low-hardship neighborhoods cluster spatially using Moran's I and LISA maps</li>
+        <li><strong>Module 5 — Temporal Change Analysis</strong>: You will compare hardship index values across two time periods (2015 vs 2023) to identify neighborhoods experiencing the most change</li>
+        <li><strong>Module 6 — Integration &amp; Policy Brief</strong>: You will combine multi-scale analysis into a professional Quarto document with callouts, tabsets, and policy recommendations</li>
+        <li><strong>Module 7 — Interactive Dashboard (Final Project)</strong>: You will build a Flexdashboard or Shiny app that brings together all analyses from the course</li>
     </ul>
 
-    <p><strong>The quality of your downstream analysis depends on the quality of your measurement.</strong> A poorly constructed index will produce misleading clusters, biased regressions, and uninformative maps.</p>
+    <p><strong>The quality of your downstream analysis depends on the quality of your measurement.</strong> A poorly constructed index will produce misleading maps, flawed spatial statistics, and uninformative policy recommendations.</p>
 </div>
 
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
@@ -185,7 +186,7 @@ iframe { max-width: 100%; }
 
     <p>In Lab 01, you will use R to retrieve census variables with <code>tidycensus</code>, assess their reliability with <code>psych::alpha()</code>, build a composite index of neighborhood quality, and visualize the results.</p>
 
-    <p>Download the Lab 01 Quarto template (.qmd), complete the exercises, and submit both the .qmd and rendered .html to Canvas.</p>
+    <p>Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/Assignment/Lab1_Assignment.qmd" target="_blank" rel="noopener">Lab 01 Quarto template (.qmd)</a>, complete the exercises, and submit both the .qmd and rendered .html to Canvas.</p>
 
     <hr />
 

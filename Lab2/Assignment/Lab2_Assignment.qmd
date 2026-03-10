@@ -1,5 +1,5 @@
 ---
-title: "Lab 02 — Lab Guide: Cartographic Design & Multi-Scale Visual Analytics"
+title: "Lab 02 — Cartographic Design & Multi-Scale Visual Analytics"
 subtitle: "PAF 516 | M2 Assignment"
 date: today
 format:
@@ -19,6 +19,10 @@ execute:
 ```{r}
 #| label: setup
 #| include: false
+#| eval: true
+#| results: hide
+#| message: false
+#| warning: false
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10)
 
 # Cache Census TIGER/Line geometries so they don't re-download every render
@@ -52,7 +56,10 @@ use. By the end of this lab you will be able to:
 
 ```{r}
 #| label: packages
-#| eval: false
+#| eval: true
+#| results: hide
+#| message: false
+#| warning: false
 
 # ── Load packages ─────────────────────────────────────────────
 # Core data & spatial
@@ -122,6 +129,7 @@ all_vars <- c(hardship_vars, demo_vars)
 
 ```{r}
 #| label: step.01b
+#| results: hide
 #| eval: false
 
 # Pull ACS 5-year estimates at the block group level for Maricopa County.
@@ -135,6 +143,28 @@ cbg_raw <- get_acs(
   survey    = "acs5",
   geometry  = TRUE
 )
+```
+
+```{r}
+#| label: local-data-fallback
+#| eval: false
+
+# ── Local Data Fallback ────────────────────────────────────
+# If the Census API is unavailable or your API key isn't working,
+# uncomment the lines below to load the same data from local CSV files.
+#
+# The CBG pull above includes both hardship and demographic variables.
+# The lab2_extra file contains the demographic variables (race, tenure).
+# You will need to join them by GEOID after loading.
+#
+# cbg_raw <- read_csv("data/Lab2/maricopa_cbgs_lab2_extra.csv")
+#
+# For Step 4 multi-scale pulls:
+# county_raw <- read_csv("data/Lab2/us_counties_acs2023.csv")
+# tract_raw  <- read_csv("data/Lab2/az_tracts_acs2023.csv")
+#
+# Note: CSV files do not include geometry. To map the data, you'll
+# need to join it with a shapefile or use tigris::counties() / tracts() / block_groups()
 ```
 
 ## 1c. Reshape and compute rates
@@ -253,8 +283,8 @@ make_class_map <- function(data, breaks_obj, method_label) {
 
 ```{r}
 #| label: step.02c
-#| eval: false
 #| fig-height: 10
+#| eval: false
 
 # ── Build 4 maps and arrange in a 2x2 grid ───────────────────
 # patchwork lets us combine ggplots with + and / operators.
@@ -309,8 +339,8 @@ cbg_bi <- cbg %>%
 
 ```{r}
 #| label: step.03b
-#| eval: false
 #| fig-height: 8
+#| eval: false
 
 # ── Build the bivariate map ──────────────────────────────────
 # bi_scale_fill() maps the bi_class column to a bivariate color palette.
@@ -370,6 +400,7 @@ build the hardship index at all three scales and compare.
 
 ```{r}
 #| label: step.04a
+#| results: hide
 #| eval: false
 
 # ── Pull US county-level data ─────────────────────────────────
@@ -435,8 +466,8 @@ tract_df  <- build_index(tract_raw)
 
 ```{r}
 #| label: step.04c
-#| eval: false
 #| fig-height: 5
+#| eval: false
 
 # ── National county map ───────────────────────────────────────
 # shift_geometry() moves Alaska and Hawaii for a clean CONUS layout.
@@ -455,8 +486,8 @@ p_county <- ggplot(county_lower48) +
 
 ```{r}
 #| label: step.04d
-#| eval: false
 #| fig-height: 5
+#| eval: false
 
 # ── Arizona tract map ────────────────────────────────────────
 p_tract <- ggplot(tract_df) +
@@ -469,8 +500,8 @@ p_tract <- ggplot(tract_df) +
 
 ```{r}
 #| label: step.04e
-#| eval: false
 #| fig-height: 5
+#| eval: false
 
 # ── Maricopa CBG map ─────────────────────────────────────────
 p_cbg <- ggplot(cbg) +
@@ -483,8 +514,8 @@ p_cbg <- ggplot(cbg) +
 
 ```{r}
 #| label: step.04f
-#| eval: false
 #| fig-height: 6
+#| eval: false
 
 # ── Combine the three scales into one figure ──────────────────
 # patchwork layout: national on top spanning full width, state and
@@ -607,8 +638,8 @@ any `ggplot2` + `geom_sf()` map.
 
 ```{r}
 #| label: step.06
-#| eval: false
 #| fig-height: 8
+#| eval: false
 
 # ── Publication-ready map with scale bar and north arrow ──────
 # annotation_scale() adds a scale bar (default = km).
@@ -654,13 +685,13 @@ Look at the 2x2 classification comparison from Step 2.
 **1a.** Which classification method makes economic hardship appear *most
 widespread* across Maricopa County? Which makes it appear *most concentrated*?
 
-> [YOUR ANSWER HERE]
+> **Answer:** [YOUR ANSWER HERE]
 
 **1b.** In a policy memo arguing for increased funding to "high hardship" areas,
 which classification method would you choose and why? What about a memo arguing
 that hardship is *not* a widespread problem?
 
-> [YOUR ANSWER HERE]
+> **Answer:** [YOUR ANSWER HERE]
 
 ---
 
@@ -674,15 +705,56 @@ Show the complete code and output.
 #| label: q2.a
 #| eval: false
 
-# YOUR CODE HERE
+# ── Bivariate classification: hardship x % renter ────────────
+# Same approach as Step 3 but substituting pct_renter for pct_minority.
+# This lets us see whether areas of high hardship are also areas of
+# high renter concentration (potential housing instability).
+
+cbg_bi_renter <- cbg %>%
+  filter(!is.na(hardship_index), !is.na(pct_renter)) %>%
+  bi_class(
+    x     = hardship_index,
+    y     = pct_renter,
+    dim   = 3,
+    style = "quantile"
+  )
 ```
 
 ```{r}
 #| label: q2.b
-#| eval: false
 #| fig-height: 8
+#| eval: false
 
-# YOUR CODE HERE
+# ── Build the bivariate map ──────────────────────────────────
+map_bi_renter <- ggplot(cbg_bi_renter) +
+  geom_sf(aes(fill = bi_class), color = NA, show.legend = FALSE) +
+  bi_scale_fill(pal = "DkViolet", dim = 3) +
+  coord_sf(datum = NA) +
+  theme_void(base_size = 12) +
+  labs(
+    title    = "Economic Hardship x Percent Renter-Occupied",
+    subtitle = "Maricopa County Block Groups (ACS 2019-2023)",
+    caption  = "Source: ACS 5-Year Estimates, 2019-2023"
+  )
+
+# ── Build the bivariate legend ────────────────────────────────
+legend_bi_renter <- bi_legend(
+  pal  = "DkViolet",
+  dim  = 3,
+  xlab = "Higher Hardship →",
+  ylab = "Higher % Renter →",
+  size = 9
+)
+
+# ── Combine map and legend ────────────────────────────────────
+map_bi_renter +
+  inset_element(
+    legend_bi_renter,
+    left   = 0.0,
+    bottom = 0.0,
+    right  = 0.30,
+    top    = 0.30
+  )
 ```
 
 ---
@@ -695,9 +767,9 @@ from Question 2 (hardship x % renter).
 **3a.** Do the same areas show "double disadvantage" in both maps? Or do the
 spatial patterns differ?
 
-> [YOUR ANSWER HERE]
+> **Answer:** [YOUR ANSWER HERE]
 
 **3b.** What does this comparison tell you about the relationship between
 economic hardship, race/ethnicity, and housing tenure in Maricopa County?
 
-> [YOUR ANSWER HERE]
+> **Answer:** [YOUR ANSWER HERE]

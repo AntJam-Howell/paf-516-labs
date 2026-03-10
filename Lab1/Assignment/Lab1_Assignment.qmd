@@ -1,5 +1,5 @@
 ---
-title: "Lab 01 — Lab Guide: Measurement, Indexing & Multi-Scale Mapping"
+title: "Lab 01 — Measurement, Indexing & Multi-Scale Mapping"
 subtitle: "PAF 516 | M1 Assignment"
 date: today
 format:
@@ -20,6 +20,10 @@ execute:
 ```{r}
 #| label: setup
 #| include: false
+#| eval: true
+#| results: hide
+#| message: false
+#| warning: false
 knitr::opts_chunk$set( echo = TRUE, message=F, warning=F, fig.width=10 )
 options( tigris_use_cache = TRUE )
 ```
@@ -27,7 +31,10 @@ options( tigris_use_cache = TRUE )
 
 ```{r}
 #| label: packages
-#| eval: false
+#| eval: true
+#| results: hide
+#| message: false
+#| warning: false
 # ── Packages ─────────────────────────────────────────
 # Load all required packages for data, mapping, and reliability analysis
 library( tidyverse )
@@ -62,6 +69,7 @@ vars_available <- load_variables( 2023, "acs5", cache = TRUE )
 
 ```{r}
 #| label: step.01
+#| results: hide
 #| eval: false
 
 # Define our indicator variables for an "economic hardship" construct
@@ -88,6 +96,29 @@ CenDF <- get_acs(
   survey    = "acs5",
   geometry  = TRUE
 )
+```
+
+```{r}
+#| label: local-data-fallback
+#| eval: false
+
+# ── Local Data Fallback ────────────────────────────────────
+# If the Census API is unavailable or your API key isn't working,
+# uncomment the lines below to load the same data from local CSV files.
+# Note: This lab pulls data at three scales. The fallback covers
+# the tract-level pull above. County and CBG fallbacks are below
+# in their respective sections.
+#
+# CenDF <- read_csv("data/Lab1/az_tracts_acs2023.csv")
+#
+# For county-level data (Step 4b):
+# county_df <- read_csv("data/Lab1/us_counties_acs2023.csv")
+#
+# For block-group-level data (Step 4c):
+# cbg_df <- read_csv("data/Lab1/maricopa_cbgs_acs2023.csv")
+#
+# Note: CSV files do not include geometry. To map the data, you'll
+# need to join it with a shapefile or use tigris::tracts() / counties() / block_groups()
 ```
 
 **Common error note:** If you get an API key error, make sure you have run `census_api_key("YOUR_KEY", install = TRUE)` at least once and restarted R.
@@ -260,6 +291,7 @@ We now pull the same 5 hardship variables at the **county level** for the entire
 
 ```{r}
 #| label: step.04b-pull
+#| results: hide
 #| eval: false
 
 # Pull county-level data for the entire US
@@ -335,6 +367,7 @@ We zoom in further to the **block group** level within Maricopa County. Block gr
 
 ```{r}
 #| label: step.04c-pull
+#| results: hide
 #| eval: false
 
 # Pull block group data for Maricopa County
@@ -409,9 +442,9 @@ Using `patchwork`, we place all three maps side by side to compare how spatial p
 
 ```{r}
 #| label: step.04d-patchwork
-#| eval: false
 #| fig-width: 16
 #| fig-height: 6
+#| eval: false
 
 # Build compact versions of each map for the 3-panel comparison
 # Remove subtitles/captions to keep the panel clean
@@ -461,23 +494,88 @@ p_county + p_tract + p_cbg +
 
 ```{r}
 #| label: q2-pull
+#| results: hide
 #| eval: false
 
-# YOUR CODE HERE
+# Define expanded variable list with SNAP benefits added
+# B22010_002 = households receiving SNAP; B22010_001 = total households
+hardship_vars_6 <- c(
+  hardship_vars,
+  snap_num = "B22010_002",   # Households receiving SNAP/food stamps
+  snap_den = "B22010_001"    # Total households (SNAP universe)
+)
+
+# Re-pull tract data with the expanded variable set
+CenDF_6 <- get_acs(
+  geography = "tract",
+  variables = hardship_vars_6,
+  state     = "AZ",
+  county    = "Maricopa",
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE
+)
 ```
 
 ```{r}
 #| label: q2-index
 #| eval: false
 
-# YOUR CODE HERE
+# Reshape and compute all 6 rate variables
+CenDF_6_wide <- CenDF_6 %>%
+  select( -moe ) %>%
+  pivot_wider( names_from = variable, values_from = estimate )
+
+CenDF_6_wide <- CenDF_6_wide %>%
+  mutate(
+    poverty_rate = pct_poverty / pop_total_pov,
+    unemp_rate   = pct_unemp_num / pct_unemp_den,
+    no_hs_rate   = pct_no_hs_num / pct_no_hs_den,
+    no_ins_rate  = pct_no_ins_num / pct_no_ins_den,
+    snap_rate    = snap_num / snap_den       # NEW: percent receiving SNAP
+  )
+
+# Select all 6 indicators, z-score, and reverse-code income
+index_vars_6 <- CenDF_6_wide %>%
+  as.data.frame() %>%
+  select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income, snap_rate ) %>%
+  drop_na()
+
+index_z_6 <- index_vars_6 %>%
+  mutate( across( everything(), ~ as.numeric( scale(.) ) ) ) %>%
+  mutate( median_income = -1 * median_income )
+
+# Cronbach's alpha with 6 items
+alpha_result_6 <- psych::alpha( index_z_6 )
+alpha_value_6  <- alpha_result_6$total$raw_alpha
+
+cat( "6-variable Cronbach's alpha:", round( alpha_value_6, 3 ), "\n" )
+print( alpha_result_6 )
 ```
 
 ```{r}
 #| label: q2-map
 #| eval: false
 
-# YOUR CODE HERE
+# Build the 6-variable composite index
+index_z_6$hardship_index_6 <- rowMeans( index_z_6, na.rm = TRUE )
+
+# Attach to spatial data
+CenDF_6_complete <- CenDF_6_wide %>%
+  drop_na( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income, snap_rate )
+CenDF_6_complete$hardship_index_6 <- index_z_6$hardship_index_6
+
+# Map the 6-variable hardship index
+ggplot( CenDF_6_complete ) +
+  geom_sf( aes( fill = hardship_index_6 ), color = NA ) +
+  scale_fill_viridis( option = "inferno", direction = -1,
+                      name = "Hardship\nIndex (6-var)" ) +
+  theme_void() +
+  labs(
+    title    = "Economic Hardship Index (6 Variables) by Census Tract",
+    subtitle = "Maricopa County, AZ — ACS 5-Year (2023)",
+    caption  = "Includes SNAP benefits as 6th indicator"
+  )
 ```
 
 

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAF 516 — Module 7: Interactive Dashboard (Final Project)</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; color: #333; }
+h1, h2, h3, h4 { color: #8c1d40; }
+a { color: #8c1d40; }
+a:hover { color: #ffc627; }
+code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background-color: #8c1d40; color: white; }
+.btn-group { display: flex; gap: 15px; flex-wrap: wrap; margin: 20px 0; }
+.btn {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1em;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-primary { background: #8c1d40; color: #fff; }
+.btn-primary:hover { background: #6b1530; }
+.btn-secondary { background: #ffc627; color: #333; }
+.btn-secondary:hover { background: #e6b020; }
+.back-link {
+  display: inline-block;
+  margin-top: 30px;
+  color: #8c1d40;
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 2px solid #ffc627;
+  padding-bottom: 1px;
+}
+.back-link:hover { color: #ffc627; }
+</style>
+</head>
+<body>
+
+<div style="background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px;">
+    <h2><strong><span style="color: #ffffff;">M7 Overview &amp; Learning Materials<br /></span></strong></h2>
+    <p style="background-color: #ffc627; margin: auto; border-radius: 10px; width: 98%; text-align: center; padding: 5px;"><span style="font-size: 14pt;"><strong>Interactive Dashboard (Final Project)<br /></strong></span></p>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40;"><strong>Module Overview and Objectives</strong></h3>
+    <p>In this capstone module, you will transform your Lab 6 static policy brief into an <strong>interactive Quarto Dashboard</strong>. The dashboard uses <code>format: dashboard</code> and relies on <code>crosstalk</code> for linked interactivity between maps and tables &mdash; no Shiny server required. The result is a self-contained HTML file published to RPubs so anyone with the URL can explore your analysis.</p>
+    <p>This project synthesizes everything you have learned across Labs 1&ndash;6: index construction, choropleth mapping, spatial joins, LISA hot spot analysis, temporal change analysis, and policy communication. The new skills are <strong>dashboard layout</strong> (tabs, columns, value boxes) and <strong>crosstalk interactivity</strong> (clicking a polygon on a leaflet map highlights the corresponding row in a DT table, and vice versa).</p>
+    <hr />
+    <p>After completing this module, you will be able to:</p>
+    <ul>
+        <li>Build a Quarto Dashboard with multiple tabs and value boxes</li>
+        <li>Use <code>crosstalk::SharedData</code> to link interactive maps and tables</li>
+        <li>Combine static <code>ggplot2</code> maps with interactive <code>leaflet</code> maps in a single dashboard</li>
+        <li>Publish an interactive HTML dashboard to RPubs</li>
+        <li>Write data-driven policy recommendations</li>
+    </ul>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40;"><strong>Dashboard Requirements</strong></h3>
+    <p>Your dashboard must contain exactly <strong>5 tabs</strong>:</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Tab</th>
+                <th>Content</th>
+                <th>Key Visualization</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>National Context</strong></td>
+                <td>US county-level hardship choropleth with value boxes</td>
+                <td>Static ggplot map + 2&ndash;3 value boxes</td>
+            </tr>
+            <tr>
+                <td><strong>Local Patterns</strong></td>
+                <td>Block group hardship map linked to a detail table via crosstalk</td>
+                <td>Leaflet map + DT table (linked)</td>
+            </tr>
+            <tr>
+                <td><strong>Hot Spots</strong></td>
+                <td>LISA cluster map with hot/cold spot counts</td>
+                <td>Static ggplot LISA map + value boxes + cluster table</td>
+            </tr>
+            <tr>
+                <td><strong>Change Over Time</strong></td>
+                <td>Diverging change map (2015 vs. 2023) with improvement/worsening stats</td>
+                <td>Static ggplot diverging map + value boxes</td>
+            </tr>
+            <tr>
+                <td><strong>Policy</strong></td>
+                <td>Priority areas table + 3 written policy recommendations</td>
+                <td>DT table + narrative text</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4 style="color: #8c1d40;">Technical Requirements</h4>
+    <ul>
+        <li>At least 1 crosstalk-linked leaflet map + DT table</li>
+        <li>At least 2 value boxes with meaningful metrics</li>
+        <li>Published to RPubs (preferred), Quarto Pub, or GitHub Pages</li>
+        <li>Self-contained HTML under 25 MB</li>
+        <li>All code chunks labeled; <code>echo: false</code> in YAML header</li>
+    </ul>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40;"><strong>Grading Rubric</strong></h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>Dashboard renders without errors</td><td>10</td></tr>
+            <tr><td>5 tabs with appropriate content</td><td>20</td></tr>
+            <tr><td>Crosstalk interactivity (map &harr; table)</td><td>15</td></tr>
+            <tr><td>Value boxes with meaningful metrics</td><td>10</td></tr>
+            <tr><td>Visual design and readability</td><td>10</td></tr>
+            <tr><td>Published to RPubs (live URL)</td><td>10</td></tr>
+            <tr><td>.qmd source code quality</td><td>10</td></tr>
+            <tr><td>Reflection questions (3 questions)</td><td>15</td></tr>
+            <tr><td><strong>Total</strong></td><td><strong>100</strong></td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40;"><strong>Reflection Questions</strong></h3>
+    <p>Include your responses to the following three questions in your Canvas submission (5 points each):</p>
+    <ol>
+        <li><strong>Key Analytical Finding:</strong> What analytical finding from your dashboard is most important for policymakers? How did you highlight it in the dashboard design?</li>
+        <li><strong>Interactive vs. Static Format:</strong> How does the interactive dashboard differ from the static policy brief you created in Lab 6? What can users discover through interactivity that they could not see in the static document?</li>
+        <li><strong>Future Improvements:</strong> If you had another week to work on this dashboard, what would you add or change?</li>
+    </ol>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40;"><strong>Submission</strong></h3>
+    <p>Submit the following <strong>three items</strong> on Canvas:</p>
+    <ol>
+        <li><strong>Rendered HTML file</strong> (.html) &mdash; the self-contained dashboard file (&lt; 25 MB)</li>
+        <li><strong>Source code</strong> (.qmd) &mdash; your Quarto source file</li>
+        <li><strong>Published URL</strong> &mdash; paste the RPubs (or Quarto Pub / GitHub Pages) link in the submission comments</li>
+    </ol>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40;"><strong>Assignment</strong></h3>
+    <hr />
+    <h4 style="color: #8c1d40;"><strong>Final Project: Interactive Economic Hardship Dashboard</strong></h4>
+    <p>Download the Quarto dashboard template and the full project instructions below. Open the template in RStudio, follow the TODO comments in each section, and reuse code from your Labs 4, 5, and 6 solutions.</p>
+    <div class="btn-group">
+      <a class="btn btn-primary" href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/Assignment/Final_Project_Template.qmd" download>Download Dashboard Template (.qmd)</a>
+      <a class="btn btn-secondary" href="https://github.com/AntJam-Howell/paf-516-labs/blob/main/Lab7/final-project-instructions.md" target="_blank">View Full Instructions on GitHub</a>
+    </div>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40;"><strong>Getting Started</strong></h3>
+    <ol>
+        <li>Download the <code>Final_Project_Template.qmd</code> file using the button above.</li>
+        <li>Open it in RStudio.</li>
+        <li>Update the title with your name.</li>
+        <li>Follow the TODO comments in each section.</li>
+        <li>Reuse code from your Labs 4, 5, and 6 solutions &mdash; most of the analytical code is the same.</li>
+        <li>Render frequently to catch errors early.</li>
+        <li>Publish to RPubs when you are satisfied with the result.</li>
+    </ol>
+</div>
+
+<div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
+    <h3 style="color: #8c1d40;"><strong>Publishing to RPubs</strong></h3>
+    <ol>
+        <li>Render your <code>.qmd</code> to HTML in RStudio (click <strong>Render</strong>).</li>
+        <li>Create a free account at <a href="https://rpubs.com">rpubs.com</a> if you do not already have one.</li>
+        <li>In the RStudio Viewer pane, click the <strong>Publish</strong> button (blue icon, top-right corner).</li>
+        <li>Select <strong>RPubs</strong> as the destination and follow the prompts.</li>
+        <li>Test the published URL in an incognito browser window.</li>
+    </ol>
+    <p><strong>Troubleshooting:</strong> If the file exceeds 25 MB, switch national maps from leaflet to static <code>ggplot2</code>. If crosstalk is not working on RPubs, ensure both the leaflet map and DT table reference the same <code>SharedData</code> object with a <code>key</code> argument (e.g., <code>key = ~GEOID</code>).</p>
+</div>
+
+<p>&nbsp;</p>
+<a class="back-link" href="index.html">&larr; Back to Course Home</a>
+<p>&nbsp;</p>
+
+</body>
+</html>
