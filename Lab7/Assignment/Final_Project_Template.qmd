@@ -102,6 +102,36 @@ build_hardship_index <- function( df ) {
 ```
 
 ```{r}
+#| label: fallback-data
+
+# ── FALLBACK: Load pre-saved datasets if Census API is down ──────
+# If the Census API is unavailable or you cannot get an API key,
+# uncomment the lines below to load pre-saved spatial datasets
+# from GitHub. These contain raw Census variables in long format.
+#
+# county_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/county_hardship_2023.rds") )
+# county_raw <- county_raw %>%
+#   mutate( variable = recode( variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
+#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
+#
+# cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_hardship_2023.rds") )
+# cbg_raw <- cbg_raw %>%
+#   mutate( variable = recode( variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
+#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
+#
+# cbg_2015_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_hardship_2015.rds") )
+# cbg_2015_raw <- cbg_2015_raw %>%
+#   mutate( variable = recode( variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
+#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
+```
+
+```{r}
 #| label: pull-data
 #| results: hide
 

@@ -78,6 +78,49 @@ library(viridis)     # Perceptually uniform color scales
 # census_api_key("YOUR KEY GOES HERE", install = TRUE)
 ```
 
+```{r}
+#| label: fallback-data
+#| eval: false
+
+# ── FALLBACK: Load pre-saved datasets if Census API is down ──────
+# If the Census API is unavailable or you cannot get an API key,
+# uncomment the lines below to load pre-saved spatial datasets
+# from GitHub. These contain raw Census variables in long format —
+# you will still build the index yourself.
+#
+# ── CBG data (includes demographic variables for bivariate mapping):
+# cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_extended_2023.rds") )
+# cbg_raw <- cbg_raw %>%
+#   mutate( variable = recode( variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
+#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
+#     median_income = "med_income",
+#     total_pop = "race_total", white_nh = "race_wnh",
+#     total_tenure = "tenure_total", renter_occ = "tenure_rent" ) )
+#
+# ── US county data (for small-multiples comparison):
+# county_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/county_hardship_2023.rds") )
+# county_raw <- county_raw %>%
+#   mutate( variable = recode( variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
+#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
+#     median_income = "med_income" ) )
+#
+# ── AZ tract data (for small-multiples comparison):
+# tract_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/az_tract_hardship_2023.rds") )
+# tract_raw <- tract_raw %>%
+#   mutate( variable = recode( variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
+#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
+#     median_income = "med_income" ) )
+#
+# If using fallback data, skip the get_acs() calls and proceed
+# directly to Step 1c (Reshape and compute rates).
+```
+
 ---
 
 # ── Step 1: Pull Data & Build the Hardship Index ──────────────
