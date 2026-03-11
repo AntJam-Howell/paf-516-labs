@@ -56,9 +56,9 @@ library( patchwork )   # For combining multi-panel figures
 # These contain all census variables, computed rates, hardship index,
 # and geometry — ready for mapping.
 #
-# county_complete <- readRDS( url("LINK_TO_HOSTED_DATA/hardship_counties_us.rds") )
-# CenDF_complete  <- readRDS( url("LINK_TO_HOSTED_DATA/hardship_tracts_az.rds") )
-# cbg_complete    <- readRDS( url("LINK_TO_HOSTED_DATA/hardship_cbg_maricopa.rds") )
+# county_complete <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_counties_us.rds") )
+# CenDF_complete  <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_tracts_az.rds") )
+# cbg_complete    <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_cbg_maricopa.rds") )
 #
 # If using fallback data, skip Steps 1-4c and go directly to Step 4d.
 ```

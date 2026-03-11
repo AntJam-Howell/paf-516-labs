@@ -50,13 +50,13 @@ th { background-color: #8c1d40; color: white; }
 <div style="clear: both; border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%;">
     <h3 style="color: #8c1d40;"><strong>Module Overview and Objectives</strong></h3>
     <p>In this capstone module, you will transform your Lab 6 static policy brief into an <strong>interactive Quarto Dashboard</strong>. The dashboard uses <code>format: dashboard</code> and relies on <code>crosstalk</code> for linked interactivity between maps and tables &mdash; no Shiny server required. The result is a self-contained HTML file published to RPubs so anyone with the URL can explore your analysis.</p>
-    <p>This project synthesizes everything you have learned across Labs 1&ndash;6: index construction, choropleth mapping, spatial joins, LISA hot spot analysis, temporal change analysis, and policy communication. The new skills are <strong>dashboard layout</strong> (tabs, columns, value boxes) and <strong>crosstalk interactivity</strong> (clicking a polygon on a leaflet map highlights the corresponding row in a DT table, and vice versa).</p>
+    <p>This project synthesizes everything you have learned across Labs 1&ndash;6: index construction, choropleth mapping, spatial joins, LISA hot spot analysis, temporal change analysis, and policy communication. The new skills are <strong>dashboard layout</strong> (tabs, columns, value boxes) and <strong>crosstalk interactivity</strong> (clicking a polygon on a mapgl map highlights the corresponding row in a DT table, and vice versa).</p>
     <hr />
     <p>After completing this module, you will be able to:</p>
     <ul>
         <li>Build a Quarto Dashboard with multiple tabs and value boxes</li>
         <li>Use <code>crosstalk::SharedData</code> to link interactive maps and tables</li>
-        <li>Combine static <code>ggplot2</code> maps with interactive <code>leaflet</code> maps in a single dashboard</li>
+        <li>Combine static <code>ggplot2</code> maps with interactive <code>mapgl</code> maps in a single dashboard</li>
         <li>Publish an interactive HTML dashboard to RPubs</li>
         <li>Write data-driven policy recommendations</li>
     </ul>
@@ -82,7 +82,7 @@ th { background-color: #8c1d40; color: white; }
             <tr>
                 <td><strong>Local Patterns</strong></td>
                 <td>Block group hardship map linked to a detail table via crosstalk</td>
-                <td>Leaflet map + DT table (linked)</td>
+                <td>mapgl map + DT table (linked)</td>
             </tr>
             <tr>
                 <td><strong>Hot Spots</strong></td>
@@ -104,7 +104,7 @@ th { background-color: #8c1d40; color: white; }
 
     <h4 style="color: #8c1d40;">Technical Requirements</h4>
     <ul>
-        <li>At least 1 crosstalk-linked leaflet map + DT table</li>
+        <li>At least 1 crosstalk-linked mapgl map + DT table</li>
         <li>At least 2 value boxes with meaningful metrics</li>
         <li>Published to RPubs (preferred), Quarto Pub, or GitHub Pages</li>
         <li>Self-contained HTML under 25 MB</li>
@@ -188,7 +188,7 @@ th { background-color: #8c1d40; color: white; }
         <li>Select <strong>RPubs</strong> as the destination and follow the prompts.</li>
         <li>Test the published URL in an incognito browser window.</li>
     </ol>
-    <p><strong>Troubleshooting:</strong> If the file exceeds 25 MB, switch national maps from leaflet to static <code>ggplot2</code>. If crosstalk is not working on RPubs, ensure both the leaflet map and DT table reference the same <code>SharedData</code> object with a <code>key</code> argument (e.g., <code>key = ~GEOID</code>).</p>
+    <p><strong>Troubleshooting:</strong> If the file exceeds 25 MB, switch national maps from mapgl to static <code>ggplot2</code>. If crosstalk is not working on RPubs, ensure both the mapgl map and DT table reference the same <code>SharedData</code> object with a <code>key</code> argument (e.g., <code>key = ~GEOID</code>).</p>
 </div>
 
 <p>&nbsp;</p>
