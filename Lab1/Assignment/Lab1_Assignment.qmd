@@ -46,10 +46,27 @@ library( patchwork )   # For combining multi-panel figures
 # census_api_key("YOUR KEY GOES HERE")
 ```
 
+```{r}
+#| label: fallback-data
+#| eval: false
+
+# ── FALLBACK: Load pre-built datasets if Census API is down ──────
+# If the Census API is unavailable or you cannot get an API key,
+# uncomment the lines below to load pre-built spatial datasets.
+# These contain all census variables, computed rates, hardship index,
+# and geometry — ready for mapping.
+#
+# county_complete <- readRDS( url("LINK_TO_HOSTED_DATA/hardship_counties_us.rds") )
+# CenDF_complete  <- readRDS( url("LINK_TO_HOSTED_DATA/hardship_tracts_az.rds") )
+# cbg_complete    <- readRDS( url("LINK_TO_HOSTED_DATA/hardship_cbg_maricopa.rds") )
+#
+# If using fallback data, skip Steps 1-4c and go directly to Step 4d.
+```
+
 
 # ── Step 1: Retrieve Census Variables ──────────────────
 
-We build an **economic hardship index** using 5 census variables at the tract level for Maricopa County, AZ. Each variable captures a different dimension of economic disadvantage.
+We build an **economic hardship index** using 5 census variables at the tract level for Arizona. Each variable captures a different dimension of economic disadvantage.
 
 ```{r}
 #| label: browse-variables
@@ -80,11 +97,11 @@ hardship_vars <- c(
 )
 
 # Retrieve tract-level data with geometry for mapping
+# Pull ALL Arizona tracts (not just Maricopa) for state-level analysis
 CenDF <- get_acs(
   geography = "tract",
   variables = hardship_vars,
   state     = "AZ",
-  county    = "Maricopa",
   year      = 2023,
   survey    = "acs5",
   geometry  = TRUE
@@ -221,7 +238,7 @@ ggplot( index_z, aes( x = hardship_index ) ) +
   theme_minimal() +
   labs(
     title    = "Distribution of Economic Hardship Index",
-    subtitle = "Maricopa County Census Tracts (ACS 2023)",
+    subtitle = "Arizona Census Tracts (ACS 2023)",
     x        = "Hardship Index (z-score scale)",
     y        = "Number of Tracts",
     caption  = "Dashed line = mean"
@@ -247,7 +264,7 @@ map_tract <- ggplot( CenDF_complete ) +
   theme_void() +
   labs(
     title    = "Economic Hardship Index by Census Tract",
-    subtitle = "Maricopa County, AZ — ACS 5-Year (2023)",
+    subtitle = "Arizona — ACS 5-Year (2023)",
     caption  = "Higher values = greater economic hardship"
   )
 
@@ -426,7 +443,7 @@ p_tract <- ggplot( CenDF_complete ) +
   geom_sf( aes( fill = hardship_index ), color = NA ) +
   scale_fill_viridis( option = "inferno", direction = -1, name = "Index" ) +
   theme_void() +
-  labs( title = "Tract (Maricopa)" )
+  labs( title = "Tract (Arizona)" )
 
 p_cbg <- ggplot( cbg_complete ) +
   geom_sf( aes( fill = hardship_index ), color = NA ) +
@@ -440,6 +457,23 @@ p_county + p_tract + p_cbg +
     title   = "Economic Hardship Across Three Geographic Scales",
     caption = "ACS 5-Year (2023) | Higher values = greater hardship"
   )
+```
+
+
+# ── Save Datasets for Offline Use ─────────────────────
+
+The code below saves the three completed spatial datasets as `.rds` files. These files contain all census variables, computed rates, and the hardship index along with geometry. Students can load these if the Census API is unavailable.
+
+```{r}
+#| label: save-datasets
+#| eval: false
+
+# Save the three completed spatial datasets for offline use
+# Each file includes: GEOID, NAME, all census variables, computed rates,
+# hardship_index, and sf geometry
+saveRDS( county_complete,  "hardship_counties_us.rds" )
+saveRDS( CenDF_complete,   "hardship_tracts_az.rds" )
+saveRDS( cbg_complete,     "hardship_cbg_maricopa.rds" )
 ```
 
 
