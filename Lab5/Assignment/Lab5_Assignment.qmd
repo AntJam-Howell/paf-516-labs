@@ -203,7 +203,7 @@ p1 <- cbg_2015_idx %>%
   select( GEOID, hardship_2015 = hardship_index )
 
 p2 <- cbg_2023_idx %>%
-  select( GEOID, hardship_2023 = hardship_index )
+  select( GEOID, NAME, hardship_2023 = hardship_index )
 
 # inner_join keeps only GEOIDs found in both datasets
 # The result retains the sf geometry from p2 (the 2023 boundaries)
