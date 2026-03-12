@@ -52,7 +52,7 @@ library( patchwork )
 # still build the index yourself.
 #
 # ── Period 1 (2011-2015) — Maricopa CBGs:
-# cbg_2015 <- readRDS( "data/cbg_hardship_2015.rds" )
+# cbg_2015 <- readRDS( "../data/cbg_hardship_2015.rds" )
 # OR via URL:
 # cbg_2015 <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/data/cbg_hardship_2015.rds") )
 # cbg_2015 <- cbg_2015 %>%
@@ -62,7 +62,7 @@ library( patchwork )
 #     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
 #
 # ── Period 2 (2019-2023) — Maricopa CBGs:
-# cbg_2023 <- readRDS( "data/cbg_hardship_2023.rds" )
+# cbg_2023 <- readRDS( "../data/cbg_hardship_2023.rds" )
 # OR via URL:
 # cbg_2023 <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/data/cbg_hardship_2023.rds") )
 # cbg_2023 <- cbg_2023 %>%
@@ -233,7 +233,7 @@ Census block group boundaries can change between decennial censuses. The 2015 AC
 # We keep the 2023 geometry for mapping (more current boundaries).
 
 p1 <- cbg_2015_idx %>%
-  as.data.frame() %>%
+  st_drop_geometry() %>%
   select( GEOID, hardship_2015 = hardship_index )
 
 p2 <- cbg_2023_idx %>%
@@ -413,7 +413,7 @@ To give concrete examples, we identify the CBGs with the largest increases and d
 # ── CBGs with the largest hardship INCREASES ──────────
 cat( "── Top 10 CBGs with Greatest Hardship INCREASE ──\n" )
 change_df %>%
-  as.data.frame() %>%
+  st_drop_geometry() %>%
   select( GEOID, NAME, hardship_2015, hardship_2023, hardship_change ) %>%
   arrange( desc( hardship_change ) ) %>%
   head( 10 ) %>%
@@ -422,7 +422,7 @@ change_df %>%
 
 cat( "\n── Top 10 CBGs with Greatest Hardship DECREASE ──\n" )
 change_df %>%
-  as.data.frame() %>%
+  st_drop_geometry() %>%
   select( GEOID, NAME, hardship_2015, hardship_2023, hardship_change ) %>%
   arrange( hardship_change ) %>%
   head( 10 ) %>%

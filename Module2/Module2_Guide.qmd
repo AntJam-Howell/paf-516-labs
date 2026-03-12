@@ -159,7 +159,7 @@ The `ggspatial` package adds professional cartographic elements to ggplot maps: 
 
 ### R Package Documentation
 
-- [classInt package vignette](https://cran.r-project.org/web/packages/classInt/vignettes/classInt.html) --- Classification interval algorithms
+- [classInt package documentation](https://r-spatial.github.io/classInt/) --- Classification interval algorithms
 - [biscale package documentation](https://chris-prener.github.io/biscale/) --- Bivariate choropleth tools
 - [mapgl package documentation](https://walker-data.com/mapgl/) --- Interactive GPU-rendered maps
 - [freestiler package documentation](https://walker-data.com/freestiler/) --- Vector tile generation from sf objects

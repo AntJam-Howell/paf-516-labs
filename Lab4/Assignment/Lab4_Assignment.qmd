@@ -55,7 +55,7 @@ Moran's I tests, and classifying local clusters. Install it with
 # format — you will still build the index yourself.
 #
 # Local file:
-# cbg_raw <- readRDS("data/cbg_hardship_maricopa_2023.rds")
+# cbg_raw <- readRDS("../data/cbg_hardship_maricopa_2023.rds")
 #
 # OR via URL:
 # cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/data/cbg_hardship_maricopa_2023.rds"))
@@ -114,7 +114,7 @@ cbg_raw <- get_acs(
 )
 
 # Fallback — uncomment if API unavailable:
-# cbg_raw <- readRDS("data/cbg_hardship_maricopa_2023.rds")
+# cbg_raw <- readRDS("../data/cbg_hardship_maricopa_2023.rds")
 # OR via URL:
 # cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/data/cbg_hardship_maricopa_2023.rds"))
 #

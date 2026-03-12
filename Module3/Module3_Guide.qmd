@@ -153,7 +153,7 @@ There is no perfect solution to the MAUP, but awareness is the first defense. Be
 - Dark, S. J., & Bram, D. (2007). The modifiable areal unit problem (MAUP) in physical geography. *Progress in Physical Geography*, 31(5), 471--479. [link](https://journals.sagepub.com/doi/10.1177/0309133307083294)
   - An accessible review of MAUP with examples and potential solutions. Useful companion to Openshaw's original monograph.
 
-- U.S. EPA. EJScreen: Environmental Justice Screening and Mapping Tool. [https://www.epa.gov/ejscreen](https://www.epa.gov/ejscreen)
+- U.S. EPA. EJScreen: Environmental Justice Screening and Mapping Tool. [https://screening-tools.com/epa-ejscreen](https://screening-tools.com/epa-ejscreen) (reconstructed by the Open Environmental Data Project; the original EPA page was removed in February 2025)
   - EPA's national screening tool that combines environmental and demographic indicators at the census block group level. Demonstrates a real-world application of the spatial data integration methods covered in this module.
 
 ### R Package Documentation

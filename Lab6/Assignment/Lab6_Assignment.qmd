@@ -57,7 +57,7 @@ library( patchwork )
 # align them with the names expected by build_hardship_index().
 #
 # ── US county data (Step 1 — National Context):
-# county_raw <- readRDS( "data/county_hardship_2023.rds" )
+# county_raw <- readRDS( "../../data/county_hardship_2023.rds" )
 # county_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/county_hardship_2023.rds") )
 # county_raw <- county_raw %>%
 #   mutate( variable = recode( variable,
@@ -66,7 +66,7 @@ library( patchwork )
 #     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
 #
 # ── AZ tract data (Step 2 — State Patterns):
-# az_raw <- readRDS( "data/az_tract_hardship_2023.rds" )
+# az_raw <- readRDS( "../../data/az_tract_hardship_2023.rds" )
 # az_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/az_tract_hardship_2023.rds") )
 # az_raw <- az_raw %>%
 #   mutate( variable = recode( variable,
@@ -75,7 +75,7 @@ library( patchwork )
 #     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
 #
 # ── Maricopa CBG data 2023 (Step 3 — Local Analysis + LISA):
-# cbg_raw <- readRDS( "data/cbg_hardship_2023.rds" )
+# cbg_raw <- readRDS( "../../data/cbg_hardship_2023.rds" )
 # cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_hardship_2023.rds") )
 # cbg_raw <- cbg_raw %>%
 #   mutate( variable = recode( variable,
@@ -84,7 +84,7 @@ library( patchwork )
 #     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
 #
 # ── Maricopa CBG data 2015 (Step 4 — Temporal Change):
-# cbg_2015_raw <- readRDS( "data/cbg_hardship_2015.rds" )
+# cbg_2015_raw <- readRDS( "../../data/cbg_hardship_2015.rds" )
 # cbg_2015_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_hardship_2015.rds") )
 # cbg_2015_raw <- cbg_2015_raw %>%
 #   mutate( variable = recode( variable,
@@ -512,7 +512,7 @@ cbg_2015_complete <- build_hardship_index( cbg_2015_raw )
 # Positive change = hardship INCREASED over time.
 # Negative change = hardship DECREASED (improved).
 p1 <- cbg_2015_complete %>%
-  as.data.frame() %>%
+  st_drop_geometry() %>%
   select( GEOID, hardship_2015 = hardship_index )
 
 p2 <- cbg_complete %>%

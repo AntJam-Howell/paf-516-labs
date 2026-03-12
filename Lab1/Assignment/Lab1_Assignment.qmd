@@ -30,6 +30,7 @@ options( tigris_use_cache = TRUE )
 # Load all required packages for data, mapping, and reliability analysis
 library( tidyverse )
 library( tidycensus )
+library( sf )          # Spatial objects and st_drop_geometry
 library( tigris )      # For shift_geometry (AK/HI insets)
 library( psych )       # For Cronbach's alpha
 library( corrplot )    # For correlation matrix visualization
@@ -56,9 +57,9 @@ library( patchwork )   # For combining multi-panel figures
 # and geometry — ready for mapping.
 #
 # Option A — from local file:
-# county_complete <- readRDS("data/hardship_counties_us.rds")
-# CenDF_complete  <- readRDS("data/hardship_tracts_az.rds")
-# cbg_complete    <- readRDS("data/hardship_cbg_maricopa.rds")
+# county_complete <- readRDS("../data/hardship_counties_us.rds")
+# CenDF_complete  <- readRDS("../data/hardship_tracts_az.rds")
+# cbg_complete    <- readRDS("../data/hardship_cbg_maricopa.rds")
 #
 # Option B — from GitHub:
 # county_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_counties_us.rds"))
@@ -116,7 +117,7 @@ CenDF <- get_acs(
 # Fallback: load pre-built data if API unavailable
 # (loads processed data — skip to Step 5 for mapping)
 # Option A — from local file:
-# CenDF_complete <- readRDS("data/hardship_tracts_az.rds")
+# CenDF_complete <- readRDS("../data/hardship_tracts_az.rds")
 # Option B — from GitHub:
 # CenDF_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_tracts_az.rds"))
 ```
@@ -153,7 +154,7 @@ CenDF_wide <- CenDF_wide %>%
 # Select just the indicator variables for our index
 # Note: median_income is REVERSE CODED — high income = LOW hardship
 index_vars <- CenDF_wide %>%
-  as.data.frame() %>%  # drop sf geometry for psych::alpha
+  st_drop_geometry() %>%  # drop sf geometry for psych::alpha
   select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
   drop_na()  # alpha() requires complete cases
 
@@ -293,7 +294,7 @@ county_df <- get_acs(
 # Fallback: load pre-built data if API unavailable
 # (loads processed data — skip to step.05-map for mapping)
 # Option A — from local file:
-# county_complete <- readRDS("data/hardship_counties_us.rds")
+# county_complete <- readRDS("../data/hardship_counties_us.rds")
 # Option B — from GitHub:
 # county_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_counties_us.rds"))
 ```
@@ -318,7 +319,7 @@ county_wide <- county_wide %>%
 
 # Z-score standardization and reverse-code income
 county_index <- county_wide %>%
-  as.data.frame() %>%
+  st_drop_geometry() %>%
   select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
   drop_na() %>%
   mutate( across( everything(), ~ as.numeric( scale(.) ) ) ) %>%
@@ -403,7 +404,7 @@ cbg_df <- get_acs(
 # Fallback: load pre-built data if API unavailable
 # (loads processed data — skip to step.07-map for mapping)
 # Option A — from local file:
-# cbg_complete <- readRDS("data/hardship_cbg_maricopa.rds")
+# cbg_complete <- readRDS("../data/hardship_cbg_maricopa.rds")
 # Option B — from GitHub:
 # cbg_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_cbg_maricopa.rds"))
 ```
@@ -427,7 +428,7 @@ cbg_wide <- cbg_wide %>%
 
 # Z-score and reverse-code income
 cbg_index <- cbg_wide %>%
-  as.data.frame() %>%
+  st_drop_geometry() %>%
   select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
   drop_na() %>%
   mutate( across( everything(), ~ as.numeric( scale(.) ) ) ) %>%

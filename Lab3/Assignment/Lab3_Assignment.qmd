@@ -51,7 +51,7 @@ library( psych )       # Cronbach's alpha
 # format — you will still build the index yourself.
 #
 # Local fallback:
-# cbg_raw <- readRDS( "data/cbg_hardship_maricopa.rds" )
+# cbg_raw <- readRDS( "../data/cbg_hardship_maricopa.rds" )
 #
 # GitHub URL fallback:
 # cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/data/cbg_hardship_maricopa.rds") )
@@ -103,12 +103,12 @@ cbg_raw <- get_acs(
 )
 
 # Fallback — uncomment if Census API is unavailable:
-# cbg_raw <- readRDS( "data/cbg_hardship_maricopa.rds" )
+# cbg_raw <- readRDS( "../data/cbg_hardship_maricopa.rds" )
 # OR via URL:
 # cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/data/cbg_hardship_maricopa.rds") )
 ```
 
-We now have ___ rows of long-format data covering all Maricopa County CBGs.
+Examine the dimensions of the resulting data frame to verify it loaded correctly. The data is in long format, with one row per variable per CBG.
 
 
 # Step 2: Build the 5-Variable Hardship Index
@@ -140,7 +140,7 @@ cbg_complete <- cbg_wide %>%
 
 # Extract numeric columns, standardize to z-scores
 index_vars <- cbg_complete %>%
-  as.data.frame() %>%
+  st_drop_geometry() %>%
   select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income )
 
 index_z <- index_vars %>%
@@ -290,7 +290,7 @@ cbg_with_pts <- st_join( cbg_proj, facil_proj, join = st_contains )
 
 # Count facilities per CBG
 facility_counts <- cbg_with_pts %>%
-  as.data.frame() %>%
+  st_drop_geometry() %>%
   group_by( GEOID ) %>%
   summarise( facility_count = sum( !is.na( name ) ) )
 
@@ -368,7 +368,7 @@ Both are standardized and added to the index. We then recompute Cronbach's alpha
 
 # Build the enriched index with 7 variables
 enriched_vars <- cbg_proj %>%
-  as.data.frame() %>%
+  st_drop_geometry() %>%
   select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate,
           median_income, facility_count, in_buffer )
 

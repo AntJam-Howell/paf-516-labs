@@ -192,13 +192,13 @@ Download the lecture notes: [Measurement Theory --- Lecture Notes (PDF)](https:/
 
 - Messer, L. C., Laraia, B. A., Kaufman, J. S., Eyster, J., Holzman, C., Culhane, J., Elo, I., Burke, J. G., & O'Campo, P. (2006). The development of a standardized neighborhood deprivation index. *Journal of Urban Health*, 83(6), 1041--1062. [doi:10.1007/s11524-006-9094-x](https://doi.org/10.1007/s11524-006-9094-x) --- Demonstrates how to build a census-based deprivation index using principal components analysis across multiple US cities. Directly relevant to the composite index approach in Lab 1.
 
-- Manduca, R., & Sampson, R. J. (2019). Punishing and toxic neighborhood environments independently predict the intergenerational social mobility of black and white children. *PNAS*, 116(16), 7772--7777. [doi:10.1073/pnas.1820464116](https://doi.org/10.1073/pnas.1820464116) --- Shows how composite neighborhood environment scales (combining violence, incarceration, and lead exposure) predict long-term outcomes. Used in the Yellowdig discussion below.
+- Manduca, R., & Sampson, R.J. (2019). Punishing and toxic neighborhood environments independently predict the intergenerational social mobility of Black and white children. *Proceedings of the National Academy of Sciences*, *116*(16), 7772-7777. [doi:10.1073/pnas.1820464116](https://doi.org/10.1073/pnas.1820464116) --- Shows how composite neighborhood environment scales (combining violence, incarceration, and lead exposure) predict long-term outcomes. Used in the Yellowdig discussion below.
 
 - Walker, K. (2023). *Analyzing US Census Data: Methods, Maps, and Models in R*. CRC Press. [Free online edition](https://walker-data.com/census-r/) --- The course's primary R reference. Covers `tidycensus` for data retrieval, `sf` for spatial objects, and mapping with `ggplot2` and `mapgl`.
 
 ### R Package Documentation
 
-- [psych package vignette](https://cran.r-project.org/web/packages/psych/vignettes/intro.html) --- includes `alpha()` for reliability analysis
+- [psych package vignette](https://personality-project.org/r/psych/) --- includes `alpha()` for reliability analysis
 - [corrplot package vignette](https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html) --- correlation matrix visualization
 
 :::
