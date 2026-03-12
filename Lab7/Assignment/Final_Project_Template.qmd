@@ -2,7 +2,9 @@
 title: "Economic Hardship Dashboard — [YOUR NAME]"
 format:
   dashboard:
-    theme: readable
+    theme:
+      - darkly
+      - ../assets/dashboard-theme.scss
     orientation: columns
 execute:
   echo: false
@@ -24,7 +26,9 @@ options( tigris_use_cache = TRUE )
 library( tidyverse )
 library( tidycensus )
 library( sf )
+library( tigris )
 library( spdep )
+library( psych )
 library( viridis )
 library( mapgl )
 library( DT )
@@ -255,8 +259,7 @@ build_hardship_index <- function( df ) {
 
 ### About
 
-<!-- TODO: Write 2-3 sentences placing your study area in national context. -->
-<!-- What does the national map reveal? Where does your county fall? -->
+**YOUR TEXT HERE:** Write 2-3 sentences placing your study area in national context. What does the national map reveal? Where does your county fall?
 
 
 # Local Patterns
@@ -274,7 +277,7 @@ build_hardship_index <- function( df ) {
 # 1. Transform CBG data to WGS84: st_transform( cbg_complete, 4326 )
 # 2. Round values for clean tooltip display
 # 3. Wrap in SharedData: crosstalk::SharedData$new( data, key = ~GEOID )
-# 4. Build map: maplibre( style = openfreemap_style("positron"), bounds = ... )
+# 4. Build map: maplibre( style = openfreemap_style("dark"), bounds = ... )
 # 5. Add GeoJSON source: add_source( id = "hardship-src", type = "geojson", data = cbg_map )
 # 6. Add fill layer: add_fill_layer( id = "hardship-fill", source = "hardship-src", ... )
 ```
@@ -311,9 +314,9 @@ build_hardship_index <- function( df ) {
 
 # TODO: Create the LISA cluster map from Lab 4.
 # Use scale_fill_manual() with the standard LISA colors:
-#   "High-High" = "#d7191c", "Low-Low" = "#2c7bb6",
-#   "High-Low" = "#fdae61", "Low-High" = "#abd9e9",
-#   "Not Significant" = "#eeeeee"
+#   "High-High" = "#d73027", "Low-Low" = "#4575b4",
+#   "High-Low" = "#fc8d59", "Low-High" = "#91bfdb",
+#   "Not Significant" = "#4a4a4a"
 ```
 
 ## Column {width=40%}
@@ -393,8 +396,7 @@ build_hardship_index <- function( df ) {
 
 ### Summary
 
-<!-- TODO: Write 2-3 sentences interpreting the temporal change patterns. -->
-<!-- Are the hot spots from Tab 3 getting better, worse, or staying the same? -->
+**YOUR TEXT HERE:** Write 2-3 sentences interpreting the temporal change patterns. Are the hot spots from Tab 3 getting better, worse, or staying the same?
 
 
 # Policy
@@ -424,21 +426,24 @@ build_hardship_index <- function( df ) {
 
 ### Recommendations
 
-<!-- TODO: Write 3 policy recommendations. Each should: -->
-<!-- 1. Name a specific geographic area identified in your analysis -->
-<!-- 2. Reference the evidence (which tab/analysis supports it) -->
-<!-- 3. Propose a concrete, actionable intervention -->
+**YOUR TEXT HERE:** Write 3 policy recommendations. Each should:
 
-<!-- **Recommendation 1: [Title]** -->
-<!-- [Your recommendation text here] -->
+1. Name a specific geographic area identified in your analysis
+2. Reference the evidence (which tab/analysis supports it)
+3. Propose a concrete, actionable intervention
 
-<!-- **Recommendation 2: [Title]** -->
-<!-- [Your recommendation text here] -->
+**Recommendation 1: [Title]**
 
-<!-- **Recommendation 3: [Title]** -->
-<!-- [Your recommendation text here] -->
+[Your recommendation text here]
+
+**Recommendation 2: [Title]**
+
+[Your recommendation text here]
+
+**Recommendation 3: [Title]**
+
+[Your recommendation text here]
 
 ### Data Sources & Methods
 
-<!-- TODO: List your data sources, time periods, geography, index construction -->
-<!-- method, clustering approach, and tools used. -->
+**YOUR TEXT HERE:** List your data sources, time periods, geography, index construction method, clustering approach, and tools used.

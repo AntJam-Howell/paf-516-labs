@@ -1,0 +1,71 @@
+/*-- Dark Intelligence Theme for PAF 516 Dashboard --*/
+/*-- scss:defaults --*/
+
+$body-bg: #0d1117;
+$body-color: #e6edf3;
+$card-bg: #161b22;
+$card-border-color: #30363d;
+$primary: #58a6ff;
+$secondary: #8b949e;
+$success: #3fb950;
+$warning: #d29922;
+$danger: #f85149;
+
+$font-family-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+$headings-font-weight: 600;
+
+/* Navbar */
+$navbar-bg: #010409;
+
+/*-- scss:rules --*/
+
+/* Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Value boxes */
+.value-box {
+  border-left: 3px solid $primary;
+  background: $card-bg !important;
+}
+.value-box-title { color: $secondary !important; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.value-box-value { color: $body-color !important; font-size: 2rem; font-weight: 600; }
+
+/* Cards */
+.card {
+  background: $card-bg !important;
+  border: 1px solid $card-border-color !important;
+}
+.card-header {
+  background: #21262d !important;
+  border-bottom: 1px solid $card-border-color !important;
+  color: $body-color !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Tables (DT DataTables) */
+.dataTables_wrapper { color: $body-color; }
+table.dataTable { background-color: $card-bg !important; color: $body-color !important; }
+table.dataTable thead th {
+  background-color: #0d1117 !important;
+  color: $primary !important;
+  border-bottom: 1px solid $card-border-color !important;
+}
+table.dataTable tbody tr { background-color: $card-bg !important; }
+table.dataTable tbody tr:hover { background-color: #1c2128 !important; }
+table.dataTable tbody td { border-color: $card-border-color !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: $body-bg; }
+::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+/* Narrative text cards */
+.card-body p, .card-body li { color: $body-color; }
+.card-body h3, .card-body h4 { color: $primary; }
+
+/* Navbar tweaks */
+.navbar-brand { color: $primary !important; font-weight: 600; }
+.navbar { border-bottom: 1px solid $card-border-color; }
