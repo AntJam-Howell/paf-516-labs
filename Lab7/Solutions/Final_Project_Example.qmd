@@ -1,5 +1,5 @@
 ---
-title: "Lab 7 | PAF 516"
+title: "Economic Hardship in Maricopa County"
 format:
   dashboard:
     theme:
@@ -26,12 +26,12 @@ options( tigris_progress_bar = FALSE )
 # R packages update frequently and can break working code. We have saved
 # the exact package versions used to build this lab. Run the block below
 # ONCE the first time you open this file, then comment it out.
-if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
-download.file(
-  url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/renv.lock",
-  destfile = "renv.lock", mode = "wb"
-)
-renv::restore(lockfile = "renv.lock", prompt = FALSE)
+# if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+# download.file(
+#   url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/renv.lock",
+#   destfile = "renv.lock", mode = "wb"
+# )
+# renv::restore(lockfile = "renv.lock", prompt = FALSE)
 # After running once, comment out the four lines above.
 # ───────────────────────────────────────────────────────────────────────
 
@@ -864,17 +864,17 @@ DT::datatable(
 
 ### Recommendations
 
-**Recommendation 1: [YOUR TITLE]**
+**Recommendation 1: Targeted Workforce Development in South Phoenix**
 
-[Write 3-5 sentences identifying a specific geographic area from the LISA analysis, describing the problem using data from the dashboard, and proposing a targeted policy intervention. Reference specific statistics.]
+The south Phoenix corridor is the largest and most persistent hardship hot spot. Unemployment rates are 2-3x the county average, with no meaningful improvement between 2015 and 2023. Invest in a workforce development center co-located with light rail infrastructure, focused on healthcare, logistics, and construction sectors with wraparound services for childcare and transportation.
 
-**Recommendation 2: [YOUR TITLE]**
+**Recommendation 2: Health Insurance Enrollment Outreach in West Phoenix**
 
-[Write 3-5 sentences for a second recommendation targeting a different hot spot area or issue revealed by the temporal analysis.]
+The Maryvale hot spot shows elevated uninsurance rates that persist despite Medicaid expansion. Deploy targeted door-to-door enrollment campaigns in High-High cluster block groups, partnering with community health centers and bilingual navigators.
 
-**Recommendation 3: [YOUR TITLE]**
+**Recommendation 3: Affordable Housing Preservation in Central Mesa**
 
-[Write 3-5 sentences for a third recommendation. Consider what the change-over-time data reveals about emerging needs.]
+The central Mesa hot spot shows signs of expansion between 2015 and 2023. Pursue an affordable housing preservation strategy including acquisition of naturally occurring affordable housing (NOAH) properties, rehabilitation investment, and zoning reforms allowing gentle density near light rail stations.
 
 ### Data Sources & Methods
 
