@@ -44,8 +44,6 @@ library( psych )
 library( viridis )
 library( mapgl )
 library( DT )
-library( crosstalk )
-library( bslib )
 ```
 
 ```{r}
@@ -308,7 +306,7 @@ moran_i_val  <- round( moran_global$estimate["Moran I statistic"], 3 )
 
 # National Context
 
-## Column {width=65%}
+## Column {width=60%}
 
 ### US County Hardship Map
 
@@ -326,11 +324,12 @@ county_shifted <- shift_geometry( county_complete )
 ggplot( county_shifted ) +
   geom_sf( aes( fill = hardship_index ), color = NA ) +
   scale_fill_viridis(
-    option    = "inferno",
-    direction = -1,
-    name      = "Hardship\nIndex"
+    option = "inferno",
+    name   = "Hardship\nIndex"
   ) +
   theme_dark_dash() +
+  theme( legend.position = "bottom",
+         legend.key.width = unit( 1.5, "cm" ) ) +
   labs(
     title    = "Economic Hardship Index by US County",
     subtitle = "ACS 5-Year Estimates (2019-2023)",
@@ -338,7 +337,11 @@ ggplot( county_shifted ) +
   )
 ```
 
-## Column {width=35%}
+## Column {width=40%}
+
+### About
+
+Economic hardship concentrates in the rural South, Appalachia, border counties in South Texas, and tribal areas of the Southwest. Arizona's counties fall in the moderate range nationally, but this county-level average conceals sharp within-county inequality that becomes visible only at finer geographic scales.
 
 ### Summary Statistics
 
@@ -379,9 +382,6 @@ list(
 )
 ```
 
-### About
-
-Economic hardship concentrates in the rural South, Appalachia, border counties in South Texas, and tribal areas of the Southwest. Arizona's counties fall in the moderate range nationally, but this county-level average conceals sharp within-county inequality that becomes visible only at finer geographic scales.
 
 
 # Local Patterns
@@ -406,23 +406,15 @@ cbg_map <- cbg_complete %>%
     income_fmt     = scales::dollar( median_income )
   )
 
-# ── Create SharedData for crosstalk linking ──────────────────
-# SharedData wraps the sf object so that DT datatable supports
-# filtering and selection.  Note: mapgl's add_source() requires
-# a plain sf object, so bidirectional map-to-table linking is
-# not natively supported.  The DT table uses SharedData for its
-# own selection/filter features; full bidirectional linking would
-# require Observable JS or Shiny.
-sd <- crosstalk::SharedData$new(
-  cbg_map,
-  key = ~GEOID,
-  group = "cbg_link"
-)
+# ── Prepare display-only columns for DT table ─────────────────
+cbg_display <- cbg_map %>%
+  st_drop_geometry() %>%
+  select( GEOID, NAME, hardship_round, poverty_pct, unemp_pct,
+          no_hs_pct, no_ins_pct, income_fmt )
 
 # ── Build mapgl interactive map using GeoJSON source ─────────
 # Uses add_source() with type = "geojson" instead of PMTiles/serve_tiles()
 # so the map is fully self-contained and works without a local tile server.
-# add_source() expects an sf object (not SharedData).
 maplibre( style = openfreemap_style( "dark" ),
           bounds = st_bbox( cbg_map ) ) |>
   add_source( id = "hardship-src",
@@ -433,7 +425,7 @@ maplibre( style = openfreemap_style( "dark" ),
                   fill_color = interpolate(
                     column = "hardship_round",
                     values = c( -1, 0, 1, 2 ),
-                    stops  = c( "#1a9850", "#fee08b", "#d73027", "#67001f" )
+                    stops  = c( "#1a9850", "#fee08b", "#d73027", "#a50026" )
                   ),
                   fill_opacity = 0.7,
                   hover_options = list( fill_opacity = 1 ),
@@ -444,21 +436,23 @@ maplibre( style = openfreemap_style( "dark" ),
                     " | Unemp: ", get_column( "unemp_pct" ), "%",
                     " | No HS: ", get_column( "no_hs_pct" ), "%",
                     " | Uninsured: ", get_column( "no_ins_pct" ), "%"
-                  ) )
+                  ) ) |>
+  add_line_layer( id = "hardship-border",
+                  source = "hardship-src",
+                  line_color = "#30363d",
+                  line_width = 0.5 )
 ```
 
 ## Column {width=40%}
 
-### Block Group Details (linked to map)
+### Block Group Details
 
 ```{r}
 #| label: local-table
 
-# ── DT datatable linked via crosstalk ────────────────────────
-# Selecting rows here highlights the corresponding polygon on the
-# map, and clicking a polygon on the map selects the table row.
+# ── DT datatable with pre-selected display columns ────────────
 DT::datatable(
-  sd,
+  cbg_display,
   extensions = "Scroller",
   options    = list(
     scrollY    = 400,
@@ -510,7 +504,7 @@ lisa_colors <- c(
   "Low-Low"         = "#4575b4",
   "High-Low"        = "#fc8d59",
   "Low-High"        = "#91bfdb",
-  "Not Significant" = "#4a4a4a"
+  "Not Significant" = "#6e7681"
 )
 
 ggplot( cbg_complete ) +
@@ -520,6 +514,7 @@ ggplot( cbg_complete ) +
     name   = "LISA Cluster"
   ) +
   theme_dark_dash() +
+  theme( legend.position = "bottom" ) +
   labs(
     title    = "LISA Hot Spots: Economic Hardship",
     subtitle = "Maricopa County Block Groups | Queen contiguity, p < 0.05",
@@ -597,9 +592,10 @@ cluster_tbl <- cbg_complete %>%
 
 DT::datatable(
   cluster_tbl,
-  options  = list(
-    scrollY  = 300,
-    scroller = TRUE,
+  extensions = "Scroller",
+  options    = list(
+    scrollY    = 300,
+    scroller   = TRUE,
     pageLength = 50
   ),
   rownames = FALSE,
@@ -624,12 +620,13 @@ ggplot( change_df ) +
   geom_sf( aes( fill = hardship_change ), color = NA ) +
   scale_fill_gradient2(
     low      = "#4575b4",
-    mid      = "#3d4450",
+    mid      = "#58626e",
     high     = "#d73027",
     midpoint = 0,
     name     = "Change in\nHardship"
   ) +
   theme_dark_dash() +
+  theme( legend.position = "bottom" ) +
   labs(
     title    = "Change in Economic Hardship (2015 to 2023)",
     subtitle = "Maricopa County Block Groups",
@@ -638,6 +635,10 @@ ggplot( change_df ) +
 ```
 
 ## Column {width=40%}
+
+### Summary
+
+Comparing 2011-2015 and 2019-2023 ACS estimates, most block groups experienced modest change. The core hardship clusters in south Phoenix, central Mesa, and west Phoenix show little improvement, confirming these are persistent hardship zones. Peripheral suburban areas show the most improvement, likely reflecting new development and rising incomes in growing communities.
 
 ### CBGs Matched
 
@@ -678,16 +679,12 @@ list(
 )
 ```
 
-### Summary
-
-Comparing 2011-2015 and 2019-2023 ACS estimates, most block groups experienced modest change. The core hardship clusters in south Phoenix, central Mesa, and west Phoenix show little improvement, confirming these are persistent hardship zones. Peripheral suburban areas show the most improvement, likely reflecting new development and rising incomes in growing communities.
-
 
 # Policy
 
 ## Column {width=50%}
 
-### Key Metrics
+### Policy Indicators
 
 ```{r}
 #| label: policy-vbox1
@@ -746,7 +743,8 @@ priority <- cbg_complete %>%
 
 DT::datatable(
   priority,
-  options  = list(
+  extensions = "Scroller",
+  options    = list(
     scrollY    = 350,
     scroller   = TRUE,
     pageLength = 20
@@ -779,4 +777,4 @@ DT::datatable(
 - **Geography**: Census block groups within Maricopa County, AZ
 - **Index**: 5-variable composite (poverty, unemployment, education, insurance, income) using z-score standardization
 - **Clustering**: Local Moran's I (LISA) with queen contiguity weights, p < 0.05
-- **Tools**: R, Quarto Dashboard, crosstalk, mapgl, DT
+- **Tools**: R, Quarto Dashboard, mapgl, DT
