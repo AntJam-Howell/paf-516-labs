@@ -3102,7 +3102,7 @@ vertical-align: -.125em;
   <li><a href="#a.-pull-and-compute-at-county-and-tract-levels" id="toc-a.-pull-and-compute-at-county-and-tract-levels" class="nav-link" data-scroll-target="#a.-pull-and-compute-at-county-and-tract-levels">4a. Pull and compute at county and tract levels</a></li>
   <li><a href="#b.-create-the-small-multiple-comparison" id="toc-b.-create-the-small-multiple-comparison" class="nav-link" data-scroll-target="#b.-create-the-small-multiple-comparison">4b. Create the small-multiple comparison</a></li>
   </ul></li>
-  <li><a href="#step-5-interactive-map-with-mapgl-freestiler" id="toc-step-5-interactive-map-with-mapgl-freestiler" class="nav-link" data-scroll-target="#step-5-interactive-map-with-mapgl-freestiler">Step 5: Interactive Map with mapgl + freestiler</a></li>
+  <li><a href="#step-5-interactive-map-with-mapgl" id="toc-step-5-interactive-map-with-mapgl" class="nav-link" data-scroll-target="#step-5-interactive-map-with-mapgl">Step 5: Interactive Map with mapgl</a></li>
   <li><a href="#step-6-export-quality-figure-with-ggspatial" id="toc-step-6-export-quality-figure-with-ggspatial" class="nav-link" data-scroll-target="#step-6-export-quality-figure-with-ggspatial">Step 6: Export-Quality Figure with ggspatial</a></li>
   <li><a href="#questions" id="toc-questions" class="nav-link" data-scroll-target="#questions">Questions</a>
   <ul class="collapse">
@@ -3145,7 +3145,7 @@ vertical-align: -.125em;
 <li>Build <strong>small-multiple</strong> maps that compare patterns across geographic scales.</li>
 <li>Produce an <strong>interactive mapgl map</strong> with tooltips, hover effects, and GPU-rendered vector tiles.</li>
 </ol>
-<p><strong>New packages introduced</strong>: <code>classInt</code>, <code>biscale</code>, <code>mapgl</code>, <code>freestiler</code>, <code>ggspatial</code>, <code>patchwork</code>.</p>
+<p><strong>New packages introduced</strong>: <code>classInt</code>, <code>biscale</code>, <code>mapgl</code>, <code>ggspatial</code>, <code>patchwork</code>.</p>
 <hr>
 </section>
 <section id="required-packages" class="level1">
@@ -3161,7 +3161,7 @@ vertical-align: -.125em;
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(classInt)    <span class="co"># Classification algorithms (Jenks, quantile, etc.)</span></span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(biscale)     <span class="co"># Bivariate choropleth palette + legend</span></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mapgl)       <span class="co"># Interactive GPU-rendered maps via MapLibre GL JS</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(freestiler)  <span class="co"># Convert sf objects to PMTiles vector tiles</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># library(freestiler)  # Not needed — mapgl uses GeoJSON source directly</span></span>
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggspatial)   <span class="co"># Scale bars and north arrows for ggplot maps</span></span>
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)   <span class="co"># Combine multiple ggplots into one figure</span></span>
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(viridis)     <span class="co"># Perceptually uniform color scales</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -3586,9 +3586,9 @@ vertical-align: -.125em;
 <hr>
 </section>
 </section>
-<section id="step-5-interactive-map-with-mapgl-freestiler" class="level1">
-<h1>Step 5: Interactive Map with mapgl + freestiler</h1>
-<p>Static maps are great for print; interactive maps let users explore. Here we build an interactive GPU-rendered map of Maricopa County CBGs using <code>mapgl</code> and <code>freestiler</code>. The <code>freestiler</code> package converts sf objects to PMTiles vector tiles, and <code>mapgl</code> renders them via MapLibre GL JS — producing smooth, fast, interactive maps even with thousands of polygons.</p>
+<section id="step-5-interactive-map-with-mapgl" class="level1">
+<h1>Step 5: Interactive Map with mapgl</h1>
+<p>Static maps are great for print; interactive maps let users explore. Here we build an interactive GPU-rendered map of Maricopa County CBGs using <code>mapgl</code>. The <code>mapgl</code> package renders spatial data via MapLibre GL JS — producing smooth, fast, interactive maps even with thousands of polygons. We pass the sf object directly as a GeoJSON source so the map works in rendered HTML without a local tile server.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Prepare data for mapgl ───────────────────────────────────</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co"># mapgl uses WGS84 (EPSG:4326) coordinate reference system.</span></span>
@@ -3605,43 +3605,33 @@ vertical-align: -.125em;
 <span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Create PMTiles for GPU-rendered map ──────────────────────</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="co"># freestile() converts the sf object into a PMTiles file that</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co"># mapgl can render efficiently on the GPU.</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">freestile</span>(cbg_map, <span class="st">&quot;hardship_cbg.pmtiles&quot;</span>, <span class="at">layer_name =</span> <span class="st">&quot;hardship&quot;</span>,</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">min_zoom =</span> <span class="dv">8</span>, <span class="at">max_zoom =</span> <span class="dv">14</span>)</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="fu">serve_tiles</span>(<span class="st">&quot;hardship_cbg.pmtiles&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Build the interactive mapgl map ──────────────────────────</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co"># maplibre() initializes a MapLibre GL JS map with a basemap style.</span></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co"># add_pmtiles_source() loads our vector tile data.</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="co"># add_fill_layer() renders polygons with color, opacity, and tooltips.</span></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="fu">maplibre</span>(<span class="at">style =</span> <span class="fu">openfreemap_style</span>(<span class="st">&quot;positron&quot;</span>),</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">bounds =</span> <span class="fu">st_bbox</span>(cbg_map)) <span class="sc">|&gt;</span></span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_pmtiles_source</span>(<span class="at">id =</span> <span class="st">&quot;hardship-src&quot;</span>,</span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>                     <span class="at">url =</span> <span class="st">&quot;http://localhost:8080/hardship_cbg.pmtiles&quot;</span>,</span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>                     <span class="at">promote_id =</span> <span class="st">&quot;GEOID&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_fill_layer</span>(<span class="at">id =</span> <span class="st">&quot;hardship-fill&quot;</span>,</span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>                 <span class="at">source =</span> <span class="st">&quot;hardship-src&quot;</span>,</span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>                 <span class="at">source_layer =</span> <span class="st">&quot;hardship&quot;</span>,</span>
-<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>                 <span class="at">fill_color =</span> <span class="fu">interpolate</span>(</span>
-<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>                   <span class="at">column =</span> <span class="st">&quot;hardship_round&quot;</span>,</span>
-<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>                   <span class="at">values =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>),</span>
-<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>                   <span class="at">stops  =</span> <span class="fu">c</span>(<span class="st">&quot;#1a9850&quot;</span>, <span class="st">&quot;#fee08b&quot;</span>, <span class="st">&quot;#d73027&quot;</span>, <span class="st">&quot;#67001f&quot;</span>)</span>
-<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>                 ),</span>
-<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>                 <span class="at">fill_opacity =</span> <span class="fl">0.7</span>,</span>
-<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>                 <span class="at">hover_options =</span> <span class="fu">list</span>(<span class="at">fill_opacity =</span> <span class="dv">1</span>),</span>
-<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>                 <span class="at">tooltip =</span> <span class="fu">concat</span>(</span>
-<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot;GEOID: &quot;</span>, <span class="fu">get_column</span>(<span class="st">&quot;GEOID&quot;</span>),</span>
-<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot; | Hardship: &quot;</span>, <span class="fu">number_format</span>(<span class="fu">get_column</span>(<span class="st">&quot;hardship_round&quot;</span>)),</span>
-<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot; | Poverty: &quot;</span>, <span class="fu">get_column</span>(<span class="st">&quot;poverty_pct&quot;</span>), <span class="st">&quot;%&quot;</span>,</span>
-<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot; | Minority: &quot;</span>, <span class="fu">get_column</span>(<span class="st">&quot;minority_pct&quot;</span>), <span class="st">&quot;%&quot;</span>,</span>
-<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot; | Renter: &quot;</span>, <span class="fu">get_column</span>(<span class="st">&quot;renter_pct&quot;</span>), <span class="st">&quot;%&quot;</span></span>
-<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a>                 ))</span>
-<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a><span class="co"># When done exploring: stop_server()</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Build the interactive mapgl map ──────────────────────</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="co"># maplibre() initializes a MapLibre GL JS map with a basemap style.</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co"># add_source() loads the sf object as GeoJSON directly — no local</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co"># tile server needed, so the map works in rendered HTML.</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="co"># add_fill_layer() renders polygons with color, opacity, and tooltips.</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="fu">maplibre</span>(<span class="at">style =</span> <span class="fu">openfreemap_style</span>(<span class="st">&quot;positron&quot;</span>),</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">bounds =</span> <span class="fu">st_bbox</span>(cbg_map)) <span class="sc">|&gt;</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_source</span>(<span class="at">id =</span> <span class="st">&quot;hardship-src&quot;</span>,</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>             <span class="at">type =</span> <span class="st">&quot;geojson&quot;</span>,</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>             <span class="at">data =</span> cbg_map) <span class="sc">|&gt;</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_fill_layer</span>(<span class="at">id =</span> <span class="st">&quot;hardship-fill&quot;</span>,</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>                 <span class="at">source =</span> <span class="st">&quot;hardship-src&quot;</span>,</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>                 <span class="at">fill_color =</span> <span class="fu">interpolate</span>(</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>                   <span class="at">column =</span> <span class="st">&quot;hardship_round&quot;</span>,</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>                   <span class="at">values =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>),</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>                   <span class="at">stops  =</span> <span class="fu">c</span>(<span class="st">&quot;#1a9850&quot;</span>, <span class="st">&quot;#fee08b&quot;</span>, <span class="st">&quot;#d73027&quot;</span>, <span class="st">&quot;#67001f&quot;</span>)</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>                 ),</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>                 <span class="at">fill_opacity =</span> <span class="fl">0.7</span>,</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>                 <span class="at">hover_options =</span> <span class="fu">list</span>(<span class="at">fill_opacity =</span> <span class="dv">1</span>),</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>                 <span class="at">tooltip =</span> <span class="fu">concat</span>(</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot;GEOID: &quot;</span>, <span class="fu">get_column</span>(<span class="st">&quot;GEOID&quot;</span>),</span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot; | Hardship: &quot;</span>, <span class="fu">number_format</span>(<span class="fu">get_column</span>(<span class="st">&quot;hardship_round&quot;</span>)),</span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot; | Poverty: &quot;</span>, <span class="fu">get_column</span>(<span class="st">&quot;poverty_pct&quot;</span>), <span class="st">&quot;%&quot;</span>,</span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot; | Minority: &quot;</span>, <span class="fu">get_column</span>(<span class="st">&quot;minority_pct&quot;</span>), <span class="st">&quot;%&quot;</span>,</span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot; | Renter: &quot;</span>, <span class="fu">get_column</span>(<span class="st">&quot;renter_pct&quot;</span>), <span class="st">&quot;%&quot;</span></span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>                 ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <hr>
 </section>
@@ -3649,37 +3639,37 @@ vertical-align: -.125em;
 <h1>Step 6: Export-Quality Figure with ggspatial</h1>
 <p>For reports and presentations you often need a polished static map with a scale bar and north arrow. The <code>ggspatial</code> package adds these cartographic elements to any <code>ggplot2</code> + <code>geom_sf()</code> map.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Publication-ready map with scale bar and north arrow ──────</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co"># annotation_scale() adds a scale bar (default = km).</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co"># annotation_north_arrow() adds a north arrow with configurable style.</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(cbg <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(hardship_index))) <span class="sc">+</span></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> hardship_index), <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis</span>(</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">option    =</span> <span class="st">&quot;inferno&quot;</span>,</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>,</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">name      =</span> <span class="st">&quot;Hardship</span><span class="sc">\n</span><span class="st">Index&quot;</span></span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggspatial scale bar — placed at bottom-left</span></span>
-<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_scale</span>(</span>
-<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">location =</span> <span class="st">&quot;bl&quot;</span>,</span>
-<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">width_hint =</span> <span class="fl">0.3</span>,</span>
-<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">style =</span> <span class="st">&quot;ticks&quot;</span></span>
-<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggspatial north arrow — placed at top-right</span></span>
-<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_north_arrow</span>(</span>
-<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">location =</span> <span class="st">&quot;tr&quot;</span>,</span>
-<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">style =</span> <span class="fu">north_arrow_fancy_orienteering</span>()</span>
-<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>(<span class="at">datum =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>(<span class="at">base_size =</span> <span class="dv">12</span>) <span class="sc">+</span></span>
-<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">title    =</span> <span class="st">&quot;Economic Hardship Index&quot;</span>,</span>
-<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">&quot;Maricopa County Block Groups (ACS 2019-2023)&quot;</span>,</span>
-<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption  =</span> <span class="st">&quot;Source: ACS 5-Year Estimates, 2019-2023&quot;</span>,</span>
-<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill     =</span> <span class="st">&quot;Hardship</span><span class="sc">\n</span><span class="st">Index&quot;</span></span>
-<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Publication-ready map with scale bar and north arrow ──────</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co"># annotation_scale() adds a scale bar (default = km).</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co"># annotation_north_arrow() adds a north arrow with configurable style.</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(cbg <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(hardship_index))) <span class="sc">+</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> hardship_index), <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis</span>(</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">option    =</span> <span class="st">&quot;inferno&quot;</span>,</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>,</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">name      =</span> <span class="st">&quot;Hardship</span><span class="sc">\n</span><span class="st">Index&quot;</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggspatial scale bar — placed at bottom-left</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_scale</span>(</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">location =</span> <span class="st">&quot;bl&quot;</span>,</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">width_hint =</span> <span class="fl">0.3</span>,</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">style =</span> <span class="st">&quot;ticks&quot;</span></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggspatial north arrow — placed at top-right</span></span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_north_arrow</span>(</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">location =</span> <span class="st">&quot;tr&quot;</span>,</span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">style =</span> <span class="fu">north_arrow_fancy_orienteering</span>()</span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>(<span class="at">datum =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>(<span class="at">base_size =</span> <span class="dv">12</span>) <span class="sc">+</span></span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">title    =</span> <span class="st">&quot;Economic Hardship Index&quot;</span>,</span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">&quot;Maricopa County Block Groups (ACS 2019-2023)&quot;</span>,</span>
+<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption  =</span> <span class="st">&quot;Source: ACS 5-Year Estimates, 2019-2023&quot;</span>,</span>
+<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill     =</span> <span class="st">&quot;Hardship</span><span class="sc">\n</span><span class="st">Index&quot;</span></span>
+<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <hr>
 </section>
@@ -3702,10 +3692,10 @@ vertical-align: -.125em;
 <h2 class="anchored" data-anchor-id="question-2-modify-bivariate-map-with-hardship-x-renter-occupied">Question 2 — Modify: Bivariate Map with Hardship x % Renter-Occupied</h2>
 <p>Create a <strong>second bivariate choropleth</strong> using <code>hardship_index</code> and <code>pct_renter</code> (percent renter-occupied housing) instead of <code>pct_minority</code>. Show the complete code and output.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <hr>
 </section>

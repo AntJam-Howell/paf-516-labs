@@ -42,7 +42,7 @@ use. By the end of this lab you will be able to:
 4. Produce an **interactive mapgl map** with tooltips, hover effects, and
    GPU-rendered vector tiles.
 
-**New packages introduced**: `classInt`, `biscale`, `mapgl`, `freestiler`,
+**New packages introduced**: `classInt`, `biscale`, `mapgl`,
 `ggspatial`, `patchwork`.
 
 ---
@@ -62,7 +62,7 @@ library(sf)
 library(classInt)    # Classification algorithms (Jenks, quantile, etc.)
 library(biscale)     # Bivariate choropleth palette + legend
 library(mapgl)       # Interactive GPU-rendered maps via MapLibre GL JS
-library(freestiler)  # Convert sf objects to PMTiles vector tiles
+# library(freestiler)  # Not needed — mapgl uses GeoJSON source directly
 library(ggspatial)   # Scale bars and north arrows for ggplot maps
 library(patchwork)   # Combine multiple ggplots into one figure
 library(viridis)     # Perceptually uniform color scales
@@ -557,13 +557,14 @@ moderate at the tract level contain both very-high and very-low hardship CBGs.
 
 ---
 
-# Step 5: Interactive Map with mapgl + freestiler
+# Step 5: Interactive Map with mapgl
 
 Static maps are great for print; interactive maps let users explore. Here we
-build an interactive GPU-rendered map of Maricopa County CBGs using `mapgl` and
-`freestiler`. The `freestiler` package converts sf objects to PMTiles vector
-tiles, and `mapgl` renders them via MapLibre GL JS — producing smooth, fast,
-interactive maps even with thousands of polygons.
+build an interactive GPU-rendered map of Maricopa County CBGs using `mapgl`.
+The `mapgl` package renders spatial data via MapLibre GL JS — producing smooth,
+fast, interactive maps even with thousands of polygons. We pass the sf object
+directly as a GeoJSON source so the map works in rendered HTML without a local
+tile server.
 
 ```{r}
 #| label: step.05a
@@ -588,31 +589,19 @@ cbg_map <- cbg %>%
 #| label: step.05b
 #| eval: false
 
-# ── Create PMTiles for GPU-rendered map ──────────────────────
-# freestile() converts the sf object into a PMTiles file that
-# mapgl can render efficiently on the GPU.
-freestile(cbg_map, "hardship_cbg.pmtiles", layer_name = "hardship",
-          min_zoom = 8, max_zoom = 14)
-serve_tiles("hardship_cbg.pmtiles")
-```
-
-```{r}
-#| label: step.05c
-#| eval: false
-
-# ── Build the interactive mapgl map ──────────────────────────
+# ── Build the interactive mapgl map ──────────────────────
 # maplibre() initializes a MapLibre GL JS map with a basemap style.
-# add_pmtiles_source() loads our vector tile data.
+# add_source() loads the sf object as GeoJSON directly — no local
+# tile server needed, so the map works in rendered HTML.
 # add_fill_layer() renders polygons with color, opacity, and tooltips.
 
 maplibre(style = openfreemap_style("positron"),
          bounds = st_bbox(cbg_map)) |>
-  add_pmtiles_source(id = "hardship-src",
-                     url = "http://localhost:8080/hardship_cbg.pmtiles",
-                     promote_id = "GEOID") |>
+  add_source(id = "hardship-src",
+             type = "geojson",
+             data = cbg_map) |>
   add_fill_layer(id = "hardship-fill",
                  source = "hardship-src",
-                 source_layer = "hardship",
                  fill_color = interpolate(
                    column = "hardship_round",
                    values = c(-1, 0, 1, 2),
@@ -627,8 +616,6 @@ maplibre(style = openfreemap_style("positron"),
                    " | Minority: ", get_column("minority_pct"), "%",
                    " | Renter: ", get_column("renter_pct"), "%"
                  ))
-
-# When done exploring: stop_server()
 ```
 
 ---

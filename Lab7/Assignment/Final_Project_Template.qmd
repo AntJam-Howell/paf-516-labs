@@ -27,7 +27,6 @@ library( sf )
 library( spdep )
 library( viridis )
 library( mapgl )
-library( freestiler )
 library( DT )
 library( crosstalk )
 library( bslib )
@@ -275,11 +274,9 @@ build_hardship_index <- function( df ) {
 # 1. Transform CBG data to WGS84: st_transform( cbg_complete, 4326 )
 # 2. Round values for clean tooltip display
 # 3. Wrap in SharedData: crosstalk::SharedData$new( data, key = ~GEOID )
-# 4. Create PMTiles: freestile( data, "hardship.pmtiles", layer_name = "hardship" )
-# 5. Serve tiles: serve_tiles( "hardship.pmtiles" )
-# 6. Build map: maplibre( style = openfreemap_style("positron"), bounds = ... )
-# 7. Add source: add_pmtiles_source( id = "hardship-src", url = ... )
-# 8. Add fill layer: add_fill_layer( id = "hardship-fill", ... )
+# 4. Build map: maplibre( style = openfreemap_style("positron"), bounds = ... )
+# 5. Add GeoJSON source: add_source( id = "hardship-src", type = "geojson", data = cbg_map )
+# 6. Add fill layer: add_fill_layer( id = "hardship-fill", source = "hardship-src", ... )
 ```
 
 ## Column {width=40%}
