@@ -45,6 +45,44 @@ After completing this module, you will be able to:
 
 :::
 
+## Lab 1 Overview
+
+::: {.section-box}
+
+**What you will build:** A composite Economic Hardship Index from US Census
+variables, evaluated for reliability using Cronbach's alpha, and mapped at
+three geographic scales: US counties (national), Arizona census tracts
+(state), and Maricopa County block groups (neighborhood).
+
+### Downloading the Lab Template
+
+Right-click the link in the **Lab Assignment** section below and choose
+**"Save Link As"** to download the `.qmd` file. Do not open it in the
+browser — save it first, then open it in RStudio.
+
+### File and Folder Management
+
+Set up a clean folder structure before opening the file. Store course
+files in a cloud-synced folder (Dropbox, Google Drive, or OneDrive).
+
+Recommended semester structure:
+```
+PAF516/
+  Lab1/
+    Lab1_Assignment.qmd          ← downloaded from Canvas/GitHub
+    Lab1_Assignment_Howell.qmd   ← your working copy (rename with lastname)
+    Lab1_Assignment.html         ← rendered output — submit to Canvas
+    data/                        ← fallback .rds files if needed
+  Lab2/  Lab3/  Lab4/  Lab5/  Lab6/  FinalProject/
+```
+
+Move the downloaded `.qmd` from Downloads into `PAF516/Lab1/` **before**
+opening it. Rename a copy with your last name before editing — the
+original stays as a clean reference. The `../data/` paths in the file
+resolve correctly only when opened from inside the `Lab1/` folder.
+
+:::
+
 ## Section 1: What Is Measurement?
 
 ::: {.section-box}
@@ -143,23 +181,6 @@ alpha = var(T) / var(T + e)
 
 :::
 
-## Section 4: From Measurement to Analysis
-
-::: {.section-box}
-
-The index you build in this module's lab becomes an **input** for all subsequent analyses:
-
-- **Module 2 --- Cartographic Design & Multi-Scale Visual Analytics**: You will classify and map the hardship index using multiple cartographic methods (quantile breaks, natural breaks, bivariate choropleth) and create interactive mapgl maps
-- **Module 3 --- Spatial Data Integration & Overlay Analysis**: You will overlay external data (environmental, infrastructure) onto your index using spatial joins and buffer analysis
-- **Module 4 --- Spatial Autocorrelation & Hot Spots**: You will test whether high- and low-hardship neighborhoods cluster spatially using Moran's I and LISA maps
-- **Module 5 --- Temporal Change Analysis**: You will compare hardship index values across two time periods (2015 vs 2023) to identify neighborhoods experiencing the most change
-- **Module 6 --- Integration & Policy Brief**: You will combine multi-scale analysis into a professional Quarto document with callouts, tabsets, and policy recommendations
-- **Module 7 --- Interactive Dashboard (Final Project)**: You will build an interactive Quarto Dashboard with mapgl maps that brings together all analyses from the course
-
-**The quality of your downstream analysis depends on the quality of your measurement.** A poorly constructed index will produce misleading maps, flawed spatial statistics, and uninformative policy recommendations.
-
-:::
-
 ## Lecture
 
 ::: {.section-box}
@@ -209,84 +230,73 @@ Download the [Lab 01 Quarto template (.qmd)](https://raw.githubusercontent.com/A
 
 :::
 
-## Static vs. Interactive Mapping
+## Your Target Deliverable
 
 ::: {.section-box}
 
-Throughout this course you will create two types of maps:
-
-- **Static maps** --- built with `ggplot2::geom_sf()`. These render as images, are reproducible, and embed easily in PDF and Canvas submissions. Labs 1--6 use static maps for graded assignments.
-- **Interactive maps** --- built with `mapgl` (powered by MapLibre GL JS). These render in a web browser, support zoom, pan, hover tooltips, and click interactivity. The Final Project dashboard uses interactive maps.
-
-**Why mapgl?** mapgl is GPU-accelerated and can smoothly render tens of thousands of census block groups --- something that slows down older packages. It pairs with `freestiler`, which converts `sf` objects into PMTiles vector tiles for efficient delivery.
-
-| Feature | Static (`geom_sf`) | Interactive (`mapgl`) |
-|---|---|---|
-| Rendering | PNG/PDF image | GPU-rendered in browser |
-| Interactivity | None | Zoom, pan, hover, click |
-| File size | Small (KB) | Larger (MB, depends on data) |
-| Canvas compatible | Yes (renders in .html) | Yes (self-contained .html) |
-| Best for | Graded labs, policy briefs, print | Dashboards, exploratory analysis |
-| Required packages | `ggplot2`, `sf` | `mapgl`, `freestiler`, `sf` |
-
-### Demo: Static Map with `geom_sf`
+The maps below are produced in **Step 8** of Lab 1. This is what you are
+building toward. No code is shown here — your job is to write the code
+that produces these results.
 
 ```{r}
-#| label: demo-static-map
-#| echo: true
+#| label: target-deliverable
+#| echo: false
 #| eval: true
-library(ggplot2)
-library(sf)
-library(viridis)
-demo_data <- readRDS("data/hardship_cbg_maricopa.rds")
-ggplot(demo_data) +
+library(ggplot2); library(sf); library(viridis)
+library(patchwork); library(tigris)
+options(tigris_progress_bar = FALSE)
+
+county <- readRDS("data/hardship_counties_us.rds")
+tract  <- readRDS("data/hardship_tracts_az.rds")
+cbg    <- readRDS("data/hardship_cbg_maricopa.rds")
+county_shifted <- shift_geometry(county)
+
+p1 <- ggplot(county_shifted) +
   geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis_c(option = "inferno") +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship\nIndex") +
   theme_void() +
-  labs(title = "Economic Hardship Index — Maricopa County",
-       subtitle = "Block Group Level | ACS 2019-2023",
-       fill = "Hardship\nIndex")
+  labs(title = "US Counties", subtitle = "ACS 2019–2023")
+
+p2 <- ggplot(tract) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship\nIndex") +
+  theme_void() +
+  labs(title = "Arizona Census Tracts", subtitle = "ACS 2019–2023")
+
+p3 <- ggplot(cbg) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship\nIndex") +
+  theme_void() +
+  labs(title = "Maricopa County Block Groups", subtitle = "ACS 2019–2023")
+
+p1 / p2 / p3
 ```
 
-### Demo: Interactive Map with `mapgl`
+*Three geographic scales. One index. Lab 1 asks you to build this from scratch.*
 
-```{r}
-#| label: demo-interactive-map
-#| echo: true
-#| eval: true
-library(mapgl)
-library(sf)
+:::
 
-demo_data <- readRDS("data/hardship_cbg_maricopa.rds")
+## Course Learning Arc
 
-maplibre(
-  style = openfreemap_style("positron"),
-  bounds = st_bbox(demo_data)
-) |>
-  add_source(
-    id   = "hardship-src",
-    type = "geojson",
-    data = demo_data
-  ) |>
-  add_fill_layer(
-    id     = "hardship-fill",
-    source = "hardship-src",
-    fill_color = interpolate(
-      column = "hardship_index",
-      values = c(-1, 0, 1, 2),
-      stops  = c("#1a9850", "#fee08b", "#d73027", "#67001f")
-    ),
-    fill_opacity = 0.7,
-    tooltip = "hardship_index"
-  )
-```
+::: {.section-box}
 
-*Note:* The `mapgl` interactive map uses a GeoJSON source and renders directly in the self-contained HTML. Zoom, pan, and hover over block groups to see hardship index values. The lab assignment uses `geom_sf` for graded static maps.
+The Economic Hardship Index you build in Lab 1 is the **foundation for
+every subsequent module**. Each lab takes the same index and asks a
+progressively more sophisticated analytical question:
 
-**Package documentation:**
+| Module | Lab | Core Question |
+|--------|-----|---------------|
+| **Module 1** | Lab 1 | *Is the index reliable?* Build the index, assess Cronbach's alpha, map at three scales |
+| **Module 2** | Lab 2 | *How do we communicate it?* Classification schemes, bivariate mapping, interactive GPU maps |
+| **Module 3** | Lab 3 | *What else is layered on top?* Spatial joins, buffer analysis, external data integration |
+| **Module 4** | Lab 4 | *Does hardship cluster spatially?* Moran's I, LISA hot spot maps, spatial autocorrelation |
+| **Module 5** | Lab 5 | *Is hardship getting better or worse?* 2015 vs 2023 ACS temporal change analysis |
+| **Module 6** | Lab 6 | *How do we communicate findings?* Professional Quarto policy brief |
+| **Module 7** | Final Project | *Can we build a dashboard?* Quarto Dashboard with dark theme, interactive maps, LISA |
 
-- [mapgl documentation](https://walker-data.com/mapgl/) --- interactive maps via MapLibre GL JS
-- [freestiler documentation](https://walker-data.com/freestiler/) --- convert sf objects to PMTiles vector tiles
+**Build the index right in Lab 1.** A poorly constructed index produces
+misleading maps in Lab 2, flawed spatial statistics in Lab 4, and
+uninformative policy recommendations in Lab 6.
 
 :::
 
