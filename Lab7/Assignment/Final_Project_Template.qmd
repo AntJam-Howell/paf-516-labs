@@ -150,7 +150,7 @@ build_hardship_index <- function( df ) {
 #| label: pull-county
 #| results: hide
 
-# ── Pull US county-level data ────────────────────────────────
+# ── Pull US county-level data (2023) ────────────────────────
 county_raw <- get_acs(
   geography    = "county",
   variables    = hardship_vars,
@@ -164,6 +164,52 @@ county_raw <- get_acs(
 ```{r}
 #| label: build-county-index
 county_complete <- build_hardship_index( county_raw )
+```
+
+```{r}
+#| label: pull-county-2015
+#| results: hide
+
+# ── Pull US county-level data (2015) ────────────────────────
+county_raw_2015 <- get_acs(
+  geography    = "county",
+  variables    = hardship_vars,
+  year         = 2015,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
+)
+```
+
+```{r}
+#| label: build-county-2015
+county_complete_2015 <- build_hardship_index(county_raw_2015)
+```
+
+```{r}
+#| label: build-county-change
+
+# ── County-level temporal change (2015 → 2023) ──────────────
+county_change <- full_join(
+  county_complete_2015 |> st_drop_geometry() |>
+    select(GEOID, hardship_2015 = hardship_index),
+  county_complete |>
+    select(GEOID, NAME, hardship_2023 = hardship_index, geometry),
+  by = "GEOID"
+) |>
+  st_as_sf() |>
+  mutate(
+    hardship_change = hardship_2023 - hardship_2015,
+    change_round    = round(hardship_change, 2),
+    county_label    = str_extract(NAME, "^[^,]+"),
+    state_label     = str_extract(NAME, "(?<=, ).+")
+  )
+
+n_county_matched  <- sum(!is.na(county_change$hardship_2015) & !is.na(county_change$hardship_2023))
+n_county_worsened <- sum(county_change$hardship_change > 0, na.rm = TRUE)
+n_county_improved <- sum(county_change$hardship_change < 0, na.rm = TRUE)
+pct_county_worsened <- round(100 * n_county_worsened / n_county_matched, 1)
+pct_county_improved <- round(100 * n_county_improved / n_county_matched, 1)
 ```
 
 ```{r}
@@ -187,12 +233,15 @@ tract_raw_2023 <- get_acs(
 
 tract_complete_2023 <- build_hardship_index(tract_raw_2023)
 
-# Extract county name from NAME field:
+# Extract county name using str_remove chain
 # NAME format: "Census Tract XXXX, Maricopa County, Arizona"
 tract_complete_2023 <- tract_complete_2023 |>
   mutate(
-    county_name  = str_extract(NAME, "(?<=, )([^,]+)(?=, Arizona)"),
-    tract_number = str_extract(NAME, "(?<=Census Tract )([0-9.]+)")
+    county_name  = NAME |>
+      str_remove("^Census Tract [^,]+, ") |>
+      str_remove(", Arizona$") |>
+      str_trim(),
+    tract_number = str_extract(NAME, "(?<=Census Tract )[0-9.]+")
   )
 ```
 
@@ -222,7 +271,7 @@ tract_complete_2015 <- build_hardship_index(tract_raw_2015)
 #| label: pull-maricopa-cbg
 #| results: hide
 
-# ── Pull Maricopa block groups (2023) — for LISA only ────────
+# ── Pull Maricopa block groups (2023) — for reliability only ──
 cbg_raw <- get_acs(
   geography    = "block group",
   variables    = hardship_vars,
@@ -244,44 +293,56 @@ cbg_complete <- build_hardship_index(cbg_raw)
 ```{r}
 #| label: reliability
 
-# ── Cronbach's alpha for index reliability ────────────────────
+# ── Cronbach's alpha for index reliability ───────────────────
 alpha_data <- cbg_complete |>
   st_drop_geometry() |>
-  select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, med_income = median_income ) |>
-  mutate( med_income = -med_income ) |>
+  select(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income) |>
+  mutate(median_income = -median_income) |>
   drop_na()
 
-alpha_result <- psych::alpha( alpha_data )
-alpha_val    <- round( alpha_result$total$raw_alpha, 3 )
+if (nrow(alpha_data) < 10) {
+  alpha_val <- NA_real_
+} else {
+  alpha_result <- psych::alpha(alpha_data, check.keys = FALSE)
+  alpha_val    <- round(alpha_result$total$raw_alpha, 3)
+}
+```
+
+```{r}
+#| label: filter-maricopa-tracts
+
+# ── Use Maricopa tracts for LISA instead of block groups ─────
+maricopa_tracts <- tract_complete_2023 |>
+  filter(str_detect(county_name, "Maricopa"))
 ```
 
 ```{r}
 #| label: lisa-analysis
 
-# ── LISA Hot Spot Analysis ───────────────────────────────────
-cbg_complete <- st_make_valid( cbg_complete )
+# ── LISA Hot Spot Analysis on Maricopa Census Tracts ─────────
+maricopa_tracts <- st_make_valid(maricopa_tracts)
 
-nb <- poly2nb( cbg_complete, queen = TRUE )
-lw <- nb2listw( nb, style = "W", zero.policy = TRUE )
+nb <- poly2nb(maricopa_tracts, queen = TRUE)
+lw <- nb2listw(nb, style = "W", zero.policy = TRUE)
 
-lisa <- localmoran( cbg_complete$hardship_index, lw, zero.policy = TRUE )
+lisa <- localmoran(maricopa_tracts$hardship_index, lw, zero.policy = TRUE)
 
-cbg_complete$lisa_i <- lisa[, "Ii"]
-cbg_complete$lisa_z <- lisa[, "Z.Ii"]
-cbg_complete$lisa_p <- lisa[, "Pr(z != E(Ii))"]
+maricopa_tracts$lisa_i <- lisa[, "Ii"]
+maricopa_tracts$lisa_z <- lisa[, "Z.Ii"]
+maricopa_tracts$lisa_p <- lisa[, "Pr(z != E(Ii))"]
 
-cbg_complete$lag_hardship <- lag.listw( lw, cbg_complete$hardship_index,
-                                         zero.policy = TRUE )
+maricopa_tracts$lag_hardship <- lag.listw(lw, maricopa_tracts$hardship_index,
+                                          zero.policy = TRUE)
 ```
 
 ```{r}
 #| label: lisa-classify
 
 # ── Classify LISA clusters ───────────────────────────────────
-cbg_complete <- cbg_complete %>%
+maricopa_tracts <- maricopa_tracts %>%
   mutate(
-    val_centered = hardship_index - mean( hardship_index, na.rm = TRUE ),
-    lag_centered = lag_hardship   - mean( lag_hardship, na.rm = TRUE ),
+    val_centered = hardship_index - mean(hardship_index, na.rm = TRUE),
+    lag_centered = lag_hardship   - mean(lag_hardship, na.rm = TRUE),
 
     quadrant = case_when(
       val_centered > 0 & lag_centered > 0 ~ "High-High",
@@ -291,20 +352,20 @@ cbg_complete <- cbg_complete %>%
       TRUE ~ "Not Significant"
     ),
 
-    lisa_cluster = if_else( lisa_p <= 0.05, quadrant, "Not Significant" )
+    lisa_cluster = if_else(lisa_p <= 0.05, quadrant, "Not Significant")
   )
 
-cbg_complete$lisa_cluster <- factor(
-  cbg_complete$lisa_cluster,
-  levels = c( "High-High", "Low-Low", "High-Low", "Low-High", "Not Significant" )
+maricopa_tracts$lisa_cluster <- factor(
+  maricopa_tracts$lisa_cluster,
+  levels = c("High-High", "Low-Low", "High-Low", "Low-High", "Not Significant")
 )
 ```
 
 ```{r}
 #| label: compute-moran
 
-moran_global <- moran.test(cbg_complete$hardship_index, lw, zero.policy = TRUE)
-moran_i_val  <- round(moran_global$estimate["Moran I statistic"], 3)
+moran_global <- moran.test(maricopa_tracts$hardship_index, lw, zero.policy = TRUE)
+moran_i_val  <- as.numeric(round(moran_global$estimate["Moran I statistic"], 3))
 ```
 
 ```{r}
@@ -331,13 +392,14 @@ tract_change <- full_join(
 # ── Summary statistics ────────────────────────────────────────
 n_tract        <- nrow(tract_complete_2023)
 n_county       <- nrow(county_complete)
-n_cbg          <- nrow(cbg_complete)
-n_hotspot      <- sum(cbg_complete$lisa_cluster == "High-High", na.rm = TRUE)
-n_coldspot     <- sum(cbg_complete$lisa_cluster == "Low-Low",   na.rm = TRUE)
+n_cbg          <- nrow(maricopa_tracts)
+n_hotspot      <- sum(maricopa_tracts$lisa_cluster == "High-High", na.rm = TRUE)
+n_coldspot     <- sum(maricopa_tracts$lisa_cluster == "Low-Low",   na.rm = TRUE)
 min_hardship    <- round(min(county_complete$hardship_index,    na.rm = TRUE), 2)
 median_hardship <- round(median(county_complete$hardship_index, na.rm = TRUE), 2)
 mean_hardship   <- round(mean(county_complete$hardship_index,   na.rm = TRUE), 2)
 max_hardship    <- round(max(county_complete$hardship_index,    na.rm = TRUE), 2)
+n_above_avg    <- sum(county_complete$hardship_index > 0, na.rm = TRUE)
 
 county_display <- county_complete |>
   st_drop_geometry() |>
@@ -379,10 +441,10 @@ indicate greater hardship.
 
 **Geographic scales analyzed:**
 
-- **National:** ~3,100 counties across the United States (ACS 2019-2023)
-- **State:** ~1,500 census tracts across Arizona (ACS 2019-2023)
+- **National:** `r scales::comma(n_county)` counties across the United States (ACS 2019-2023)
+- **State:** `r scales::comma(n_tract)` census tracts across Arizona (ACS 2019-2023)
 - **Temporal:** AZ census tract change between 2011-2015 and 2019-2023
-- **Neighborhood:** ~900 block groups within Maricopa County for hot spot detection
+- **Neighborhood:** `r scales::comma(n_cbg)` census tracts within Maricopa County for hot spot detection
 
 **Policy focus:** Identifying persistent hot spots of economic hardship within
 Maricopa County to support targeted intervention by county government and
@@ -416,13 +478,13 @@ list(
 )
 ```
 
-### Maricopa Block Groups
+### Maricopa Census Tracts
 
 ```{r}
 #| label: overview-vbox3
 #| content: valuebox
 list(
-  title = "Maricopa Block Groups",
+  title = "Maricopa Census Tracts",
   value = scales::comma(n_cbg),
   icon  = "geo-alt-fill",
   color = "secondary"
@@ -441,6 +503,8 @@ list(
   color = "success"
 )
 ```
+
+## Row
 
 ### Methods
 
@@ -475,7 +539,7 @@ county_map <- county_complete |>
 
 maplibre(
   style  = openfreemap_style("dark"),
-  bounds = st_bbox(county_map)
+  bounds = c(-125, 24, -66, 50)
 ) |>
   add_source(
     id   = "county-src",
@@ -533,15 +597,15 @@ list(
 )
 ```
 
-### Mean Hardship
+### Counties Above Average
 
 ```{r}
-#| label: mean-vbox
+#| label: above-avg-vbox
 #| content: valuebox
 list(
-  title = "Mean County Hardship",
-  value = mean_hardship,
-  icon  = "bar-chart-fill",
+  title = "Counties Above Average",
+  value = scales::comma(n_above_avg),
+  icon  = "arrow-up-circle",
   color = "warning"
 )
 ```
@@ -575,6 +639,102 @@ DT::datatable(
   ),
   rownames = FALSE,
   filter   = "top"
+)
+```
+
+
+# National Change
+
+## Column {width=60%}
+
+### US County Hardship Change: 2015 → 2023 {.no-title}
+
+```{r}
+#| label: national-change-map
+
+# ── National county change mapgl ─────────────────────────────
+county_change_map <- county_change |>
+  filter(!is.na(hardship_change)) |>
+  st_transform(4326)
+
+maplibre(
+  style  = openfreemap_style("dark"),
+  bounds = c(-125, 24, -66, 50)
+) |>
+  add_source(
+    id   = "county-change-src",
+    type = "geojson",
+    data = county_change_map
+  ) |>
+  add_fill_layer(
+    id     = "county-change-fill",
+    source = "county-change-src",
+    fill_color = interpolate(
+      column   = "change_round",
+      values   = c(-2, 0, 2),
+      stops    = c("#4575b4", "#f7f7f7", "#d73027"),
+      na_color = "#2a2a2a"
+    ),
+    fill_opacity = 0.85,
+    tooltip = concat(
+      get_column("county_label"), ", ", get_column("state_label"),
+      " | Change: ", number_format(get_column("change_round"))
+    )
+  ) |>
+  add_line_layer(
+    id         = "county-change-border",
+    source     = "county-change-src",
+    line_color = "#30363d",
+    line_width  = 0.3
+  )
+```
+
+## Column {width=40%}
+
+### Summary
+
+Comparing 2011--2015 and 2019--2023 ACS estimates at the county level reveals
+broad national trends in economic hardship. Blue counties show improvement
+(declining hardship); red counties show worsening conditions. Counties in the
+Deep South, Appalachia, and tribal areas show persistently high hardship, while
+many suburban counties in the Sun Belt and Mountain West have improved.
+
+### Counties Matched
+
+```{r}
+#| label: county-match-vbox
+#| content: valuebox
+list(
+  title = "Counties in Both Periods",
+  value = scales::comma(n_county_matched),
+  icon  = "arrow-left-right",
+  color = "secondary"
+)
+```
+
+### Hardship Worsened
+
+```{r}
+#| label: county-worse-vbox
+#| content: valuebox
+list(
+  title = "Counties Where Hardship Increased",
+  value = paste0(pct_county_worsened, "%"),
+  icon  = "arrow-up-circle-fill",
+  color = "danger"
+)
+```
+
+### Hardship Improved
+
+```{r}
+#| label: county-improve-vbox
+#| content: valuebox
+list(
+  title = "Counties Where Hardship Decreased",
+  value = paste0(pct_county_improved, "%"),
+  icon  = "arrow-down-circle-fill",
+  color = "success"
 )
 ```
 
@@ -764,16 +924,7 @@ ggplot(county_ts,
            color = county_short, group = county_short)) +
   geom_line(linewidth = 1.2) +
   geom_point(size = 3) +
-  scale_color_manual(
-    values = c(
-      "Maricopa"  = "#d73027", "Pima"       = "#fc8d59",
-      "Pinal"     = "#fee090", "Yuma"       = "#4575b4",
-      "Cochise"   = "#91bfdb", "Mohave"     = "#e0f3f8",
-      "Navajo"    = "#a50026", "Apache"     = "#f46d43",
-      "Coconino"  = "#74add1", "Yavapai"    = "#abd9e9",
-      "Graham"    = "#fdae61", "Greenlee"   = "#d9ef8b"
-    )
-  ) +
+  scale_color_viridis_d(option = "turbo") +
   labs(
     title    = "Mean Economic Hardship Index by County",
     subtitle = "Arizona census tracts · ACS 2011–2015 vs 2019–2023",
@@ -849,15 +1000,15 @@ list(
 
 ### LISA Cluster Map
 
-*Neighborhood-level spatial clustering --- Maricopa County Census Block Groups.
+*Neighborhood-level spatial clustering --- Maricopa County Census Tracts.
 **High-High** = hot spot (high hardship surrounded by high hardship).
 **Low-Low** = cold spot. Moran's I = `r moran_i_val` indicates moderate positive clustering.*
 
 ```{r}
 #| label: lisa-map
 
-# ── LISA cluster mapgl interactive map ───────────────────────
-cbg_lisa <- cbg_complete |>
+# ── LISA cluster mapgl — Maricopa Census Tracts ──────────────
+tract_lisa <- maricopa_tracts |>
   st_transform(4326) |>
   mutate(
     cluster_label = as.character(lisa_cluster),
@@ -872,11 +1023,11 @@ cbg_lisa <- cbg_complete |>
   )
 
 maplibre(style = openfreemap_style("dark"),
-         bounds = st_bbox(cbg_lisa)) |>
+         bounds = st_bbox(tract_lisa)) |>
   add_source(
     id   = "lisa-src",
     type = "geojson",
-    data = cbg_lisa
+    data = tract_lisa
   ) |>
   add_fill_layer(
     id     = "lisa-fill",
@@ -884,7 +1035,8 @@ maplibre(style = openfreemap_style("dark"),
     fill_color = get_column("cluster_color"),
     fill_opacity = 0.85,
     tooltip = concat(
-      "Cluster: ", get_column("cluster_label"),
+      "Tract ", get_column("tract_number"),
+      " | Cluster: ", get_column("cluster_label"),
       " | Hardship: ", number_format(get_column("hardship_index"))
     )
   ) |>
@@ -904,7 +1056,7 @@ maplibre(style = openfreemap_style("dark"),
 #| label: hotspot-vbox
 #| content: valuebox
 list(
-  title = "Hot Spot CBGs (High-High)",
+  title = "Hot Spot Tracts (High-High)",
   value = n_hotspot,
   icon  = "fire",
   color = "danger"
@@ -917,7 +1069,7 @@ list(
 #| label: coldspot-vbox
 #| content: valuebox
 list(
-  title = "Cold Spot CBGs (Low-Low)",
+  title = "Cold Spot Tracts (Low-Low)",
   value = n_coldspot,
   icon  = "snow2",
   color = "info"
@@ -937,17 +1089,17 @@ list(
 )
 ```
 
-### Hot Spot Block Groups
+### Hot Spot Census Tracts
 
 ```{r}
 #| label: hotspot-table
 
-# ── Table of HH and LL cluster CBGs ─────────────────────────
-cluster_tbl <- cbg_complete %>%
+# ── Table of HH and LL cluster tracts ────────────────────────
+cluster_tbl <- maricopa_tracts %>%
   st_drop_geometry() %>%
-  filter( lisa_cluster %in% c( "High-High", "Low-Low" ) ) %>%
+  filter(lisa_cluster %in% c("High-High", "Low-Low")) %>%
   select(
-    GEOID,
+    `Tract`       = tract_number,
     Cluster       = lisa_cluster,
     Hardship      = hardship_index,
     `Poverty %`   = poverty_rate,
@@ -956,13 +1108,13 @@ cluster_tbl <- cbg_complete %>%
     `Uninsured %` = no_ins_rate
   ) %>%
   mutate(
-    Hardship      = round( Hardship, 3 ),
-    `Poverty %`   = round( `Poverty %` * 100, 1 ),
-    `Unemp %`     = round( `Unemp %` * 100, 1 ),
-    `No HS %`     = round( `No HS %` * 100, 1 ),
-    `Uninsured %` = round( `Uninsured %` * 100, 1 )
+    Hardship      = round(Hardship, 3),
+    `Poverty %`   = round(`Poverty %` * 100, 1),
+    `Unemp %`     = round(`Unemp %` * 100, 1),
+    `No HS %`     = round(`No HS %` * 100, 1),
+    `Uninsured %` = round(`Uninsured %` * 100, 1)
   ) %>%
-  arrange( desc( Hardship ) )
+  arrange(desc(Hardship))
 
 DT::datatable(
   cluster_tbl,
@@ -981,82 +1133,9 @@ DT::datatable(
 
 # Policy
 
-## Column {width=50%}
+## Column {width=55%}
 
-### Policy Indicators
-
-```{r}
-#| label: policy-vbox1
-#| content: valuebox
-list(
-  title = "Persistent Hot Spots",
-  value = n_hotspot,
-  icon  = "exclamation-octagon-fill",
-  color = "danger"
-)
-```
-
-### Mean Change
-
-```{r}
-#| label: policy-vbox2
-#| content: valuebox
-list(
-  title = "Mean Hardship Change",
-  value = mean_change,
-  icon  = "graph-up",
-  color = "warning"
-)
-```
-
-### Priority Areas for Intervention
-
-```{r}
-#| label: priority-table
-
-# ── Priority areas table ─────────────────────────────────────
-# Identifies the top 20 highest-hardship hot spot CBGs as
-# priority targets for policy intervention.
-priority <- cbg_complete %>%
-  st_drop_geometry() %>%
-  filter( lisa_cluster == "High-High" ) %>%
-  select(
-    GEOID,
-    Hardship      = hardship_index,
-    `Poverty %`   = poverty_rate,
-    `Unemp %`     = unemp_rate,
-    `No HS %`     = no_hs_rate,
-    `Uninsured %` = no_ins_rate,
-    `Median Income` = median_income
-  ) %>%
-  mutate(
-    Hardship        = round( Hardship, 3 ),
-    `Poverty %`     = round( `Poverty %` * 100, 1 ),
-    `Unemp %`       = round( `Unemp %` * 100, 1 ),
-    `No HS %`       = round( `No HS %` * 100, 1 ),
-    `Uninsured %`   = round( `Uninsured %` * 100, 1 ),
-    `Median Income` = scales::dollar( `Median Income` )
-  ) %>%
-  arrange( desc( Hardship ) ) %>%
-  head( 20 )
-
-DT::datatable(
-  priority,
-  extensions = "Scroller",
-  options    = list(
-    scrollY    = 350,
-    scroller   = TRUE,
-    paging     = TRUE,
-    pageLength = 20
-  ),
-  rownames = FALSE,
-  caption  = "Top 20 Highest-Hardship Hot Spot Block Groups"
-)
-```
-
-## Column {width=50%}
-
-### Recommendations
+### Policy Recommendations
 
 **Recommendation 1: [YOUR TITLE]**
 
@@ -1070,12 +1149,45 @@ DT::datatable(
 
 [Write 3-5 sentences for a third recommendation. Consider what the change-over-time data reveals about emerging needs.]
 
+## Column {width=45%}
+
+### Top 10 Highest-Hardship Tracts
+
+```{r}
+#| label: policy-chart
+#| fig-height: 4
+
+top_tracts <- maricopa_tracts |>
+  st_drop_geometry() |>
+  arrange(desc(hardship_index)) |>
+  slice_head(n = 10) |>
+  mutate(
+    label = paste0("Tract ", tract_number),
+    label = fct_reorder(label, hardship_index)
+  )
+
+ggplot(top_tracts, aes(x = hardship_index, y = label)) +
+  geom_col(fill = "#d73027", alpha = 0.85) +
+  labs(
+    title    = "Top 10 Highest-Hardship Tracts",
+    subtitle = "Maricopa County · ACS 2019–2023",
+    x = "Hardship Index", y = NULL
+  ) +
+  theme_dark_dash() +
+  theme(
+    axis.text        = element_text(color = "#e6edf3"),
+    axis.title       = element_text(color = "#8b949e"),
+    panel.grid.major.x = element_line(color = "#21262d"),
+    panel.grid.minor = element_blank()
+  )
+```
+
 ### Data Sources & Methods
 
 - **Data**: American Community Survey 5-Year Estimates via tidycensus
 - **Periods**: 2011--2015 (ACS 2015) and 2019--2023 (ACS 2023)
 - **Geographies**: US counties (national); AZ census tracts (state/temporal);
-  Maricopa County block groups (hot spot detection)
+  Maricopa County census tracts (hot spot detection)
 - **Index**: 5-variable composite (poverty, unemployment, education,
   insurance, income) using z-score standardization
 - **Clustering**: Local Moran's I (LISA) with queen contiguity spatial weights,
