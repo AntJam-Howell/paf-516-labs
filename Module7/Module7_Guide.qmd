@@ -1,0 +1,309 @@
+---
+title: "Module 7 — Final Project Dashboard"
+subtitle: "PAF 516 | Community Analytics"
+format:
+  html:
+    theme: readable
+    toc: true
+    self-contained: true
+    number-sections: false
+    css: ../assets/paf516.css
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{=html}
+<div class="module-header">
+  <h2><strong>M7 Overview & Learning Materials</strong></h2>
+  <div class="module-subtitle">
+    <span style="font-size: 14pt;"><strong>Final Project Dashboard</strong></span>
+  </div>
+</div>
+```
+
+::: {.section-box}
+## Module Overview and Objectives
+
+Over the past six modules you have built a complete spatial analytics pipeline: measuring neighborhood hardship (Lab 1), visualizing it with professional cartography (Lab 2), enriching it with external spatial data (Lab 3), testing for statistically significant clusters (Lab 4), tracking change over time (Lab 5), and synthesizing your findings in a policy brief (Lab 6). In this final module you bring everything together in an **interactive Quarto dashboard** designed for a policy audience.
+
+Dashboards are how spatial analysis reaches decision-makers in practice. A city council member is unlikely to read your .qmd file, but they will explore an interactive map, scan key metrics in value boxes, and read your three targeted recommendations. This module teaches you how to design and build that communication tool.
+
+---
+
+After completing this module, you will be able to:
+
+- Build a **multi-page Quarto dashboard** with dark theme and professional styling
+- Design effective **dashboard layouts** using columns, value boxes, and narrative cards
+- Choose between **static maps** (ggplot) and **interactive maps** (mapgl) based on communication goals
+- Use **mapgl** with GeoJSON sources, choropleth fill layers, polygon borders, and hover tooltips
+- Present **LISA hot spot analysis** results in a dashboard context with summary statistics
+- Construct a **temporal change panel** comparing two ACS vintages side by side
+- Write **data-driven policy recommendations** that reference specific geographies and statistics from your dashboard
+- Synthesize all six prior labs into a cohesive analytical narrative for a non-technical audience
+:::
+
+::: {.section-box}
+## Lab 7 Overview
+
+**What you will build:** A five-page interactive Quarto Dashboard analyzing economic hardship in Maricopa County. The dashboard includes a national context map, an interactive block-group-level hardship map, LISA hot spot analysis, temporal change analysis, and a policy page with your three original recommendations.
+
+### Downloading the Lab Template
+
+Right-click the link in the **Lab Assignment** section below and choose **"Save Link As"** to download the `.qmd` file. Do not open it in the browser --- save it first, then open it in RStudio.
+
+### Dashboard Pages
+
+Your dashboard has five pages, each building on the previous:
+
+| Page | Purpose | Key Visualization |
+|---|---|---|
+| **National Context** | Where does Maricopa sit in the national picture? | Static US county choropleth (ggplot + shift_geometry) |
+| **Local Patterns** | What does hardship look like at the block group level? | Interactive mapgl map + data table |
+| **Hot Spots** | Where are statistically significant clusters? | LISA cluster map + cluster statistics |
+| **Change Over Time** | How has hardship shifted since 2015? | Diverging change map + trend statistics |
+| **Policy** | What should decision-makers do? | Priority areas table + your 3 recommendations |
+
+### What You Need to Write
+
+All data processing, analysis, and visualization code is provided. **Your task is to write three original policy recommendations** on the Policy page. Each recommendation must:
+
+1. Identify a specific geographic area from the LISA or temporal analysis
+2. Describe the problem using data visible in the dashboard
+3. Propose a targeted policy intervention with a specific responsible entity
+:::
+
+::: {.section-box}
+## Section 1: Dashboard Design Principles
+
+### Dashboards vs. Reports
+
+A dashboard is not a report reformatted for the web. Reports are read linearly; dashboards are **scanned and explored**. This has implications for design:
+
+- **Lead with visuals**: Maps and value boxes should be the first things a reader sees, not paragraphs of text
+- **Progressive disclosure**: Overview first (national map), then detail (block group map), then analysis (LISA), then action (policy)
+- **Value boxes as scannable metrics**: A busy reader should understand the scale of the problem in 3 seconds by reading the value boxes alone
+- **Narrative text supports, not leads**: Place explanatory text in sidebars to contextualize the visuals, not to replace them
+
+### Dark Theme Design
+
+The Lab 7 dashboard uses a dark theme (`darkly` + custom SCSS). Dark themes work well for data-dense dashboards because they:
+
+- Reduce visual fatigue when displaying many choropleth maps
+- Make bright colors (value boxes, map fills) stand out more
+- Convey a professional, modern aesthetic appropriate for analytical tools
+
+The custom `theme_dark_dash()` function ensures ggplot static maps match the dashboard background (#0d1117). Without it, ggplot figures would render with white backgrounds inside dark cards.
+
+### Column Layouts
+
+Quarto dashboards use a column-based layout system. Each page defines columns with percentage widths:
+
+```
+## Column {width=60%}
+### Map Card
+[map code]
+
+## Column {width=40%}
+### Value Box
+[value box code]
+```
+
+The 60/40 split works well for map + sidebar layouts. Keep the map in the wider column and supporting metrics or text in the narrower one.
+:::
+
+::: {.section-box}
+## Section 2: Synthesizing Multi-Scale Analysis
+
+The dashboard's five-page structure mirrors the **multi-scale analytical approach** you have been building all semester:
+
+### The Scale Hierarchy
+
+| Scale | Data Source | Lab of Origin | Dashboard Page |
+|---|---|---|---|
+| National (3,200+ counties) | ACS county-level data | Lab 1 | National Context |
+| Local (2,600+ block groups) | ACS block-group-level data | Labs 1--3 | Local Patterns |
+| Clusters (LISA) | Spatial autocorrelation analysis | Lab 4 | Hot Spots |
+| Temporal (2015 vs. 2023) | Two ACS vintages | Lab 5 | Change Over Time |
+| Synthesis | All of the above | Lab 6 | Policy |
+
+Each page builds on the previous. The national map provides context ("hardship exists everywhere but concentrates regionally"). The local map zooms in ("within Maricopa, hardship varies dramatically by block group"). The hot spot map adds statistical rigor ("these specific clusters are statistically significant, not just visual patterns"). The change map adds temporal depth ("these clusters have persisted over 8 years"). The policy page demands action ("given all of this, here is what should be done").
+
+### The Hardship Index
+
+The same five-variable composite index powers every page:
+
+- **Poverty rate** (below 100% FPL)
+- **Unemployment rate**
+- **Educational attainment** (no high school diploma)
+- **Health insurance coverage** (uninsured rate)
+- **Median household income** (reverse-coded)
+
+Each variable is z-score standardized before averaging, so a one-unit increase in the index corresponds to one standard deviation above the mean on the composite hardship measure. Cronbach's alpha validates that these five variables measure a coherent latent construct.
+:::
+
+::: {.section-box}
+## Section 3: Interactive Visualization with mapgl
+
+### When to Use Static vs. Interactive Maps
+
+| Feature | Static (ggplot) | Interactive (mapgl) |
+|---|---|---|
+| **Best for** | Publication figures, multi-panel layouts, national maps | Exploration, tooltips, zoom/pan, block-group detail |
+| **File size** | Small (embedded PNG) | Larger (GeoJSON data in HTML) |
+| **User interaction** | None | Hover, click, zoom, pan |
+| **Legends** | Built-in (ggplot scales) | Must be custom-built or omitted |
+| **AK/HI insets** | Supported via shift_geometry() | Not supported (tiles show true lat/lon) |
+
+The Lab 7 dashboard uses **static ggplot** for the national map (shift_geometry needed for AK/HI insets), the LISA cluster map (categorical legend is easier in ggplot), and the temporal change map. It uses **interactive mapgl** for the block-group hardship map where tooltips and zoom are most valuable.
+
+### mapgl with GeoJSON Sources
+
+The dashboard uses `add_source(type = "geojson")` to embed spatial data directly in the HTML file. This makes the map fully self-contained --- no tile server required.
+
+Key mapgl functions used:
+
+- `maplibre()`: Creates the base map with a dark tile style
+- `add_source()`: Adds an sf object as a GeoJSON data source
+- `add_fill_layer()`: Colors polygons using `interpolate()` for continuous scales
+- `add_line_layer()`: Adds polygon borders for visual clarity
+- `tooltip = concat(...)`: Builds multi-field hover tooltips
+- `hover_options`: Highlights polygons on mouseover
+
+### Color Scales on Dark Backgrounds
+
+Choosing colors for dark-background maps requires care:
+
+- Avoid very dark colors (< #404040) for meaningful data --- they blend with the background
+- Use `viridis` palettes which are perceptually uniform and colorblind-safe
+- For diverging scales (change maps), ensure the midpoint color is visible against the background
+- Test your dashboard at different zoom levels to verify readability
+:::
+
+::: {.section-box}
+## Section 4: Writing Data-Driven Policy Recommendations
+
+The Policy page is where your analysis becomes **actionable**. This is the most important page for your audience and the part of the dashboard you must write yourself.
+
+### The Three-Part Framework
+
+Each recommendation should follow this structure:
+
+1. **State the finding**: Reference a specific pattern from the dashboard. Name the geography (e.g., "south Phoenix corridor"), the statistic (e.g., "14 High-High cluster block groups"), and the data source (e.g., "LISA analysis at p < 0.05")
+2. **Explain the implication**: Why does this pattern matter for the community? Connect the spatial data to real-world consequences
+3. **Propose the action**: Name a specific intervention, a responsible entity (e.g., "Maricopa County Department of Public Health"), and a target geography
+
+### What Makes a Strong Recommendation
+
+**Weak**: "The city should address poverty in underserved areas."
+
+**Strong**: "The 14 High-High cluster block groups in south Phoenix show unemployment rates 2--3x the county average with no improvement between 2015 and 2023. We recommend the Maricopa Workforce Connection invest in a satellite workforce center co-located with the 19th Avenue light rail station, targeting healthcare, logistics, and construction training with wraparound childcare support."
+
+The strong version names specific geographies, cites dashboard statistics, identifies a responsible entity, and proposes a concrete action.
+
+### Using Dashboard Data in Recommendations
+
+Your recommendations should reference specific metrics visible in the dashboard:
+
+- Hot spot and cold spot counts from the value boxes
+- Percentage of CBGs where hardship worsened vs. improved
+- Global Moran's I value (evidence of spatial clustering)
+- Mean hardship change over time
+- Specific block groups from the priority areas table
+:::
+
+::: {.section-box}
+## Lecture
+
+<!-- PLACEHOLDER: Record lecture on dashboard design, mapgl interactivity, and policy communication -->
+
+<iframe src="" width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+:::
+
+::: {.section-box}
+## Readings
+
+### Dashboard Design
+
+- Few, S. (2013). *Information Dashboard Design: Displaying Data for At-a-Glance Monitoring* (2nd ed.). Analytics Press. --- The definitive guide to dashboard design principles. Chapters on visual perception, layout, and avoiding chartjunk are directly applicable to your final project.
+
+- Tufte, E. R. (2001). *The Visual Display of Quantitative Information* (2nd ed.). Graphics Press. --- The classic text on data visualization. Tufte's principles of data-ink ratio and graphical integrity should guide your map and value box design.
+
+### Interactive Spatial Visualization
+
+- Walker, K. (2023). *Analyzing US Census Data: Methods, Maps, and Models in R*. CRC Press. [Free online version](https://walker-data.com/census-r/) --- Chapters 6--8 cover mapping census data with ggplot2, mapgl, and interactive tools. The authoritative reference for the tidycensus and mapgl workflow used in this lab.
+
+- [mapgl R package documentation](https://walker-data.com/mapgl/) --- API reference for maplibre(), add_source(), add_fill_layer(), and other functions used in the dashboard.
+
+- [Quarto Dashboards](https://quarto.org/docs/dashboards/) --- Official documentation for Quarto dashboard format, including layouts, value boxes, and theming.
+
+### Spatial Analysis for Policy
+
+- Sampson, R. J. (2012). *Great American City: Chicago and the Enduring Neighborhood Effect*. University of Chicago Press. --- Demonstrates that neighborhood-level inequality is durable and self-reinforcing, providing the empirical foundation for the spatial targeting approach your recommendations should take.
+
+- Anselin, L. (1995). Local Indicators of Spatial Association --- LISA. *Geographical Analysis*, 27(2), 93--115. --- The original paper introducing LISA statistics. Understanding this method is essential for interpreting the Hot Spots page of your dashboard.
+
+- Schwabish, J., & Feng, A. (2021). *Do No Harm Guide: Applying Equity Awareness in Data Visualization*. Urban Institute. [[free online]](https://www.urban.org/research/publication/do-no-harm-guide-applying-equity-awareness-data-visualization) --- Essential guidance on presenting data about communities ethically, particularly when mapping disadvantage.
+:::
+
+::: {.section-box}
+## Lab 07: Final Project Dashboard
+
+For Lab 7, you will complete the Quarto Dashboard template by writing three original policy recommendations on the Policy page. All data processing, visualization, and analysis code is provided --- your task is to interpret the results and propose evidence-based interventions.
+
+### Deliverables
+
+1. **Final_Project_Template.qmd**: The completed dashboard with your three recommendations written in the Policy page
+2. **Final_Project_Template.html**: The rendered dashboard HTML file
+
+### Grading Criteria
+
+- **Recommendation quality** (60%): Are your three recommendations specific, evidence-based, and actionable? Do they reference dashboard statistics and name target geographies?
+- **Dashboard renders correctly** (20%): Does the HTML file render without errors? Do all five pages display correctly?
+- **Professional presentation** (20%): Is the Policy page well-written? Are recommendations clearly structured? Do they demonstrate understanding of the spatial analysis?
+
+### Getting Started
+
+1. Download the template and save it in your `PAF516/FinalProject/` folder
+2. Install your Census API key if you haven't already: `census_api_key("YOUR_KEY", install = TRUE)`
+3. Run the renv block once to install required packages, then comment it out
+4. Render the dashboard to verify it works before writing your recommendations
+5. Study the National Context, Local Patterns, Hot Spots, and Change Over Time pages
+6. Write your three recommendations on the Policy page
+7. Re-render and submit both .qmd and .html to Canvas
+
+**Download:** [Final_Project_Template.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/Assignment/Final_Project_Template.qmd)
+:::
+
+::: {.section-box}
+## Yellowdig Discussion
+
+You have now completed the full PAF 516 spatial analytics pipeline, from raw Census data to an interactive policy dashboard. For your final Yellowdig post, reflect on the **semester-long analytical journey** and what you have learned about using spatial data for community decision-making.
+
+Find an example of an **interactive dashboard** or **spatial data tool** used by a government agency, nonprofit, or research organization to communicate community-level data. Examples include the CDC's Social Vulnerability Index dashboard, the Urban Institute's spatial equity tools, or a local government's open data portal. Post a link and write a response addressing:
+
+- **Design and usability**: How does the dashboard's layout, color scheme, and interactivity compare to what you built in Lab 7? What design choices work well, and what would you change?
+- **Data communication**: How effectively does the dashboard translate complex spatial data into information a non-expert can understand? Does it include the multi-scale perspective (national, local, cluster, temporal) that we used in this course?
+- **Policy connection**: Does the dashboard include recommendations or link to policy actions? If so, evaluate their specificity using the framework from this module. If not, what recommendations would you add based on the data shown?
+- **Course reflection**: What is the single most important skill or concept you learned in PAF 516 that you will carry into your career? How did the progression from measurement to visualization to clustering to policy communication build your analytical capabilities?
+
+Engage with at least one classmate's post by comparing their example dashboard with yours. What patterns do you see in how organizations communicate spatial data to policy audiences?
+:::
+
+::: {.section-box}
+## Key Terms
+
+| Term | Definition |
+|---|---|
+| **Quarto Dashboard** | A multi-page interactive document format designed for data visualization and key metrics display |
+| **Value Box** | A dashboard component that displays a single key metric with an icon and color, designed for at-a-glance scanning |
+| **mapgl** | An R package for creating interactive maps using MapLibre GL JS, supporting GeoJSON sources and style-based rendering |
+| **GeoJSON Source** | A method of embedding spatial data directly in a map rather than serving it from a tile server |
+| **Dark Theme** | A visual design using dark backgrounds and light text, common in analytical dashboards and data tools |
+| **SCSS** | Sass CSS --- a stylesheet language that extends CSS with variables and nesting, used to customize dashboard themes |
+| **Choropleth** | A map where areas are shaded proportional to a data variable, the primary visualization type in this dashboard |
+| **LISA Cluster** | A classification from Local Moran's I analysis identifying areas of significant spatial association (High-High, Low-Low, etc.) |
+| **Diverging Color Scale** | A color palette with a neutral midpoint and contrasting colors at each extreme, used for change maps |
+| **Progressive Disclosure** | A design principle that presents overview information first and detail on demand, matching the dashboard's page sequence |
+:::
