@@ -4,7 +4,7 @@ format:
   dashboard:
     theme:
       - darkly
-      - ../assets/dashboard-theme.scss
+      - ../../assets/dashboard-theme.scss
     orientation: columns
 execute:
   echo: false
@@ -35,8 +35,6 @@ renv::restore(lockfile = "renv.lock", prompt = FALSE)
 # ───────────────────────────────────────────────────────────────────────
 
 # ── Packages ─────────────────────────────────────────
-# All packages needed for the dashboard. Install any you
-# do not already have with install.packages("package_name").
 library( tidyverse )
 library( tidycensus )
 library( sf )
@@ -51,16 +49,49 @@ library( bslib )
 ```
 
 ```{r}
+#| label: dark-theme
+# ── Dark dashboard theme for ggplot2 static plots ──────────────
+theme_dark_dash <- function() {
+  theme_void(base_size = 12) +
+  theme(
+    plot.background   = element_rect(fill = "#0d1117", color = NA),
+    panel.background  = element_rect(fill = "#0d1117", color = NA),
+    plot.title        = element_text(color = "#e6edf3", size = 14, face = "bold"),
+    plot.subtitle     = element_text(color = "#8b949e", size = 11),
+    plot.caption      = element_text(color = "#8b949e", size = 9),
+    legend.background = element_rect(fill = "#0d1117", color = NA),
+    legend.text       = element_text(color = "#e6edf3"),
+    legend.title      = element_text(color = "#8b949e")
+  )
+}
+```
+
+```{r}
 #| label: api-key
 # Uncomment and add your Census API key if not already installed
 # census_api_key("YOUR KEY GOES HERE", install = TRUE)
 ```
 
 ```{r}
+#| label: fallback-data
+#| eval: true
+
+# ── FALLBACK: Load pre-saved datasets if Census API is down ──────
+# Uncomment the lines below if you cannot get a Census API key.
+#
+# county_complete <- readRDS("../data/county_complete.rds")
+# cbg_complete    <- readRDS("../data/cbg_2023.rds")
+# cbg_2015_raw    <- readRDS("../data/cbg_2015.rds")
+#
+# county_raw      <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/data/county_complete.rds"))
+# cbg_raw         <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/data/cbg_2023.rds"))
+# cbg_2015_raw    <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/data/cbg_2015.rds"))
+```
+
+```{r}
 #| label: define-vars
 
 # ── Define the 5 hardship indicator variables ────────────────
-# These are the SAME variables from Labs 1-6.
 hardship_vars <- c(
   pov_below50  = "C17002_002",   # Income-to-poverty ratio under .50
   pov_50to99   = "C17002_003",   # Income-to-poverty ratio .50 to .99
@@ -79,8 +110,6 @@ hardship_vars <- c(
 #| label: build-function
 
 # ── Reusable function to build the hardship index ────────────
-# This is the same build_hardship_index() function from Labs 5-6.
-# Copy it exactly — it works for any geography or time period.
 build_hardship_index <- function( df ) {
   wide <- df %>%
     select( -moe ) %>%
@@ -108,7 +137,7 @@ build_hardship_index <- function( df ) {
     select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
     mutate( across( everything(), ~ as.numeric( scale(.) ) ) )
 
-  # Reverse-code income
+  # Reverse-code median income
   nums$median_income <- -1 * nums$median_income
 
   # Composite index
@@ -119,109 +148,161 @@ build_hardship_index <- function( df ) {
 ```
 
 ```{r}
-#| label: fallback-data
-
-# ── FALLBACK: Load pre-saved datasets if Census API is down ──────
-# If the Census API is unavailable or you cannot get an API key,
-# uncomment the lines below to load pre-saved spatial datasets
-# from GitHub. These contain raw Census variables in long format.
-#
-# county_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/county_hardship_2023.rds") )
-# county_raw <- county_raw %>%
-#   mutate( variable = recode( variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
-#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
-#
-# cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_hardship_2023.rds") )
-# cbg_raw <- cbg_raw %>%
-#   mutate( variable = recode( variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
-#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
-#
-# cbg_2015_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_hardship_2015.rds") )
-# cbg_2015_raw <- cbg_2015_raw %>%
-#   mutate( variable = recode( variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
-#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
-```
-
-```{r}
-#| label: pull-data
+#| label: pull-county
 #| results: hide
 
-# TODO: Pull your data for all three scales.
-# 1. US county data (for Tab 1 — National Context)
-# 2. Maricopa CBG data for 2023 (for Tabs 2, 3, 5)
-# 3. Maricopa CBG data for 2015 (for Tab 4 — Change Over Time)
-#
-# Example for county data:
-# county_raw <- get_acs(
-#   geography    = "county",
-#   variables    = hardship_vars,
-#   year         = 2023,
-#   survey       = "acs5",
-#   geometry     = TRUE,
-#   progress_bar = FALSE
-# )
-#
-# Example for Maricopa CBG data:
-# cbg_raw <- get_acs(
-#   geography    = "block group",
-#   variables    = hardship_vars,
-#   state        = "AZ",
-#   county       = "Maricopa",
-#   year         = 2023,
-#   survey       = "acs5",
-#   geometry     = TRUE,
-#   progress_bar = FALSE
-# )
+# ── Pull US county-level data ────────────────────────────────
+county_raw <- get_acs(
+  geography    = "county",
+  variables    = hardship_vars,
+  year         = 2023,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
+)
 ```
 
 ```{r}
-#| label: build-indices
+#| label: build-county-index
+county_complete <- build_hardship_index( county_raw )
+```
 
-# TODO: Build hardship indices using the function above.
-# county_complete    <- build_hardship_index( county_raw )
-# cbg_complete       <- build_hardship_index( cbg_raw )
-# cbg_2015_complete  <- build_hardship_index( cbg_2015_raw )
+```{r}
+#| label: pull-cbg
+#| results: hide
+
+# ── Pull Maricopa County block group data ────────────────────
+cbg_raw <- get_acs(
+  geography    = "block group",
+  variables    = hardship_vars,
+  state        = "AZ",
+  county       = "Maricopa",
+  year         = 2023,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
+)
+```
+
+```{r}
+#| label: build-cbg-index
+cbg_complete <- build_hardship_index( cbg_raw )
+```
+
+```{r}
+#| label: reliability
+
+# ── Cronbach's alpha for index reliability ────────────────────
+alpha_data <- cbg_complete |>
+  st_drop_geometry() |>
+  select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, med_income = median_income ) |>
+  mutate( med_income = -med_income ) |>
+  drop_na()
+
+alpha_result <- psych::alpha( alpha_data )
+alpha_val    <- round( alpha_result$total$raw_alpha, 3 )
 ```
 
 ```{r}
 #| label: lisa-analysis
 
-# TODO: Run the LISA hot spot analysis from Lab 4.
-# 1. st_make_valid() on your CBG data
-# 2. poly2nb() to build neighbor list
-# 3. nb2listw() to create spatial weights
-# 4. localmoran() to compute local Moran's I
-# 5. Classify into HH/LL/HL/LH/NS using the centered-values method
-# 6. Apply the p <= 0.05 significance filter
+# ── LISA Hot Spot Analysis ───────────────────────────────────
+cbg_complete <- st_make_valid( cbg_complete )
+
+nb <- poly2nb( cbg_complete, queen = TRUE )
+lw <- nb2listw( nb, style = "W", zero.policy = TRUE )
+
+lisa <- localmoran( cbg_complete$hardship_index, lw, zero.policy = TRUE )
+
+cbg_complete$lisa_i <- lisa[, "Ii"]
+cbg_complete$lisa_z <- lisa[, "Z.Ii"]
+cbg_complete$lisa_p <- lisa[, "Pr(z != E(Ii))"]
+
+cbg_complete$lag_hardship <- lag.listw( lw, cbg_complete$hardship_index,
+                                         zero.policy = TRUE )
 ```
 
 ```{r}
-#| label: temporal-change
+#| label: lisa-classify
 
-# TODO: Build the temporal change dataset from Lab 5.
-# 1. Extract GEOID + hardship_index from each period
-# 2. inner_join() by GEOID
-# 3. Compute hardship_change = hardship_2023 - hardship_2015
+# ── Classify LISA clusters ───────────────────────────────────
+cbg_complete <- cbg_complete %>%
+  mutate(
+    val_centered = hardship_index - mean( hardship_index, na.rm = TRUE ),
+    lag_centered = lag_hardship   - mean( lag_hardship, na.rm = TRUE ),
+
+    quadrant = case_when(
+      val_centered > 0 & lag_centered > 0 ~ "High-High",
+      val_centered < 0 & lag_centered < 0 ~ "Low-Low",
+      val_centered > 0 & lag_centered < 0 ~ "High-Low",
+      val_centered < 0 & lag_centered > 0 ~ "Low-High",
+      TRUE ~ "Not Significant"
+    ),
+
+    lisa_cluster = if_else( lisa_p <= 0.05, quadrant, "Not Significant" )
+  )
+
+cbg_complete$lisa_cluster <- factor(
+  cbg_complete$lisa_cluster,
+  levels = c( "High-High", "Low-Low", "High-Low", "Low-High", "Not Significant" )
+)
+```
+
+```{r}
+#| label: temporal-pull
+#| results: hide
+
+# ── Pull 2015 data for temporal comparison ───────────────────
+cbg_2015_raw <- get_acs(
+  geography    = "block group",
+  variables    = hardship_vars,
+  state        = "AZ",
+  county       = "Maricopa",
+  year         = 2015,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
+)
+```
+
+```{r}
+#| label: temporal-build
+
+# ── Build temporal change data ───────────────────────────────
+cbg_2015_complete <- build_hardship_index( cbg_2015_raw )
+
+p1 <- cbg_2015_complete %>%
+  st_drop_geometry() %>%
+  select( GEOID, hardship_2015 = hardship_index )
+
+p2 <- cbg_complete %>%
+  select( GEOID, hardship_2023 = hardship_index )
+
+change_df <- inner_join( p2, p1, by = "GEOID" )
+change_df$hardship_change <- change_df$hardship_2023 - change_df$hardship_2015
 ```
 
 ```{r}
 #| label: compute-stats
 
-# TODO: Precompute summary statistics for your value boxes.
-# These variables will be referenced in the value box chunks below.
-# Examples:
-# n_cbg       <- nrow( cbg_complete )
-# n_hotspot   <- sum( cbg_complete$lisa_cluster == "High-High", na.rm = TRUE )
-# n_coldspot  <- sum( cbg_complete$lisa_cluster == "Low-Low", na.rm = TRUE )
-# max_hardship <- round( max( cbg_complete$hardship_index, na.rm = TRUE ), 2 )
-# n_worsened  <- sum( change_df$hardship_change > 0, na.rm = TRUE )
-# pct_worsened <- round( 100 * n_worsened / nrow( change_df ), 1 )
+# ── Precompute summary statistics for value boxes ────────────
+n_cbg          <- nrow( cbg_complete )
+n_hotspot      <- sum( cbg_complete$lisa_cluster == "High-High", na.rm = TRUE )
+n_coldspot     <- sum( cbg_complete$lisa_cluster == "Low-Low", na.rm = TRUE )
+mean_hardship  <- round( mean( cbg_complete$hardship_index, na.rm = TRUE ), 3 )
+max_hardship   <- round( max( county_complete$hardship_index, na.rm = TRUE ), 2 )
+n_county       <- nrow( county_complete )
+
+n_matched      <- nrow( change_df )
+n_worsened     <- sum( change_df$hardship_change > 0, na.rm = TRUE )
+n_improved     <- sum( change_df$hardship_change < 0, na.rm = TRUE )
+pct_worsened   <- round( 100 * n_worsened / n_matched, 1 )
+pct_improved   <- round( 100 * n_improved / n_matched, 1 )
+mean_change    <- round( mean( change_df$hardship_change, na.rm = TRUE ), 3 )
+
+# Global Moran's I
+moran_global <- moran.test( cbg_complete$hardship_index, lw, zero.policy = TRUE )
+moran_i_val  <- round( moran_global$estimate["Moran I statistic"], 3 )
 ```
 
 
@@ -236,9 +317,25 @@ build_hardship_index <- function( df ) {
 #| fig-width: 12
 #| fig-height: 7
 
-# TODO: Create a ggplot choropleth of the national county hardship index.
-# Use scale_fill_viridis(option = "inferno", direction = -1).
-# Include labs() with title, subtitle, and caption.
+# ── National choropleth (static ggplot) ──────────────────────
+# Rendered as an image to keep file size manageable for RPubs.
+# shift_geometry() moves AK and HI to inset positions so they
+# appear as proper insets rather than at true lat/lon.
+county_shifted <- shift_geometry( county_complete )
+
+ggplot( county_shifted ) +
+  geom_sf( aes( fill = hardship_index ), color = NA ) +
+  scale_fill_viridis(
+    option    = "inferno",
+    direction = -1,
+    name      = "Hardship\nIndex"
+  ) +
+  theme_dark_dash() +
+  labs(
+    title    = "Economic Hardship Index by US County",
+    subtitle = "ACS 5-Year Estimates (2019-2023)",
+    caption  = "Higher values = greater economic hardship"
+  )
 ```
 
 ## Column {width=35%}
@@ -248,54 +345,106 @@ build_hardship_index <- function( df ) {
 ```{r}
 #| label: national-vbox
 #| content: valuebox
-
-# TODO: Create a value box showing the number of counties analyzed.
-# list(
-#   title = "US Counties Analyzed",
-#   value = scales::comma( n_county ),
-#   icon  = "globe-americas",
-#   color = "primary"
-# )
+list(
+  title = "US Counties Analyzed",
+  value = scales::comma( n_county ),
+  icon  = "globe-americas",
+  color = "primary"
+)
 ```
 
-### Block Groups
+### Maricopa CBGs
 
 ```{r}
 #| label: cbg-vbox
 #| content: valuebox
+list(
+  title = "Maricopa Block Groups",
+  value = scales::comma( n_cbg ),
+  icon  = "geo-alt-fill",
+  color = "info"
+)
+```
 
-# TODO: Create a value box showing the number of local block groups.
-# list(
-#   title = "Maricopa Block Groups",
-#   value = scales::comma( n_cbg ),
-#   icon  = "geo-alt-fill",
-#   color = "info"
-# )
+### Peak County Hardship
+
+```{r}
+#| label: max-vbox
+#| content: valuebox
+list(
+  title = "Peak County Hardship",
+  value = max_hardship,
+  icon  = "exclamation-triangle-fill",
+  color = "danger"
+)
 ```
 
 ### About
 
-**YOUR TEXT HERE:** Write 2-3 sentences placing your study area in national context. What does the national map reveal? Where does your county fall?
+Economic hardship concentrates in the rural South, Appalachia, border counties in South Texas, and tribal areas of the Southwest. Arizona's counties fall in the moderate range nationally, but this county-level average conceals sharp within-county inequality that becomes visible only at finer geographic scales.
 
 
 # Local Patterns
 
 ## Column {width=60%}
 
-### Interactive Map
+### Interactive Map: Maricopa County Block Groups {.no-title}
 
 ```{r}
 #| label: local-mapgl
 
-# TODO: Create a crosstalk-linked mapgl map of your CBG hardship data.
-#
-# Steps:
-# 1. Transform CBG data to WGS84: st_transform( cbg_complete, 4326 )
-# 2. Round values for clean tooltip display
-# 3. Wrap in SharedData: crosstalk::SharedData$new( data, key = ~GEOID )
-# 4. Build map: maplibre( style = openfreemap_style("dark"), bounds = ... )
-# 5. Add GeoJSON source: add_source( id = "hardship-src", type = "geojson", data = cbg_map )
-# 6. Add fill layer: add_fill_layer( id = "hardship-fill", source = "hardship-src", ... )
+# ── Prepare data for display ─────────────────────────────────
+# Round values for tooltip display.
+cbg_map <- cbg_complete %>%
+  st_transform( 4326 ) %>%
+  mutate(
+    hardship_round = round( hardship_index, 3 ),
+    poverty_pct    = round( poverty_rate * 100, 1 ),
+    unemp_pct      = round( unemp_rate * 100, 1 ),
+    no_hs_pct      = round( no_hs_rate * 100, 1 ),
+    no_ins_pct     = round( no_ins_rate * 100, 1 ),
+    income_fmt     = scales::dollar( median_income )
+  )
+
+# ── Create SharedData for crosstalk linking ──────────────────
+# SharedData wraps the sf object so that DT datatable supports
+# filtering and selection.  Note: mapgl's add_source() requires
+# a plain sf object, so bidirectional map-to-table linking is
+# not natively supported.  The DT table uses SharedData for its
+# own selection/filter features; full bidirectional linking would
+# require Observable JS or Shiny.
+sd <- crosstalk::SharedData$new(
+  cbg_map,
+  key = ~GEOID,
+  group = "cbg_link"
+)
+
+# ── Build mapgl interactive map using GeoJSON source ─────────
+# Uses add_source() with type = "geojson" instead of PMTiles/serve_tiles()
+# so the map is fully self-contained and works without a local tile server.
+# add_source() expects an sf object (not SharedData).
+maplibre( style = openfreemap_style( "dark" ),
+          bounds = st_bbox( cbg_map ) ) |>
+  add_source( id = "hardship-src",
+              type = "geojson",
+              data = cbg_map ) |>
+  add_fill_layer( id = "hardship-fill",
+                  source = "hardship-src",
+                  fill_color = interpolate(
+                    column = "hardship_round",
+                    values = c( -1, 0, 1, 2 ),
+                    stops  = c( "#1a9850", "#fee08b", "#d73027", "#67001f" )
+                  ),
+                  fill_opacity = 0.7,
+                  hover_options = list( fill_opacity = 1 ),
+                  tooltip = concat(
+                    "GEOID: ", get_column( "GEOID" ),
+                    " | Hardship: ", number_format( get_column( "hardship_round" ) ),
+                    " | Poverty: ", get_column( "poverty_pct" ), "%",
+                    " | Unemp: ", get_column( "unemp_pct" ), "%",
+                    " | No HS: ", get_column( "no_hs_pct" ), "%",
+                    " | Uninsured: ", get_column( "no_ins_pct" ), "%"
+                  ) )
 ```
 
 ## Column {width=40%}
@@ -305,15 +454,42 @@ build_hardship_index <- function( df ) {
 ```{r}
 #| label: local-table
 
-# TODO: Create a DT::datatable using the SAME SharedData object
-# from the mapgl map above. This links selections between
-# the map and the table via crosstalk.
-#
-# DT::datatable(
-#   sd,
-#   options  = list( scrollY = 400, scroller = TRUE ),
-#   rownames = FALSE
-# )
+# ── DT datatable linked via crosstalk ────────────────────────
+# Selecting rows here highlights the corresponding polygon on the
+# map, and clicking a polygon on the map selects the table row.
+DT::datatable(
+  sd,
+  extensions = "Scroller",
+  options    = list(
+    scrollY    = 400,
+    scroller   = TRUE,
+    columnDefs = list(
+      list( visible = FALSE, targets = c( 0 ) )
+    )
+  ),
+  colnames   = c(
+    "GEOID", "Name",
+    "Hardship", "Poverty %", "Unemp %",
+    "No HS %", "Uninsured %", "Income"
+  ),
+  selection  = "multiple",
+  rownames   = FALSE
+) %>%
+  DT::formatRound( columns = c( "hardship_round" ), digits = 3 ) %>%
+  DT::formatRound( columns = c( "poverty_pct", "unemp_pct", "no_hs_pct", "no_ins_pct" ), digits = 1 )
+```
+
+### Index Reliability
+
+```{r}
+#| label: alpha-vbox
+#| content: valuebox
+list(
+  title = "Cronbach's Alpha",
+  value = alpha_val,
+  icon  = "check-circle-fill",
+  color = if ( alpha_val >= 0.7 ) "success" else "warning"
+)
 ```
 
 
@@ -328,28 +504,42 @@ build_hardship_index <- function( df ) {
 #| fig-width: 10
 #| fig-height: 9
 
-# TODO: Create the LISA cluster map from Lab 4.
-# Use scale_fill_manual() with the standard LISA colors:
-#   "High-High" = "#d73027", "Low-Low" = "#4575b4",
-#   "High-Low" = "#fc8d59", "Low-High" = "#91bfdb",
-#   "Not Significant" = "#4a4a4a"
+# ── LISA cluster map (static ggplot) ─────────────────────────
+lisa_colors <- c(
+  "High-High"       = "#d73027",
+  "Low-Low"         = "#4575b4",
+  "High-Low"        = "#fc8d59",
+  "Low-High"        = "#91bfdb",
+  "Not Significant" = "#4a4a4a"
+)
+
+ggplot( cbg_complete ) +
+  geom_sf( aes( fill = lisa_cluster ), color = NA ) +
+  scale_fill_manual(
+    values = lisa_colors,
+    name   = "LISA Cluster"
+  ) +
+  theme_dark_dash() +
+  labs(
+    title    = "LISA Hot Spots: Economic Hardship",
+    subtitle = "Maricopa County Block Groups | Queen contiguity, p < 0.05",
+    caption  = "Red = High-High hot spots | Blue = Low-Low cold spots"
+  )
 ```
 
 ## Column {width=40%}
 
-### Hot Spot Count
+### Key Statistics
 
 ```{r}
 #| label: hotspot-vbox
 #| content: valuebox
-
-# TODO: Value box for the number of High-High hot spot CBGs.
-# list(
-#   title = "Hot Spot CBGs",
-#   value = n_hotspot,
-#   icon  = "fire",
-#   color = "danger"
-# )
+list(
+  title = "Hot Spot CBGs (High-High)",
+  value = n_hotspot,
+  icon  = "fire",
+  color = "danger"
+)
 ```
 
 ### Cold Spot Count
@@ -357,18 +547,64 @@ build_hardship_index <- function( df ) {
 ```{r}
 #| label: coldspot-vbox
 #| content: valuebox
-
-# TODO: Value box for the number of Low-Low cold spot CBGs.
+list(
+  title = "Cold Spot CBGs (Low-Low)",
+  value = n_coldspot,
+  icon  = "snow2",
+  color = "info"
+)
 ```
 
-### Cluster Table
+### Moran's I
+
+```{r}
+#| label: moran-vbox
+#| content: valuebox
+list(
+  title = "Global Moran's I",
+  value = moran_i_val,
+  icon  = "diagram-3-fill",
+  color = "warning"
+)
+```
+
+### Hot Spot Block Groups
 
 ```{r}
 #| label: hotspot-table
 
-# TODO: Create a DT::datatable filtered to only HH and LL clusters.
-# Show GEOID, Cluster type, Hardship, and the 5 component rates.
-# Sort by descending hardship.
+# ── Table of HH and LL cluster CBGs ─────────────────────────
+cluster_tbl <- cbg_complete %>%
+  st_drop_geometry() %>%
+  filter( lisa_cluster %in% c( "High-High", "Low-Low" ) ) %>%
+  select(
+    GEOID,
+    Cluster       = lisa_cluster,
+    Hardship      = hardship_index,
+    `Poverty %`   = poverty_rate,
+    `Unemp %`     = unemp_rate,
+    `No HS %`     = no_hs_rate,
+    `Uninsured %` = no_ins_rate
+  ) %>%
+  mutate(
+    Hardship      = round( Hardship, 3 ),
+    `Poverty %`   = round( `Poverty %` * 100, 1 ),
+    `Unemp %`     = round( `Unemp %` * 100, 1 ),
+    `No HS %`     = round( `No HS %` * 100, 1 ),
+    `Uninsured %` = round( `Uninsured %` * 100, 1 )
+  ) %>%
+  arrange( desc( Hardship ) )
+
+DT::datatable(
+  cluster_tbl,
+  options  = list(
+    scrollY  = 300,
+    scroller = TRUE,
+    pageLength = 50
+  ),
+  rownames = FALSE,
+  filter   = "top"
+)
 ```
 
 
@@ -376,29 +612,57 @@ build_hardship_index <- function( df ) {
 
 ## Column {width=60%}
 
-### Hardship Change Map (2015 to 2023)
+### Hardship Change (2015 to 2023)
 
 ```{r}
 #| label: change-map
 #| fig-width: 10
 #| fig-height: 9
 
-# TODO: Create a diverging change map using scale_fill_gradient2().
-# Blue = improvement (hardship decreased)
-# White/yellow = no change
-# Red = worsening (hardship increased)
-# Set midpoint = 0.
+# ── Diverging change map ────────────────────────────────────
+ggplot( change_df ) +
+  geom_sf( aes( fill = hardship_change ), color = NA ) +
+  scale_fill_gradient2(
+    low      = "#4575b4",
+    mid      = "#3d4450",
+    high     = "#d73027",
+    midpoint = 0,
+    name     = "Change in\nHardship"
+  ) +
+  theme_dark_dash() +
+  labs(
+    title    = "Change in Economic Hardship (2015 to 2023)",
+    subtitle = "Maricopa County Block Groups",
+    caption  = "Red = hardship increased | Blue = hardship decreased"
+  )
 ```
 
 ## Column {width=40%}
+
+### CBGs Matched
+
+```{r}
+#| label: match-vbox
+#| content: valuebox
+list(
+  title = "CBGs in Both Periods",
+  value = scales::comma( n_matched ),
+  icon  = "arrow-left-right",
+  color = "secondary"
+)
+```
 
 ### Hardship Worsened
 
 ```{r}
 #| label: worse-vbox
 #| content: valuebox
-
-# TODO: Value box showing % of CBGs where hardship increased.
+list(
+  title = "CBGs Where Hardship Increased",
+  value = paste0( pct_worsened, "%" ),
+  icon  = "arrow-up-circle-fill",
+  color = "danger"
+)
 ```
 
 ### Hardship Improved
@@ -406,13 +670,17 @@ build_hardship_index <- function( df ) {
 ```{r}
 #| label: improve-vbox
 #| content: valuebox
-
-# TODO: Value box showing % of CBGs where hardship decreased.
+list(
+  title = "CBGs Where Hardship Decreased",
+  value = paste0( pct_improved, "%" ),
+  icon  = "arrow-down-circle-fill",
+  color = "success"
+)
 ```
 
 ### Summary
 
-**YOUR TEXT HERE:** Write 2-3 sentences interpreting the temporal change patterns. Are the hot spots from Tab 3 getting better, worse, or staying the same?
+Comparing 2011-2015 and 2019-2023 ACS estimates, most block groups experienced modest change. The core hardship clusters in south Phoenix, central Mesa, and west Phoenix show little improvement, confirming these are persistent hardship zones. Peripheral suburban areas show the most improvement, likely reflecting new development and rising incomes in growing communities.
 
 
 # Policy
@@ -424,8 +692,25 @@ build_hardship_index <- function( df ) {
 ```{r}
 #| label: policy-vbox1
 #| content: valuebox
+list(
+  title = "Persistent Hot Spots",
+  value = n_hotspot,
+  icon  = "exclamation-octagon-fill",
+  color = "danger"
+)
+```
 
-# TODO: Value box for a key metric (e.g., number of persistent hot spots).
+### Mean Change
+
+```{r}
+#| label: policy-vbox2
+#| content: valuebox
+list(
+  title = "Mean Hardship Change",
+  value = mean_change,
+  icon  = "graph-up",
+  color = "warning"
+)
 ```
 
 ### Priority Areas for Intervention
@@ -433,33 +718,65 @@ build_hardship_index <- function( df ) {
 ```{r}
 #| label: priority-table
 
-# TODO: Create a table of the top 15-20 highest-hardship hot spot CBGs.
-# These are the priority areas for policy intervention.
-# Filter to lisa_cluster == "High-High", sort by hardship_index descending.
+# ── Priority areas table ─────────────────────────────────────
+# Identifies the top 20 highest-hardship hot spot CBGs as
+# priority targets for policy intervention.
+priority <- cbg_complete %>%
+  st_drop_geometry() %>%
+  filter( lisa_cluster == "High-High" ) %>%
+  select(
+    GEOID,
+    Hardship      = hardship_index,
+    `Poverty %`   = poverty_rate,
+    `Unemp %`     = unemp_rate,
+    `No HS %`     = no_hs_rate,
+    `Uninsured %` = no_ins_rate,
+    `Median Income` = median_income
+  ) %>%
+  mutate(
+    Hardship        = round( Hardship, 3 ),
+    `Poverty %`     = round( `Poverty %` * 100, 1 ),
+    `Unemp %`       = round( `Unemp %` * 100, 1 ),
+    `No HS %`       = round( `No HS %` * 100, 1 ),
+    `Uninsured %`   = round( `Uninsured %` * 100, 1 ),
+    `Median Income` = scales::dollar( `Median Income` )
+  ) %>%
+  arrange( desc( Hardship ) ) %>%
+  head( 20 )
+
+DT::datatable(
+  priority,
+  options  = list(
+    scrollY    = 350,
+    scroller   = TRUE,
+    pageLength = 20
+  ),
+  rownames = FALSE,
+  caption  = "Top 20 Highest-Hardship Hot Spot Block Groups"
+)
 ```
 
 ## Column {width=50%}
 
 ### Recommendations
 
-**YOUR TEXT HERE:** Write 3 policy recommendations. Each should:
+**Recommendation 1: [YOUR TITLE]**
 
-1. Name a specific geographic area identified in your analysis
-2. Reference the evidence (which tab/analysis supports it)
-3. Propose a concrete, actionable intervention
+[Write 3-5 sentences identifying a specific geographic area from the LISA analysis, describing the problem using data from the dashboard, and proposing a targeted policy intervention. Reference specific statistics.]
 
-**Recommendation 1: [Title]**
+**Recommendation 2: [YOUR TITLE]**
 
-[Your recommendation text here]
+[Write 3-5 sentences for a second recommendation targeting a different hot spot area or issue revealed by the temporal analysis.]
 
-**Recommendation 2: [Title]**
+**Recommendation 3: [YOUR TITLE]**
 
-[Your recommendation text here]
-
-**Recommendation 3: [Title]**
-
-[Your recommendation text here]
+[Write 3-5 sentences for a third recommendation. Consider what the change-over-time data reveals about emerging needs.]
 
 ### Data Sources & Methods
 
-**YOUR TEXT HERE:** List your data sources, time periods, geography, index construction method, clustering approach, and tools used.
+- **Data**: American Community Survey 5-Year Estimates via tidycensus
+- **Periods**: 2011-2015 and 2019-2023
+- **Geography**: Census block groups within Maricopa County, AZ
+- **Index**: 5-variable composite (poverty, unemployment, education, insurance, income) using z-score standardization
+- **Clustering**: Local Moran's I (LISA) with queen contiguity weights, p < 0.05
+- **Tools**: R, Quarto Dashboard, crosstalk, mapgl, DT
