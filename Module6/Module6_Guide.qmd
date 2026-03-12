@@ -1,0 +1,286 @@
+---
+title: "Module 6 — Policy Brief & Multi-Scale Synthesis"
+subtitle: "PAF 516 | Community Analytics"
+format:
+  html:
+    theme: readable
+    toc: true
+    self-contained: true
+    number-sections: false
+    css: |
+      h1, h2, h3 { color: #8c1d40; }
+      .module-header { background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px; color: #ffffff; }
+      .module-subtitle { background-color: #ffc627; border-radius: 10px; width: 98%; text-align: center; padding: 5px; }
+      .section-box { border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%; }
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+::: {.module-header}
+## **M6 Overview & Learning Materials**
+
+::: {.module-subtitle}
+**Integration & Policy Brief**
+:::
+:::
+
+::: {.section-box}
+## Module Overview and Objectives
+
+You have spent five modules building a progressively richer analysis: measuring neighborhood hardship (Lab 1), visualizing it with professional cartography (Lab 2), enriching it with spatial data (Lab 3), testing for statistically significant clusters (Lab 4), and tracking change over time (Lab 5). Now you must do the hardest part: **translate all of that analysis into a document that a non-technical decision-maker can understand and act on**.
+
+This capstone module focuses on **policy communication**. You will produce a professional policy brief using Quarto that synthesizes your findings into a coherent narrative with an executive summary, multi-scale maps, data-driven recommendations, and polished formatting. The audience is a city council member, county manager, or community development director --- someone who needs to understand what your analysis means, not how you coded it.
+
+---
+
+After completing this module, you will be able to:
+
+- Structure a **policy brief** with executive summary, background, findings, and recommendations
+- Write for a **non-technical audience** --- translating statistical findings into actionable insights
+- Use Quarto document features: **callout blocks**, **tabsets**, **cross-references**, and **figure captions**
+- Create **multi-scale visualizations** that provide both overview and detail
+- Formulate **evidence-based policy recommendations** grounded in your spatial analysis
+- Produce a publication-ready HTML document with professional formatting
+- Critically evaluate the **limitations** of your analysis and communicate uncertainty honestly
+:::
+
+::: {.section-box}
+## Section 1: Writing for Policy Audiences
+
+Academic writing and policy writing are fundamentally different. Academic writing explains methodology in detail and hedges conclusions carefully. Policy writing **leads with the answer**, provides just enough evidence to be credible, and ends with concrete actions.
+
+### The Inverted Pyramid
+
+Policy documents follow an **inverted pyramid** structure --- the most important information comes first:
+
+1. **Executive Summary** (1 paragraph): What did you find? What should be done? A busy decision-maker may read only this
+2. **Key Findings** (2--3 paragraphs with maps): The spatial patterns, hot spots, and temporal trends with visualizations
+3. **Recommendations** (bulleted list): Specific, actionable steps tied directly to the evidence
+4. **Methods and Limitations** (brief): Enough for credibility, not a tutorial
+
+### Common Mistakes to Avoid
+
+- **Leading with methods**: "We used tidycensus to retrieve ACS 5-year estimates..." --- No. Lead with findings
+- **Jargon without translation**: "Global Moran's I = 0.45 (p < 0.001)" means nothing to a city manager. Instead: "Hardship is strongly concentrated in specific neighborhoods rather than spread evenly across the city"
+- **Maps without interpretation**: Every map must be accompanied by a sentence that tells the reader what to see
+- **Vague recommendations**: "The city should address inequality" is not actionable. "The city should prioritize the 12 block groups in south Phoenix identified as persistent hot spots for targeted infrastructure investment" is
+:::
+
+::: {.section-box}
+## Section 2: Quarto Document Features for Professional Output
+
+Quarto extends standard R Markdown with features designed for professional documents. Your policy brief should use these features to improve readability and navigation.
+
+### Callout Blocks
+
+Callout blocks highlight important information. Use them for key findings, warnings, or recommendations:
+
+```
+::: {.callout-note}
+## Key Finding
+Hardship hot spots in south Phoenix have persisted across both ACS vintages,
+suggesting entrenched structural disadvantage rather than temporary fluctuation.
+:::
+```
+
+Available types: `.callout-note`, `.callout-warning`, `.callout-important`, `.callout-tip`
+
+### Tabsets
+
+Tabsets let readers switch between views without scrolling. Ideal for showing the same geography mapped with different variables or time periods:
+
+```
+::: {.panel-tabset}
+## 2015 Hardship
+[map code]
+
+## 2023 Hardship
+[map code]
+
+## Change
+[map code]
+:::
+```
+
+### Cross-References and Figure Captions
+
+Label figures and tables so you can reference them in text:
+
+```
+#| label: fig-lisa-clusters
+#| fig-cap: "LISA cluster map of hardship index, 2019-2023 ACS"
+```
+
+Then reference in text with `@fig-lisa-clusters`, which renders as "Figure 1" with a hyperlink.
+
+### YAML Header for Policy Briefs
+
+Set up your document header for professional output:
+
+```yaml
+---
+title: "Neighborhood Hardship in [Your County]"
+subtitle: "A Spatial Analysis and Policy Brief"
+author: "[Your Name]"
+date: today
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 2
+    code-fold: true
+    embed-resources: true
+---
+```
+
+The `code-fold: true` option hides code by default but lets technical readers expand it. The `embed-resources: true` option creates a standalone HTML file with no external dependencies.
+:::
+
+::: {.section-box}
+## Section 3: Multi-Scale Synthesis
+
+Your policy brief should present findings at **multiple scales** --- from the county-wide overview to the neighborhood-level detail. This serves different readers and different purposes:
+
+### Scale Hierarchy for Your Brief
+
+| Scale | What It Shows | Map Type | From Which Lab |
+|---|---|---|---|
+| **County overview** | Overall spatial distribution of hardship | Choropleth with Jenks classification | Lab 2 |
+| **Enriched context** | How spatial access variables modify the picture | Bivariate choropleth or side-by-side comparison | Labs 2--3 |
+| **Hot spot analysis** | Statistically significant clusters | LISA cluster map | Lab 4 |
+| **Temporal change** | Where hardship is increasing or decreasing | Diverging change map | Lab 5 |
+| **Neighborhood detail** | Deep dive into specific hot spots | Interactive mapgl map with tooltips | Lab 2 |
+
+Each map should build on the previous one, creating a narrative arc: "Here is the overall picture. Here is where it is worst. Here is where it is changing. Here is what we should do about it."
+:::
+
+::: {.section-box}
+## Section 4: Formulating Evidence-Based Recommendations
+
+The recommendations section is where your analysis becomes **actionable**. Each recommendation should follow this pattern:
+
+1. **State the finding**: What did the data show?
+2. **Explain the implication**: Why does this matter for the community?
+3. **Propose the action**: What specifically should be done, by whom, and where?
+
+### Example
+
+*"Our LISA analysis identified 14 block groups in the southeast quadrant of the county as persistent hardship hot spots across both ACS vintages. These areas contain 23% of the county's population living below poverty but only 8% of its public transit stops. **We recommend that the county transit authority prioritize route expansion in these 14 block groups**, starting with connections to the three nearest employment centers identified in our spatial access analysis."*
+
+Notice how this recommendation is **specific** (14 block groups, southeast quadrant), **evidence-based** (LISA hot spots, persistent over time), and **actionable** (transit authority, route expansion, specific connections).
+
+### Limitations and Honest Uncertainty
+
+Every analysis has limitations. Acknowledge them briefly but directly:
+
+- ACS data has margins of error, especially at the block group level
+- The hardship index captures only the dimensions you measured --- other factors matter
+- Spatial patterns describe where hardship clusters, not why
+- Boundary changes between census vintages may affect temporal comparisons
+
+Acknowledging limitations builds credibility. Ignoring them undermines it.
+:::
+
+::: {.section-box}
+## Lecture
+
+<!-- PLACEHOLDER: Record lecture on policy brief writing, audience-aware communication, and Quarto features -->
+
+<iframe src="" width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+:::
+
+::: {.section-box}
+## Readings
+
+### Foundational Works
+
+- Wilson, W. J. (1987). *The Truly Disadvantaged: The Inner City, the Underclass, and Public Policy*. University of Chicago Press. --- The foundational text on concentrated urban poverty and neighborhood effects. Wilson demonstrates how the out-migration of middle-class Black families from inner-city neighborhoods created "concentration effects" that compounded disadvantage --- the theoretical backbone of why spatial analysis of hardship matters for policy.
+
+- Briggs, X. de S. (Ed.). (2005). *The Geography of Opportunity: Race and Housing Choice in Metropolitan America*. Brookings Institution Press. --- A landmark edited volume examining how place shapes life chances through housing markets, school quality, and access to employment. Directly relevant to the policy brief's task of connecting spatial patterns to actionable recommendations.
+
+### Recent Applications
+
+- Sampson, R. J. (2012). *Great American City: Chicago and the Enduring Neighborhood Effect*. University of Chicago Press. --- Drawing on decades of research in Chicago, Sampson demonstrates that neighborhood-level inequality is durable and self-reinforcing. His concept of "collective efficacy" and evidence on persistent spatial stratification provide the empirical foundation for place-based policy interventions like those you propose in your policy brief.
+
+- Desmond, M., & Gershenson, C. (2016). Housing and employment insecurity among the working poor. *Social Problems*, 63(1), 46--67. --- Shows how housing instability cascades into job loss and deeper poverty, reinforcing the spatial hardship clusters your analysis identifies. Essential reading for understanding why neighborhood-level hardship is self-perpetuating and why policy responses must address multiple dimensions simultaneously.
+
+- Schwabish, J. A. (2014). An economist's guide to visualizing data. *Journal of Economic Perspectives*, 28(1), 209--234. --- Practical guidance on designing figures and maps for policy audiences. Directly applicable to the data visualization choices in your policy brief.
+
+- Kneebone, E., & Berube, A. (2013). *Confronting Suburban Poverty in America*. Brookings Institution Press. --- Uses census data to reframe poverty as a metropolitan-wide spatial phenomenon rather than a purely inner-city issue. An excellent model for how to translate spatial analysis into a policy narrative.
+
+- Walker, K. (2023). *Analyzing US Census Data: Methods, Maps, and Models in R*. CRC Press. [Free online version](https://walker-data.com/census-r/) --- The authoritative reference for the tidycensus workflow used throughout this course. Chapter 6 on mapping and Chapter 7 on spatial analysis are particularly relevant to producing the visualizations in your policy brief.
+
+### Policy Brief Writing Guides
+
+- Young, E., & Quinn, L. (2002). *Writing Effective Public Policy Papers: A Guide for Policy Advisers in Central and Eastern Europe*. Open Society Institute. Chapter 6 on policy briefs is particularly useful. [[free PDF]](https://www.icpolicyadvocacy.org/sites/icpa/files/downloads/writing_effective_public_policy_papers_young_quinn.pdf)
+
+- Herman, L. (2013). Tips for writing policy papers. Stanford Law School. [[PDF]](https://law.stanford.edu/wp-content/uploads/2015/04/White-Papers-Guidelines.pdf) --- Concise, practical guidance on structure and argumentation for policy documents.
+
+- Schwabish, J., & Feng, A. (2021). *Do No Harm Guide: Applying Equity Awareness in Data Visualization*. Urban Institute. [[free online]](https://www.urban.org/research/publication/do-no-harm-guide-applying-equity-awareness-data-visualization) --- Essential guidance on presenting data about communities ethically, particularly when mapping disadvantage.
+
+### Quarto Documentation
+
+- [Quarto: Callout Blocks](https://quarto.org/docs/authoring/callouts.html)
+- [Quarto: Tabset Panels](https://quarto.org/docs/interactive/layout.html#tabset-panel)
+- [Quarto: Cross-References](https://quarto.org/docs/authoring/cross-references.html)
+- [Quarto: HTML Output Options](https://quarto.org/docs/output-formats/html-basics.html)
+:::
+
+::: {.section-box}
+## Lab 06: Policy Brief
+
+In Lab 06, you will synthesize all previous analyses into a professional policy brief. Your deliverable is a single Quarto document that includes:
+
+1. **Executive Summary** (1 paragraph): The most important finding and primary recommendation --- written so a busy reader can get the message in 30 seconds
+2. **Background**: Brief context on your study area and why neighborhood hardship matters for policy
+3. **Findings**: Multi-scale maps and analysis drawn from Labs 1--5, organized as a narrative (not a chronological lab report). Use **tabsets** for comparative views and **callout blocks** for key findings
+4. **Recommendations** (3--5 specific items): Each recommendation must be tied to a specific finding from your analysis, name a responsible entity, and identify a target geography
+5. **Limitations**: Honest assessment of what the analysis can and cannot tell us
+
+### Formatting Requirements
+
+- Use `code-fold: true` to hide code by default
+- Include at least one **callout block** highlighting a key finding
+- Include at least one **tabset** comparing maps (e.g., 2015 vs. 2023, or original vs. enriched index)
+- Use **cross-references** for at least two figures
+- Include an **interactive mapgl map** so readers can explore neighborhoods
+- Use `embed-resources: true` so the HTML file is self-contained
+
+**Connection to all previous labs:** This is the capstone. You are assembling the measurement (Lab 1), cartography (Lab 2), spatial integration (Lab 3), hot spot analysis (Lab 4), and temporal analysis (Lab 5) into a single coherent document. The quality of your brief depends on the quality of all prior work.
+
+Download the [Lab 06 Quarto template (.qmd)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab6/Assignment/Lab6_Assignment.qmd) and submit both the .qmd source file and the rendered .html to Canvas.
+
+**Download:** [Lab6_Assignment.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab6/Assignment/Lab6_Assignment.qmd)
+:::
+
+::: {.section-box}
+## Yellowdig Discussion
+
+Throughout this course you have built a spatial analysis pipeline that moves from raw Census data to neighborhood-level hot spot maps. In this final Yellowdig post, step back from the technical work and consider the challenge of **translating spatial analysis into policy action**.
+
+Find a real policy brief, data-driven report, or spatial equity analysis published by a government agency, think tank, or nonprofit (e.g., Urban Institute, Brookings, a municipal planning department, or a community development organization). Post a link to the document and write a response that addresses the following:
+
+- **Audience and format**: Who is the intended reader, and how does the document's structure, language, and visual design signal that audience? Consider whether the document follows the inverted pyramid structure discussed in this module.
+- **Evidence-to-action translation**: Select one specific recommendation from the document and evaluate it using the finding-implication-action framework. Does the recommendation name a specific geography, a responsible entity, and a concrete action? How could it be strengthened?
+- **Spatial analysis and equity**: Does the document use maps or spatial data to identify where interventions should be targeted? If so, how effectively does it connect spatial patterns to policy responses? If not, how would adding a spatial dimension improve the argument?
+- **Connection to your own work**: Reflect on one lesson from this document that you will apply to your own policy brief in Lab 6. What will you do differently in your brief as a result of reading this example?
+
+Engage with at least one classmate's post by comparing the document they reviewed with yours. What common strengths or weaknesses do you see across policy communication in practice?
+:::
+
+::: {.section-box}
+## Key Terms
+
+| Term | Definition |
+|---|---|
+| **Policy Brief** | A concise document that presents research findings and recommendations to a non-technical decision-making audience |
+| **Executive Summary** | A brief overview (1--2 paragraphs) capturing the most important findings and recommendations |
+| **Inverted Pyramid** | A writing structure that places the most important information first |
+| **Callout Block** | A Quarto feature that visually highlights important content (notes, warnings, tips) |
+| **Tabset** | A Quarto layout that organizes content into clickable tabs within a single page section |
+| **Cross-Reference** | A labeled reference to a figure, table, or section that auto-numbers and hyperlinks |
+| **Evidence-Based Recommendation** | A proposed action grounded in specific empirical findings rather than general intuition |
+| **Code-Fold** | A Quarto option that hides source code by default while allowing readers to expand it |
+:::

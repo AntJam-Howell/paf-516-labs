@@ -1,0 +1,339 @@
+---
+title: "Module 1 — Measurement, Indexing & Multi-Scale Mapping"
+subtitle: "PAF 516 | Community Analytics"
+format:
+  html:
+    theme: readable
+    toc: true
+    self-contained: true
+    number-sections: false
+    css: |
+      h1, h2, h3 { color: #8c1d40; }
+      .module-header { background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px; color: #ffffff; }
+      .module-subtitle { background-color: #ffc627; border-radius: 10px; width: 98%; text-align: center; padding: 5px; }
+      .section-box { border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%; }
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{=html}
+<div class="module-header">
+  <h2><strong>M1 Overview & Learning Materials</strong></h2>
+  <div class="module-subtitle">
+    <span style="font-size: 14pt;"><strong>Measurement, Indexing & Reliability</strong></span>
+  </div>
+</div>
+```
+
+## Module Overview and Objectives
+
+::: {.section-box}
+
+This module introduces **measurement theory** as it applies to community analytics. Before we can analyze neighborhoods (Modules 2--6), we need a reliable way to *measure* neighborhood quality. Many of the things we care about --- economic hardship, social vulnerability, community health --- are **latent constructs** that cannot be directly observed. Instead, we combine multiple observable indicators (census variables) into a single composite **index**.
+
+This module teaches you how to build such an index and how to evaluate whether it is *reliable* using **Cronbach's alpha**.
+
+---
+
+After completing this module, you will be able to:
+
+- Define a **construct** and distinguish it from directly measurable variables
+- Explain why multiple indicators are combined into a composite index
+- Apply **z-score standardization** before combining variables measured on different scales
+- Calculate and interpret **Cronbach's alpha** as a measure of internal consistency
+- Use `tidycensus` to retrieve census variables and `psych::alpha()` to assess reliability
+- Identify census variables that map to neighborhood constructs (e.g., economic hardship, social vulnerability)
+- Visualize inter-item correlations using `corrplot`
+
+:::
+
+## Section 1: What Is Measurement?
+
+::: {.section-box}
+
+*Many variables studied by psychologists are straightforward and simple to measure. These include sex, age, height, weight, and birth order... Other variables --- perhaps the majority --- are not so straightforward or simple to measure. We cannot accurately assess people's level of intelligence by looking at them, and we certainly cannot put their self-esteem on a bathroom scale.*
+
+--- [Understanding Psychological Measurement](https://opentextbc.ca/researchmethods/chapter/understanding-psychological-measurement/)
+
+**These kinds of variables are called latent CONSTRUCTS** and include personality traits (e.g., extraversion), emotional states (e.g., fear), attitudes (e.g., toward taxes), and abilities (e.g., athleticism).
+
+In community analytics, we are less interested in psychological measures and more interested in constructs of **neighborhood quality**. But we use the same tools developed in psychometrics to build reliable measures.
+
+### Key Concepts
+
+- **Construct**: An abstract concept that cannot be directly measured (e.g., "economic hardship")
+- **Indicator**: An observable, measurable variable that reflects some aspect of the construct (e.g., poverty rate, unemployment rate)
+- **Construct Validity**: Are we measuring what we think we are measuring?
+- **Measurement Levels**: Nominal, ordinal, interval, ratio --- determines which operations are valid
+
+**Example:** How does the Census measure "poverty"? The official poverty measure uses income thresholds that vary by family size and composition. But a single income variable may not capture the full experience of economic hardship. We might combine poverty rate, unemployment rate, median household income, and public assistance receipt into a composite index.
+
+:::
+
+## Section 2: Building Composite Indices
+
+::: {.section-box}
+
+Why combine multiple variables into one index?
+
+- **Dimensionality reduction**: Summarize many variables into a single score
+- **Construct representation**: No single variable fully captures a latent construct; multiple indicators triangulate it
+- **Noise reduction**: Random measurement error in individual items averages out when combined
+
+### Measurement Theory
+
+Each item (variable) can be decomposed into signal and noise:
+
+```
+item = X + e
+```
+
+Where **X** is the true score component and **e** is measurement error. When we combine items into an index:
+
+```
+index = T + e   where:  T = X1 + X2 + X3   e = e1 + e2 + e3
+```
+
+The reliability of the index is: *alpha = var(T) / var(T + e)* --- a "signal to noise" ratio.
+
+### Z-Score Standardization
+
+Before combining variables measured on different scales (e.g., income in dollars vs. percentage in poverty), we standardize each to z-scores:
+
+```
+z = (x - mean(x)) / sd(x)
+```
+
+This puts all variables on the same scale (mean = 0, sd = 1) so they contribute equally to the index.
+
+### Real-World Example: Social Vulnerability Index (SVI)
+
+The CDC's Social Vulnerability Index combines 16 census variables across 4 themes: socioeconomic status, household characteristics, racial/ethnic minority status, and housing type/transportation. Each variable is percentile-ranked and summed within themes. [Learn more about the SVI](https://www.atsdr.cdc.gov/place-health/php/svi/index.html).
+
+:::
+
+## Section 3: Reliability --- Cronbach's Alpha
+
+::: {.section-box}
+
+**Internal consistency** asks: do the items in our index "hang together"? If they all measure the same underlying construct, they should be correlated with each other.
+
+### What Is Cronbach's Alpha?
+
+Alpha is the most common measure of internal consistency. Intuitively, it captures the average inter-item correlation, scaled by the number of items:
+
+```
+alpha = var(T) / var(T + e)
+```
+
+### Interpreting Alpha
+
+| Alpha Range | Interpretation |
+|---|---|
+| alpha > 0.9 | Excellent |
+| 0.8 < alpha <= 0.9 | Good |
+| 0.7 < alpha <= 0.8 | Acceptable |
+| 0.6 < alpha <= 0.7 | Questionable |
+| alpha <= 0.6 | Poor --- reconsider your items |
+
+### What If Alpha Is Low?
+
+- Check the correlation matrix --- are some items uncorrelated or negatively correlated with the rest?
+- Consider dropping poorly fitting items
+- Reconsider whether all items actually reflect the same construct
+- Use the `psych::alpha()` output's "alpha if item dropped" column to identify weak items
+
+:::
+
+## Section 4: From Measurement to Analysis
+
+::: {.section-box}
+
+The index you build in this module's lab becomes an **input** for all subsequent analyses:
+
+- **Module 2 --- Cartographic Design & Multi-Scale Visual Analytics**: You will classify and map the hardship index using multiple cartographic methods (quantile breaks, natural breaks, bivariate choropleth) and create interactive mapgl maps
+- **Module 3 --- Spatial Data Integration & Overlay Analysis**: You will overlay external data (environmental, infrastructure) onto your index using spatial joins and buffer analysis
+- **Module 4 --- Spatial Autocorrelation & Hot Spots**: You will test whether high- and low-hardship neighborhoods cluster spatially using Moran's I and LISA maps
+- **Module 5 --- Temporal Change Analysis**: You will compare hardship index values across two time periods (2015 vs 2023) to identify neighborhoods experiencing the most change
+- **Module 6 --- Integration & Policy Brief**: You will combine multi-scale analysis into a professional Quarto document with callouts, tabsets, and policy recommendations
+- **Module 7 --- Interactive Dashboard (Final Project)**: You will build an interactive Quarto Dashboard with mapgl maps that brings together all analyses from the course
+
+**The quality of your downstream analysis depends on the quality of your measurement.** A poorly constructed index will produce misleading maps, flawed spatial statistics, and uninformative policy recommendations.
+
+:::
+
+## Lecture
+
+::: {.section-box}
+
+Download the lecture notes: [Measurement Theory --- Lecture Notes (PDF)](https://canvas.asu.edu/courses/220070/files/105139000?wrap=1)
+
+```{=html}
+<iframe src="https://www.youtube.com/embed/ra5rMqr00Ew?start=192" width="560" height="315" allowfullscreen></iframe>
+```
+
+:::
+
+## Readings
+
+::: {.section-box}
+
+### Foundational Works
+
+- Cronbach, L. J. (1951). Coefficient alpha and the internal structure of tests. *Psychometrika*, 16, 297--334. --- The seminal paper establishing Cronbach's alpha as the standard measure of internal consistency. This is the method you will use in Lab 1 to evaluate your hardship index.
+
+- Townsend, P., Phillimore, P., & Beattie, A. (1987). *Health and Deprivation: Inequality and the North*. Croom Helm. --- Introduced the Townsend Deprivation Index, one of the first census-based composite indices combining unemployment, overcrowding, non-home ownership, and non-car ownership using z-score standardization --- the same approach used in this course.
+
+- Diez Roux, A. V. (2001). Investigating neighborhood and area effects on health. *American Journal of Public Health*, 91(11), 1783--1789. [doi:10.2105/AJPH.91.11.1783](https://doi.org/10.2105/AJPH.91.11.1783) --- A foundational review of how neighborhood-level measures (like composite indices) relate to health outcomes, and the methodological challenges of defining "neighborhoods" from census geographies.
+
+### Recent Applications
+
+- Messer, L. C., Laraia, B. A., Kaufman, J. S., Eyster, J., Holzman, C., Culhane, J., Elo, I., Burke, J. G., & O'Campo, P. (2006). The development of a standardized neighborhood deprivation index. *Journal of Urban Health*, 83(6), 1041--1062. [doi:10.1007/s11524-006-9094-x](https://doi.org/10.1007/s11524-006-9094-x) --- Demonstrates how to build a census-based deprivation index using principal components analysis across multiple US cities. Directly relevant to the composite index approach in Lab 1.
+
+- Manduca, R., & Sampson, R. J. (2019). Punishing and toxic neighborhood environments independently predict the intergenerational social mobility of black and white children. *PNAS*, 116(16), 7772--7777. [doi:10.1073/pnas.1820464116](https://doi.org/10.1073/pnas.1820464116) --- Shows how composite neighborhood environment scales (combining violence, incarceration, and lead exposure) predict long-term outcomes. Used in the Yellowdig discussion below.
+
+- Walker, K. (2023). *Analyzing US Census Data: Methods, Maps, and Models in R*. CRC Press. [Free online edition](https://walker-data.com/census-r/) --- The course's primary R reference. Covers `tidycensus` for data retrieval, `sf` for spatial objects, and mapping with `ggplot2` and `mapgl`.
+
+### R Package Documentation
+
+- [psych package vignette](https://cran.r-project.org/web/packages/psych/vignettes/intro.html) --- includes `alpha()` for reliability analysis
+- [corrplot package vignette](https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html) --- correlation matrix visualization
+
+:::
+
+## Lab Assignment
+
+::: {.section-box}
+
+In Lab 01, you will use R to retrieve census variables with `tidycensus`, assess their reliability with `psych::alpha()`, build a composite index of neighborhood quality, and visualize the results at three geographic scales (county, tract, block group).
+
+Download the [Lab 01 Quarto template (.qmd)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/Assignment/Lab1_Assignment.qmd), complete the exercises, and submit both the .qmd and rendered .html to Canvas.
+
+:::
+
+## Static vs. Interactive Mapping
+
+::: {.section-box}
+
+Throughout this course you will create two types of maps:
+
+- **Static maps** --- built with `ggplot2::geom_sf()`. These render as images, are reproducible, and embed easily in PDF and Canvas submissions. Labs 1--6 use static maps for graded assignments.
+- **Interactive maps** --- built with `mapgl` (powered by MapLibre GL JS). These render in a web browser, support zoom, pan, hover tooltips, and click interactivity. The Final Project dashboard uses interactive maps.
+
+**Why mapgl?** mapgl is GPU-accelerated and can smoothly render tens of thousands of census block groups --- something that slows down older packages. It pairs with `freestiler`, which converts `sf` objects into PMTiles vector tiles for efficient delivery.
+
+| Feature | Static (`geom_sf`) | Interactive (`mapgl`) |
+|---|---|---|
+| Rendering | PNG/PDF image | GPU-rendered in browser |
+| Interactivity | None | Zoom, pan, hover, click |
+| File size | Small (KB) | Larger (MB, depends on data) |
+| Canvas compatible | Yes (renders in .html) | Yes (self-contained .html) |
+| Best for | Graded labs, policy briefs, print | Dashboards, exploratory analysis |
+| Required packages | `ggplot2`, `sf` | `mapgl`, `freestiler`, `sf` |
+
+### Demo: Static Map with `geom_sf`
+
+```{r}
+#| label: demo-static-map
+#| echo: true
+#| eval: true
+library(ggplot2)
+library(sf)
+library(viridis)
+demo_data <- readRDS("data/hardship_cbg_maricopa.rds")
+ggplot(demo_data) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis_c(option = "inferno") +
+  theme_void() +
+  labs(title = "Economic Hardship Index — Maricopa County",
+       subtitle = "Block Group Level | ACS 2019-2023",
+       fill = "Hardship\nIndex")
+```
+
+### Demo: Interactive Map with `mapgl`
+
+```{r}
+#| label: demo-interactive-map
+#| echo: true
+#| eval: false
+library(mapgl)
+library(freestiler)
+library(sf)
+
+demo_data <- readRDS("data/hardship_cbg_maricopa.rds")
+
+# Step 1: Create vector tiles from sf object
+freestile(demo_data, "hardship.pmtiles",
+          layer_name = "hardship",
+          min_zoom = 3, max_zoom = 10)
+serve_tiles("hardship.pmtiles")
+
+# Step 2: Build the interactive map
+maplibre(
+  style = openfreemap_style("positron"),
+  bounds = st_bbox(demo_data)
+) |>
+  add_pmtiles_source(
+    id = "hardship-src",
+    url = "http://localhost:8080/hardship.pmtiles",
+    promote_id = "GEOID"
+  ) |>
+  add_fill_layer(
+    id = "hardship-fill",
+    source = "hardship-src",
+    source_layer = "hardship",
+    fill_color = interpolate(
+      column = "hardship_index",
+      values = c(-1, 0, 1, 2),
+      stops  = c("#1a9850", "#fee08b",
+                 "#d73027", "#67001f")
+    ),
+    fill_opacity = 0.7,
+    hover_options = list(fill_opacity = 1),
+    tooltip = concat(
+      "GEOID: ", get_column("GEOID"),
+      " | Hardship: ",
+      number_format(get_column("hardship_index"))
+    )
+  )
+
+# When finished: stop_server()
+```
+
+*Note:* The `mapgl` interactive map requires a running tile server and renders in a browser session. Run this code interactively in RStudio to see the full interactive experience. The lab assignment uses `geom_sf` for graded static maps.
+
+**Package documentation:**
+
+- [mapgl documentation](https://walker-data.com/mapgl/) --- interactive maps via MapLibre GL JS
+- [freestiler documentation](https://walker-data.com/freestiler/) --- convert sf objects to PMTiles vector tiles
+
+:::
+
+## Yellowdig Discussion
+
+::: {.section-box}
+
+Manduca and Sampson (2019) built a composite "toxic neighborhood environment" scale from indicators of violence, incarceration, and lead exposure --- and showed that it independently predicts lower intergenerational social mobility for children, even after accounting for concentrated poverty and racial composition. Their work illustrates both the power and the limits of index-based approaches: a well-constructed index can reveal patterns that single variables miss, but every index reflects choices about which dimensions to include, how to weight them, and whose experience counts as "hardship."
+
+**Discussion prompt:** Census data can reveal *where* hardship is concentrated, but it cannot tell us *why* neighborhoods ended up that way or *whose priorities* should guide the response. Drawing on the Manduca & Sampson reading and the measurement concepts from this module, what do you think is the most important limitation of using census-based composite indices alone to drive neighborhood investment decisions --- and how would you address it? Consider what dimensions of neighborhood quality census data captures well, what it misses entirely, and whether equal weighting of indicators is appropriate when some dimensions (e.g., environmental toxins vs. low income) may have different causal effects on residents' well-being.
+
+:::
+
+## Key Terms
+
+::: {.section-box}
+
+| Term | Definition |
+|---|---|
+| **Construct** | An abstract concept that cannot be directly observed or measured (e.g., neighborhood quality) |
+| **Indicator / Item** | An observable variable used to measure an aspect of a construct |
+| **Composite Index** | A single score created by combining multiple indicators |
+| **Z-Score** | A standardized value: (x - mean) / sd; puts variables on a common scale |
+| **Cronbach's Alpha** | A measure of internal consistency; how well items in an index correlate with each other |
+| **Internal Consistency** | The degree to which items in a scale measure the same underlying construct |
+| **Reliability** | The signal-to-noise ratio of a measurement: var(T) / var(T + e) |
+| **Latent Variable** | An unobserved variable inferred from observed indicators |
+
+:::

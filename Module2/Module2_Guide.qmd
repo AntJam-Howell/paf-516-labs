@@ -1,0 +1,212 @@
+---
+title: "Module 2 — Cartographic Design"
+subtitle: "PAF 516 | Community Analytics"
+format:
+  html:
+    theme: readable
+    toc: true
+    self-contained: true
+    number-sections: false
+    css: |
+      h1, h2, h3 { color: #8c1d40; }
+      .module-header { background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px; color: #ffffff; }
+      .module-subtitle { background-color: #ffc627; border-radius: 10px; width: 98%; text-align: center; padding: 5px; }
+      .section-box { border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%; }
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+::: {.module-header}
+## **M2 Overview & Learning Materials**
+
+::: {.module-subtitle}
+**Cartographic Design & Multi-Scale Visual Analytics**
+:::
+:::
+
+::: {.section-box}
+
+## Module Overview and Objectives
+
+In Module 1, you built a composite hardship index and mapped it with a basic choropleth. This module asks a deceptively important question: **does the story your map tells change depending on how you classify the data?** The answer is yes --- and the differences can be dramatic. A map using equal intervals may hide inequality that a quantile map reveals. A Jenks natural breaks map emphasizes clusters that a standard deviation map smooths away.
+
+Beyond classification, this module introduces **bivariate choropleth maps** that display two variables simultaneously, **interactive web maps** with mapgl + freestiler that let users explore data on demand, and cartographic design principles that separate professional-quality maps from default output. You will move from "making a map" to *designing a visual argument*.
+
+---
+
+After completing this module, you will be able to:
+
+- Apply and compare four classification methods: **quantile, Jenks natural breaks, equal interval,** and **standard deviation**
+- Explain how classification method choice affects map interpretation and policy conclusions
+- Create a **bivariate choropleth map** using the `biscale` package to visualize two variables simultaneously
+- Build an **interactive mapgl map** with tooltips, hover effects, and GPU-rendered vector tiles
+- Apply cartographic design principles: visual hierarchy, figure-ground, appropriate color ramps
+- Use `ggspatial` to add scale bars, north arrows, and annotation to static maps
+- Construct **small multiple** map panels for side-by-side comparison
+
+:::
+
+::: {.section-box}
+
+## Section 1: Classification Methods and Why They Matter
+
+Every choropleth map requires a decision: how do we divide a continuous variable into discrete color bins? This is not a neutral technical choice --- it is an **editorial decision** that shapes what patterns viewers perceive.
+
+### Four Common Classification Methods
+
+| Method | How It Works | Best For | Watch Out For |
+|--------|-------------|----------|---------------|
+| **Equal Interval** | Divides the data range into bins of equal width | Data with uniform distributions | Skewed data concentrates most observations in one or two bins |
+| **Quantile** | Places an equal number of observations in each bin | Ensuring visual variation across the map | Can place very different values in the same bin; may exaggerate small differences |
+| **Jenks Natural Breaks** | Minimizes within-class variance and maximizes between-class variance | Data with natural clusters or gaps | Breaks are data-specific --- not comparable across maps with different data |
+| **Standard Deviation** | Bins centered on the mean, each one standard deviation wide | Showing how far observations deviate from the average | Assumes roughly normal distribution; outliers dominate the visual |
+
+The `classInt` package in R provides functions for all four methods. The key function is `classIntervals()`, which accepts a `style` argument: `"equal"`, `"quantile"`, `"jenks"`, or `"sd"`.
+
+**Critical insight:** When you present a choropleth map in a policy setting, you should be able to justify your classification choice. "I used the default" is not a justification.
+
+:::
+
+::: {.section-box}
+
+## Section 2: Bivariate Choropleth Mapping
+
+A standard choropleth shows one variable. But policy questions often involve relationships between two variables: Is poverty concentrated where educational attainment is low? Do areas with high hardship also have high unemployment?
+
+A **bivariate choropleth** maps two variables simultaneously using a two-dimensional color legend. Each variable is classified into categories (typically 3x3), and the combinations produce a grid of 9 colors. For example, one axis might represent hardship index values and the other might represent the percentage of residents without a high school diploma.
+
+### The biscale Package
+
+The `biscale` package streamlines bivariate mapping in R:
+
+1. `bi_class()` --- classifies two variables into a combined bivariate class
+2. `bi_scale_fill()` --- applies the appropriate 2D color palette to ggplot
+3. `bi_legend()` --- generates the 3x3 legend
+
+The legend is created separately and composed with the map using `cowplot` or `patchwork`.
+
+**Design consideration:** Bivariate choropleths are powerful but cognitively demanding. Always include a clear legend and limit the classification to 3x3 (not 4x4 or 5x5) to keep the map interpretable.
+
+:::
+
+::: {.section-box}
+
+## Section 3: Interactive Maps with mapgl + freestiler
+
+Static maps are essential for reports and publications, but **interactive maps** let users explore data at their own pace --- zooming in on neighborhoods, hovering over polygons for details, and experiencing smooth GPU-rendered performance.
+
+The `mapgl` package renders interactive maps via MapLibre GL JS, and `freestiler` converts sf objects to PMTiles vector tiles for efficient loading. Key features include:
+
+- **Basemap styles**: Choose from OpenFreeMap styles (positron, bright, dark) via `openfreemap_style()`
+- **Vector tile layers**: Create PMTiles with `freestile()` and add them with `add_pmtiles_source()`
+- **Fill layers**: Color polygons by variable values using `add_fill_layer()` with `interpolate()`
+- **Tooltips and hover**: Display data values on hover using `tooltip` and `hover_options`
+- **GPU acceleration**: Handles block-group-level data (thousands of polygons) smoothly
+
+Interactive maps produced by `mapgl` are HTML widgets --- they can be embedded directly in Quarto documents and dashboards, making them ideal for the policy briefs and final project you will produce later in the course.
+
+:::
+
+::: {.section-box}
+
+## Section 4: Cartographic Design Principles
+
+Good cartography is not decoration --- it is **communication**. A well-designed map directs attention to the data story; a poorly designed map obscures it.
+
+### Core Principles
+
+- **Visual hierarchy**: The most important information (the thematic data) should be the most visually prominent. Basemap labels and borders should recede
+- **Figure-ground**: The study area should stand out from the surrounding context. Use a subtle background or outline to frame the area of interest
+- **Color choice**: Use sequential palettes for ordinal data, diverging palettes for data with a meaningful midpoint, and qualitative palettes for categorical data. Colorblind-safe palettes (e.g., viridis) are essential for accessibility
+- **Map elements**: Every thematic map should include a title, legend, scale bar, north arrow, and data source citation
+
+The `ggspatial` package adds professional cartographic elements to ggplot maps: `annotation_scale()` for scale bars and `annotation_north_arrow()` for orientation.
+
+:::
+
+::: {.section-box}
+
+## Lecture
+
+<!-- PLACEHOLDER: Record lecture on classification methods and cartographic design principles -->
+<!-- Replace VIDEO_ID below with the actual YouTube video ID once recorded -->
+
+```{=html}
+<iframe src="" width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+```
+
+:::
+
+::: {.section-box}
+
+## Readings
+
+### Foundational Works
+
+- Brewer, C. A., & Pickle, L. (2002). Evaluation of methods for classifying epidemiological data on choropleth maps in series. *Annals of the Association of American Geographers*, 92(4), 662--681. --- The definitive empirical comparison of classification methods for choropleth maps. Demonstrates that quantile and natural breaks methods outperform equal interval for map-reading accuracy.
+
+- Brewer, C. A. [ColorBrewer 2.0](https://colorbrewer2.org/). --- Interactive tool for choosing cartographically sound color schemes. Provides sequential, diverging, and qualitative palettes tested for colorblind safety, print friendliness, and screen legibility.
+
+### Recent Applications
+
+- Stevens, J. (2015). [Bivariate Choropleth Maps: A How-to Guide](http://www.joshuastevens.net/cartography/make-a-bivariate-choropleth-map/). --- Practical introduction to bivariate choropleth design with emphasis on color selection and legend construction. The design principles in this guide directly inform the `biscale` package workflow used in Lab 2.
+
+- Walker, K. (2023). *Analyzing US Census Data: Methods, Maps, and Models in R*. CRC Press. [Chapter 6: Mapping Census Data with R](https://walker-data.com/census-r/mapping-census-data-with-r.html). --- Covers choropleth mapping with R including classification methods, color palettes, and interactive mapping. Directly relevant to the tidycensus + ggplot2 workflow used throughout this course.
+
+- Axis Maps. [Cartography Guide](https://www.axismaps.com/guide). --- Concise, practical reference covering color theory, classification, labeling, and layout for thematic maps. Excellent quick reference for cartographic design decisions.
+
+### R Package Documentation
+
+- [classInt package vignette](https://cran.r-project.org/web/packages/classInt/vignettes/classInt.html) --- Classification interval algorithms
+- [biscale package documentation](https://chris-prener.github.io/biscale/) --- Bivariate choropleth tools
+- [mapgl package documentation](https://walker-data.com/mapgl/) --- Interactive GPU-rendered maps
+- [freestiler package documentation](https://walker-data.com/freestiler/) --- Vector tile generation from sf objects
+- [ggspatial package documentation](https://paleolimbot.github.io/ggspatial/) --- Scale bars, north arrows, and cartographic annotation
+
+:::
+
+::: {.section-box}
+
+## Lab Assignment
+
+In Lab 02, you will take the hardship index you built in Lab 01 and apply advanced cartographic techniques to visualize it. Specifically, you will:
+
+1. **Compare classification methods**: Map the hardship index using all four methods (equal interval, quantile, Jenks, standard deviation) as small multiples and write a brief analysis of how each changes the visual story
+2. **Create a bivariate choropleth**: Use `biscale` to map the relationship between two variables from your index (e.g., poverty rate and unemployment) in a single visualization
+3. **Build an interactive mapgl map**: Create a GPU-rendered interactive map of your hardship index with tooltips showing CBG-level data and hover effects
+4. **Apply cartographic best practices**: Add scale bars, north arrows, titles, and source annotations using `ggspatial`
+
+**Connection to Lab 01:** You will load the hardship index data from Lab 01. If you have not completed Lab 01, you will not be able to proceed.
+
+**Download:** [Lab2_Assignment.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/Assignment/Lab2_Assignment.qmd)
+
+:::
+
+::: {.section-box}
+
+## Yellowdig Discussion
+
+Find a published choropleth map from a news article, government report, nonprofit dashboard, or academic paper. Share the map (or a link to it) in your post, then write a critical cartographic review. Your review should address how the mapmaker's design choices --- classification method, color scheme, scale, and layout --- shape the story the map tells, and whether different choices would lead to different policy interpretations. Connect your analysis to at least one concept from this module's readings (e.g., Brewer & Pickle's findings on classification accuracy, Stevens' bivariate design principles, or the Axis Maps guidance on visual hierarchy). Consider: if this map were presented to a city council or included in a federal grant application, would its design strengthen or undermine the argument?
+
+:::
+
+::: {.section-box}
+
+## Key Terms
+
+| Term | Definition |
+|------|-----------|
+| **Classification Method** | An algorithm for dividing continuous data into discrete bins for choropleth mapping |
+| **Quantile Classification** | Places an equal number of observations in each class; maximizes visual variation |
+| **Jenks Natural Breaks** | Optimizes class boundaries to minimize within-class variance (Goodness of Variance Fit) |
+| **Equal Interval** | Divides the data range into classes of equal width |
+| **Standard Deviation** | Centers bins on the mean; each bin spans one standard deviation |
+| **Bivariate Choropleth** | A map that encodes two variables simultaneously using a two-dimensional color grid |
+| **Small Multiples** | A series of similar maps or charts displayed together to facilitate comparison |
+| **Visual Hierarchy** | The arrangement of map elements so the most important data draws the most attention |
+| **Sequential Palette** | A color ramp from light to dark representing low-to-high values |
+| **Diverging Palette** | A color ramp with two hues diverging from a neutral midpoint (e.g., blue-white-red) |
+
+:::

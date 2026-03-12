@@ -1,7 +1,6 @@
 ---
 title: "Lab 06 — Lab Guide: Integration & Policy Brief"
 subtitle: "PAF 516 | M6 Assignment"
-date: today
 format:
   html:
     theme: readable
@@ -27,8 +26,7 @@ options( tigris_use_cache = TRUE )
 
 ```{r}
 #| label: packages
-#| eval: false
-# -- Packages -----------------------------------------
+# ── Packages ─────────────────────────────────────────
 library( tidyverse )
 library( tidycensus )
 library( sf )
@@ -93,6 +91,13 @@ library( patchwork )
 
 ---
 
+> **Lab Guide:** This document contains the fully annotated tutorial code
+> for Lab 6. Work through each step by changing `eval: false` to
+> `eval: true` one section at a time. Answer the open-ended questions
+> (Q1--Q3) in the spaces provided.
+
+---
+
 # Overview
 
 Lab 6 is a capstone synthesis lab. It introduces **no new analytical techniques** --- every data pull, index computation, LISA analysis, and temporal comparison reuses code from Labs 1--5. The one new skill is **professional Quarto output formatting**: callout blocks (`:::{.callout-note}`, `:::{.callout-warning}`, `:::{.callout-tip}`), tabbed panels (`:::{.panel-tabset}`), cross-references (`@fig-label`), and figure captions (`#| fig-cap:`). The goal is to assemble findings from all prior labs into a coherent policy brief that communicates spatial analysis to a non-technical audience.
@@ -119,7 +124,7 @@ These are not R packages. They are built into Quarto's markdown syntax and requi
 :::
 
 
-# -- Step 1: National Context -------------------------
+# Step 1: National Context
 
 We begin at the broadest geographic scale --- all US counties --- to establish where Arizona sits in the national landscape of economic hardship. This contextualizes the state-level and local patterns we examine later. We reuse the same 5-variable hardship index from Lab 1: poverty rate, unemployment rate, percent without a high school diploma, percent without health insurance, and median household income (reverse-coded).
 
@@ -127,7 +132,7 @@ We begin at the broadest geographic scale --- all US counties --- to establish w
 #| label: define-vars
 #| eval: false
 
-# -- Define the 5 hardship indicator variables ----------
+# ── Define the 5 hardship indicator variables ────────────────
 # These are the SAME variables used throughout Labs 1-5.
 # Each variable name is given a readable alias.
 hardship_vars <- c(
@@ -148,8 +153,9 @@ hardship_vars <- c(
 ```{r}
 #| label: pull-county
 #| eval: false
+#| results: hide
 
-# -- Pull US county-level data --------------------------
+# ── Pull US county-level data ────────────────────────────────
 # geography = "county" returns one row per US county (~3,200).
 # geometry = TRUE attaches boundary shapes for mapping.
 county_raw <- get_acs(
@@ -166,7 +172,7 @@ county_raw <- get_acs(
 #| label: build-county-index
 #| eval: false
 
-# -- Reusable function to build the hardship index ------
+# ── Reusable function to build the hardship index ────────────
 # Rather than copy-pasting the same pipeline for each geographic
 # scale, we define a function (as in Lab 5). This takes the raw
 # long-format tidycensus output and returns a spatial data frame
@@ -220,7 +226,9 @@ county_complete <- build_hardship_index( county_raw )
 #| eval: false
 #| fig-cap: "Economic hardship index across all US counties. Darker colors indicate greater hardship concentration, with visible clusters in the rural South, Appalachia, and tribal areas of the Southwest."
 
-# -- National county-level hardship map -----------------
+# ── National county-level hardship map ───────────────────────
+# This map shows the full geographic distribution of economic
+# hardship across the US, providing context for Arizona.
 ggplot( county_complete ) +
   geom_sf( aes( fill = hardship_index ), color = NA ) +
   scale_fill_viridis(
@@ -239,15 +247,16 @@ ggplot( county_complete ) +
 **National context:** As shown in @fig-national, economic hardship at the county level is concentrated in three broad regions: the rural South stretching from the Mississippi Delta through Appalachia, border counties in South Texas, and tribal nations across the Southwest. Arizona's counties fall in the moderate range nationally. Maricopa County, which contains Phoenix and roughly 60 percent of the state's population, does not appear as a high-hardship county at this scale --- but as we will see in subsequent sections, this county-level average conceals significant internal variation. The national map establishes that Arizona is not among the hardest-hit states overall, which makes the pockets of concentrated hardship within the state all the more important to identify through finer-grained analysis.
 
 
-# -- Step 2: State Patterns ----------------------------
+# Step 2: State Patterns
 
 We now zoom in to Arizona's census tracts. Tracts contain roughly 2,500 to 8,000 people each, allowing us to see within-county variation that the national map cannot reveal.
 
 ```{r}
 #| label: pull-az-tracts
 #| eval: false
+#| results: hide
 
-# -- Pull Arizona tract-level data ----------------------
+# ── Pull Arizona tract-level data ────────────────────────────
 # state = "AZ" limits the pull to Arizona's ~1,500 census tracts.
 az_raw <- get_acs(
   geography = "tract",
@@ -264,7 +273,7 @@ az_raw <- get_acs(
 #| label: build-az-index
 #| eval: false
 
-# -- Build hardship index for Arizona tracts -------------
+# ── Build hardship index for Arizona tracts ──────────────────
 az_complete <- build_hardship_index( az_raw )
 ```
 
@@ -274,7 +283,7 @@ az_complete <- build_hardship_index( az_raw )
 #| eval: false
 #| fig-cap: "Economic hardship index across Arizona census tracts. High-hardship tracts cluster in tribal areas, along the US-Mexico border, and in specific urban corridors within Phoenix and Tucson."
 
-# -- Arizona tract-level hardship map --------------------
+# ── Arizona tract-level hardship map ─────────────────────────
 ggplot( az_complete ) +
   geom_sf( aes( fill = hardship_index ), color = NA ) +
   scale_fill_viridis(
@@ -293,15 +302,16 @@ ggplot( az_complete ) +
 **State-level patterns:** @fig-az-tracts reveals that within Arizona, the highest hardship tracts are concentrated in two types of areas: tribal nations in the northeastern part of the state (Navajo Nation, Hopi Reservation) and rural border communities in the south. Within the Phoenix metropolitan area, hardship is not uniformly distributed --- specific corridors, particularly in south Phoenix and parts of central Mesa, show elevated hardship scores even within this generally prosperous metro. Tucson's south side also shows a visible concentration. This tract-level view demonstrates why the county-level national map is insufficient for policy purposes: Maricopa County's moderate overall score masks neighborhoods that rival some of the highest-hardship areas in the country.
 
 
-# -- Step 3: Local Hot Spots ---------------------------
+# Step 3: Local Hot Spots
 
 We now zoom to the finest available geography --- census block groups (CBGs) within Maricopa County --- and apply Local Indicators of Spatial Association (LISA) to identify statistically significant clusters of high and low hardship. This reuses the spatial autocorrelation techniques from Lab 4.
 
 ```{r}
 #| label: pull-cbg
 #| eval: false
+#| results: hide
 
-# -- Pull Maricopa County block group data ---------------
+# ── Pull Maricopa County block group data ────────────────────
 # Block groups are the smallest geography for which ACS data are
 # available, with roughly 600-3,000 people each.
 cbg_raw <- get_acs(
@@ -320,7 +330,7 @@ cbg_raw <- get_acs(
 #| label: build-cbg-index
 #| eval: false
 
-# -- Build the hardship index at the block group level ----
+# ── Build the hardship index at the block group level ────────
 cbg_complete <- build_hardship_index( cbg_raw )
 ```
 
@@ -331,7 +341,7 @@ cbg_complete <- build_hardship_index( cbg_raw )
 #| fig-cap: "Economic hardship index for Maricopa County at the block group level, revealing fine-grained neighborhood variation invisible at the county or tract scale."
 #| fig-height: 8
 
-# -- Maricopa CBG hardship map --------------------------
+# ── Maricopa CBG hardship map ──────────────────────────────
 ggplot( cbg_complete ) +
   geom_sf( aes( fill = hardship_index ), color = NA ) +
   scale_fill_viridis(
@@ -352,7 +362,7 @@ ggplot( cbg_complete ) +
 #| label: lisa-analysis
 #| eval: false
 
-# -- LISA Hot Spot Analysis ------------------------------
+# ── LISA Hot Spot Analysis ───────────────────────────────────
 # This reuses the spatial autocorrelation workflow from Lab 4.
 
 # Fix any geometry errors before building neighbor lists.
@@ -387,7 +397,7 @@ cbg_complete$lag_hardship <- lag.listw( lw, cbg_complete$hardship_index,
 #| label: lisa-classify
 #| eval: false
 
-# -- Classify each CBG into a LISA category ---------------
+# ── Classify each CBG into a LISA category ───────────────────
 # The quadrant assignment uses the centered values of the hardship
 # index and its spatial lag, following the same logic as Lab 4.
 cbg_complete <- cbg_complete %>%
@@ -424,7 +434,7 @@ table( cbg_complete$lisa_cluster )
 #| fig-cap: "LISA hot spot map of economic hardship in Maricopa County at the block group level. Red areas are statistically significant hot spots where high-hardship block groups cluster together. Blue areas are cold spots of concentrated low hardship."
 #| fig-height: 9
 
-# -- LISA cluster map ------------------------------------
+# ── LISA cluster map ─────────────────────────────────────────
 # Color scheme follows the standard LISA convention:
 # Red = High-High hot spots, Blue = Low-Low cold spots
 lisa_colors <- c(
@@ -459,15 +469,16 @@ The LISA analysis in @fig-lisa identifies primary hardship hot spot clusters wit
 :::
 
 
-# -- Step 4: Temporal Change ---------------------------
+# Step 4: Temporal Change
 
 We now compare hardship levels across two time periods to understand whether conditions are improving, worsening, or staying the same. This reuses the temporal analysis workflow from Lab 5, pulling ACS data for 2015 (representing the 2011--2015 estimates) and 2023 (representing the 2019--2023 estimates).
 
 ```{r}
 #| label: pull-cbg-2015
 #| eval: false
+#| results: hide
 
-# -- Pull Maricopa CBG data for the earlier time period ---
+# ── Pull Maricopa CBG data for the earlier time period ───────
 # year = 2015 retrieves the 2011-2015 ACS 5-year estimates.
 cbg_2015_raw <- get_acs(
   geography = "block group",
@@ -485,10 +496,10 @@ cbg_2015_raw <- get_acs(
 #| label: build-temporal-index
 #| eval: false
 
-# -- Build hardship index for 2015 (Period 1) -----------
+# ── Build hardship index for 2015 (Period 1) ────────────────
 cbg_2015_complete <- build_hardship_index( cbg_2015_raw )
 
-# -- Compute change scores ------------------------------
+# ── Compute change scores ────────────────────────────────────
 # Join the two time periods by GEOID and compute the difference.
 # Positive change = hardship INCREASED over time.
 # Negative change = hardship DECREASED (improved).
@@ -518,7 +529,7 @@ cat( "CBGs matched in both periods:", nrow( change_df ), "\n" )
 #| fig-cap: "Economic hardship index for Maricopa County block groups based on the 2011-2015 ACS 5-year estimates."
 #| fig-height: 8
 
-# -- Period 1 map ----------------------------------------
+# ── Period 1 map ─────────────────────────────────────────────
 ggplot( change_df ) +
   geom_sf( aes( fill = hardship_2015 ), color = NA ) +
   scale_fill_viridis(
@@ -541,7 +552,7 @@ ggplot( change_df ) +
 #| fig-cap: "Economic hardship index for Maricopa County block groups based on the 2019-2023 ACS 5-year estimates."
 #| fig-height: 8
 
-# -- Period 2 map ----------------------------------------
+# ── Period 2 map ─────────────────────────────────────────────
 ggplot( change_df ) +
   geom_sf( aes( fill = hardship_2023 ), color = NA ) +
   scale_fill_viridis(
@@ -564,7 +575,7 @@ ggplot( change_df ) +
 #| fig-cap: "Change in economic hardship between the 2011-2015 and 2019-2023 ACS estimates. Red areas experienced increasing hardship; blue areas experienced decreasing hardship (improvement)."
 #| fig-height: 8
 
-# -- Change map with diverging palette -------------------
+# ── Change map with diverging palette ────────────────────────
 # A diverging palette centered at zero is essential here:
 # positive values (red) = hardship increased
 # negative values (blue) = hardship decreased (improved)
@@ -587,8 +598,10 @@ ggplot( change_df ) +
 
 :::
 
+**Temporal analysis:** The tabbed panels above allow direct comparison across the two time periods and their difference. Several patterns emerge from @fig-change. First, most block groups experienced relatively modest change, as indicated by the predominance of pale yellow tones near zero. Second, the most notable improvements (blue areas) appear in select neighborhoods on the periphery of the metro area, likely reflecting new suburban development and rising incomes in growing communities. Third --- and most importantly for policy --- the core hardship clusters identified in the LISA analysis (south Phoenix, central Mesa, west Phoenix) show little change or slight worsening, confirming that these are persistent hardship zones rather than areas experiencing temporary setbacks. The stability of these clusters over an 8-year span suggests that market forces alone are insufficient to address the concentrated disadvantage in these neighborhoods.
 
-# -- Step 5: Policy Recommendations --------------------
+
+# Step 5: Policy Recommendations
 
 The following recommendations should be grounded in the multi-scale analysis above. Each recommendation should identify a specific geographic area, reference the evidence supporting it, and propose a concrete action.
 
@@ -611,7 +624,7 @@ The following recommendations should be grounded in the multi-scale analysis abo
 :::
 
 
-# -- Step 6: Multi-Scale Summary Figure ----------------
+# Step 6: Multi-Scale Summary Figure
 
 ```{r}
 #| label: fig-multiscale
@@ -620,7 +633,7 @@ The following recommendations should be grounded in the multi-scale analysis abo
 #| fig-width: 16
 #| fig-height: 6
 
-# -- Compact maps for side-by-side comparison ------------
+# ── Compact maps for side-by-side comparison ─────────────────
 # This replicates the three-scale comparison from Lab 1 but with
 # the updated 2023 data used throughout this policy brief.
 p1 <- ggplot( county_complete ) +
@@ -649,7 +662,7 @@ p1 + p2 + p3 +
 ```
 
 
-# -- Questions -----------------------------------------
+# Questions
 
 ## Q1 --- Interpret {#sec-q1}
 
@@ -659,7 +672,9 @@ p1 + p2 + p3 +
 What are the top 3 findings from your multi-scale analysis? For each, explain what geographic scale revealed it and why that scale was necessary.
 :::
 
-> [YOUR ANSWER HERE]
+YOUR ANSWER:
+
+
 
 
 ## Q2 --- Modify (Full Text) {#sec-q2}
@@ -670,7 +685,13 @@ What are the top 3 findings from your multi-scale analysis? For each, explain wh
 Rewrite the executive summary from @sec-executive-summary for a DIFFERENT audience --- a **community nonprofit** instead of county government. Write the complete text below.
 :::
 
-> [YOUR ANSWER HERE]
+**Original executive summary** (written for county government, reproduced from @sec-executive-summary):
+
+> Economic hardship in Maricopa County is not evenly distributed --- it concentrates in specific neighborhoods that can be identified through multi-scale spatial analysis. At the national level, Arizona's counties fall in the moderate range of economic hardship relative to the rest of the United States, but this average masks sharp within-state inequality. Within Maricopa County, LISA hot spot analysis at the block group level reveals statistically significant clusters of high hardship in south Phoenix, central Mesa, and portions of west Phoenix. Temporal analysis comparing 2015 and 2023 ACS estimates shows that while some areas have seen modest improvement, the core hardship clusters have remained remarkably stable over time. These findings point to the need for geographically targeted interventions in persistent hardship zones, with particular attention to unemployment and lack of health insurance as the hardship components showing the least improvement.
+
+YOUR ANSWER:
+
+
 
 
 ## Q3 --- Interpret Modified {#sec-q3}
@@ -681,7 +702,9 @@ Rewrite the executive summary from @sec-executive-summary for a DIFFERENT audien
 How did changing the audience change what you emphasized? What does this reveal about the difference between analytical findings and policy communication?
 :::
 
-> [YOUR ANSWER HERE]
+YOUR ANSWER:
+
+
 
 
 ---

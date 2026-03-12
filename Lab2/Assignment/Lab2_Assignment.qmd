@@ -1,7 +1,6 @@
 ---
 title: "Lab 02 — Lab Guide: Cartographic Design & Multi-Scale Visual Analytics"
 subtitle: "PAF 516 | M2 Assignment"
-date: today
 format:
   html:
     theme: readable
@@ -52,7 +51,6 @@ use. By the end of this lab you will be able to:
 
 ```{r}
 #| label: packages
-#| eval: false
 
 # ── Load packages ─────────────────────────────────────────────
 # Core data & spatial
@@ -123,7 +121,7 @@ library(viridis)     # Perceptually uniform color scales
 
 ---
 
-# ── Step 1: Pull Data & Build the Hardship Index ──────────────
+# Step 1: Pull Data & Build the Hardship Index
 
 We reuse the exact same index construction from Lab 1: five ACS variables
 measuring economic hardship, z-score standardized, with median income reversed.
@@ -168,6 +166,7 @@ all_vars <- c(hardship_vars, demo_vars)
 ```{r}
 #| label: step.01b
 #| eval: false
+#| results: hide
 
 # Pull ACS 5-year estimates at the block group level for Maricopa County.
 # geometry = TRUE attaches spatial boundaries for mapping.
@@ -232,7 +231,7 @@ cat("Hardship index range:",
 
 ---
 
-# ── Step 2: Classification Comparison ─────────────────────────
+# Step 2: Classification Comparison
 
 A choropleth map's story depends heavily on how you **classify** continuous
 values into discrete color bins. Here we apply four common methods to the
@@ -326,7 +325,7 @@ Standard deviation highlights how far each area deviates from the mean.
 
 ---
 
-# ── Step 3: Bivariate Choropleth — Hardship x % Minority ──────
+# Step 3: Bivariate Choropleth — Hardship x % Minority
 
 A standard choropleth maps **one** variable. A bivariate choropleth maps
 **two** variables simultaneously by crossing their classifications into a 3x3
@@ -404,7 +403,7 @@ two variables diverge: high hardship but low minority share, or vice versa.
 
 ---
 
-# ── Step 4: Small Multiples Across Scales ─────────────────────
+# Step 4: Small Multiples Across Scales
 
 One of the most important lessons in spatial analysis is that **patterns change
 with scale**. A national county map reveals broad regional divides; a tract map
@@ -416,6 +415,7 @@ build the hardship index at all three scales and compare.
 ```{r}
 #| label: step.04a
 #| eval: false
+#| results: hide
 
 # ── Pull US county-level data ─────────────────────────────────
 # This gives us ~3,200 counties across the entire US.
@@ -551,7 +551,7 @@ moderate at the tract level contain both very-high and very-low hardship CBGs.
 
 ---
 
-# ── Step 5: Interactive Map with mapgl + freestiler ───────────
+# Step 5: Interactive Map with mapgl + freestiler
 
 Static maps are great for print; interactive maps let users explore. Here we
 build an interactive GPU-rendered map of Maricopa County CBGs using `mapgl` and
@@ -627,7 +627,7 @@ maplibre(style = openfreemap_style("positron"),
 
 ---
 
-# ── Step 6: Export-Quality Figure with ggspatial ──────────────
+# Step 6: Export-Quality Figure with ggspatial
 
 For reports and presentations you often need a polished static map with a scale
 bar and north arrow. The `ggspatial` package adds these cartographic elements to
@@ -682,13 +682,13 @@ Look at the 2x2 classification comparison from Step 2.
 **1a.** Which classification method makes economic hardship appear *most
 widespread* across Maricopa County? Which makes it appear *most concentrated*?
 
-> [YOUR ANSWER HERE]
+> **YOUR ANSWER HERE**
 
 **1b.** In a policy memo arguing for increased funding to "high hardship" areas,
 which classification method would you choose and why? What about a memo arguing
 that hardship is *not* a widespread problem?
 
-> [YOUR ANSWER HERE]
+> **YOUR ANSWER HERE**
 
 ---
 
@@ -723,9 +723,9 @@ from Question 2 (hardship x % renter).
 **3a.** Do the same areas show "double disadvantage" in both maps? Or do the
 spatial patterns differ?
 
-> [YOUR ANSWER HERE]
+> **YOUR ANSWER HERE**
 
 **3b.** What does this comparison tell you about the relationship between
 economic hardship, race/ethnicity, and housing tenure in Maricopa County?
 
-> [YOUR ANSWER HERE]
+> **YOUR ANSWER HERE**

@@ -1,0 +1,218 @@
+---
+title: "Module 3 — Spatial Data Integration"
+subtitle: "PAF 516 | Community Analytics"
+format:
+  html:
+    theme: readable
+    toc: true
+    self-contained: true
+    number-sections: false
+    css: |
+      h1, h2, h3 { color: #8c1d40; }
+      .module-header { background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px; color: #ffffff; }
+      .module-subtitle { background-color: #ffc627; border-radius: 10px; width: 98%; text-align: center; padding: 5px; }
+      .section-box { border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%; }
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+::: {.module-header}
+## **M3 Overview & Learning Materials**
+
+::: {.module-subtitle}
+**Spatial Data Integration & Overlay Analysis**
+:::
+:::
+
+::: {.section-box}
+
+### Module Overview and Objectives
+
+So far, your hardship index is built entirely from census variables — measures of who lives in a place. But neighborhood quality is also shaped by **what is near** a place. Proximity to environmental hazards, grocery stores, transit stops, or health clinics matters as much as demographic composition. This module teaches you to combine **tabular census data** with **external point data** using spatial operations.
+
+The central challenge is that these data sources live in different formats, different coordinate reference systems, and different geographic units. You will learn to align them using **spatial joins**, **buffer analysis**, and **coordinate transformations** — the core operations of spatial data integration. Along the way, you will confront the **Modifiable Areal Unit Problem (MAUP)**, one of the most important methodological issues in spatial analysis.
+
+---
+
+After completing this module, you will be able to:
+
+- Explain the role of **coordinate reference systems (CRS)** and transform data between projections using `st_transform()`
+- Perform **point-in-polygon spatial joins** using `st_join()` to count point features within census boundaries
+- Conduct **buffer analysis** using `st_buffer()` to measure proximity to spatial features
+- Use `st_intersection()` to clip and combine spatial layers
+- Describe the **Modifiable Areal Unit Problem** and its implications for spatial analysis
+- Create an **enriched hardship index** that incorporates spatial access variables alongside census demographics
+- Integrate external data sources (e.g., EPA facility data, USDA food access data) with census geographies
+
+:::
+
+::: {.section-box}
+
+### Section 1: Coordinate Reference Systems
+
+Before you can combine spatial datasets, they must share the same **coordinate reference system (CRS)**. A CRS defines how locations on the curved Earth are represented on a flat surface. Two data layers that appear to be in the same location but use different CRS definitions will not align — your spatial joins will produce nonsense results.
+
+#### Geographic vs. Projected CRS
+
+- **Geographic CRS** (e.g., WGS 84 / EPSG:4326): Uses latitude and longitude in degrees. Good for global data and web mapping. Distances and areas are distorted because degrees are not constant-length units
+- **Projected CRS** (e.g., NAD83 UTM Zone 12N / EPSG:26912): Projects the globe onto a flat surface. Distances and areas are accurate within the projection's valid zone. Essential for buffer analysis and area calculations
+
+#### Practical Rule
+
+Always check CRS with `st_crs()` before performing any spatial operation. If your layers have different CRS values, use `st_transform()` to reproject one to match the other. For operations that require accurate distances (buffers, area calculations), use a projected CRS appropriate for your study area.
+
+**Common mistake:** Creating a buffer of "1000" on data in EPSG:4326. This produces a buffer of 1000 *degrees*, not 1000 meters. Always project first.
+
+:::
+
+::: {.section-box}
+
+### Section 2: Spatial Joins and Overlay Operations
+
+A **spatial join** attaches attributes from one spatial layer to another based on their geographic relationship — analogous to a table join in SQL, but using location instead of a key column.
+
+#### Point-in-Polygon Joins
+
+The most common spatial join in community analytics: "How many [facilities/events/resources] fall within each [census tract/block group]?" The `st_join()` function in the `sf` package performs this operation:
+
+```r
+joined <- st_join(polygons, points, join = st_intersects)
+```
+
+After joining, you typically group by the polygon ID and count the number of matched points.
+
+#### Buffer Analysis
+
+Buffers create a zone of specified distance around a feature. Common uses include:
+
+- Identifying census tracts within 1 mile of a hazardous facility
+- Counting the number of grocery stores within 0.5 miles of each neighborhood centroid
+- Measuring overlap between service areas and target populations
+
+In R: `st_buffer(points, dist = 1609)` creates a 1-mile (1609 meter) buffer around each point (assuming a projected CRS in meters).
+
+#### Intersection and Clipping
+
+`st_intersection()` returns only the portions of features that overlap between two layers. This is useful for clipping a statewide dataset to your study area or computing the area of overlap between buffers and census geographies.
+
+:::
+
+::: {.section-box}
+
+### Section 3: The Modifiable Areal Unit Problem (MAUP)
+
+The **MAUP** is a fundamental issue in spatial analysis: the results of statistical analyses can change depending on *how* geographic areas are defined. It has two components:
+
+- **Scale effect**: Aggregating data to larger units (e.g., from block groups to tracts to counties) changes summary statistics. Correlations that appear at one scale may vanish at another
+- **Zoning effect**: Even at the same scale, different boundary configurations can produce different results. Congressional districts drawn two different ways yield different demographic profiles
+
+**Why it matters for this course:** When you count environmental facilities per census block group, the result depends entirely on where the Census Bureau drew the block group boundaries. A facility sitting right on a boundary could be counted in either unit. The hardship index values themselves are sensitive to the choice of geographic unit.
+
+There is no perfect solution to the MAUP, but awareness is the first defense. Best practices include: analyzing at multiple scales, using the finest available geography, and being transparent about the units used.
+
+:::
+
+::: {.section-box}
+
+## Lecture
+
+<!-- PLACEHOLDER: Record lecture on spatial joins, CRS, buffer analysis, and MAUP -->
+
+<iframe src="" width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+
+:::
+
+::: {.section-box}
+
+## Readings
+
+### Foundational Works
+
+- Maantay, J. (2002). Mapping environmental injustices: Pitfalls and potential of geographic information systems in assessing environmental health and equity. *Environmental Health Perspectives*, 110(Suppl 2), 161--171. [open access](https://pmc.ncbi.nlm.nih.gov/articles/PMC1241160/)
+  - The seminal article on using GIS for environmental justice analysis. Maantay examines how spatial methods can reveal disproportionate environmental burdens while cautioning against methodological pitfalls such as inadequate exposure indices and the choice of geographic unit.
+
+- Pastor, M., Sadd, J., & Hipp, J. (2001). Which came first? Toxic facilities, minority move-in, and environmental justice. *Journal of Urban Affairs*, 23(1), 1--21. [link](https://onlinelibrary.wiley.com/doi/abs/10.1111/0735-2166.00072)
+  - A landmark study using longitudinal data and spatial analysis to test whether hazardous facilities were disproportionately sited in minority communities or whether minorities moved in after siting. Findings support the disproportionate siting hypothesis.
+
+- Openshaw, S. (1984). The modifiable areal unit problem. *Concepts and Techniques in Modern Geography*, 38. Norwich: GeoBooks.
+  - The foundational monograph defining MAUP. Essential background for understanding why spatial analysis results depend on the choice of geographic boundaries.
+
+### Recent Applications
+
+- Walker, K. (2023). *Analyzing US Census Data: Methods, Maps, and Models in R*. CRC Press. Chapter 7: Spatial Analysis with US Census Data. [free online](https://walker-data.com/census-r/spatial-analysis-with-us-census-data.html)
+  - The primary reference for this module. Covers spatial joins, distance and proximity analysis, and exploratory spatial data analysis using tidycensus and sf in R.
+
+- Pebesma, E. (2018). Simple features for R: Standardized support for spatial vector data. *The R Journal*, 10(1), 439--446. [open access](https://journal.r-project.org/archive/2018/RJ-2018-009/)
+  - The technical reference for the sf package that powers all spatial operations in this course. Explains how `st_join()`, `st_buffer()`, `st_intersection()`, and other functions work.
+
+- Mohai, P., & Saha, R. (2015). Which came first, people or pollution? A review of theory and evidence from longitudinal environmental justice studies. *Environmental Research Letters*, 10(12), 125011. [open access](https://iopscience.iop.org/article/10.1088/1748-9326/10/12/125011)
+  - A comprehensive review of longitudinal EJ studies using distance-based spatial methods. Directly relevant to this module's focus on proximity analysis and buffer-based exposure assessment.
+
+- Dark, S. J., & Bram, D. (2007). The modifiable areal unit problem (MAUP) in physical geography. *Progress in Physical Geography*, 31(5), 471--479. [link](https://journals.sagepub.com/doi/10.1177/0309133307083294)
+  - An accessible review of MAUP with examples and potential solutions. Useful companion to Openshaw's original monograph.
+
+- U.S. EPA. EJScreen: Environmental Justice Screening and Mapping Tool. [https://www.epa.gov/ejscreen](https://www.epa.gov/ejscreen)
+  - EPA's national screening tool that combines environmental and demographic indicators at the census block group level. Demonstrates a real-world application of the spatial data integration methods covered in this module.
+
+### R Package Documentation
+
+- [sf package documentation](https://r-spatial.github.io/sf/) — especially the spatial operations vignette
+- [tidycensus package](https://walker-data.com/tidycensus/) — for retrieving census data with geometry
+
+:::
+
+::: {.section-box}
+
+## Lab Assignment
+
+In Lab 03, you will extend your hardship index by integrating external spatial data. Specifically, you will:
+
+1. **Load and project external point data**: Import a dataset of environmental facilities (e.g., EPA-regulated sites or food retailers) and ensure it shares a CRS with your census boundaries
+2. **Perform point-in-polygon spatial joins**: Use `st_join()` to count how many facilities fall within each census block group
+3. **Conduct buffer analysis**: Create 1-mile buffers around facilities and identify which block groups intersect these buffers
+4. **Build an enriched hardship index**: Add your new spatial access variables (facility counts, buffer proximity) to the original index from Lab 01
+5. **Map and compare**: Visualize the original vs. enriched index side by side to see how spatial access changes the picture
+
+**Connection to previous labs:** You will load your Lab 01 hardship index data and apply the cartographic techniques learned in Lab 02 to visualize the results.
+
+Download the [Lab 03 Quarto template (.qmd)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/Assignment/Lab3_Assignment.qmd), complete the exercises, and submit both the .qmd and rendered .html to Canvas.
+
+**Download:** [Lab3_Assignment.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/Assignment/Lab3_Assignment.qmd)
+
+:::
+
+::: {.section-box}
+
+## Yellowdig Discussion
+
+Environmental justice research depends on spatial methods to connect *where people live* with *what they are exposed to*. This module introduced the core tools — spatial joins, buffer analysis, and CRS alignment — but every methodological choice (buffer distance, geographic unit, data source) shapes the conclusions.
+
+**Discussion prompt:** Choose a real environmental or public health concern in a community you are familiar with (e.g., proximity to industrial sites, food deserts, lack of transit access, flood risk). Drawing on the readings and this module's concepts, discuss:
+
+- What spatial data sources would you combine with census data to measure this concern, and at what geographic scale (block group, tract, county)? Why does the scale choice matter?
+- How would you operationalize "proximity" or "exposure" — through point-in-polygon counts, buffer distances, or some other spatial measure? What are the trade-offs?
+- Reflect on how the MAUP and the choice of buffer distance could lead different analysts to reach different conclusions about the same community. What steps would you take to make your analysis more transparent and defensible?
+
+Engage with at least two classmates' posts. Look for cases where a different spatial method or scale would change the interpretation.
+
+:::
+
+::: {.section-box}
+
+## Key Terms
+
+| Term | Definition |
+|------|------------|
+| **Coordinate Reference System (CRS)** | A system that defines how spatial coordinates relate to locations on the Earth |
+| **Geographic CRS** | CRS using latitude/longitude in angular degrees (e.g., WGS 84 / EPSG:4326) |
+| **Projected CRS** | CRS that maps the Earth onto a flat surface with linear distance units (e.g., UTM) |
+| **Spatial Join** | Combining attributes from two spatial layers based on their geographic relationship |
+| **Point-in-Polygon** | A spatial operation that identifies which polygon contains each point |
+| **Buffer** | A zone of specified distance around a spatial feature |
+| **MAUP** | Modifiable Areal Unit Problem — the sensitivity of spatial analysis results to the definition of geographic boundaries |
+| **Scale Effect** | Changes in analysis results when data is aggregated to larger or smaller geographic units |
+| **Enriched Index** | A composite index that combines demographic variables with spatial access or proximity variables |
+
+:::

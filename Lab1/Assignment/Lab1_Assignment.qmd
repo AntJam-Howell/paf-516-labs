@@ -1,7 +1,6 @@
 ---
 title: "Lab 01 — Lab Guide: Measurement, Indexing & Multi-Scale Mapping"
 subtitle: "PAF 516 | M1 Assignment"
-date: today
 format:
   html:
     theme: readable
@@ -27,11 +26,11 @@ options( tigris_use_cache = TRUE )
 
 ```{r}
 #| label: packages
-#| eval: false
 # ── Packages ─────────────────────────────────────────
 # Load all required packages for data, mapping, and reliability analysis
 library( tidyverse )
 library( tidycensus )
+library( tigris )      # For shift_geometry (AK/HI insets)
 library( psych )       # For Cronbach's alpha
 library( corrplot )    # For correlation matrix visualization
 library( viridis )     # For color scales on maps
@@ -60,11 +59,11 @@ library( patchwork )   # For combining multi-panel figures
 # CenDF_complete  <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_tracts_az.rds") )
 # cbg_complete    <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_cbg_maricopa.rds") )
 #
-# If using fallback data, skip Steps 1-4c and go directly to Step 4d.
+# If using fallback data, skip Steps 1-4 and go directly to Step 5.
 ```
 
 
-# ── Step 1: Retrieve Census Variables ──────────────────
+# Step 1: Retrieve Census Variables
 
 We build an **economic hardship index** using 5 census variables at the tract level for Arizona. Each variable captures a different dimension of economic disadvantage.
 
@@ -80,6 +79,7 @@ vars_available <- load_variables( 2023, "acs5", cache = TRUE )
 ```{r}
 #| label: step.01
 #| eval: false
+#| results: hide
 
 # Define our indicator variables for an "economic hardship" construct
 # Each variable name is given a readable alias
@@ -111,7 +111,7 @@ CenDF <- get_acs(
 **Common error note:** If you get an API key error, make sure you have run `census_api_key("YOUR_KEY", install = TRUE)` at least once and restarted R.
 
 
-# ── Step 2: Select and Justify Variables ───────────────
+# Step 2: Select and Justify Variables
 
 We now reshape the data from long to wide format, compute percentages from numerator/denominator pairs, and standardize all variables to z-scores.
 
@@ -168,7 +168,7 @@ index_z <- index_z %>%
 | Median household income | B19013_001 | Core income measure (reverse coded) |
 
 
-# ── Step 3: Assess Reliability with Cronbach's Alpha ──
+# Step 3: Assess Reliability with Cronbach's Alpha
 
 ```{r}
 #| label: step.03
@@ -198,7 +198,7 @@ cat( "Cronbach's alpha:", round( alpha_value, 3 ), "\n" )
 ```
 
 
-# ── Step 4: Build the Index and Visualize ──────────────
+# Step 4: Build the Index and Visualize
 
 ```{r}
 #| label: step.04a
@@ -255,30 +255,17 @@ CenDF_complete <- CenDF_wide %>%
   drop_na( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income )
 
 CenDF_complete$hardship_index <- index_z$hardship_index
-
-# Map the hardship index across tracts
-map_tract <- ggplot( CenDF_complete ) +
-  geom_sf( aes( fill = hardship_index ), color = NA ) +
-  scale_fill_viridis( option = "inferno", direction = -1,
-                      name = "Hardship\nIndex" ) +
-  theme_void() +
-  labs(
-    title    = "Economic Hardship Index by Census Tract",
-    subtitle = "Arizona — ACS 5-Year (2023)",
-    caption  = "Higher values = greater economic hardship"
-  )
-
-map_tract
 ```
 
 
-# ── Step 4b: National County-Level Map ─────────────────
+# Step 5: National County-Level Map
 
 We now pull the same 5 hardship variables at the **county level** for the entire US, compute the index using the same method, and map national patterns of economic hardship.
 
 ```{r}
-#| label: step.04b-pull
+#| label: step.05-pull
 #| eval: false
+#| results: hide
 
 # Pull county-level data for the entire US
 # Same 5 variables, different geography
@@ -292,7 +279,7 @@ county_df <- get_acs(
 ```
 
 ```{r}
-#| label: step.04b-index
+#| label: step.05-index
 #| eval: false
 
 # Reshape county data from long to wide
@@ -327,33 +314,59 @@ county_complete$hardship_index <- county_index$hardship_index
 ```
 
 ```{r}
-#| label: step.04b-map
+#| label: step.05-map
 #| eval: false
 
-# National county-level hardship map
-# shift_geometry not used here; simple contiguous-US view
-map_county <- ggplot( county_complete ) +
-  geom_sf( aes( fill = hardship_index ), color = NA ) +
-  scale_fill_viridis( option = "inferno", direction = -1,
-                      name = "Hardship\nIndex" ) +
+# Use shift_geometry to show Alaska and Hawaii as standard insets
+county_shifted <- shift_geometry( county_complete )
+
+# National county-level hardship map with AK/HI insets
+map_county <- ggplot( county_shifted ) +
+  geom_sf( aes( fill = hardship_index ), color = NA, linewidth = 0 ) +
+  scale_fill_viridis_c( option = "inferno",
+                        name = "Hardship\nIndex",
+                        na.value = "grey80" ) +
   theme_void() +
   labs(
-    title   = "Economic Hardship Index by US County",
-    subtitle = "ACS 5-Year (2023)",
-    caption = "Higher values = greater economic hardship"
+    title    = "Economic Hardship Across U.S. Counties",
+    subtitle = "ACS 5-Year (2023) | Higher values = greater hardship",
+    caption  = "Alaska and Hawaii shown as insets"
   )
 
 map_county
 ```
 
 
-# ── Step 4c: Maricopa CBG-Level Map ───────────────────
+# Step 6: Arizona Census Tract Map
+
+```{r}
+#| label: step.06-map
+#| eval: false
+
+# Map the hardship index across Arizona tracts
+map_tract <- ggplot( CenDF_complete ) +
+  geom_sf( aes( fill = hardship_index ), color = NA ) +
+  scale_fill_viridis( option = "inferno", direction = -1,
+                      name = "Hardship\nIndex" ) +
+  theme_void() +
+  labs(
+    title    = "Economic Hardship Index by Census Tract",
+    subtitle = "Arizona — ACS 5-Year (2023)",
+    caption  = "Higher values = greater economic hardship"
+  )
+
+map_tract
+```
+
+
+# Step 7: Maricopa County Block Group Map
 
 We zoom in further to the **block group** level within Maricopa County. Block groups are the smallest geography for which ACS data are available, revealing fine-grained variation within tracts.
 
 ```{r}
-#| label: step.04c-pull
+#| label: step.07-pull
 #| eval: false
+#| results: hide
 
 # Pull block group data for Maricopa County
 # This is the finest spatial resolution available in the ACS
@@ -369,7 +382,7 @@ cbg_df <- get_acs(
 ```
 
 ```{r}
-#| label: step.04c-index
+#| label: step.07-index
 #| eval: false
 
 # Reshape and compute rates — same pipeline as tracts and counties
@@ -402,7 +415,7 @@ cbg_complete$hardship_index <- cbg_index$hardship_index
 ```
 
 ```{r}
-#| label: step.04c-map
+#| label: step.07-map
 #| eval: false
 
 # Block-group-level hardship map for Maricopa County
@@ -421,21 +434,22 @@ map_cbg
 ```
 
 
-# ── Step 4d: Three-Scale Comparison ───────────────────
+# Step 8: Three-Scale Comparison
 
 Using `patchwork`, we place all three maps side by side to compare how spatial patterns of hardship appear at different geographic scales. This illustrates the **Modifiable Areal Unit Problem (MAUP)** — the same phenomenon looks different depending on the unit of analysis.
 
 ```{r}
-#| label: step.04d-patchwork
+#| label: step.08-patchwork
 #| eval: false
 #| fig-width: 16
 #| fig-height: 6
 
 # Build compact versions of each map for the 3-panel comparison
 # Remove subtitles/captions to keep the panel clean
-p_county <- ggplot( county_complete ) +
-  geom_sf( aes( fill = hardship_index ), color = NA ) +
-  scale_fill_viridis( option = "inferno", direction = -1, name = "Index" ) +
+p_county <- ggplot( county_shifted ) +
+  geom_sf( aes( fill = hardship_index ), color = NA, linewidth = 0 ) +
+  scale_fill_viridis_c( option = "inferno", name = "Index",
+                        na.value = "grey80" ) +
   theme_void() +
   labs( title = "County (US)" )
 
@@ -460,7 +474,7 @@ p_county + p_tract + p_cbg +
 ```
 
 
-# ── Save Datasets for Offline Use ─────────────────────
+# Save Datasets for Offline Use
 
 The code below saves the three completed spatial datasets as `.rds` files. These files contain all census variables, computed rates, and the hardship index along with geometry. Students can load these if the Census API is unavailable.
 
@@ -474,10 +488,15 @@ The code below saves the three completed spatial datasets as `.rds` files. These
 saveRDS( county_complete,  "hardship_counties_us.rds" )
 saveRDS( CenDF_complete,   "hardship_tracts_az.rds" )
 saveRDS( cbg_complete,     "hardship_cbg_maricopa.rds" )
+
+cat( "Saved 3 datasets:\n" )
+cat( "  hardship_counties_us.rds   —", nrow(county_complete), "counties\n" )
+cat( "  hardship_tracts_az.rds     —", nrow(CenDF_complete), "tracts\n" )
+cat( "  hardship_cbg_maricopa.rds  —", nrow(cbg_complete), "block groups\n" )
 ```
 
 
-# ── Questions ──────────────────────────────────────────
+# Questions
 
 ### Q1 — Interpret
 
@@ -497,6 +516,7 @@ saveRDS( cbg_complete,     "hardship_cbg_maricopa.rds" )
 ```{r}
 #| label: q2-pull
 #| eval: false
+#| results: hide
 
 # YOUR CODE HERE
 ```

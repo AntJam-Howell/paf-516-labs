@@ -1,0 +1,236 @@
+---
+title: "Module 5 — Temporal Change Analysis"
+subtitle: "PAF 516 | Community Analytics"
+format:
+  html:
+    theme: readable
+    toc: true
+    self-contained: true
+    number-sections: false
+    css: |
+      h1, h2, h3 { color: #8c1d40; }
+      .module-header { background-color: #8c1d40; border-radius: 10px; width: 98%; text-align: center; padding: 10px; color: #ffffff; }
+      .module-subtitle { background-color: #ffc627; border-radius: 10px; width: 98%; text-align: center; padding: 5px; }
+      .section-box { border: 1px solid #d3d3d3; padding: 10px; margin-top: 10px; width: 98%; }
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+::: {.module-header}
+## **M5 Overview & Learning Materials**
+
+::: {.module-subtitle}
+**Temporal Change Analysis**
+:::
+:::
+
+::: {.section-box}
+
+### Module Overview and Objectives
+
+Modules 1--4 analyzed your study area at a single point in time. But neighborhoods are not static --- they gentrify, decline, stabilize, or fluctuate over years and decades. This module adds the **time dimension** to your analysis. You will compare hardship index values across two American Community Survey (ACS) vintages to identify neighborhoods that are **improving**, **deteriorating**, or **stable**.
+
+Temporal analysis with census data introduces unique methodological challenges. Census boundaries can change between years. Margins of error can make small changes statistically meaningless. Diverging color palettes must be chosen carefully to communicate the direction and magnitude of change. This module addresses all of these issues while building directly on the index and spatial analysis skills from previous labs.
+
+---
+
+After completing this module, you will be able to:
+
+- Retrieve and compare ACS data from **two different vintages** (e.g., 2011--2015 vs. 2019--2023) using `tidycensus`
+- Compute **change scores** for individual variables and composite indices
+- Address **boundary changes** between census vintages and understand when direct comparison is valid
+- Apply **diverging color scales** to effectively communicate positive and negative change
+- Assess whether observed changes exceed ACS **margins of error**
+- Evaluate the **temporal stability** of spatial patterns identified in Module 4
+- Connect neighborhood change to theories of **gentrification, disinvestment, and neighborhood succession**
+
+:::
+
+
+::: {.section-box}
+
+### Section 1: Multi-Year Census Comparison
+
+The American Community Survey (ACS) provides rolling 5-year estimates. The `tidycensus` package lets you pull data from any available vintage by setting the `year` argument in `get_acs()`. For temporal comparison, you will retrieve the same variables for two different periods --- for example, the 2011--2015 ACS and the 2019--2023 ACS.
+
+#### Computing Change Scores
+
+The simplest approach is a **raw change score**: the value at time 2 minus the value at time 1. For the hardship index:
+
+```
+change = hardship_2023 - hardship_2015
+```
+
+- **Positive change**: Hardship increased (neighborhood deteriorated)
+- **Negative change**: Hardship decreased (neighborhood improved)
+- **Near zero**: Neighborhood was stable
+
+You can also compute **percentage change** for individual variables, but be cautious with variables that have small denominators --- percentage change can be unstable when the baseline is small.
+
+#### Important: Index Comparability
+
+When comparing z-score-based indices across time, you must decide: do you standardize each year's data using *that year's* mean and standard deviation, or using a *pooled* mean and standard deviation? If each year is standardized separately, a z-score of 1.0 in 2015 and 1.0 in 2023 both mean "one standard deviation above that year's average" --- but the absolute level of hardship could be very different. For valid change scores, consider standardizing both years against a common baseline.
+
+:::
+
+
+::: {.section-box}
+
+### Section 2: Boundary Changes and Data Comparability
+
+Census geographies are not permanent. The Census Bureau **redraws tract and block group boundaries** with each decennial census (2010, 2020). This means:
+
+- ACS 2011--2015 data uses **2010 census boundaries**
+- ACS 2019--2023 data uses **2020 census boundaries**
+
+If boundaries changed in your study area, you cannot directly subtract one year's value from another for affected geographies --- the areas are literally different shapes containing different populations.
+
+#### Strategies for Handling Boundary Changes
+
+- **Compare within the same boundary vintage**: Use two ACS years that share the same boundaries (e.g., 2015 and 2019, both on 2010 boundaries). This is the simplest and most defensible approach
+- **Crosswalk files**: The Census Bureau and NHGIS provide relationship files that map old boundaries to new ones, allowing approximate comparison
+- **Visual comparison only**: Map both years side by side without computing change scores --- readers can see the broad patterns without relying on unit-level subtraction
+
+In the lab, you will use the approach that best fits your study area, but you must **explicitly acknowledge** the boundary issue in your analysis.
+
+:::
+
+
+::: {.section-box}
+
+### Section 3: Diverging Color Scales for Change Maps
+
+Change data has a meaningful midpoint (zero = no change), which calls for a **diverging color palette** rather than a sequential one. Diverging palettes use two distinct hues radiating from a neutral center:
+
+- **Blue-to-Red**: Common convention where red signals "alarm" (increasing hardship) and blue signals improvement
+- **Purple-to-Orange**: A colorblind-friendly alternative
+- **Brown-to-Teal**: Another accessible option from ColorBrewer
+
+#### Design Decisions
+
+- **Center the midpoint on zero**: The neutral color must correspond to "no change," not the median of your data. In ggplot2, use `scale_fill_gradient2(midpoint = 0)` or `scale_fill_distiller(type = "div")`
+- **Symmetric limits**: Set the minimum and maximum of the color scale to equal absolute values (e.g., -2 to +2) so that the visual weight of positive and negative changes is balanced
+- **Handle outliers**: Extreme values can compress the rest of the scale. Consider winsorizing (capping extreme values) or using a discrete classification
+
+:::
+
+
+::: {.section-box}
+
+### Section 4: Margins of Error and Statistical Significance of Change
+
+ACS estimates come with **margins of error (MOE)**, and these margins can be substantial for small geographies like block groups. A change from 15% to 18% poverty may look meaningful on a map, but if both estimates have MOEs of +/- 5 percentage points, the "change" is well within sampling noise.
+
+#### Testing Whether Change Is Significant
+
+The Census Bureau provides guidance for computing a z-test for the difference between two ACS estimates:
+
+```
+z = (estimate_2 - estimate_1) / sqrt(SE_1^2 + SE_2^2)
+```
+
+where SE = MOE / 1.645 for 90% confidence intervals. If |z| > 1.645, the change is statistically significant at the 90% level.
+
+**Practical implication:** Your change map should distinguish between statistically significant changes and noise. Consider using hatching, transparency, or a separate significance layer to flag block groups where the observed change exceeds the margin of error.
+
+:::
+
+
+::: {.section-box}
+
+## Lecture
+
+<!-- PLACEHOLDER: Record lecture on temporal change analysis, boundary changes, and diverging palettes -->
+
+<iframe src="" width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+
+:::
+
+
+::: {.section-box}
+
+## Readings
+
+### Foundational Works
+
+- Temkin, K., & Rohe, W. (1996). Neighborhood change and urban policy. *Journal of Planning Education and Research*, 15(3), 159--170. [Link](https://journals.sagepub.com/doi/10.1177/0739456X9601500301)
+  A foundational framework for understanding neighborhood change processes, integrating institutional actors, social fabric, and metropolitan-level forces into a multidisciplinary model.
+
+- Freeman, L. (2005). Displacement or succession? Residential mobility in gentrifying neighborhoods. *Urban Affairs Review*, 40(4), 463--491. [Link](https://journals.sagepub.com/doi/10.1177/1078087404273341)
+  Seminal study examining whether gentrification causes displacement, finding that demographic change in gentrifying neighborhoods is driven more by the relative affluence of in-movers than by displacement of existing residents.
+
+### Recent Applications
+
+- Owens, A. (2012). Neighborhoods on the rise: A typology of neighborhoods experiencing socioeconomic ascent. *City & Community*, 11(4), 345--369. [Link](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1540-6040.2012.01412.x)
+  Develops a typology of ascending neighborhoods using principal components and cluster analysis, demonstrating that gentrification is only one of several pathways through which neighborhoods gain socioeconomic status.
+
+- Landis, J. D. (2016). Tracking and explaining neighborhood socioeconomic change in U.S. metropolitan areas between 1990 and 2010. *Housing Policy Debate*, 26(1), 2--52. [Link](https://www.tandfonline.com/doi/full/10.1080/10511482.2014.993677)
+  Large-scale empirical study measuring gentrification and socioeconomic neighborhood change across U.S. metros, using census tract data over two decades to distinguish metropolitan-level forces from neighborhood-specific dynamics.
+
+- Ding, L., Hwang, J., & Divringi, E. (2016). Gentrification and residential mobility in Philadelphia. *Regional Science and Urban Economics*, 61, 38--51. [Link](https://www.sciencedirect.com/science/article/abs/pii/S0166046216301223)
+  Uses individual-level longitudinal data to show that while vulnerable residents in gentrifying neighborhoods are no more likely to move, when they do move they tend to relocate to lower-income neighborhoods --- highlighting the importance of examining destination quality, not just mobility rates.
+
+### Census Data and Methods
+
+- Walker, K. (2023). *Analyzing US Census Data: Methods, Maps, and Models in R*. CRC Press. [[free online]](https://walker-data.com/census-r/)
+  Comprehensive guide to working with census data in R using `tidycensus`. Chapters 2--4 cover pulling multi-year ACS data, wrangling time series, and visualizing temporal change.
+
+- U.S. Census Bureau. [Comparing ACS Data](https://www.census.gov/programs-surveys/acs/guidance/comparing-acs-data.html). Official guidance on making valid comparisons across ACS vintages, including boundary changes, inflation adjustment, and questionnaire modifications.
+
+- tidycensus documentation: [Working with multiple years](https://walker-data.com/tidycensus/articles/basic-usage.html). Package reference for pulling ACS data across vintages using the `year` argument in `get_acs()`.
+
+:::
+
+
+::: {.section-box}
+
+## Lab Assignment
+
+In Lab 05, you will add a temporal dimension to your hardship analysis. Specifically, you will:
+
+1. **Retrieve multi-year data**: Pull the same census variables for two ACS vintages (e.g., 2011--2015 and 2019--2023) using `tidycensus`
+2. **Compute change scores**: Calculate the change in hardship index between the two periods, addressing standardization decisions explicitly
+3. **Map change with diverging palettes**: Create a change map using a diverging color scale centered on zero, with symmetric limits
+4. **Assess statistical significance**: Use margins of error to identify which block groups experienced statistically significant change
+5. **Compare to Lab 04 hot spots**: Overlay or juxtapose your LISA clusters with your change map --- are the hot spots stable, growing, or shrinking?
+
+**Connection to previous labs:** This lab directly extends Lab 04. The question is: are the spatial clusters you identified persistent features of the urban landscape, or are they shifting over time? Persistent hot spots may require different policy interventions than emerging ones.
+
+**Download:** [Lab5_Assignment.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/Assignment/Lab5_Assignment.qmd)
+
+Download the Quarto template, complete the exercises, and submit both the .qmd and rendered .html to Canvas.
+
+:::
+
+
+::: {.section-box}
+
+## Yellowdig Discussion
+
+Neighborhood change is often framed as either "improvement" or "decline," but these labels depend heavily on whose perspective you center. A block group where poverty drops from 35% to 15% over eight years could represent genuine upward mobility for long-time residents --- or it could signal displacement, with the original community replaced by wealthier newcomers while the poverty simply moved elsewhere.
+
+This tension sits at the heart of temporal analysis with census data. The numbers show *what changed*, but they cannot tell us *who benefited* or *who was harmed*. Freeman (2005) found that displacement rates in gentrifying neighborhoods were not dramatically higher than in non-gentrifying ones, yet Ding, Hwang, and Divringi (2016) showed that when vulnerable residents *do* move from gentrifying areas, they tend to land in lower-income neighborhoods --- a finding invisible in aggregate census statistics.
+
+**Your prompt:** Drawing on this week's readings and your own study area, discuss the policy implications of temporal change analysis. Should public investment target neighborhoods where hardship is *currently highest*, or neighborhoods where hardship is *increasing fastest*? What are the trade-offs of each approach? Use at least one specific example --- from the readings, from your lab results, or from a real community --- to ground your argument. Consider what census data can and cannot reveal about whether neighborhood change benefits existing residents or displaces them.
+
+:::
+
+
+::: {.section-box}
+
+## Key Terms
+
+| Term | Definition |
+|------|-----------|
+| **Change Score** | The difference between a variable's value at two time points (time 2 minus time 1) |
+| **ACS Vintage** | A specific 5-year period of American Community Survey data (e.g., 2019--2023) |
+| **Diverging Color Scale** | A color palette with two hues radiating from a neutral midpoint, used for data with a meaningful center |
+| **Margin of Error (MOE)** | The range around an ACS estimate within which the true value likely falls (90% confidence) |
+| **Boundary Change** | Redrawing of census geographic boundaries between decennial censuses, complicating temporal comparison |
+| **Temporal Stability** | The degree to which spatial patterns persist over time |
+| **Gentrification** | Neighborhood change characterized by rising incomes, property values, and demographic shifts |
+| **Winsorizing** | Capping extreme values at a specified percentile to prevent outliers from dominating visualizations |
+
+:::
