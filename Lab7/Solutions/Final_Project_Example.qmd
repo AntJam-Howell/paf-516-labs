@@ -334,8 +334,24 @@ n_county       <- nrow(county_complete)
 n_cbg          <- nrow(cbg_complete)
 n_hotspot      <- sum(cbg_complete$lisa_cluster == "High-High", na.rm = TRUE)
 n_coldspot     <- sum(cbg_complete$lisa_cluster == "Low-Low",   na.rm = TRUE)
-mean_hardship  <- round(mean(cbg_complete$hardship_index, na.rm = TRUE), 3)
-max_hardship   <- round(max(county_complete$hardship_index, na.rm = TRUE), 2)
+min_hardship    <- round(min(county_complete$hardship_index,    na.rm = TRUE), 2)
+median_hardship <- round(median(county_complete$hardship_index, na.rm = TRUE), 2)
+mean_hardship   <- round(mean(county_complete$hardship_index,   na.rm = TRUE), 2)
+max_hardship    <- round(max(county_complete$hardship_index,    na.rm = TRUE), 2)
+
+county_display <- county_complete |>
+  st_drop_geometry() |>
+  mutate(
+    county_label  = str_extract(NAME, "^[^,]+"),
+    state_label   = str_extract(NAME, "(?<=, ).+"),
+    hardship_disp = round(hardship_index, 2)
+  ) |>
+  select(
+    `County`  = county_label,
+    `State`   = state_label,
+    `Hardship Index` = hardship_disp
+  ) |>
+  arrange(desc(`Hardship Index`))
 
 n_matched      <- sum(!is.na(tract_change$hardship_2015) & !is.na(tract_change$hardship_2023))
 n_worsened     <- sum(tract_change$hardship_change > 0, na.rm = TRUE)
@@ -491,27 +507,74 @@ maplibre(
 
 ## Column {width=40%}
 
-### National Distribution
+### Min Hardship
 
-Economic hardship concentrates in the rural South, Appalachia, border
-counties of South Texas, and tribal areas of the Southwest. Puerto Rico
-shows the highest hardship scores nationally. Arizona's counties fall in
-the moderate range nationally --- but this average conceals sharp
-within-county inequality visible only at finer geographic scales.
+```{r}
+#| label: min-vbox
+#| content: valuebox
+list(
+  title = "Min County Hardship",
+  value = min_hardship,
+  icon  = "arrow-down-circle-fill",
+  color = "success"
+)
+```
 
-The map is interactive --- hover over any county to see its name and
-hardship index value. Zoom and pan freely.
+### Median Hardship
 
-### Peak County Hardship
+```{r}
+#| label: median-vbox
+#| content: valuebox
+list(
+  title = "Median County Hardship",
+  value = median_hardship,
+  icon  = "dash-circle-fill",
+  color = "info"
+)
+```
+
+### Mean Hardship
+
+```{r}
+#| label: mean-vbox
+#| content: valuebox
+list(
+  title = "Mean County Hardship",
+  value = mean_hardship,
+  icon  = "bar-chart-fill",
+  color = "warning"
+)
+```
+
+### Max Hardship
 
 ```{r}
 #| label: max-vbox
 #| content: valuebox
 list(
-  title = "Peak County Hardship",
+  title = "Max County Hardship",
   value = max_hardship,
   icon  = "exclamation-triangle-fill",
   color = "danger"
+)
+```
+
+### US County Rankings
+
+```{r}
+#| label: county-table
+
+DT::datatable(
+  county_display,
+  extensions = "Scroller",
+  options = list(
+    scrollY    = 350,
+    scroller   = TRUE,
+    paging     = TRUE,
+    pageLength = 10
+  ),
+  rownames = FALSE,
+  filter   = "top"
 )
 ```
 
@@ -524,7 +587,6 @@ list(
 
 ```{r}
 #| label: state-map
-#|
 # ── AZ census tract hardship mapgl ───────────────────────────
 tract_map <- tract_complete_2023 |>
   st_transform(4326) |>
@@ -634,8 +696,8 @@ list(
 #| label: change-map
 
 change_map_sf <- tract_change |>
-  st_transform(4326) |>
   filter(!is.na(geometry)) |>
+  st_transform(4326) |>
   mutate(change_round = round(hardship_change, 2))
 
 maplibre(
@@ -789,7 +851,7 @@ list(
 
 *Neighborhood-level spatial clustering --- Maricopa County Census Block Groups.
 **High-High** = hot spot (high hardship surrounded by high hardship).
-**Low-Low** = cold spot. Moran's I = 0.47 indicates moderate positive clustering.*
+**Low-Low** = cold spot. Moran's I = `r moran_i_val` indicates moderate positive clustering.*
 
 ```{r}
 #| label: lisa-map
@@ -1022,7 +1084,7 @@ The central Mesa hot spot shows signs of expansion between 2015 and 2023. Pursue
 
 ### Download the Example File
 
-[Right-click → Save As: Final_Project_Example.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/Final_Project_Example.qmd)
+[Right-click → Save As: Final_Project_Example.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/Solutions/Final_Project_Example.qmd)
 
 Open in RStudio. Replace the `define-vars` chunk with your own 5--10 ACS
 variables to build your own index. See Module 7 Guide for full instructions.
