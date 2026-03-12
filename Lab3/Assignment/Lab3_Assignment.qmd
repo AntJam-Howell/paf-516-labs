@@ -44,13 +44,17 @@ library( psych )       # Cronbach's alpha
 #| label: fallback-data
 #| eval: false
 
-# ── FALLBACK: Load pre-saved dataset if Census API is down ──────
+# FALLBACK: Load pre-saved dataset if Census API is down
 # If the Census API is unavailable or you cannot get an API key,
-# uncomment the line below to load pre-saved Maricopa County CBG
-# data from GitHub. This contains raw Census variables in long
+# uncomment ONE of the lines below to load pre-saved Maricopa
+# County CBG data. This contains raw Census variables in long
 # format — you will still build the index yourself.
 #
-# cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_hardship_2023.rds") )
+# Local fallback:
+# cbg_raw <- readRDS( "data/cbg_hardship_maricopa.rds" )
+#
+# GitHub URL fallback:
+# cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/data/cbg_hardship_maricopa.rds") )
 #
 # If using fallback data, skip the get_acs() call and proceed
 # directly to Step 2 (Build the Hardship Index).
@@ -97,6 +101,11 @@ cbg_raw <- get_acs(
   survey    = "acs5",
   geometry  = TRUE
 )
+
+# Fallback — uncomment if Census API is unavailable:
+# cbg_raw <- readRDS( "data/cbg_hardship_maricopa.rds" )
+# OR via URL:
+# cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/data/cbg_hardship_maricopa.rds") )
 ```
 
 We now have ___ rows of long-format data covering all Maricopa County CBGs.

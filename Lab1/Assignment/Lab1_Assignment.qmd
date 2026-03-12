@@ -55,9 +55,15 @@ library( patchwork )   # For combining multi-panel figures
 # These contain all census variables, computed rates, hardship index,
 # and geometry — ready for mapping.
 #
-# county_complete <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_counties_us.rds") )
-# CenDF_complete  <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_tracts_az.rds") )
-# cbg_complete    <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_cbg_maricopa.rds") )
+# Option A — from local file:
+# county_complete <- readRDS("data/hardship_counties_us.rds")
+# CenDF_complete  <- readRDS("data/hardship_tracts_az.rds")
+# cbg_complete    <- readRDS("data/hardship_cbg_maricopa.rds")
+#
+# Option B — from GitHub:
+# county_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_counties_us.rds"))
+# CenDF_complete  <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_tracts_az.rds"))
+# cbg_complete    <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_cbg_maricopa.rds"))
 #
 # If using fallback data, skip Steps 1-4 and go directly to Step 5.
 ```
@@ -106,6 +112,13 @@ CenDF <- get_acs(
   survey    = "acs5",
   geometry  = TRUE
 )
+
+# Fallback: load pre-built data if API unavailable
+# (loads processed data — skip to Step 5 for mapping)
+# Option A — from local file:
+# CenDF_complete <- readRDS("data/hardship_tracts_az.rds")
+# Option B — from GitHub:
+# CenDF_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_tracts_az.rds"))
 ```
 
 **Common error note:** If you get an API key error, make sure you have run `census_api_key("YOUR_KEY", install = TRUE)` at least once and restarted R.
@@ -276,6 +289,13 @@ county_df <- get_acs(
   survey    = "acs5",
   geometry  = TRUE
 )
+
+# Fallback: load pre-built data if API unavailable
+# (loads processed data — skip to step.05-map for mapping)
+# Option A — from local file:
+# county_complete <- readRDS("data/hardship_counties_us.rds")
+# Option B — from GitHub:
+# county_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_counties_us.rds"))
 ```
 
 ```{r}
@@ -379,6 +399,13 @@ cbg_df <- get_acs(
   survey    = "acs5",
   geometry  = TRUE
 )
+
+# Fallback: load pre-built data if API unavailable
+# (loads processed data — skip to step.07-map for mapping)
+# Option A — from local file:
+# cbg_complete <- readRDS("data/hardship_cbg_maricopa.rds")
+# Option B — from GitHub:
+# cbg_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_cbg_maricopa.rds"))
 ```
 
 ```{r}

@@ -87,6 +87,8 @@ library(viridis)     # Perceptually uniform color scales
 # you will still build the index yourself.
 #
 # ── CBG data (includes demographic variables for bivariate mapping):
+# cbg_raw <- readRDS("../../data/cbg_extended_2023.rds")
+# OR via URL:
 # cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_extended_2023.rds") )
 # cbg_raw <- cbg_raw %>%
 #   mutate( variable = recode( variable,
@@ -98,6 +100,8 @@ library(viridis)     # Perceptually uniform color scales
 #     total_tenure = "tenure_total", renter_occ = "tenure_rent" ) )
 #
 # ── US county data (for small-multiples comparison):
+# county_raw <- readRDS("../../data/county_hardship_2023.rds")
+# OR via URL:
 # county_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/county_hardship_2023.rds") )
 # county_raw <- county_raw %>%
 #   mutate( variable = recode( variable,
@@ -107,6 +111,8 @@ library(viridis)     # Perceptually uniform color scales
 #     median_income = "med_income" ) )
 #
 # ── AZ tract data (for small-multiples comparison):
+# tract_raw <- readRDS("../../data/az_tract_hardship_2023.rds")
+# OR via URL:
 # tract_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/az_tract_hardship_2023.rds") )
 # tract_raw <- tract_raw %>%
 #   mutate( variable = recode( variable,

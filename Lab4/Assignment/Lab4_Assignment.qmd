@@ -54,12 +54,19 @@ Moran's I tests, and classifying local clusters. Install it with
 # data from GitHub. This contains raw Census variables in long
 # format — you will still build the index yourself.
 #
-# cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_hardship_2023.rds") )
+# Local file:
+# cbg_raw <- readRDS("data/cbg_hardship_maricopa_2023.rds")
+#
+# OR via URL:
+# cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/data/cbg_hardship_maricopa_2023.rds"))
+#
+# NOTE: The fallback .rds uses slightly different variable names.
+# After loading, recode them to match the named vector above:
 # cbg_raw <- cbg_raw %>%
-#   mutate( variable = recode( variable,
+#   mutate(variable = recode(variable,
 #     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
 #     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
-#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
+#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den"))
 #
 # If using fallback data, skip the get_acs() call and proceed
 # directly to the "Reshape from long to wide" step.
@@ -105,6 +112,19 @@ cbg_raw <- get_acs(
   survey    = "acs5",
   geometry  = TRUE
 )
+
+# Fallback — uncomment if API unavailable:
+# cbg_raw <- readRDS("data/cbg_hardship_maricopa_2023.rds")
+# OR via URL:
+# cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/data/cbg_hardship_maricopa_2023.rds"))
+#
+# NOTE: The fallback .rds uses slightly different variable names.
+# After loading, recode them to match the named vector above:
+# cbg_raw <- cbg_raw %>%
+#   mutate(variable = recode(variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
+#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den"))
 ```
 
 ```{r}
