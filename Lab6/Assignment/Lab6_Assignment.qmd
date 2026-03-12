@@ -1,5 +1,5 @@
 ---
-title: "Lab 06 — Lab Guide: Integration & Policy Brief"
+title: "Lab 6 | PAF 516"
 subtitle: "PAF 516 | M6 Assignment"
 format:
   html:
@@ -21,30 +21,44 @@ execute:
 #| include: false
 knitr::opts_chunk$set( echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10 )
 options( tigris_use_cache = TRUE )
+options( tigris_progress_bar = FALSE )
 ```
 
 
 ```{r}
 #| label: packages
+# ── Package Setup ──────────────────────────────────────────────────────
+# R packages update frequently and can break working code. We have saved
+# the exact package versions used to build this lab. Run the block below
+# ONCE the first time you open this file, then comment it out.
+if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+download.file(
+  url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab6/renv.lock",
+  destfile = "renv.lock", mode = "wb"
+)
+renv::restore(lockfile = "renv.lock", prompt = FALSE)
+# After running once, comment out the four lines above.
+# ───────────────────────────────────────────────────────────────────────
+
 # ── Packages ─────────────────────────────────────────
 library( tidyverse )
 library( tidycensus )
 library( sf )
 library( spdep )
+library( tigris )
 library( viridis )
 library( patchwork )
 ```
 
 ```{r}
 #| label: api-key
-#| eval: false
 # Uncomment and add your Census API key if not already installed
 # census_api_key("YOUR KEY GOES HERE", install = TRUE)
 ```
 
 ```{r}
 #| label: fallback-data
-#| eval: false
+#| eval: true
 
 # ── FALLBACK: Load pre-saved datasets if Census API is down ──────
 # If the Census API is unavailable or you cannot get an API key,
@@ -57,7 +71,7 @@ library( patchwork )
 # align them with the names expected by build_hardship_index().
 #
 # ── US county data (Step 1 — National Context):
-# county_raw <- readRDS( "../../data/county_hardship_2023.rds" )
+# county_raw <- readRDS( "../data/county_hardship_2023.rds" )
 # county_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/county_hardship_2023.rds") )
 # county_raw <- county_raw %>%
 #   mutate( variable = recode( variable,
@@ -66,7 +80,7 @@ library( patchwork )
 #     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
 #
 # ── AZ tract data (Step 2 — State Patterns):
-# az_raw <- readRDS( "../../data/az_tract_hardship_2023.rds" )
+# az_raw <- readRDS( "../data/az_tract_hardship_2023.rds" )
 # az_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/az_tract_hardship_2023.rds") )
 # az_raw <- az_raw %>%
 #   mutate( variable = recode( variable,
@@ -75,7 +89,7 @@ library( patchwork )
 #     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
 #
 # ── Maricopa CBG data 2023 (Step 3 — Local Analysis + LISA):
-# cbg_raw <- readRDS( "../../data/cbg_hardship_2023.rds" )
+# cbg_raw <- readRDS( "../data/cbg_hardship_2023.rds" )
 # cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_hardship_2023.rds") )
 # cbg_raw <- cbg_raw %>%
 #   mutate( variable = recode( variable,
@@ -84,7 +98,7 @@ library( patchwork )
 #     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
 #
 # ── Maricopa CBG data 2015 (Step 4 — Temporal Change):
-# cbg_2015_raw <- readRDS( "../../data/cbg_hardship_2015.rds" )
+# cbg_2015_raw <- readRDS( "../data/cbg_hardship_2015.rds" )
 # cbg_2015_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_hardship_2015.rds") )
 # cbg_2015_raw <- cbg_2015_raw %>%
 #   mutate( variable = recode( variable,
@@ -100,9 +114,8 @@ library( patchwork )
 ---
 
 > **Lab Guide:** This document contains the fully annotated tutorial code
-> for Lab 6. Work through each step by changing `eval: false` to
-> `eval: true` one section at a time. Answer the open-ended questions
-> (Q1--Q3) in the spaces provided.
+> for Lab 6. Work through each step, running the code blocks in order.
+> Answer the open-ended questions (Q1--Q3) in the spaces provided.
 
 ---
 
@@ -138,7 +151,6 @@ We begin at the broadest geographic scale --- all US counties --- to establish w
 
 ```{r}
 #| label: define-vars
-#| eval: false
 
 # ── Define the 5 hardship indicator variables ────────────────
 # These are the SAME variables used throughout Labs 1-5.
@@ -160,25 +172,24 @@ hardship_vars <- c(
 
 ```{r}
 #| label: pull-county
-#| eval: false
 #| results: hide
 
 # ── Pull US county-level data ────────────────────────────────
 # geography = "county" returns one row per US county (~3,200).
 # geometry = TRUE attaches boundary shapes for mapping.
 county_raw <- get_acs(
-  geography = "county",
-  variables = hardship_vars,
-  year      = 2023,
-  survey    = "acs5",
-  geometry  = TRUE
+  geography    = "county",
+  variables    = hardship_vars,
+  year         = 2023,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
 )
 ```
 
 
 ```{r}
 #| label: build-county-index
-#| eval: false
 
 # ── Reusable function to build the hardship index ────────────
 # Rather than copy-pasting the same pipeline for each geographic
@@ -231,13 +242,15 @@ county_complete <- build_hardship_index( county_raw )
 
 ```{r}
 #| label: fig-national
-#| eval: false
 #| fig-cap: "Economic hardship index across all US counties. Darker colors indicate greater hardship concentration, with visible clusters in the rural South, Appalachia, and tribal areas of the Southwest."
 
 # ── National county-level hardship map ───────────────────────
 # This map shows the full geographic distribution of economic
 # hardship across the US, providing context for Arizona.
-ggplot( county_complete ) +
+# shift_geometry() moves AK and HI to inset positions.
+county_shifted <- shift_geometry( county_complete )
+
+ggplot( county_shifted ) +
   geom_sf( aes( fill = hardship_index ), color = NA ) +
   scale_fill_viridis(
     option    = "inferno",
@@ -261,25 +274,24 @@ We now zoom in to Arizona's census tracts. Tracts contain roughly 2,500 to 8,000
 
 ```{r}
 #| label: pull-az-tracts
-#| eval: false
 #| results: hide
 
 # ── Pull Arizona tract-level data ────────────────────────────
 # state = "AZ" limits the pull to Arizona's ~1,500 census tracts.
 az_raw <- get_acs(
-  geography = "tract",
-  variables = hardship_vars,
-  state     = "AZ",
-  year      = 2023,
-  survey    = "acs5",
-  geometry  = TRUE
+  geography    = "tract",
+  variables    = hardship_vars,
+  state        = "AZ",
+  year         = 2023,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
 )
 ```
 
 
 ```{r}
 #| label: build-az-index
-#| eval: false
 
 # ── Build hardship index for Arizona tracts ──────────────────
 az_complete <- build_hardship_index( az_raw )
@@ -288,7 +300,6 @@ az_complete <- build_hardship_index( az_raw )
 
 ```{r}
 #| label: fig-az-tracts
-#| eval: false
 #| fig-cap: "Economic hardship index across Arizona census tracts. High-hardship tracts cluster in tribal areas, along the US-Mexico border, and in specific urban corridors within Phoenix and Tucson."
 
 # ── Arizona tract-level hardship map ─────────────────────────
@@ -316,27 +327,26 @@ We now zoom to the finest available geography --- census block groups (CBGs) wit
 
 ```{r}
 #| label: pull-cbg
-#| eval: false
 #| results: hide
 
 # ── Pull Maricopa County block group data ────────────────────
 # Block groups are the smallest geography for which ACS data are
 # available, with roughly 600-3,000 people each.
 cbg_raw <- get_acs(
-  geography = "block group",
-  variables = hardship_vars,
-  state     = "AZ",
-  county    = "Maricopa",
-  year      = 2023,
-  survey    = "acs5",
-  geometry  = TRUE
+  geography    = "block group",
+  variables    = hardship_vars,
+  state        = "AZ",
+  county       = "Maricopa",
+  year         = 2023,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
 )
 ```
 
 
 ```{r}
 #| label: build-cbg-index
-#| eval: false
 
 # ── Build the hardship index at the block group level ────────
 cbg_complete <- build_hardship_index( cbg_raw )
@@ -345,7 +355,6 @@ cbg_complete <- build_hardship_index( cbg_raw )
 
 ```{r}
 #| label: fig-cbg-hardship
-#| eval: false
 #| fig-cap: "Economic hardship index for Maricopa County at the block group level, revealing fine-grained neighborhood variation invisible at the county or tract scale."
 #| fig-height: 8
 
@@ -368,7 +377,6 @@ ggplot( cbg_complete ) +
 
 ```{r}
 #| label: lisa-analysis
-#| eval: false
 
 # ── LISA Hot Spot Analysis ───────────────────────────────────
 # This reuses the spatial autocorrelation workflow from Lab 4.
@@ -403,7 +411,6 @@ cbg_complete$lag_hardship <- lag.listw( lw, cbg_complete$hardship_index,
 
 ```{r}
 #| label: lisa-classify
-#| eval: false
 
 # ── Classify each CBG into a LISA category ───────────────────
 # The quadrant assignment uses the centered values of the hardship
@@ -438,7 +445,6 @@ table( cbg_complete$lisa_cluster )
 
 ```{r}
 #| label: fig-lisa
-#| eval: false
 #| fig-cap: "LISA hot spot map of economic hardship in Maricopa County at the block group level. Red areas are statistically significant hot spots where high-hardship block groups cluster together. Blue areas are cold spots of concentrated low hardship."
 #| fig-height: 9
 
@@ -483,26 +489,25 @@ We now compare hardship levels across two time periods to understand whether con
 
 ```{r}
 #| label: pull-cbg-2015
-#| eval: false
 #| results: hide
 
 # ── Pull Maricopa CBG data for the earlier time period ───────
 # year = 2015 retrieves the 2011-2015 ACS 5-year estimates.
 cbg_2015_raw <- get_acs(
-  geography = "block group",
-  variables = hardship_vars,
-  state     = "AZ",
-  county    = "Maricopa",
-  year      = 2015,
-  survey    = "acs5",
-  geometry  = TRUE
+  geography    = "block group",
+  variables    = hardship_vars,
+  state        = "AZ",
+  county       = "Maricopa",
+  year         = 2015,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
 )
 ```
 
 
 ```{r}
 #| label: build-temporal-index
-#| eval: false
 
 # ── Build hardship index for 2015 (Period 1) ────────────────
 cbg_2015_complete <- build_hardship_index( cbg_2015_raw )
@@ -533,7 +538,6 @@ cat( "CBGs matched in both periods:", nrow( change_df ), "\n" )
 
 ```{r}
 #| label: fig-period1
-#| eval: false
 #| fig-cap: "Economic hardship index for Maricopa County block groups based on the 2011-2015 ACS 5-year estimates."
 #| fig-height: 8
 
@@ -556,7 +560,6 @@ ggplot( change_df ) +
 
 ```{r}
 #| label: fig-period2
-#| eval: false
 #| fig-cap: "Economic hardship index for Maricopa County block groups based on the 2019-2023 ACS 5-year estimates."
 #| fig-height: 8
 
@@ -579,7 +582,6 @@ ggplot( change_df ) +
 
 ```{r}
 #| label: fig-change
-#| eval: false
 #| fig-cap: "Change in economic hardship between the 2011-2015 and 2019-2023 ACS estimates. Red areas experienced increasing hardship; blue areas experienced decreasing hardship (improvement)."
 #| fig-height: 8
 
@@ -636,7 +638,6 @@ The following recommendations should be grounded in the multi-scale analysis abo
 
 ```{r}
 #| label: fig-multiscale
-#| eval: false
 #| fig-cap: "Three-scale comparison of economic hardship. Left: US counties provide national context. Center: Arizona tracts reveal within-state variation. Right: Maricopa block groups expose neighborhood-level concentration invisible at broader scales."
 #| fig-width: 16
 #| fig-height: 6
@@ -644,7 +645,9 @@ The following recommendations should be grounded in the multi-scale analysis abo
 # ── Compact maps for side-by-side comparison ─────────────────
 # This replicates the three-scale comparison from Lab 1 but with
 # the updated 2023 data used throughout this policy brief.
-p1 <- ggplot( county_complete ) +
+county_shifted <- shift_geometry( county_complete )
+
+p1 <- ggplot( county_shifted ) +
   geom_sf( aes( fill = hardship_index ), color = NA ) +
   scale_fill_viridis( option = "inferno", direction = -1, name = "Index" ) +
   theme_void() +
@@ -680,6 +683,13 @@ p1 + p2 + p3 +
 What are the top 3 findings from your multi-scale analysis? For each, explain what geographic scale revealed it and why that scale was necessary.
 :::
 
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 6 Assignment .qmd and rename it
+> with your last name (e.g. Lab6_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** What are the top 3 findings from your multi-scale analysis? For each, explain what geographic scale revealed it and why that scale was necessary.
+
 YOUR ANSWER:
 
 
@@ -697,6 +707,13 @@ Rewrite the executive summary from @sec-executive-summary for a DIFFERENT audien
 
 > Economic hardship in Maricopa County is not evenly distributed --- it concentrates in specific neighborhoods that can be identified through multi-scale spatial analysis. At the national level, Arizona's counties fall in the moderate range of economic hardship relative to the rest of the United States, but this average masks sharp within-state inequality. Within Maricopa County, LISA hot spot analysis at the block group level reveals statistically significant clusters of high hardship in south Phoenix, central Mesa, and portions of west Phoenix. Temporal analysis comparing 2015 and 2023 ACS estimates shows that while some areas have seen modest improvement, the core hardship clusters have remained remarkably stable over time. These findings point to the need for geographically targeted interventions in persistent hardship zones, with particular attention to unemployment and lack of health insurance as the hardship components showing the least improvement.
 
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 6 Assignment .qmd and rename it
+> with your last name (e.g. Lab6_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** Rewrite the executive summary from @sec-executive-summary for a DIFFERENT audience --- a **community nonprofit** instead of county government. Write the complete text below.
+
 YOUR ANSWER:
 
 
@@ -709,6 +726,13 @@ YOUR ANSWER:
 
 How did changing the audience change what you emphasized? What does this reveal about the difference between analytical findings and policy communication?
 :::
+
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 6 Assignment .qmd and rename it
+> with your last name (e.g. Lab6_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** How did changing the audience change what you emphasized? What does this reveal about the difference between analytical findings and policy communication?
 
 YOUR ANSWER:
 

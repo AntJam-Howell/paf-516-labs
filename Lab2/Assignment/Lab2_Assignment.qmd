@@ -1,5 +1,5 @@
 ---
-title: "Lab 02 — Lab Guide: Cartographic Design & Multi-Scale Visual Analytics"
+title: "Lab 2 | PAF 516"
 subtitle: "PAF 516 | M2 Assignment"
 format:
   html:
@@ -22,6 +22,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width =
 
 # Cache Census TIGER/Line geometries so they don't re-download every render
 options(tigris_use_cache = TRUE)
+options(tigris_progress_bar = FALSE)
 ```
 
 # Overview
@@ -51,12 +52,25 @@ use. By the end of this lab you will be able to:
 
 ```{r}
 #| label: packages
+# ── Package Setup ──────────────────────────────────────────────────────
+# R packages update frequently and can break working code. We have saved
+# the exact package versions used to build this lab. Run the block below
+# ONCE the first time you open this file, then comment it out.
+if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+download.file(
+  url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/renv.lock",
+  destfile = "renv.lock", mode = "wb"
+)
+renv::restore(lockfile = "renv.lock", prompt = FALSE)
+# After running once, comment out the four lines above.
+# ───────────────────────────────────────────────────────────────────────
 
 # ── Load packages ─────────────────────────────────────────────
 # Core data & spatial
 library(tidyverse)
 library(tidycensus)
 library(sf)
+library(tigris)     # For shift_geometry (AK/HI insets)
 
 # Cartographic tools (new in Lab 2)
 library(classInt)    # Classification algorithms (Jenks, quantile, etc.)
@@ -70,59 +84,9 @@ library(viridis)     # Perceptually uniform color scales
 
 ```{r}
 #| label: api-key
-#| eval: false
 
 # Uncomment once and restart R — your key is stored permanently
 # census_api_key("YOUR KEY GOES HERE", install = TRUE)
-```
-
-```{r}
-#| label: fallback-data
-#| eval: false
-
-# ── FALLBACK: Load pre-saved datasets if Census API is down ──────
-# If the Census API is unavailable or you cannot get an API key,
-# uncomment the lines below to load pre-saved spatial datasets
-# from GitHub. These contain raw Census variables in long format —
-# you will still build the index yourself.
-#
-# ── CBG data (includes demographic variables for bivariate mapping):
-# cbg_raw <- readRDS("../../data/cbg_extended_2023.rds")
-# OR via URL:
-# cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/cbg_extended_2023.rds") )
-# cbg_raw <- cbg_raw %>%
-#   mutate( variable = recode( variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
-#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
-#     median_income = "med_income",
-#     total_pop = "race_total", white_nh = "race_wnh",
-#     total_tenure = "tenure_total", renter_occ = "tenure_rent" ) )
-#
-# ── US county data (for small-multiples comparison):
-# county_raw <- readRDS("../../data/county_hardship_2023.rds")
-# OR via URL:
-# county_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/county_hardship_2023.rds") )
-# county_raw <- county_raw %>%
-#   mutate( variable = recode( variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
-#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
-#     median_income = "med_income" ) )
-#
-# ── AZ tract data (for small-multiples comparison):
-# tract_raw <- readRDS("../../data/az_tract_hardship_2023.rds")
-# OR via URL:
-# tract_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/data/az_tract_hardship_2023.rds") )
-# tract_raw <- tract_raw %>%
-#   mutate( variable = recode( variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
-#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
-#     median_income = "med_income" ) )
-#
-# If using fallback data, skip the get_acs() calls and proceed
-# directly to Step 1c (Reshape and compute rates).
 ```
 
 ---
@@ -139,7 +103,6 @@ mapping later.
 
 ```{r}
 #| label: step.01a
-#| eval: false
 
 # The 5 hardship index variables (identical to Lab 1)
 hardship_vars <- c(
@@ -171,7 +134,6 @@ all_vars <- c(hardship_vars, demo_vars)
 
 ```{r}
 #| label: step.01b
-#| eval: false
 #| results: hide
 
 # Pull ACS 5-year estimates at the block group level for Maricopa County.
@@ -183,15 +145,28 @@ cbg_raw <- get_acs(
   county    = "Maricopa",
   year      = 2023,
   survey    = "acs5",
-  geometry  = TRUE
+  geometry  = TRUE,
+  progress_bar = FALSE
 )
+
+# Fallback — uncomment if API unavailable:
+# cbg_raw <- readRDS("../data/cbg_extended_2023.rds")
+# OR via URL:
+# cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/cbg_extended_2023.rds"))
+# cbg_raw <- cbg_raw %>%
+#   mutate(variable = recode(variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
+#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
+#     median_income = "med_income",
+#     total_pop = "race_total", white_nh = "race_wnh",
+#     total_tenure = "tenure_total", renter_occ = "tenure_rent"))
 ```
 
 ## 1c. Reshape and compute rates
 
 ```{r}
 #| label: step.01c
-#| eval: false
 
 # Pivot from long to wide: one row per CBG, one column per variable.
 # We drop the margin of error column since we're working with estimates only.
@@ -252,7 +227,6 @@ hardship index and compare them side-by-side.
 
 ```{r}
 #| label: step.02a
-#| eval: false
 
 # ── Compute classification breaks using classInt ──────────────
 # classInt::classIntervals() takes a numeric vector and a method name,
@@ -270,7 +244,6 @@ brk_sd       <- classIntervals(hi_values, n = 5, style = "sd")
 
 ```{r}
 #| label: step.02b
-#| eval: false
 
 # ── Helper function to cut the index and produce a map ────────
 # This avoids repeating the same ggplot code four times.
@@ -303,7 +276,6 @@ make_class_map <- function(data, breaks_obj, method_label) {
 
 ```{r}
 #| label: step.02c
-#| eval: false
 #| fig-height: 10
 
 # ── Build 4 maps and arrange in a 2x2 grid ───────────────────
@@ -340,7 +312,6 @@ concentration are high --- areas of potential "double disadvantage."
 
 ```{r}
 #| label: step.03a
-#| eval: false
 
 # ── Create the bivariate classes using the biscale package ────
 # bi_class() takes a data frame and two variable names, and adds a
@@ -359,7 +330,6 @@ cbg_bi <- cbg %>%
 
 ```{r}
 #| label: step.03b
-#| eval: false
 #| fig-height: 8
 
 # ── Build the bivariate map ──────────────────────────────────
@@ -420,7 +390,6 @@ build the hardship index at all three scales and compare.
 
 ```{r}
 #| label: step.04a
-#| eval: false
 #| results: hide
 
 # ── Pull US county-level data ─────────────────────────────────
@@ -430,8 +399,20 @@ county_raw <- get_acs(
   variables = hardship_vars,
   year      = 2023,
   survey    = "acs5",
-  geometry  = TRUE
+  geometry  = TRUE,
+  progress_bar = FALSE
 )
+
+# Fallback — uncomment if API unavailable:
+# county_raw <- readRDS("../data/county_hardship_2023.rds")
+# OR via URL:
+# county_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/county_hardship_2023.rds"))
+# county_raw <- county_raw %>%
+#   mutate(variable = recode(variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
+#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
+#     median_income = "med_income"))
 
 # ── Pull AZ tract-level data ─────────────────────────────────
 # Census tracts within Arizona (~1,800 tracts).
@@ -441,13 +422,24 @@ tract_raw <- get_acs(
   state     = "AZ",
   year      = 2023,
   survey    = "acs5",
-  geometry  = TRUE
+  geometry  = TRUE,
+  progress_bar = FALSE
 )
+
+# Fallback — uncomment if API unavailable:
+# tract_raw <- readRDS("../data/az_tract_hardship_2023.rds")
+# OR via URL:
+# tract_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/az_tract_hardship_2023.rds"))
+# tract_raw <- tract_raw %>%
+#   mutate(variable = recode(variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
+#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
+#     median_income = "med_income"))
 ```
 
 ```{r}
 #| label: step.04b
-#| eval: false
 
 # ── Reshape and compute hardship index at each scale ──────────
 # We apply the same pipeline used for CBGs: pivot wide, compute rates,
@@ -486,17 +478,15 @@ tract_df  <- build_index(tract_raw)
 
 ```{r}
 #| label: step.04c
-#| eval: false
 #| fig-height: 5
 
 # ── National county map ───────────────────────────────────────
-# shift_geometry() moves Alaska and Hawaii for a clean CONUS layout.
-# We filter to lower 48 + DC for simplicity.
+# shift_geometry() moves Alaska and Hawaii into inset positions
+# for a clean national layout without filtering states out.
 
-county_lower48 <- county_df %>%
-  filter(!str_sub(GEOID, 1, 2) %in% c("02", "15", "72", "78", "66", "69", "60"))
+county_shifted <- shift_geometry(county_df)
 
-p_county <- ggplot(county_lower48) +
+p_county <- ggplot(county_shifted) +
   geom_sf(aes(fill = hardship_index), color = NA) +
   scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship") +
   coord_sf(datum = NA) +
@@ -506,7 +496,6 @@ p_county <- ggplot(county_lower48) +
 
 ```{r}
 #| label: step.04d
-#| eval: false
 #| fig-height: 5
 
 # ── Arizona tract map ────────────────────────────────────────
@@ -520,7 +509,6 @@ p_tract <- ggplot(tract_df) +
 
 ```{r}
 #| label: step.04e
-#| eval: false
 #| fig-height: 5
 
 # ── Maricopa CBG map ─────────────────────────────────────────
@@ -534,7 +522,6 @@ p_cbg <- ggplot(cbg) +
 
 ```{r}
 #| label: step.04f
-#| eval: false
 #| fig-height: 6
 
 # ── Combine the three scales into one figure ──────────────────
@@ -561,14 +548,13 @@ moderate at the tract level contain both very-high and very-low hardship CBGs.
 
 Static maps are great for print; interactive maps let users explore. Here we
 build an interactive GPU-rendered map of Maricopa County CBGs using `mapgl`.
-The `mapgl` package renders spatial data via MapLibre GL JS — producing smooth,
+The `mapgl` package renders spatial data via MapLibre GL JS --- producing smooth,
 fast, interactive maps even with thousands of polygons. We pass the sf object
 directly as a GeoJSON source so the map works in rendered HTML without a local
 tile server.
 
 ```{r}
 #| label: step.05a
-#| eval: false
 
 # ── Prepare data for mapgl ───────────────────────────────────
 # mapgl uses WGS84 (EPSG:4326) coordinate reference system.
@@ -587,9 +573,8 @@ cbg_map <- cbg %>%
 
 ```{r}
 #| label: step.05b
-#| eval: false
 
-# ── Build the interactive mapgl map ──────────────────────
+# ── Build the interactive mapgl map ──────────────────────────
 # maplibre() initializes a MapLibre GL JS map with a basemap style.
 # add_source() loads the sf object as GeoJSON directly — no local
 # tile server needed, so the map works in rendered HTML.
@@ -628,7 +613,6 @@ any `ggplot2` + `geom_sf()` map.
 
 ```{r}
 #| label: step.06
-#| eval: false
 #| fig-height: 8
 
 # ── Publication-ready map with scale bar and north arrow ──────
@@ -670,16 +654,14 @@ ggplot(cbg %>% filter(!is.na(hardship_index))) +
 
 ## Question 1 — Interpret: Classification and the Spatial Story
 
-Look at the 2x2 classification comparison from Step 2.
-
-**1a.** Which classification method makes economic hardship appear *most
-widespread* across Maricopa County? Which makes it appear *most concentrated*?
-
-> **YOUR ANSWER HERE**
-
-**1b.** In a policy memo arguing for increased funding to "high hardship" areas,
-which classification method would you choose and why? What about a memo arguing
-that hardship is *not* a widespread problem?
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 2 Assignment .qmd and rename it
+> with your last name (e.g. Lab2_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** Look at the 2x2 classification comparison from Step 2.
+> **1a.** Which classification method makes economic hardship appear *most widespread* across Maricopa County? Which makes it appear *most concentrated*?
+> **1b.** In a policy memo arguing for increased funding to "high hardship" areas, which classification method would you choose and why? What about a memo arguing that hardship is *not* a widespread problem?
 
 > **YOUR ANSWER HERE**
 
@@ -687,20 +669,21 @@ that hardship is *not* a widespread problem?
 
 ## Question 2 — Modify: Bivariate Map with Hardship x % Renter-Occupied
 
-Create a **second bivariate choropleth** using `hardship_index` and
-`pct_renter` (percent renter-occupied housing) instead of `pct_minority`.
-Show the complete code and output.
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 2 Assignment .qmd and rename it
+> with your last name (e.g. Lab2_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** Create a **second bivariate choropleth** using `hardship_index` and `pct_renter` (percent renter-occupied housing) instead of `pct_minority`. Show the complete code and output.
 
 ```{r}
 #| label: q2.a
-#| eval: false
 
 # YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2.b
-#| eval: false
 #| fig-height: 8
 
 # YOUR CODE HERE
@@ -710,15 +693,13 @@ Show the complete code and output.
 
 ## Question 3 — Interpret: Comparing the Two Bivariate Maps
 
-Look at the bivariate map from Step 3 (hardship x % minority) and your new map
-from Question 2 (hardship x % renter).
-
-**3a.** Do the same areas show "double disadvantage" in both maps? Or do the
-spatial patterns differ?
-
-> **YOUR ANSWER HERE**
-
-**3b.** What does this comparison tell you about the relationship between
-economic hardship, race/ethnicity, and housing tenure in Maricopa County?
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 2 Assignment .qmd and rename it
+> with your last name (e.g. Lab2_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** Look at the bivariate map from Step 3 (hardship x % minority) and your new map from Question 2 (hardship x % renter).
+> **3a.** Do the same areas show "double disadvantage" in both maps? Or do the spatial patterns differ?
+> **3b.** What does this comparison tell you about the relationship between economic hardship, race/ethnicity, and housing tenure in Maricopa County?
 
 > **YOUR ANSWER HERE**

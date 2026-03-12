@@ -1,5 +1,5 @@
 ---
-title: "Lab 03 — Lab Guide: Spatial Data Integration & Overlay Analysis"
+title: "Lab 3 | PAF 516"
 subtitle: "PAF 516 | M3 Assignment"
 format:
   html:
@@ -20,10 +20,24 @@ execute:
 #| include: false
 knitr::opts_chunk$set( echo = TRUE, message=F, warning=F, fig.width=10 )
 options( tigris_use_cache = TRUE )
+options( tigris_progress_bar = FALSE )
 ```
 
 ```{r}
 #| label: packages
+# ── Package Setup ──────────────────────────────────────────────────────
+# R packages update frequently and can break working code. We have saved
+# the exact package versions used to build this lab. Run the block below
+# ONCE the first time you open this file, then comment it out.
+if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+download.file(
+  url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/renv.lock",
+  destfile = "renv.lock", mode = "wb"
+)
+renv::restore(lockfile = "renv.lock", prompt = FALSE)
+# After running once, comment out the four lines above.
+# ───────────────────────────────────────────────────────────────────────
+
 # Core packages for this lab
 library( tidyverse )
 library( tidycensus )
@@ -35,29 +49,8 @@ library( psych )       # Cronbach's alpha
 
 ```{r}
 #| label: api-key
-#| eval: false
 # Uncomment and add your Census API key
 # census_api_key("YOUR KEY GOES HERE")
-```
-
-```{r}
-#| label: fallback-data
-#| eval: false
-
-# FALLBACK: Load pre-saved dataset if Census API is down
-# If the Census API is unavailable or you cannot get an API key,
-# uncomment ONE of the lines below to load pre-saved Maricopa
-# County CBG data. This contains raw Census variables in long
-# format — you will still build the index yourself.
-#
-# Local fallback:
-# cbg_raw <- readRDS( "../data/cbg_hardship_maricopa.rds" )
-#
-# GitHub URL fallback:
-# cbg_raw <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/data/cbg_hardship_maricopa.rds") )
-#
-# If using fallback data, skip the get_acs() call and proceed
-# directly to Step 2 (Build the Hardship Index).
 ```
 
 
@@ -68,7 +61,7 @@ In Labs 1 and 2 we worked at the tract and county level. Here we move to **censu
 ```{r}
 #| label: step.01-vars
 #| echo: true
-#| eval: false
+#| eval: true
 
 # Define our 5-variable economic hardship indicator set (same as Lab 1)
 hardship_vars <- c(
@@ -88,7 +81,7 @@ hardship_vars <- c(
 ```{r}
 #| label: step.01-pull
 #| echo: true
-#| eval: false
+#| eval: true
 #| results: hide
 
 # Pull CBG-level data with geometry for Maricopa County
@@ -99,7 +92,8 @@ cbg_raw <- get_acs(
   county    = "Maricopa",
   year      = 2023,
   survey    = "acs5",
-  geometry  = TRUE
+  geometry  = TRUE,
+  progress_bar = FALSE
 )
 
 # Fallback — uncomment if Census API is unavailable:
@@ -118,7 +112,7 @@ This mirrors Lab 1: pivot to wide format, compute rates, standardize to z-scores
 ```{r}
 #| label: step.02-wrangle
 #| echo: true
-#| eval: false
+#| eval: true
 
 # Pivot from long to wide
 cbg_wide <- cbg_raw %>%
@@ -159,7 +153,7 @@ cat( "Original 5-variable alpha:", round( alpha_val_orig, 3 ), "\n" )
 ```{r}
 #| label: step.02-index
 #| echo: true
-#| eval: false
+#| eval: true
 
 # Create the composite hardship index (row mean of z-scores)
 index_z$hardship_index <- rowMeans( index_z[ , 1:5 ], na.rm = TRUE )
@@ -179,7 +173,7 @@ This is the **new skill** in Lab 3. We bring in data from outside the Census —
 ```{r}
 #| label: step.03-facilities
 #| echo: true
-#| eval: false
+#| eval: true
 
 # Create a tibble of known environmental facilities in Maricopa County
 # Sources: EPA TRI Explorer, EPA Superfund site listings
@@ -251,7 +245,7 @@ The geometry column is the key that allows us to **join** data from completely d
 ```{r}
 #| label: step.04-crs
 #| echo: true
-#| eval: false
+#| eval: true
 
 # Convert facility tibble to sf point layer
 # Coordinates are in WGS 84 (EPSG:4326 — standard lat/lon)
@@ -283,7 +277,7 @@ A **spatial join** works just like `left_join()` or `inner_join()`, except the k
 ```{r}
 #| label: step.05-spatial-join
 #| echo: true
-#| eval: false
+#| eval: true
 
 # Spatial join: attach facility info to CBGs that contain them
 cbg_with_pts <- st_join( cbg_proj, facil_proj, join = st_contains )
@@ -313,7 +307,7 @@ Not all impacts stop at a polygon boundary. Pollution, noise, and truck traffic 
 ```{r}
 #| label: step.06-buffer
 #| echo: true
-#| eval: false
+#| eval: true
 
 # 1 mile = 5280 feet (EPSG:2868 units are US survey feet)
 buffer_dist <- 5280
@@ -336,7 +330,7 @@ cat( "CBGs within 1-mile buffer zone:",
 ```{r}
 #| label: step.06-buffer-map
 #| echo: true
-#| eval: false
+#| eval: true
 
 # Visualize the buffer zones with facilities and CBGs
 ggplot() +
@@ -364,7 +358,7 @@ Both are standardized and added to the index. We then recompute Cronbach's alpha
 ```{r}
 #| label: step.07-enriched
 #| echo: true
-#| eval: false
+#| eval: true
 
 # Build the enriched index with 7 variables
 enriched_vars <- cbg_proj %>%
@@ -390,7 +384,7 @@ cat( "Enriched 7-variable alpha:", round( alpha_val_enr, 3 ), "\n" )
 ```{r}
 #| label: step.07-alpha-detail
 #| echo: true
-#| eval: false
+#| eval: true
 
 # Print full alpha output to see item-level diagnostics
 print( alpha_enriched )
@@ -399,7 +393,7 @@ print( alpha_enriched )
 ```{r}
 #| label: step.07-compute-enriched
 #| echo: true
-#| eval: false
+#| eval: true
 
 # Create the enriched composite index
 enriched_z$enriched_index <- rowMeans( enriched_z[ , 1:7 ], na.rm = TRUE )
@@ -418,7 +412,7 @@ Side-by-side comparison of the original census-only hardship index vs. the spati
 ```{r}
 #| label: step.08-maps
 #| echo: true
-#| eval: false
+#| eval: true
 #| fig-width: 14
 #| fig-height: 7
 
@@ -458,7 +452,7 @@ p1 + p2 +
 ```{r}
 #| label: step.08-difference
 #| echo: true
-#| eval: false
+#| eval: true
 
 # Compute and map the difference: enriched minus original
 cbg_proj$index_diff <- cbg_proj$enriched_index - cbg_proj$hardship_index
@@ -485,19 +479,27 @@ ggplot( cbg_proj ) +
 
 ### Question 1: Interpret the Comparative Maps
 
-**Compare the original hardship index map to the enriched index map. Where do they disagree? What does spatial integration reveal that census-only analysis missed?**
-
-> YOUR ANSWER HERE
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 3 Assignment .qmd and rename it
+> with your last name (e.g. Lab3_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** Compare the original hardship index map to the enriched index map. Where do they disagree? What does spatial integration reveal that census-only analysis missed?
 
 
 ### Question 2: Modify — Change Buffer Distance to 0.5 Miles
 
-**Change the buffer distance from 1 mile to 0.5 miles. Recompute the enriched index and re-map. Show complete code and output.**
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 3 Assignment .qmd and rename it
+> with your last name (e.g. Lab3_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** Change the buffer distance from 1 mile to 0.5 miles. Recompute the enriched index and re-map. Show complete code and output.
 
 ```{r}
 #| label: q2-half-mile-buffer
 #| echo: true
-#| eval: false
+#| eval: true
 
 # YOUR CODE HERE
 ```
@@ -505,7 +507,7 @@ ggplot( cbg_proj ) +
 ```{r}
 #| label: q2-half-mile-maps
 #| echo: true
-#| eval: false
+#| eval: true
 #| fig-width: 14
 #| fig-height: 7
 
@@ -515,6 +517,9 @@ ggplot( cbg_proj ) +
 
 ### Question 3: Interpret the Modified Results (MAUP)
 
-**How sensitive are the results to buffer distance? What does this tell you about the Modifiable Areal Unit Problem (MAUP)?**
-
-> YOUR ANSWER HERE
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 3 Assignment .qmd and rename it
+> with your last name (e.g. Lab3_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** How sensitive are the results to buffer distance? What does this tell you about the Modifiable Areal Unit Problem (MAUP)?

@@ -1,5 +1,5 @@
 ---
-title: "Lab 04 — Lab Guide: Spatial Autocorrelation & Hot Spots"
+title: "Lab 4 | PAF 516"
 subtitle: "PAF 516 | M4 Assignment"
 format:
   html:
@@ -23,10 +23,23 @@ execute:
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10)
 
 options(tigris_use_cache = TRUE)   # Cache shapefiles so re-runs are fast
+options(tigris_progress_bar = FALSE)
 ```
 
 ```{r}
 #| label: packages
+# ── Package Setup ──────────────────────────────────────────────────────
+# R packages update frequently and can break working code. We have saved
+# the exact package versions used to build this lab. Run the block below
+# ONCE the first time you open this file, then comment it out.
+if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+download.file(
+  url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/renv.lock",
+  destfile = "renv.lock", mode = "wb"
+)
+renv::restore(lockfile = "renv.lock", prompt = FALSE)
+# After running once, comment out the four lines above.
+# ───────────────────────────────────────────────────────────────────────
 
 library(tidyverse)    # Data wrangling and ggplot2
 library(tidycensus)   # Pull ACS data with geometry
@@ -44,34 +57,6 @@ Moran's I tests, and classifying local clusters. Install it with
 `install.packages("spdep")` if you have not already.
 :::
 
-```{r}
-#| label: fallback-data
-#| eval: false
-
-# ── FALLBACK: Load pre-saved dataset if Census API is down ──────
-# If the Census API is unavailable or you cannot get an API key,
-# uncomment the lines below to load pre-saved Maricopa County CBG
-# data from GitHub. This contains raw Census variables in long
-# format — you will still build the index yourself.
-#
-# Local file:
-# cbg_raw <- readRDS("../data/cbg_hardship_maricopa_2023.rds")
-#
-# OR via URL:
-# cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/data/cbg_hardship_maricopa_2023.rds"))
-#
-# NOTE: The fallback .rds uses slightly different variable names.
-# After loading, recode them to match the named vector above:
-# cbg_raw <- cbg_raw %>%
-#   mutate(variable = recode(variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
-#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den"))
-#
-# If using fallback data, skip the get_acs() call and proceed
-# directly to the "Reshape from long to wide" step.
-```
-
 ---
 
 # Step 1: Pull Maricopa County CBG Data & Build Hardship Index
@@ -83,7 +68,7 @@ people), giving us finer spatial resolution to detect local clustering.
 
 ```{r}
 #| label: pull-data
-#| eval: false
+#| eval: true
 #| results: hide
 
 # Define the ACS variables for our economic hardship index.
@@ -110,7 +95,8 @@ cbg_raw <- get_acs(
   county    = "Maricopa",
   year      = 2023,
   survey    = "acs5",
-  geometry  = TRUE
+  geometry  = TRUE,
+  progress_bar = FALSE
 )
 
 # Fallback — uncomment if API unavailable:
@@ -129,7 +115,7 @@ cbg_raw <- get_acs(
 
 ```{r}
 #| label: build-index
-#| eval: false
+#| eval: true
 
 # Reshape from long to wide: one row per CBG, one column per variable
 cbg_wide <- cbg_raw %>%
@@ -167,7 +153,7 @@ cbg_index <- cbg_wide %>%
 
 ```{r}
 #| label: map-hardship-index
-#| eval: false
+#| eval: true
 #| fig-height: 8
 
 # Quick choropleth to see the spatial pattern before we test it statistically
@@ -200,7 +186,7 @@ relationships.
 
 ```{r}
 #| label: spatial-weights
-#| eval: false
+#| eval: true
 
 # CRITICAL: st_make_valid() fixes any geometry errors (self-intersections,
 # invalid rings) in the shapefile. Without this, poly2nb() will often fail
@@ -250,7 +236,7 @@ distributed, or dispersed?"
 
 ```{r}
 #| label: global-morans-i
-#| eval: false
+#| eval: true
 
 # moran.test() computes Global Moran's I and tests significance.
 # The null hypothesis is spatial randomness (CSR = complete spatial randomness).
@@ -266,7 +252,7 @@ moran_global
 
 ```{r}
 #| label: interpret-global
-#| eval: false
+#| eval: true
 
 # Extract key values for interpretation
 cat("Moran's I statistic:", round(moran_global$estimate["Moran I statistic"], 4), "\n")
@@ -297,7 +283,7 @@ The four quadrants define the type of spatial association for each observation:
 
 ```{r}
 #| label: moran-scatter-plot
-#| eval: false
+#| eval: true
 #| fig-height: 7
 
 # moran.plot() creates the scatter plot with quadrant lines at the means.
@@ -332,7 +318,7 @@ statistic into a value for **each CBG**, telling us:
 
 ```{r}
 #| label: lisa-analysis
-#| eval: false
+#| eval: true
 
 # localmoran() returns a matrix with one row per CBG and columns:
 #   Ii      = local Moran's I for that CBG
@@ -357,7 +343,7 @@ cbg_index$lag_hardship <- lag.listw(lw, cbg_index$hardship_index, zero.policy = 
 
 ```{r}
 #| label: lisa-classify
-#| eval: false
+#| eval: true
 
 # Classify each CBG into a LISA category based on two criteria:
 # 1. Statistical significance: p-value <= 0.05
@@ -408,7 +394,7 @@ This is the payoff map. Each CBG is colored by its LISA classification:
 
 ```{r}
 #| label: lisa-cluster-map
-#| eval: false
+#| eval: true
 #| fig-height: 9
 
 # Define the color scheme for LISA categories
@@ -448,7 +434,7 @@ ggplot(cbg_index) +
 
 ```{r}
 #| label: side-by-side
-#| eval: false
+#| eval: true
 #| fig-height: 8
 
 # Side-by-side comparison: raw hardship index vs. LISA clusters
@@ -478,46 +464,41 @@ at the 0.05 level.
 
 # Q1 — Interpret the Global Moran's I and LISA Results
 
-::: {.callout-important}
-## Question 1
-
-What is the Global Moran's I value and is it statistically significant?
-What does this tell you about the spatial distribution of hardship in
-Maricopa County? Identify 2--3 specific hot spot areas from the LISA map.
-:::
-
-*Write your answer here.*
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 4 Assignment .qmd and rename it
+> with your last name (e.g. Lab4_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** What is the Global Moran's I value and is it statistically significant? What does this tell you about the spatial distribution of hardship in Maricopa County? Identify 2--3 specific hot spot areas from the LISA map.
 
 ---
 
 # Q2 — Modify: LISA Analysis on Poverty Rate Alone
 
-::: {.callout-important}
-## Question 2
-
-Rerun the entire LISA analysis on a **single component variable** ---
-poverty rate alone --- instead of the composite hardship index. Show
-complete code for spatial weights, Global Moran's I, LISA classification,
-and the cluster map.
-:::
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 4 Assignment .qmd and rename it
+> with your last name (e.g. Lab4_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** Rerun the entire LISA analysis on a **single component variable** --- poverty rate alone --- instead of the composite hardship index. Show complete code for spatial weights, Global Moran's I, LISA classification, and the cluster map.
 
 ```{r}
 #| label: q2-poverty-morans
-#| eval: false
+#| eval: true
 
 # YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-poverty-lisa
-#| eval: false
+#| eval: true
 
 # YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-poverty-lisa-map
-#| eval: false
+#| eval: true
 #| fig-height: 9
 
 # YOUR CODE HERE
@@ -527,29 +508,26 @@ and the cluster map.
 
 # Q3 — Compare Poverty Hot Spots vs. Composite Index Hot Spots
 
-::: {.callout-important}
-## Question 3
-
-Compare the hot spot map for poverty alone vs. the composite hardship index.
-Do the hot spots shift? What does this tell you about whether the composite
-index captures spatial patterns differently than individual variables?
-:::
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 4 Assignment .qmd and rename it
+> with your last name (e.g. Lab4_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** Compare the hot spot map for poverty alone vs. the composite hardship index. Do the hot spots shift? What does this tell you about whether the composite index captures spatial patterns differently than individual variables?
 
 ```{r}
 #| label: q3-comparison-maps
-#| eval: false
+#| eval: true
 
 # YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q3-cross-tabulation
-#| eval: false
+#| eval: true
 
 # YOUR CODE HERE
 ```
-
-*Write your answer here.*
 
 ---
 

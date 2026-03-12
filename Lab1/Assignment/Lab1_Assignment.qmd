@@ -1,5 +1,5 @@
 ---
-title: "Lab 01 — Lab Guide: Measurement, Indexing & Multi-Scale Mapping"
+title: "Lab 1 | PAF 516"
 subtitle: "PAF 516 | M1 Assignment"
 format:
   html:
@@ -21,11 +21,25 @@ execute:
 #| include: false
 knitr::opts_chunk$set( echo = TRUE, message=F, warning=F, fig.width=10 )
 options( tigris_use_cache = TRUE )
+options( tigris_progress_bar = FALSE )
 ```
 
 
 ```{r}
 #| label: packages
+# ── Package Setup ──────────────────────────────────────────────────────
+# R packages update frequently and can break working code. We have saved
+# the exact package versions used to build this lab. Run the block below
+# ONCE the first time you open this file, then comment it out.
+if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+download.file(
+  url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/renv.lock",
+  destfile = "renv.lock", mode = "wb"
+)
+renv::restore(lockfile = "renv.lock", prompt = FALSE)
+# After running once, comment out the four lines above.
+# ───────────────────────────────────────────────────────────────────────
+
 # ── Packages ─────────────────────────────────────────
 # Load all required packages for data, mapping, and reliability analysis
 library( tidyverse )
@@ -41,14 +55,12 @@ library( patchwork )   # For combining multi-panel figures
 
 ```{r}
 #| label: api-key
-#| eval: false
 # Uncomment and add your Census API key
 # census_api_key("YOUR KEY GOES HERE")
 ```
 
 ```{r}
 #| label: fallback-data
-#| eval: false
 
 # ── FALLBACK: Load pre-built datasets if Census API is down ──────
 # If the Census API is unavailable or you cannot get an API key,
@@ -76,16 +88,14 @@ We build an **economic hardship index** using 5 census variables at the tract le
 
 ```{r}
 #| label: browse-variables
-#| eval: false
 
 # Browse available ACS variables to find relevant indicators
-vars_available <- load_variables( 2023, "acs5", cache = TRUE )
+# vars_available <- load_variables( 2023, "acs5", cache = TRUE )
 # View(vars_available)  # Use this interactively to search
 ```
 
 ```{r}
 #| label: step.01
-#| eval: false
 #| results: hide
 
 # Define our indicator variables for an "economic hardship" construct
@@ -111,7 +121,8 @@ CenDF <- get_acs(
   state     = "AZ",
   year      = 2023,
   survey    = "acs5",
-  geometry  = TRUE
+  geometry  = TRUE,
+  progress_bar = FALSE
 )
 
 # Fallback: load pre-built data if API unavailable
@@ -131,7 +142,6 @@ We now reshape the data from long to wide format, compute percentages from numer
 
 ```{r}
 #| label: step.02
-#| eval: false
 
 # Reshape from long to wide format using pivot_wider
 CenDF_wide <- CenDF %>%
@@ -186,7 +196,6 @@ index_z <- index_z %>%
 
 ```{r}
 #| label: step.03
-#| eval: false
 
 # Calculate Cronbach's alpha to assess whether our 5 items
 # consistently measure the same underlying construct
@@ -204,7 +213,6 @@ print( alpha_result )
 
 ```{r}
 #| label: alpha-summary
-#| eval: false
 
 # Extract the key alpha value for inline reporting
 alpha_value <- alpha_result$total$raw_alpha
@@ -216,7 +224,6 @@ cat( "Cronbach's alpha:", round( alpha_value, 3 ), "\n" )
 
 ```{r}
 #| label: step.04a
-#| eval: false
 
 # Correlation matrix of indicator variables
 cor_matrix <- cor( index_z, use = "complete.obs" )
@@ -238,7 +245,6 @@ All items should show positive correlations (after reverse-coding income), confi
 
 ```{r}
 #| label: step.04b
-#| eval: false
 
 # Create the composite index as the row mean of z-scores
 # This gives equal weight to each indicator
@@ -261,7 +267,6 @@ ggplot( index_z, aes( x = hardship_index ) ) +
 
 ```{r}
 #| label: step.04c
-#| eval: false
 
 # Add the index back to the spatial data for mapping
 # Match rows using the complete-case subset
@@ -278,7 +283,6 @@ We now pull the same 5 hardship variables at the **county level** for the entire
 
 ```{r}
 #| label: step.05-pull
-#| eval: false
 #| results: hide
 
 # Pull county-level data for the entire US
@@ -288,7 +292,8 @@ county_df <- get_acs(
   variables = hardship_vars,
   year      = 2023,
   survey    = "acs5",
-  geometry  = TRUE
+  geometry  = TRUE,
+  progress_bar = FALSE
 )
 
 # Fallback: load pre-built data if API unavailable
@@ -301,7 +306,6 @@ county_df <- get_acs(
 
 ```{r}
 #| label: step.05-index
-#| eval: false
 
 # Reshape county data from long to wide
 county_wide <- county_df %>%
@@ -336,7 +340,6 @@ county_complete$hardship_index <- county_index$hardship_index
 
 ```{r}
 #| label: step.05-map
-#| eval: false
 
 # Use shift_geometry to show Alaska and Hawaii as standard insets
 county_shifted <- shift_geometry( county_complete )
@@ -362,7 +365,6 @@ map_county
 
 ```{r}
 #| label: step.06-map
-#| eval: false
 
 # Map the hardship index across Arizona tracts
 map_tract <- ggplot( CenDF_complete ) +
@@ -386,7 +388,6 @@ We zoom in further to the **block group** level within Maricopa County. Block gr
 
 ```{r}
 #| label: step.07-pull
-#| eval: false
 #| results: hide
 
 # Pull block group data for Maricopa County
@@ -398,7 +399,8 @@ cbg_df <- get_acs(
   county    = "Maricopa",
   year      = 2023,
   survey    = "acs5",
-  geometry  = TRUE
+  geometry  = TRUE,
+  progress_bar = FALSE
 )
 
 # Fallback: load pre-built data if API unavailable
@@ -411,7 +413,6 @@ cbg_df <- get_acs(
 
 ```{r}
 #| label: step.07-index
-#| eval: false
 
 # Reshape and compute rates — same pipeline as tracts and counties
 cbg_wide <- cbg_df %>%
@@ -444,7 +445,6 @@ cbg_complete$hardship_index <- cbg_index$hardship_index
 
 ```{r}
 #| label: step.07-map
-#| eval: false
 
 # Block-group-level hardship map for Maricopa County
 map_cbg <- ggplot( cbg_complete ) +
@@ -468,7 +468,6 @@ Using `patchwork`, we place all three maps side by side to compare how spatial p
 
 ```{r}
 #| label: step.08-patchwork
-#| eval: false
 #| fig-width: 16
 #| fig-height: 6
 
@@ -508,7 +507,6 @@ The code below saves the three completed spatial datasets as `.rds` files. These
 
 ```{r}
 #| label: save-datasets
-#| eval: false
 
 # Save the three completed spatial datasets for offline use
 # Each file includes: GEOID, NAME, all census variables, computed rates,
@@ -528,7 +526,12 @@ cat( "  hardship_cbg_maricopa.rds  —", nrow(cbg_complete), "block groups\n" )
 
 ### Q1 — Interpret
 
-**What is the Cronbach's alpha? Is it acceptable (>0.7)? Looking at the 3-scale maps, where is hardship concentrated nationally? How does the spatial pattern change as you zoom from counties to tracts to CBGs?**
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 1 Assignment .qmd and rename it
+> with your last name (e.g. Lab1_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** What is the Cronbach's alpha? Is it acceptable (>0.7)? Looking at the 3-scale maps, where is hardship concentrated nationally? How does the spatial pattern change as you zoom from counties to tracts to CBGs?
 
 - **Alpha**: [YOUR ANSWER HERE]
 
@@ -539,11 +542,15 @@ cat( "  hardship_cbg_maricopa.rds  —", nrow(cbg_complete), "block groups\n" )
 
 ### Q2 — Modify (FULL CODE AND OUTPUT REQUIRED)
 
-**Add a 6th variable to the hardship index — percent receiving SNAP benefits (B22010_002 / B22010_001). Re-pull data at the tract level, recompute Cronbach's alpha with 6 variables, rebuild the index, and re-map at the tract level.**
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 1 Assignment .qmd and rename it
+> with your last name (e.g. Lab1_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** Add a 6th variable to the hardship index — percent receiving SNAP benefits (B19058_002 / B19058_001). Re-pull data at the tract level, recompute Cronbach's alpha with 6 variables, rebuild the index, and re-map at the tract level.
 
 ```{r}
 #| label: q2-pull
-#| eval: false
 #| results: hide
 
 # YOUR CODE HERE
@@ -551,14 +558,12 @@ cat( "  hardship_cbg_maricopa.rds  —", nrow(cbg_complete), "block groups\n" )
 
 ```{r}
 #| label: q2-index
-#| eval: false
 
 # YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-map
-#| eval: false
 
 # YOUR CODE HERE
 ```
@@ -566,7 +571,12 @@ cat( "  hardship_cbg_maricopa.rds  —", nrow(cbg_complete), "block groups\n" )
 
 ### Q3 — Interpret Modified
 
-**Did adding SNAP improve or weaken Cronbach's alpha? Compare the 5-variable map to the 6-variable map. Should you keep the 6th variable? Why or why not?**
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 1 Assignment .qmd and rename it
+> with your last name (e.g. Lab1_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** Did adding SNAP improve or weaken Cronbach's alpha? Compare the 5-variable map to the 6-variable map. Should you keep the 6th variable? Why or why not?
 
 - **Alpha comparison**: [YOUR ANSWER HERE]
 

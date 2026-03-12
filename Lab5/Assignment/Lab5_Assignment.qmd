@@ -1,5 +1,5 @@
 ---
-title: "Lab 05 — Lab Guide: Temporal Change Analysis"
+title: "Lab 5 | PAF 516"
 subtitle: "PAF 516 | M5 Assignment"
 format:
   html:
@@ -21,11 +21,25 @@ execute:
 #| include: false
 knitr::opts_chunk$set( echo = TRUE, message=F, warning=F, fig.width=10 )
 options( tigris_use_cache = TRUE )
+options( tigris_progress_bar = FALSE )
 ```
 
 
 ```{r}
 #| label: packages
+# ── Package Setup ──────────────────────────────────────────────────────
+# R packages update frequently and can break working code. We have saved
+# the exact package versions used to build this lab. Run the block below
+# ONCE the first time you open this file, then comment it out.
+if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+download.file(
+  url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/renv.lock",
+  destfile = "renv.lock", mode = "wb"
+)
+renv::restore(lockfile = "renv.lock", prompt = FALSE)
+# After running once, comment out the four lines above.
+# ───────────────────────────────────────────────────────────────────────
+
 # ── Packages ─────────────────────────────────────────
 library( tidyverse )
 library( tidycensus )
@@ -36,43 +50,8 @@ library( patchwork )
 
 ```{r}
 #| label: api-key
-#| eval: false
 # Uncomment and add your Census API key
 # census_api_key("YOUR KEY GOES HERE")
-```
-
-```{r}
-#| label: fallback-data
-#| eval: false
-
-# ── FALLBACK: Load pre-saved datasets if Census API is down ──────
-# If the Census API is unavailable or you cannot get an API key,
-# uncomment the lines below to load pre-saved data from GitHub.
-# These contain raw Census variables in long format — you will
-# still build the index yourself.
-#
-# ── Period 1 (2011-2015) — Maricopa CBGs:
-# cbg_2015 <- readRDS( "../data/cbg_hardship_2015.rds" )
-# OR via URL:
-# cbg_2015 <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/data/cbg_hardship_2015.rds") )
-# cbg_2015 <- cbg_2015 %>%
-#   mutate( variable = recode( variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
-#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
-#
-# ── Period 2 (2019-2023) — Maricopa CBGs:
-# cbg_2023 <- readRDS( "../data/cbg_hardship_2023.rds" )
-# OR via URL:
-# cbg_2023 <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/data/cbg_hardship_2023.rds") )
-# cbg_2023 <- cbg_2023 %>%
-#   mutate( variable = recode( variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
-#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
-#
-# If using fallback data, skip the get_acs() calls and proceed
-# directly to Step 2 (Build Hardship Index for Each Period).
 ```
 
 
@@ -96,7 +75,6 @@ We use the same 5 economic hardship variables from Lab 1. One important note: th
 
 ```{r}
 #| label: step.01-vars
-#| eval: false
 
 # ── Define hardship variables ──────────────────────────
 # These are the SAME 5 indicators from Lab 1.
@@ -117,39 +95,61 @@ hardship_vars <- c(
 
 ```{r}
 #| label: step.01-pull-p1
-#| eval: false
 #| results: hide
 
 # ── Pull Period 1: 2011-2015 ACS ──────────────────────
 # We pull Maricopa County block group (CBG) data for the earlier period.
 # geometry = TRUE gives us spatial boundaries for mapping.
 cbg_2015 <- get_acs(
-  geography = "block group",
-  variables = hardship_vars,
-  state     = "AZ",
-  county    = "Maricopa",
-  year      = 2015,
-  survey    = "acs5",
-  geometry  = TRUE
+  geography    = "block group",
+  variables    = hardship_vars,
+  state        = "AZ",
+  county       = "Maricopa",
+  year         = 2015,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
 )
+
+# Fallback — uncomment if API unavailable:
+# cbg_2015 <- readRDS( "../data/cbg_hardship_2015.rds" )
+# OR via URL:
+# cbg_2015 <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/data/cbg_hardship_2015.rds") )
+# NOTE: Fallback data uses pct_ prefix on some variable names. Recode to match:
+# cbg_2015 <- cbg_2015 %>%
+#   mutate( variable = recode( variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
+#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
 ```
 
 ```{r}
 #| label: step.01-pull-p2
-#| eval: false
 #| results: hide
 
 # ── Pull Period 2: 2019-2023 ACS ──────────────────────
 # Same variables, same geography, different time period.
 cbg_2023 <- get_acs(
-  geography = "block group",
-  variables = hardship_vars,
-  state     = "AZ",
-  county    = "Maricopa",
-  year      = 2023,
-  survey    = "acs5",
-  geometry  = TRUE
+  geography    = "block group",
+  variables    = hardship_vars,
+  state        = "AZ",
+  county       = "Maricopa",
+  year         = 2023,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
 )
+
+# Fallback — uncomment if API unavailable:
+# cbg_2023 <- readRDS( "../data/cbg_hardship_2023.rds" )
+# OR via URL:
+# cbg_2023 <- readRDS( url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/data/cbg_hardship_2023.rds") )
+# NOTE: Fallback data uses pct_ prefix on some variable names. Recode to match:
+# cbg_2023 <- cbg_2023 %>%
+#   mutate( variable = recode( variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "no_hs_num", pct_no_hs_den = "no_hs_den",
+#     pct_no_ins_num = "no_ins_num", pct_no_ins_den = "no_ins_den" ) )
 ```
 
 
@@ -159,7 +159,6 @@ We now reshape each dataset from long to wide, compute rates, standardize to z-s
 
 ```{r}
 #| label: step.02-function
-#| eval: false
 
 # ── Reusable function to build the hardship index ─────
 # Rather than copy-pasting the same code twice, we write a function.
@@ -208,7 +207,6 @@ build_hardship_index <- function( df ) {
 
 ```{r}
 #| label: step.02-build
-#| eval: false
 
 # ── Build index for both periods ──────────────────────
 cbg_2015_idx <- build_hardship_index( cbg_2015 )
@@ -225,7 +223,6 @@ Census block group boundaries can change between decennial censuses. The 2015 AC
 
 ```{r}
 #| label: step.03-join
-#| eval: false
 
 # ── Join the two periods by GEOID ─────────────────────
 # We extract just the GEOID and hardship_index from each period,
@@ -255,7 +252,6 @@ The change score is simply the difference between the two period indices. A **po
 
 ```{r}
 #| label: step.04-change
-#| eval: false
 
 # ── Compute the change score ──────────────────────────
 # Positive change = hardship worsened over time
@@ -266,7 +262,6 @@ change_df <- change_df %>%
 
 ```{r}
 #| label: step.04-summary
-#| eval: false
 
 # ── Summary statistics of the change distribution ─────
 cat( "── Summary of Hardship Change Scores ──\n" )
@@ -293,7 +288,6 @@ cat( "CBGs with no change:           ", n_stable, " (",
 
 ```{r}
 #| label: step.04-histogram
-#| eval: false
 
 # ── Histogram of change scores ────────────────────────
 # The distribution shows whether change is symmetric or skewed.
@@ -322,7 +316,6 @@ For change maps, we use a **diverging color palette** centered at zero. Blue = i
 
 ```{r}
 #| label: step.05-change-map
-#| eval: false
 #| fig-width: 10
 #| fig-height: 8
 
@@ -359,7 +352,6 @@ We create a three-panel figure: the hardship index for Period 1, the index for P
 
 ```{r}
 #| label: step.06-sidebyside
-#| eval: false
 #| fig-width: 16
 #| fig-height: 6
 
@@ -408,7 +400,6 @@ To give concrete examples, we identify the CBGs with the largest increases and d
 
 ```{r}
 #| label: step.07-top10
-#| eval: false
 
 # ── CBGs with the largest hardship INCREASES ──────────
 cat( "── Top 10 CBGs with Greatest Hardship INCREASE ──\n" )
@@ -437,6 +428,13 @@ change_df %>%
 
 **What is the overall direction of change — is hardship generally increasing or decreasing across Maricopa County CBGs? Are the patterns from Lab 4 (hot spots) worsening, improving, or stable?**
 
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 5 Assignment .qmd and rename it
+> with your last name (e.g. Lab5_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** What is the overall direction of change — is hardship generally increasing or decreasing across Maricopa County CBGs? Are the patterns from Lab 4 (hot spots) worsening, improving, or stable?
+
 *YOUR ANSWER HERE*
 
 
@@ -444,45 +442,45 @@ change_df %>%
 
 **Rerun the temporal change analysis at the Arizona TRACT level (`geography = "tract"`, `state = "AZ"`) instead of Maricopa CBGs. Pull both periods, compute the change score, and map statewide. Show complete code and output.**
 
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 5 Assignment .qmd and rename it
+> with your last name (e.g. Lab5_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** Rerun the temporal change analysis at the Arizona TRACT level (`geography = "tract"`, `state = "AZ"`) instead of Maricopa CBGs. Pull both periods, compute the change score, and map statewide. Show complete code and output.
+
 ```{r}
 #| label: q2-pull-p1
-#| eval: false
 # YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-pull-p2
-#| eval: false
 # YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-build-index
-#| eval: false
 # YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-join
-#| eval: false
 # YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-summary
-#| eval: false
 # YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-change-map
-#| eval: false
 # YOUR CODE HERE
 ```
 
 ```{r}
 #| label: q2-sidebyside
-#| eval: false
 # YOUR CODE HERE
 ```
 
@@ -490,5 +488,12 @@ change_df %>%
 ### Q3 — Interpret Modified
 
 **Compare the statewide tract map to the Maricopa CBG map. Does the statewide view reveal different patterns? Where is change most concentrated? What does the scale comparison reveal?**
+
+> **This question requires you to modify the code from the steps above.**
+> Recommendation: re-download the Lab 5 Assignment .qmd and rename it
+> with your last name (e.g. Lab5_Assignment_Howell.qmd) before editing.
+> This preserves the master copy as a reference.
+>
+> **Instructions:** Compare the statewide tract map to the Maricopa CBG map. Does the statewide view reveal different patterns? Where is change most concentrated? What does the scale comparison reveal?
 
 *YOUR ANSWER HERE*

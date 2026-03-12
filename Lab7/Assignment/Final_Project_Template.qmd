@@ -1,5 +1,5 @@
 ---
-title: "Economic Hardship Dashboard — [YOUR NAME]"
+title: "Lab 7 | PAF 516"
 format:
   dashboard:
     theme:
@@ -16,10 +16,24 @@ execute:
 #| label: setup
 knitr::opts_chunk$set( echo = FALSE, message = FALSE, warning = FALSE )
 options( tigris_use_cache = TRUE )
+options( tigris_progress_bar = FALSE )
 ```
 
 ```{r}
 #| label: packages
+# ── Package Setup ──────────────────────────────────────────────────────
+# R packages update frequently and can break working code. We have saved
+# the exact package versions used to build this lab. Run the block below
+# ONCE the first time you open this file, then comment it out.
+if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+download.file(
+  url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/renv.lock",
+  destfile = "renv.lock", mode = "wb"
+)
+renv::restore(lockfile = "renv.lock", prompt = FALSE)
+# After running once, comment out the four lines above.
+# ───────────────────────────────────────────────────────────────────────
+
 # ── Packages ─────────────────────────────────────────
 # All packages needed for the dashboard. Install any you
 # do not already have with install.packages("package_name").
@@ -145,22 +159,24 @@ build_hardship_index <- function( df ) {
 #
 # Example for county data:
 # county_raw <- get_acs(
-#   geography = "county",
-#   variables = hardship_vars,
-#   year      = 2023,
-#   survey    = "acs5",
-#   geometry  = TRUE
+#   geography    = "county",
+#   variables    = hardship_vars,
+#   year         = 2023,
+#   survey       = "acs5",
+#   geometry     = TRUE,
+#   progress_bar = FALSE
 # )
 #
 # Example for Maricopa CBG data:
 # cbg_raw <- get_acs(
-#   geography = "block group",
-#   variables = hardship_vars,
-#   state     = "AZ",
-#   county    = "Maricopa",
-#   year      = 2023,
-#   survey    = "acs5",
-#   geometry  = TRUE
+#   geography    = "block group",
+#   variables    = hardship_vars,
+#   state        = "AZ",
+#   county       = "Maricopa",
+#   year         = 2023,
+#   survey       = "acs5",
+#   geometry     = TRUE,
+#   progress_bar = FALSE
 # )
 ```
 
