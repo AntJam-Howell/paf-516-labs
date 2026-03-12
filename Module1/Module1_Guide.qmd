@@ -253,52 +253,35 @@ ggplot(demo_data) +
 ```{r}
 #| label: demo-interactive-map
 #| echo: true
-#| eval: false
+#| eval: true
 library(mapgl)
-library(freestiler)
 library(sf)
 
 demo_data <- readRDS("data/hardship_cbg_maricopa.rds")
 
-# Step 1: Create vector tiles from sf object
-freestile(demo_data, "hardship.pmtiles",
-          layer_name = "hardship",
-          min_zoom = 3, max_zoom = 10)
-serve_tiles("hardship.pmtiles")
-
-# Step 2: Build the interactive map
 maplibre(
   style = openfreemap_style("positron"),
   bounds = st_bbox(demo_data)
 ) |>
-  add_pmtiles_source(
-    id = "hardship-src",
-    url = "http://localhost:8080/hardship.pmtiles",
-    promote_id = "GEOID"
+  add_source(
+    id   = "hardship-src",
+    type = "geojson",
+    data = demo_data
   ) |>
   add_fill_layer(
-    id = "hardship-fill",
+    id     = "hardship-fill",
     source = "hardship-src",
-    source_layer = "hardship",
     fill_color = interpolate(
       column = "hardship_index",
       values = c(-1, 0, 1, 2),
-      stops  = c("#1a9850", "#fee08b",
-                 "#d73027", "#67001f")
+      stops  = c("#1a9850", "#fee08b", "#d73027", "#67001f")
     ),
     fill_opacity = 0.7,
-    hover_options = list(fill_opacity = 1),
-    tooltip = concat(
-      "GEOID: ", get_column("GEOID"),
-      " | Hardship: ",
-      number_format(get_column("hardship_index"))
-    )
+    tooltip = "hardship_index"
   )
-
-# When finished: stop_server()
 ```
 
-*Note:* The `mapgl` interactive map requires a running tile server and renders in a browser session. Run this code interactively in RStudio to see the full interactive experience. The lab assignment uses `geom_sf` for graded static maps.
+*Note:* The `mapgl` interactive map uses a GeoJSON source and renders directly in the self-contained HTML. Zoom, pan, and hover over block groups to see hardship index values. The lab assignment uses `geom_sf` for graded static maps.
 
 **Package documentation:**
 
