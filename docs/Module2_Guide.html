@@ -3086,7 +3086,7 @@ width: 98%;
   <ul class="collapse">
   <li><a href="#the-biscale-package" id="toc-the-biscale-package" class="nav-link" data-scroll-target="#the-biscale-package">The biscale Package</a></li>
   </ul></li>
-  <li><a href="#section-3-interactive-maps-with-mapgl-freestiler" id="toc-section-3-interactive-maps-with-mapgl-freestiler" class="nav-link" data-scroll-target="#section-3-interactive-maps-with-mapgl-freestiler">Section 3: Interactive Maps with mapgl + freestiler</a></li>
+  <li><a href="#section-3-interactive-maps-with-mapgl" id="toc-section-3-interactive-maps-with-mapgl" class="nav-link" data-scroll-target="#section-3-interactive-maps-with-mapgl">Section 3: Interactive Maps with mapgl</a></li>
   <li><a href="#section-4-cartographic-design-principles" id="toc-section-4-cartographic-design-principles" class="nav-link" data-scroll-target="#section-4-cartographic-design-principles">Section 4: Cartographic Design Principles</a>
   <ul class="collapse">
   <li><a href="#core-principles" id="toc-core-principles" class="nav-link" data-scroll-target="#core-principles">Core Principles</a></li>
@@ -3098,7 +3098,7 @@ width: 98%;
   <li><a href="#recent-applications" id="toc-recent-applications" class="nav-link" data-scroll-target="#recent-applications">Recent Applications</a></li>
   <li><a href="#r-package-documentation" id="toc-r-package-documentation" class="nav-link" data-scroll-target="#r-package-documentation">R Package Documentation</a></li>
   </ul></li>
-  <li><a href="#lab-assignment" id="toc-lab-assignment" class="nav-link" data-scroll-target="#lab-assignment">Lab Assignment</a></li>
+  <li><a href="#lab-2" id="toc-lab-2" class="nav-link" data-scroll-target="#lab-2">Lab 2</a></li>
   <li><a href="#yellowdig-discussion" id="toc-yellowdig-discussion" class="nav-link" data-scroll-target="#yellowdig-discussion">Yellowdig Discussion</a></li>
   <li><a href="#key-terms" id="toc-key-terms" class="nav-link" data-scroll-target="#key-terms">Key Terms</a></li>
   </ul>
@@ -3135,7 +3135,7 @@ width: 98%;
 <section id="module-overview-and-objectives" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="module-overview-and-objectives">Module Overview and Objectives</h2>
 <p>In Module 1, you built a composite hardship index and mapped it with a basic choropleth. This module asks a deceptively important question: <strong>does the story your map tells change depending on how you classify the data?</strong> The answer is yes — and the differences can be dramatic. A map using equal intervals may hide inequality that a quantile map reveals. A Jenks natural breaks map emphasizes clusters that a standard deviation map smooths away.</p>
-<p>Beyond classification, this module introduces <strong>bivariate choropleth maps</strong> that display two variables simultaneously, <strong>interactive web maps</strong> with mapgl + freestiler that let users explore data on demand, and cartographic design principles that separate professional-quality maps from default output. You will move from “making a map” to <em>designing a visual argument</em>.</p>
+<p>Beyond classification, this module introduces <strong>bivariate choropleth maps</strong> that display two variables simultaneously, <strong>interactive web maps</strong> with <code>mapgl</code> that let users explore data on demand, and cartographic design principles that separate professional-quality maps from default output. You will move from “making a map” to <em>designing a visual argument</em>.</p>
 <hr>
 <p>After completing this module, you will be able to:</p>
 <ul>
@@ -3215,13 +3215,13 @@ width: 98%;
 <p><strong>Design consideration:</strong> Bivariate choropleths are powerful but cognitively demanding. Always include a clear legend and limit the classification to 3x3 (not 4x4 or 5x5) to keep the map interpretable.</p>
 </section>
 </section>
-<section id="section-3-interactive-maps-with-mapgl-freestiler" class="level2 section-box">
-<h2 class="anchored" data-anchor-id="section-3-interactive-maps-with-mapgl-freestiler">Section 3: Interactive Maps with mapgl + freestiler</h2>
+<section id="section-3-interactive-maps-with-mapgl" class="level2 section-box">
+<h2 class="anchored" data-anchor-id="section-3-interactive-maps-with-mapgl">Section 3: Interactive Maps with mapgl</h2>
 <p>Static maps are essential for reports and publications, but <strong>interactive maps</strong> let users explore data at their own pace — zooming in on neighborhoods, hovering over polygons for details, and experiencing smooth GPU-rendered performance.</p>
-<p>The <code>mapgl</code> package renders interactive maps via MapLibre GL JS, and <code>freestiler</code> converts sf objects to PMTiles vector tiles for efficient loading. Key features include:</p>
+<p>The <code>mapgl</code> package renders interactive maps via MapLibre GL JS. Spatial data is passed directly as GeoJSON — no external tile server required. Key features include:</p>
 <ul>
 <li><strong>Basemap styles</strong>: Choose from OpenFreeMap styles (positron, bright, dark) via <code>openfreemap_style()</code></li>
-<li><strong>Vector tile layers</strong>: Create PMTiles with <code>freestile()</code> and add them with <code>add_pmtiles_source()</code></li>
+<li><strong>GeoJSON source</strong>: Pass sf objects directly with <code>add_source(type = &quot;geojson&quot;, data = sf_object)</code></li>
 <li><strong>Fill layers</strong>: Color polygons by variable values using <code>add_fill_layer()</code> with <code>interpolate()</code></li>
 <li><strong>Tooltips and hover</strong>: Display data values on hover using <code>tooltip</code> and <code>hover_options</code></li>
 <li><strong>GPU acceleration</strong>: Handles block-group-level data (thousands of polygons) smoothly</li>
@@ -3271,22 +3271,17 @@ width: 98%;
 <li><a href="https://r-spatial.github.io/classInt/">classInt package documentation</a> — Classification interval algorithms</li>
 <li><a href="https://chris-prener.github.io/biscale/">biscale package documentation</a> — Bivariate choropleth tools</li>
 <li><a href="https://walker-data.com/mapgl/">mapgl package documentation</a> — Interactive GPU-rendered maps</li>
-<li><a href="https://walker-data.com/freestiler/">freestiler package documentation</a> — Vector tile generation from sf objects</li>
 <li><a href="https://paleolimbot.github.io/ggspatial/">ggspatial package documentation</a> — Scale bars, north arrows, and cartographic annotation</li>
 </ul>
 </section>
 </section>
-<section id="lab-assignment" class="level2 section-box">
-<h2 class="anchored" data-anchor-id="lab-assignment">Lab Assignment</h2>
-<p>In Lab 02, you will take the hardship index you built in Lab 01 and apply advanced cartographic techniques to visualize it. Specifically, you will:</p>
-<ol type="1">
-<li><strong>Compare classification methods</strong>: Map the hardship index using all four methods (equal interval, quantile, Jenks, standard deviation) as small multiples and write a brief analysis of how each changes the visual story</li>
-<li><strong>Create a bivariate choropleth</strong>: Use <code>biscale</code> to map the relationship between two variables from your index (e.g., poverty rate and unemployment) in a single visualization</li>
-<li><strong>Build an interactive mapgl map</strong>: Create a GPU-rendered interactive map of your hardship index with tooltips showing CBG-level data and hover effects</li>
-<li><strong>Apply cartographic best practices</strong>: Add scale bars, north arrows, titles, and source annotations using <code>ggspatial</code></li>
-</ol>
-<p><strong>Connection to Lab 01:</strong> You will load the hardship index data from Lab 01. If you have not completed Lab 01, you will not be able to proceed.</p>
-<p><strong>Download:</strong> <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/Assignment/Lab2_Assignment.qmd">Lab2_Assignment.qmd</a></p>
+<section id="lab-2" class="level2 section-box">
+<h2 class="anchored" data-anchor-id="lab-2">Lab 2</h2>
+<p>The Lab 2 materials are on the course lab site.</p>
+<ul>
+<li><strong><a href="https://antjam-howell.github.io/paf-516-labs/lab2-tutorial.html">Lab 2 Tutorial</a></strong> — Download the tutorial file, knit it to see the complete analysis, then run chunk by chunk to understand each step.</li>
+<li><strong><a href="https://antjam-howell.github.io/paf-516-labs/lab2-assignment.html">Lab 2 Assignment</a></strong> — Download the assignment file, rename it with your last name, complete the three questions, and submit to Canvas.</li>
+</ul>
 </section>
 <section id="yellowdig-discussion" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="yellowdig-discussion">Yellowdig Discussion</h2>

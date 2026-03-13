@@ -28,7 +28,7 @@ execute:
 
 In Module 1, you built a composite hardship index and mapped it with a basic choropleth. This module asks a deceptively important question: **does the story your map tells change depending on how you classify the data?** The answer is yes --- and the differences can be dramatic. A map using equal intervals may hide inequality that a quantile map reveals. A Jenks natural breaks map emphasizes clusters that a standard deviation map smooths away.
 
-Beyond classification, this module introduces **bivariate choropleth maps** that display two variables simultaneously, **interactive web maps** with mapgl + freestiler that let users explore data on demand, and cartographic design principles that separate professional-quality maps from default output. You will move from "making a map" to *designing a visual argument*.
+Beyond classification, this module introduces **bivariate choropleth maps** that display two variables simultaneously, **interactive web maps** with `mapgl` that let users explore data on demand, and cartographic design principles that separate professional-quality maps from default output. You will move from "making a map" to *designing a visual argument*.
 
 ---
 
@@ -89,14 +89,14 @@ The legend is created separately and composed with the map using `cowplot` or `p
 
 ::: {.section-box}
 
-## Section 3: Interactive Maps with mapgl + freestiler
+## Section 3: Interactive Maps with mapgl
 
 Static maps are essential for reports and publications, but **interactive maps** let users explore data at their own pace --- zooming in on neighborhoods, hovering over polygons for details, and experiencing smooth GPU-rendered performance.
 
-The `mapgl` package renders interactive maps via MapLibre GL JS, and `freestiler` converts sf objects to PMTiles vector tiles for efficient loading. Key features include:
+The `mapgl` package renders interactive maps via MapLibre GL JS. Spatial data is passed directly as GeoJSON --- no external tile server required. Key features include:
 
 - **Basemap styles**: Choose from OpenFreeMap styles (positron, bright, dark) via `openfreemap_style()`
-- **Vector tile layers**: Create PMTiles with `freestile()` and add them with `add_pmtiles_source()`
+- **GeoJSON source**: Pass sf objects directly with `add_source(type = "geojson", data = sf_object)`
 - **Fill layers**: Color polygons by variable values using `add_fill_layer()` with `interpolate()`
 - **Tooltips and hover**: Display data values on hover using `tooltip` and `hover_options`
 - **GPU acceleration**: Handles block-group-level data (thousands of polygons) smoothly
@@ -158,25 +158,18 @@ The `ggspatial` package adds professional cartographic elements to ggplot maps: 
 - [classInt package documentation](https://r-spatial.github.io/classInt/) --- Classification interval algorithms
 - [biscale package documentation](https://chris-prener.github.io/biscale/) --- Bivariate choropleth tools
 - [mapgl package documentation](https://walker-data.com/mapgl/) --- Interactive GPU-rendered maps
-- [freestiler package documentation](https://walker-data.com/freestiler/) --- Vector tile generation from sf objects
 - [ggspatial package documentation](https://paleolimbot.github.io/ggspatial/) --- Scale bars, north arrows, and cartographic annotation
 
 :::
 
 ::: {.section-box}
 
-## Lab Assignment
+## Lab 2
 
-In Lab 02, you will take the hardship index you built in Lab 01 and apply advanced cartographic techniques to visualize it. Specifically, you will:
+The Lab 2 materials are on the course lab site.
 
-1. **Compare classification methods**: Map the hardship index using all four methods (equal interval, quantile, Jenks, standard deviation) as small multiples and write a brief analysis of how each changes the visual story
-2. **Create a bivariate choropleth**: Use `biscale` to map the relationship between two variables from your index (e.g., poverty rate and unemployment) in a single visualization
-3. **Build an interactive mapgl map**: Create a GPU-rendered interactive map of your hardship index with tooltips showing CBG-level data and hover effects
-4. **Apply cartographic best practices**: Add scale bars, north arrows, titles, and source annotations using `ggspatial`
-
-**Connection to Lab 01:** You will load the hardship index data from Lab 01. If you have not completed Lab 01, you will not be able to proceed.
-
-**Download:** [Lab2_Assignment.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/Assignment/Lab2_Assignment.qmd)
+- **[Lab 2 Tutorial](https://antjam-howell.github.io/paf-516-labs/lab2-tutorial.html)** — Download the tutorial file, knit it to see the complete analysis, then run chunk by chunk to understand each step.
+- **[Lab 2 Assignment](https://antjam-howell.github.io/paf-516-labs/lab2-assignment.html)** — Download the assignment file, rename it with your last name, complete the three questions, and submit to Canvas.
 
 :::
 

@@ -1,11 +1,12 @@
 ---
-title: "Lab 2 | PAF 516"
-subtitle: "PAF 516 | M2 Assignment"
+title: "Lab 2 Assignment | PAF 516"
+subtitle: "Cartographic Design & Interactive Mapping"
 format:
   html:
     theme: readable
     highlight-style: tango
     toc: true
+    toc-title: "Steps & Questions"
     self-contained: true
     number-sections: false
 execute:
@@ -14,6 +15,16 @@ execute:
   message: false
   fig-width: 10
 ---
+
+::: {.callout-important}
+## Before you begin
+1. Rename this file: `Lab2_Assignment_YourLastName.qmd`
+2. Open the renamed copy — never edit the original
+3. Run the `packages` chunk first (Cmd+Return / Ctrl+Enter) — this installs packages and may take 5–10 minutes the first time
+4. Knit the file (Cmd+Shift+K / Ctrl+Shift+K) to see the completed Steps 1–6 before editing
+5. Fill in Q1, Q2, and Q3, then knit again and submit both `.qmd` and rendered `.html` to Canvas
+:::
+
 
 ```{r}
 #| label: setup
@@ -25,47 +36,21 @@ options(tigris_use_cache = TRUE)
 options(tigris_progress_bar = FALSE)
 ```
 
-# Overview
-
-In Lab 1 you built a 5-variable **economic hardship index** and mapped it
-across Maricopa County census tracts. That map used a single color ramp with
-default classification breaks --- sensible defaults, but defaults nonetheless.
-
-This lab asks a sharper question: **how do cartographic choices shape the
-analytical story?** The same data can look dramatically different depending on
-how you classify values, what you pair them with, and what geographic scale you
-use. By the end of this lab you will be able to:
-
-1. Apply four classification methods (quantile, Jenks, equal interval, standard
-   deviation) and explain how each changes the visual narrative.
-2. Create a **bivariate choropleth** that maps *two* variables simultaneously.
-3. Build **small-multiple** maps that compare patterns across geographic scales.
-4. Produce an **interactive mapgl map** with tooltips, hover effects, and
-   GPU-rendered vector tiles.
-
-**New packages introduced**: `classInt`, `biscale`, `mapgl`,
-`ggspatial`, `patchwork`.
-
----
-
-# Required Packages
 
 ```{r}
 #| label: packages
 # ── Package Setup ──────────────────────────────────────────────────────
-# R packages update frequently and can break working code. We have saved
-# the exact package versions used to build this lab. Run the block below
-# ONCE the first time you open this file, then comment it out.
+# Run this chunk ONCE the first time you open this file.
+# It downloads the exact package versions used to build this lab.
+# After it finishes, comment out the four renv lines below.
 if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
 download.file(
   url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/renv.lock",
   destfile = "renv.lock", mode = "wb"
 )
 renv::restore(lockfile = "renv.lock", prompt = FALSE)
-# After running once, comment out the four lines above.
-# ───────────────────────────────────────────────────────────────────────
+# ── After running once, comment out the four lines above ───────────────
 
-# ── Load packages ─────────────────────────────────────────────
 # Core data & spatial
 library(tidyverse)
 library(tidycensus)
@@ -76,7 +61,6 @@ library(tigris)     # For shift_geometry (AK/HI insets)
 library(classInt)    # Classification algorithms (Jenks, quantile, etc.)
 library(biscale)     # Bivariate choropleth palette + legend
 library(mapgl)       # Interactive GPU-rendered maps via MapLibre GL JS
-# library(freestiler)  # Not needed — mapgl uses GeoJSON source directly
 library(ggspatial)   # Scale bars and north arrows for ggplot maps
 library(patchwork)   # Combine multiple ggplots into one figure
 library(viridis)     # Perceptually uniform color scales
@@ -84,12 +68,35 @@ library(viridis)     # Perceptually uniform color scales
 
 ```{r}
 #| label: api-key
-
-# Uncomment once and restart R — your key is stored permanently
-# census_api_key("YOUR KEY GOES HERE", install = TRUE)
+# Get a free Census API key at: https://api.census.gov/data/key_signup.html
+# After receiving your key by email, run this line ONCE in the RStudio console:
+# census_api_key("YOUR_KEY_HERE", install = TRUE)
+# Then restart R: Session → Restart R
+# You only need to do this once — the key is saved to your .Renviron file.
 ```
 
----
+```{r}
+#| label: fallback-data
+# ── FALLBACK: If Census API is unavailable ─────────────────────────────
+# Pre-built .rds files are available for each data pull step.
+# See the commented fallback lines in Step 1b (CBG data) and
+# Step 4a (county + tract data). Uncomment the readRDS() lines
+# and skip the get_acs() calls in those steps.
+#
+# Option A — from local file (save .rds files to PAF516/Lab2/data/ first):
+# cbg_raw      <- readRDS("../data/cbg_extended_2023.rds")
+# county_raw   <- readRDS("../data/county_hardship_2023.rds")
+# tract_raw    <- readRDS("../data/az_tract_hardship_2023.rds")
+#
+# Option B — directly from GitHub:
+# cbg_raw      <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/cbg_extended_2023.rds"))
+# county_raw   <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/county_hardship_2023.rds"))
+# tract_raw    <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/az_tract_hardship_2023.rds"))
+#
+# If using fallback data, skip the get_acs() calls in Steps 1b and 4a,
+# then continue from Step 1c.
+```
+
 
 # Step 1: Pull Data & Build the Hardship Index
 
@@ -210,7 +217,6 @@ cat("Hardship index range:",
     round(max(cbg$hardship_index, na.rm = TRUE), 2), "\n")
 ```
 
----
 
 # Step 2: Classification Comparison
 
@@ -301,7 +307,6 @@ widespread. The equal interval method concentrates most CBGs in a narrow range,
 making only extreme outliers visible. Jenks finds natural clusters in the data.
 Standard deviation highlights how far each area deviates from the mean.
 
----
 
 # Step 3: Bivariate Choropleth — Hardship x % Minority
 
@@ -377,7 +382,6 @@ the "double disadvantage" neighborhoods. Light areas (lower-left) have low
 hardship and low minority share. The off-diagonal colors show areas where the
 two variables diverge: high hardship but low minority share, or vice versa.
 
----
 
 # Step 4: Small Multiples Across Scales
 
@@ -542,7 +546,6 @@ within-Arizona variation that is invisible at the county level. The CBG map
 exposes block-level heterogeneity *within* tracts --- some tracts that appear
 moderate at the tract level contain both very-high and very-low hardship CBGs.
 
----
 
 # Step 5: Interactive Map with mapgl
 
@@ -603,7 +606,6 @@ maplibre(style = openfreemap_style("positron"),
                  ))
 ```
 
----
 
 # Step 6: Export-Quality Figure with ggspatial
 
@@ -648,38 +650,36 @@ ggplot(cbg %>% filter(!is.na(hardship_index))) +
   )
 ```
 
+
 ---
 
 # Questions
 
-## Question 1 — Interpret: Classification and the Spatial Story
+## Q1 — Interpret: Classification and the Spatial Story {.question}
 
-> **This question requires you to modify the code from the steps above.**
-> Recommendation: re-download the Lab 2 Assignment .qmd and rename it
-> with your last name (e.g. Lab2_Assignment_Howell.qmd) before editing.
-> This preserves the master copy as a reference.
+> **Text answer — no code required.** Look at the 2x2 classification comparison from Step 2.
+
+- **1a.** Which classification method makes economic hardship appear *most widespread* across Maricopa County? Which makes it appear *most concentrated*?
+
+[YOUR ANSWER HERE]
+
+- **1b.** In a policy memo arguing for increased funding to "high hardship" areas, which classification method would you choose and why? What about a memo arguing that hardship is *not* a widespread problem?
+
+[YOUR ANSWER HERE]
+
+
+## Q2 — Modify: Bivariate Map with Hardship x % Renter-Occupied {.question}
+
+> **Code + output required.** Create a **second bivariate choropleth** using `hardship_index` and `pct_renter` (percent renter-occupied housing) instead of `pct_minority`. Show the complete code and output.
 >
-> **Instructions:** Look at the 2x2 classification comparison from Step 2.
-> **1a.** Which classification method makes economic hardship appear *most widespread* across Maricopa County? Which makes it appear *most concentrated*?
-> **1b.** In a policy memo arguing for increased funding to "high hardship" areas, which classification method would you choose and why? What about a memo arguing that hardship is *not* a widespread problem?
-
-> **YOUR ANSWER HERE**
-
----
-
-## Question 2 — Modify: Bivariate Map with Hardship x % Renter-Occupied
-
-> **This question requires you to modify the code from the steps above.**
-> Recommendation: re-download the Lab 2 Assignment .qmd and rename it
-> with your last name (e.g. Lab2_Assignment_Howell.qmd) before editing.
-> This preserves the master copy as a reference.
->
-> **Instructions:** Create a **second bivariate choropleth** using `hardship_index` and `pct_renter` (percent renter-occupied housing) instead of `pct_minority`. Show the complete code and output.
+> Hint: follow the same pattern as Step 3 — use `bi_class()` to classify, `bi_scale_fill()` to map, and `bi_legend()` + `inset_element()` for the legend.
 
 ```{r}
 #| label: q2.a
 
 # YOUR CODE HERE
+# Hint: use bi_class() with x = hardship_index, y = pct_renter
+# Filter out NAs for both variables first
 ```
 
 ```{r}
@@ -687,19 +687,19 @@ ggplot(cbg %>% filter(!is.na(hardship_index))) +
 #| fig-height: 8
 
 # YOUR CODE HERE
+# Hint: build the bivariate map with bi_scale_fill(),
+# create the legend with bi_legend(), and combine with inset_element()
 ```
 
----
 
-## Question 3 — Interpret: Comparing the Two Bivariate Maps
+## Q3 — Interpret: Comparing the Two Bivariate Maps {.question}
 
-> **This question requires you to modify the code from the steps above.**
-> Recommendation: re-download the Lab 2 Assignment .qmd and rename it
-> with your last name (e.g. Lab2_Assignment_Howell.qmd) before editing.
-> This preserves the master copy as a reference.
->
-> **Instructions:** Look at the bivariate map from Step 3 (hardship x % minority) and your new map from Question 2 (hardship x % renter).
-> **3a.** Do the same areas show "double disadvantage" in both maps? Or do the spatial patterns differ?
-> **3b.** What does this comparison tell you about the relationship between economic hardship, race/ethnicity, and housing tenure in Maricopa County?
+> **Text answer — no code required.** Look at the bivariate map from Step 3 (hardship x % minority) and your new map from Q2 (hardship x % renter).
 
-> **YOUR ANSWER HERE**
+- **3a.** Do the same areas show "double disadvantage" in both maps? Or do the spatial patterns differ?
+
+[YOUR ANSWER HERE]
+
+- **3b.** What does this comparison tell you about the relationship between economic hardship, race/ethnicity, and housing tenure in Maricopa County?
+
+[YOUR ANSWER HERE]

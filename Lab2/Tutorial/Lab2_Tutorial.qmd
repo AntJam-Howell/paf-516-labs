@@ -1,0 +1,675 @@
+---
+title: "Lab 2 Tutorial | PAF 516"
+subtitle: "Cartographic Design & Interactive Mapping"
+format:
+  html:
+    theme: readable
+    highlight-style: tango
+    toc: true
+    toc-title: "Steps"
+    self-contained: true
+    number-sections: false
+execute:
+  echo: true
+  warning: false
+  message: false
+  fig-width: 10
+---
+
+::: {.callout-tip}
+## How to use this file
+**First time:** Click the **Render** button (or Cmd+Shift+K / Ctrl+Shift+K) to produce a complete HTML with all results. Then come back and run chunk by chunk to understand each step.
+
+**Chunk by chunk:** Place cursor inside any chunk → Cmd+Return (Mac) / Ctrl+Enter (PC).
+
+This file is for learning — do not edit it. When you are ready for the assignment, download `Lab2_Assignment.qmd` from the [Lab 2 Assignment page](https://antjam-howell.github.io/paf-516-labs/lab2-assignment.html).
+:::
+
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10)
+
+# Cache Census TIGER/Line geometries so they don't re-download every render
+options(tigris_use_cache = TRUE)
+options(tigris_progress_bar = FALSE)
+```
+
+
+```{r}
+#| label: packages
+# ── Package Setup ──────────────────────────────────────────────────────
+# Run this chunk ONCE the first time you open this file.
+# It downloads the exact package versions used to build this lab.
+# After it finishes, comment out the four renv lines below.
+if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+download.file(
+  url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/renv.lock",
+  destfile = "renv.lock", mode = "wb"
+)
+renv::restore(lockfile = "renv.lock", prompt = FALSE)
+# ── After running once, comment out the four lines above ───────────────
+
+# Core data & spatial
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(tigris)     # For shift_geometry (AK/HI insets)
+
+# Cartographic tools (new in Lab 2)
+library(classInt)    # Classification algorithms (Jenks, quantile, etc.)
+library(biscale)     # Bivariate choropleth palette + legend
+library(mapgl)       # Interactive GPU-rendered maps via MapLibre GL JS
+library(ggspatial)   # Scale bars and north arrows for ggplot maps
+library(patchwork)   # Combine multiple ggplots into one figure
+library(viridis)     # Perceptually uniform color scales
+```
+
+```{r}
+#| label: api-key
+# Get a free Census API key at: https://api.census.gov/data/key_signup.html
+# After receiving your key by email, run this line ONCE in the RStudio console:
+# census_api_key("YOUR_KEY_HERE", install = TRUE)
+# Then restart R: Session → Restart R
+# You only need to do this once — the key is saved to your .Renviron file.
+```
+
+```{r}
+#| label: fallback-data
+# ── FALLBACK: If Census API is unavailable ─────────────────────────────
+# Pre-built .rds files are available for each data pull step.
+# See the commented fallback lines in Step 1b (CBG data) and
+# Step 4a (county + tract data). Uncomment the readRDS() lines
+# and skip the get_acs() calls in those steps.
+#
+# Option A — from local file (save .rds files to PAF516/Lab2/data/ first):
+# cbg_raw      <- readRDS("../data/cbg_extended_2023.rds")
+# county_raw   <- readRDS("../data/county_hardship_2023.rds")
+# tract_raw    <- readRDS("../data/az_tract_hardship_2023.rds")
+#
+# Option B — directly from GitHub:
+# cbg_raw      <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/cbg_extended_2023.rds"))
+# county_raw   <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/county_hardship_2023.rds"))
+# tract_raw    <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/az_tract_hardship_2023.rds"))
+#
+# If using fallback data, skip the get_acs() calls in Steps 1b and 4a,
+# then continue from Step 1c.
+```
+
+
+# Step 1: Pull Data & Build the Hardship Index
+
+We reuse the exact same index construction from Lab 1: five ACS variables
+measuring economic hardship, z-score standardized, with median income reversed.
+This time we also pull **two new demographic variables** --- percent minority
+(non-white) and percent renter-occupied --- that we will use for bivariate
+mapping later.
+
+## 1a. Define variables
+
+```{r}
+#| label: step.01a
+
+# The 5 hardship index variables (identical to Lab 1)
+hardship_vars <- c(
+  pov_below50  = "C17002_002",   # Income-to-poverty ratio under .50
+  pov_50to99   = "C17002_003",   # Income-to-poverty ratio .50 to .99
+  pov_den      = "C17002_001",   # Poverty universe total
+  med_income   = "B19013_001",   # Median household income
+  unemp_num    = "B23025_005",   # Unemployed
+  unemp_den    = "B23025_002",   # In labor force
+  nohs_num     = "B15003_002",   # No high school diploma (< 9th grade)
+  nohs_den     = "B15003_001",   # Population 25+
+  noins_num    = "B27010_017",   # No health insurance (18-34)
+  noins_den    = "B27010_001"    # Insurance universe
+)
+
+# New demographic variables for bivariate mapping
+demo_vars <- c(
+  race_total   = "B03002_001",   # Total population (Hispanic/Latino origin by race)
+  race_wnh     = "B03002_003",   # White alone, not Hispanic or Latino
+  tenure_total = "B25003_001",   # Total occupied housing units
+  tenure_rent  = "B25003_003"    # Renter-occupied units
+)
+
+# Combine into one request
+all_vars <- c(hardship_vars, demo_vars)
+```
+
+## 1b. Pull Maricopa County block group data
+
+```{r}
+#| label: step.01b
+#| results: hide
+
+# Pull ACS 5-year estimates at the block group level for Maricopa County.
+# geometry = TRUE attaches spatial boundaries for mapping.
+cbg_raw <- get_acs(
+  geography = "block group",
+  variables = all_vars,
+  state     = "AZ",
+  county    = "Maricopa",
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE,
+  progress_bar = FALSE
+)
+
+# Fallback — uncomment if API unavailable:
+# cbg_raw <- readRDS("../data/cbg_extended_2023.rds")
+# OR via URL:
+# cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/cbg_extended_2023.rds"))
+# cbg_raw <- cbg_raw %>%
+#   mutate(variable = recode(variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
+#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
+#     median_income = "med_income",
+#     total_pop = "race_total", white_nh = "race_wnh",
+#     total_tenure = "tenure_total", renter_occ = "tenure_rent"))
+```
+
+## 1c. Reshape and compute rates
+
+```{r}
+#| label: step.01c
+
+# Pivot from long to wide: one row per CBG, one column per variable.
+# We drop the margin of error column since we're working with estimates only.
+cbg <- cbg_raw %>%
+  select(-moe) %>%
+  pivot_wider(names_from = variable, values_from = estimate)
+
+# Compute derived rates from numerator/denominator pairs
+cbg <- cbg %>%
+  mutate(
+    poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
+    unemp_rate   = unemp_num / unemp_den,
+    no_hs_rate   = nohs_num / nohs_den,
+    no_ins_rate  = noins_num / noins_den,
+    pct_minority = (race_total - race_wnh) / race_total,
+    pct_renter   = tenure_rent / tenure_total
+  )
+
+# Z-score standardize the 5 hardship variables, reverse median income,
+# and compute the composite index as the row mean of z-scores.
+cbg <- cbg %>%
+  mutate(
+    across(
+      c(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, med_income),
+      ~ as.numeric(scale(.)),
+      .names = "z_{.col}"
+    ),
+    # Reverse median income so higher = more hardship
+    z_med_income = -1 * z_med_income,
+    # Composite hardship index: mean of the 5 z-scores
+    hardship_index = rowMeans(
+      pick(z_poverty_rate, z_unemp_rate, z_no_hs_rate, z_no_ins_rate, z_med_income),
+      na.rm = TRUE
+    )
+  )
+
+# Quick summary — how many CBGs, what's the index range?
+cat("CBGs:", nrow(cbg), "\n")
+cat("Hardship index range:",
+    round(min(cbg$hardship_index, na.rm = TRUE), 2), "to",
+    round(max(cbg$hardship_index, na.rm = TRUE), 2), "\n")
+```
+
+
+# Step 2: Classification Comparison
+
+A choropleth map's story depends heavily on how you **classify** continuous
+values into discrete color bins. Here we apply four common methods to the
+hardship index and compare them side-by-side.
+
+| Method | Logic | Effect |
+|--------|-------|--------|
+| **Quantile** | Equal number of observations per bin | Maximizes color variation; can exaggerate small differences |
+| **Jenks (natural breaks)** | Minimizes within-class variance | Finds "natural" groupings; data-driven |
+| **Equal interval** | Equal-width bins across the range | Intuitive scale; can leave most observations in one or two bins |
+| **Standard deviation** | Bins centered on the mean, each 1 SD wide | Highlights outliers; assumes roughly normal distribution |
+
+```{r}
+#| label: step.02a
+
+# ── Compute classification breaks using classInt ──────────────
+# classInt::classIntervals() takes a numeric vector and a method name,
+# and returns an object whose $brks element contains the break points.
+# We request 5 classes (n = 5) for each method.
+
+# Drop NAs for classification
+hi_values <- cbg$hardship_index[!is.na(cbg$hardship_index)]
+
+brk_quantile <- classIntervals(hi_values, n = 5, style = "quantile")
+brk_jenks    <- classIntervals(hi_values, n = 5, style = "jenks")
+brk_equal    <- classIntervals(hi_values, n = 5, style = "equal")
+brk_sd       <- classIntervals(hi_values, n = 5, style = "sd")
+```
+
+```{r}
+#| label: step.02b
+
+# ── Helper function to cut the index and produce a map ────────
+# This avoids repeating the same ggplot code four times.
+# We use cut() with the break points from classIntervals to assign
+# each CBG to a class, then map the classes as a factor fill.
+
+make_class_map <- function(data, breaks_obj, method_label) {
+  # cut() assigns each value to a bin defined by breaks_obj$brks
+  data <- data %>%
+    mutate(
+      hi_class = cut(
+        hardship_index,
+        breaks  = breaks_obj$brks,
+        include.lowest = TRUE,
+        dig.lab = 2
+      )
+    )
+
+  ggplot(data) +
+    geom_sf(aes(fill = hi_class), color = NA) +
+    scale_fill_viridis_d(option = "inferno", direction = -1, na.value = "grey80") +
+    coord_sf(datum = NA) +
+    theme_void(base_size = 11) +
+    labs(
+      title = method_label,
+      fill  = "Hardship\nClass"
+    )
+}
+```
+
+```{r}
+#| label: step.02c
+#| fig-height: 10
+
+# ── Build 4 maps and arrange in a 2x2 grid ───────────────────
+# patchwork lets us combine ggplots with + and / operators.
+# The + operator places plots side-by-side; / stacks them vertically.
+
+p_quant <- make_class_map(cbg, brk_quantile, "Quantile")
+p_jenks <- make_class_map(cbg, brk_jenks,    "Jenks Natural Breaks")
+p_equal <- make_class_map(cbg, brk_equal,    "Equal Interval")
+p_sd    <- make_class_map(cbg, brk_sd,       "Standard Deviation")
+
+(p_quant + p_jenks) / (p_equal + p_sd) +
+  plot_annotation(
+    title    = "How Classification Method Changes the Story",
+    subtitle = "Economic Hardship Index — Maricopa County CBGs (ACS 2019-2023)",
+    caption  = "Source: ACS 5-Year Estimates, 2019-2023"
+  )
+```
+
+**Key observation:** The *same data* produces four visually different maps. The
+quantile method spreads color evenly across CBGs, making hardship appear
+widespread. The equal interval method concentrates most CBGs in a narrow range,
+making only extreme outliers visible. Jenks finds natural clusters in the data.
+Standard deviation highlights how far each area deviates from the mean.
+
+
+# Step 3: Bivariate Choropleth — Hardship x % Minority
+
+A standard choropleth maps **one** variable. A bivariate choropleth maps
+**two** variables simultaneously by crossing their classifications into a 3x3
+(or 2x2) color grid. This lets us see where *both* hardship and minority
+concentration are high --- areas of potential "double disadvantage."
+
+```{r}
+#| label: step.03a
+
+# ── Create the bivariate classes using the biscale package ────
+# bi_class() takes a data frame and two variable names, and adds a
+# new column (bi_class) that encodes the 3x3 combination.
+# dim = 3 means each variable is split into terciles (low/mid/high).
+
+cbg_bi <- cbg %>%
+  filter(!is.na(hardship_index), !is.na(pct_minority)) %>%
+  bi_class(
+    x   = hardship_index,  # x-axis variable
+    y   = pct_minority,    # y-axis variable
+    dim = 3,               # 3x3 grid = 9 color categories
+    style = "quantile"     # use quantile breaks for both variables
+  )
+```
+
+```{r}
+#| label: step.03b
+#| fig-height: 8
+
+# ── Build the bivariate map ──────────────────────────────────
+# bi_scale_fill() maps the bi_class column to a bivariate color palette.
+# "DkViolet" is a purple-to-teal palette that works well for diverging pairs.
+
+map_bi <- ggplot(cbg_bi) +
+  geom_sf(aes(fill = bi_class), color = NA, show.legend = FALSE) +
+  bi_scale_fill(pal = "DkViolet", dim = 3) +
+  coord_sf(datum = NA) +
+  theme_void(base_size = 12) +
+  labs(
+    title    = "Economic Hardship x Percent Minority",
+    subtitle = "Maricopa County Block Groups (ACS 2019-2023)",
+    caption  = "Source: ACS 5-Year Estimates, 2019-2023"
+  )
+
+# ── Build the bivariate legend ────────────────────────────────
+# bi_legend() creates the 3x3 color key that tells readers how to
+# interpret the two dimensions. We place it in the lower-left.
+
+legend_bi <- bi_legend(
+  pal = "DkViolet",
+  dim = 3,
+  xlab = "Higher Hardship →",
+  ylab = "Higher % Minority →",
+  size = 9
+)
+
+# ── Combine map and legend using patchwork ────────────────────
+# inset_element() overlays the legend on the map at specified coordinates.
+map_bi +
+  inset_element(
+    legend_bi,
+    left   = 0.0,
+    bottom = 0.0,
+    right  = 0.30,
+    top    = 0.30
+  )
+```
+
+**Interpreting the bivariate map:** The darkest purple areas (upper-right of the
+legend) have *both* high hardship and high minority concentration --- these are
+the "double disadvantage" neighborhoods. Light areas (lower-left) have low
+hardship and low minority share. The off-diagonal colors show areas where the
+two variables diverge: high hardship but low minority share, or vice versa.
+
+
+# Step 4: Small Multiples Across Scales
+
+One of the most important lessons in spatial analysis is that **patterns change
+with scale**. A national county map reveals broad regional divides; a tract map
+shows neighborhood variation; a CBG map exposes block-level inequity. Here we
+build the hardship index at all three scales and compare.
+
+## 4a. Pull and compute at county and tract levels
+
+```{r}
+#| label: step.04a
+#| results: hide
+
+# ── Pull US county-level data ─────────────────────────────────
+# This gives us ~3,200 counties across the entire US.
+county_raw <- get_acs(
+  geography = "county",
+  variables = hardship_vars,
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE,
+  progress_bar = FALSE
+)
+
+# Fallback — uncomment if API unavailable:
+# county_raw <- readRDS("../data/county_hardship_2023.rds")
+# OR via URL:
+# county_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/county_hardship_2023.rds"))
+# county_raw <- county_raw %>%
+#   mutate(variable = recode(variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
+#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
+#     median_income = "med_income"))
+
+# ── Pull AZ tract-level data ─────────────────────────────────
+# Census tracts within Arizona (~1,800 tracts).
+tract_raw <- get_acs(
+  geography = "tract",
+  variables = hardship_vars,
+  state     = "AZ",
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE,
+  progress_bar = FALSE
+)
+
+# Fallback — uncomment if API unavailable:
+# tract_raw <- readRDS("../data/az_tract_hardship_2023.rds")
+# OR via URL:
+# tract_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/az_tract_hardship_2023.rds"))
+# tract_raw <- tract_raw %>%
+#   mutate(variable = recode(variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
+#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
+#     median_income = "med_income"))
+```
+
+```{r}
+#| label: step.04b
+
+# ── Reshape and compute hardship index at each scale ──────────
+# We apply the same pipeline used for CBGs: pivot wide, compute rates,
+# z-score standardize, reverse income, take row mean.
+
+build_index <- function(df) {
+  df %>%
+    select(-moe) %>%
+    pivot_wider(names_from = variable, values_from = estimate) %>%
+    mutate(
+      poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
+      unemp_rate   = unemp_num / unemp_den,
+      no_hs_rate   = nohs_num / nohs_den,
+      no_ins_rate  = noins_num / noins_den
+    ) %>%
+    mutate(
+      across(
+        c(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, med_income),
+        ~ as.numeric(scale(.)),
+        .names = "z_{.col}"
+      ),
+      z_med_income = -1 * z_med_income,
+      hardship_index = rowMeans(
+        pick(z_poverty_rate, z_unemp_rate, z_no_hs_rate, z_no_ins_rate, z_med_income),
+        na.rm = TRUE
+      )
+    )
+}
+
+county_df <- build_index(county_raw)
+tract_df  <- build_index(tract_raw)
+# CBG already built above — we reuse 'cbg'
+```
+
+## 4b. Create the small-multiple comparison
+
+```{r}
+#| label: step.04c
+#| fig-height: 5
+
+# ── National county map ───────────────────────────────────────
+# shift_geometry() moves Alaska and Hawaii into inset positions
+# for a clean national layout without filtering states out.
+
+county_shifted <- shift_geometry(county_df)
+
+p_county <- ggplot(county_shifted) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship") +
+  coord_sf(datum = NA) +
+  theme_void(base_size = 10) +
+  labs(title = "US Counties")
+```
+
+```{r}
+#| label: step.04d
+#| fig-height: 5
+
+# ── Arizona tract map ────────────────────────────────────────
+p_tract <- ggplot(tract_df) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship") +
+  coord_sf(datum = NA) +
+  theme_void(base_size = 10) +
+  labs(title = "Arizona Tracts")
+```
+
+```{r}
+#| label: step.04e
+#| fig-height: 5
+
+# ── Maricopa CBG map ─────────────────────────────────────────
+p_cbg <- ggplot(cbg) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship") +
+  coord_sf(datum = NA) +
+  theme_void(base_size = 10) +
+  labs(title = "Maricopa CBGs")
+```
+
+```{r}
+#| label: step.04f
+#| fig-height: 6
+
+# ── Combine the three scales into one figure ──────────────────
+# patchwork layout: national on top spanning full width, state and
+# local side-by-side below.
+
+p_county / (p_tract + p_cbg) +
+  plot_annotation(
+    title    = "Economic Hardship Across Three Geographic Scales",
+    subtitle = "ACS 5-Year Estimates, 2019-2023",
+    caption  = "Source: ACS 5-Year Estimates, 2019-2023"
+  )
+```
+
+**Scale matters.** The county map shows broad regional patterns (e.g., the
+Mississippi Delta, Appalachia, the Southwest border). The tract map reveals
+within-Arizona variation that is invisible at the county level. The CBG map
+exposes block-level heterogeneity *within* tracts --- some tracts that appear
+moderate at the tract level contain both very-high and very-low hardship CBGs.
+
+
+# Step 5: Interactive Map with mapgl
+
+Static maps are great for print; interactive maps let users explore. Here we
+build an interactive GPU-rendered map of Maricopa County CBGs using `mapgl`.
+The `mapgl` package renders spatial data via MapLibre GL JS --- producing smooth,
+fast, interactive maps even with thousands of polygons. We pass the sf object
+directly as a GeoJSON source so the map works in rendered HTML without a local
+tile server.
+
+```{r}
+#| label: step.05a
+
+# ── Prepare data for mapgl ───────────────────────────────────
+# mapgl uses WGS84 (EPSG:4326) coordinate reference system.
+# We filter out NAs and transform to the standard lat/lon CRS.
+
+cbg_map <- cbg %>%
+  filter(!is.na(hardship_index)) %>%
+  st_transform(crs = 4326) %>%
+  mutate(
+    hardship_round = round(hardship_index, 3),
+    poverty_pct    = round(poverty_rate * 100, 1),
+    minority_pct   = round(pct_minority * 100, 1),
+    renter_pct     = round(pct_renter * 100, 1)
+  )
+```
+
+```{r}
+#| label: step.05b
+
+# ── Build the interactive mapgl map ──────────────────────────
+# maplibre() initializes a MapLibre GL JS map with a basemap style.
+# add_source() loads the sf object as GeoJSON directly — no local
+# tile server needed, so the map works in rendered HTML.
+# add_fill_layer() renders polygons with color, opacity, and tooltips.
+
+maplibre(style = openfreemap_style("positron"),
+         bounds = st_bbox(cbg_map)) |>
+  add_source(id = "hardship-src",
+             type = "geojson",
+             data = cbg_map) |>
+  add_fill_layer(id = "hardship-fill",
+                 source = "hardship-src",
+                 fill_color = interpolate(
+                   column = "hardship_round",
+                   values = c(-1, 0, 1, 2),
+                   stops  = c("#1a9850", "#fee08b", "#d73027", "#67001f")
+                 ),
+                 fill_opacity = 0.7,
+                 hover_options = list(fill_opacity = 1),
+                 tooltip = concat(
+                   "GEOID: ", get_column("GEOID"),
+                   " | Hardship: ", number_format(get_column("hardship_round")),
+                   " | Poverty: ", get_column("poverty_pct"), "%",
+                   " | Minority: ", get_column("minority_pct"), "%",
+                   " | Renter: ", get_column("renter_pct"), "%"
+                 ))
+```
+
+
+# Step 6: Export-Quality Figure with ggspatial
+
+For reports and presentations you often need a polished static map with a scale
+bar and north arrow. The `ggspatial` package adds these cartographic elements to
+any `ggplot2` + `geom_sf()` map.
+
+```{r}
+#| label: step.06
+#| fig-height: 8
+
+# ── Publication-ready map with scale bar and north arrow ──────
+# annotation_scale() adds a scale bar (default = km).
+# annotation_north_arrow() adds a north arrow with configurable style.
+
+ggplot(cbg %>% filter(!is.na(hardship_index))) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(
+    option    = "inferno",
+    direction = -1,
+    name      = "Hardship\nIndex"
+  ) +
+  # ggspatial scale bar — placed at bottom-left
+
+  annotation_scale(
+    location = "bl",
+    width_hint = 0.3,
+    style = "ticks"
+  ) +
+  # ggspatial north arrow — placed at top-right
+  annotation_north_arrow(
+    location = "tr",
+    style = north_arrow_fancy_orienteering()
+  ) +
+  coord_sf(datum = NA) +
+  theme_void(base_size = 12) +
+  labs(
+    title    = "Economic Hardship Index",
+    subtitle = "Maricopa County Block Groups (ACS 2019-2023)",
+    caption  = "Source: ACS 5-Year Estimates, 2019-2023",
+    fill     = "Hardship\nIndex"
+  )
+```
+
+
+# Save Datasets for Offline Use
+
+```{r}
+#| label: save-datasets
+
+dir.create("../data", showWarnings = FALSE)
+saveRDS(cbg_raw,     "../data/cbg_extended_2023.rds")
+saveRDS(county_raw,  "../data/county_hardship_2023.rds")
+saveRDS(tract_raw,   "../data/az_tract_hardship_2023.rds")
+
+cat("Saved 3 datasets to Lab2/data/:\n")
+cat("  cbg_extended_2023.rds       — Maricopa CBG data (long format)\n")
+cat("  county_hardship_2023.rds    — US county data (long format)\n")
+cat("  az_tract_hardship_2023.rds  — AZ tract data (long format)\n")
+```
+
+---
+
+::: {.callout-note}
+## Ready for the assignment?
+Head to the [Lab 2 Assignment page](https://antjam-howell.github.io/paf-516-labs/lab2-assignment.html) to download `Lab2_Assignment.qmd`. You will create a second bivariate choropleth and evaluate how the spatial patterns differ.
+:::
