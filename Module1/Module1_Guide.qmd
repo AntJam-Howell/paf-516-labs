@@ -180,100 +180,15 @@ alpha = var(T) / var(T + e)
 
 :::
 
-## Lab 1 Overview
+
+## Lab 1
 
 ::: {.section-box}
 
-**What you will build:** A composite Economic Hardship Index from US Census
-variables, evaluated for reliability using Cronbach's alpha, and mapped at
-three geographic scales: US counties (national), Arizona census tracts
-(state), and Maricopa County block groups (neighborhood).
+The Lab 1 materials are on the course lab site. Visit the links below to access the tutorial and assignment.
 
-### Downloading the Lab Template
-
-Right-click the link in the **Lab Assignment** section below and choose
-**"Save Link As"** to download the `.qmd` file. Do not open it in the
-browser — save it first, then open it in RStudio.
-
-### File and Folder Management
-
-Set up a clean folder structure before opening the file. Store course
-files in a cloud-synced folder (Dropbox, Google Drive, or OneDrive).
-
-Recommended semester structure:
-```
-PAF516/
-  Lab1/
-    Lab1_Assignment.qmd          ← downloaded from Canvas/GitHub
-    Lab1_Assignment_Howell.qmd   ← your working copy (rename with lastname)
-    Lab1_Assignment.html         ← rendered output — submit to Canvas
-    data/                        ← fallback .rds files if needed
-  Lab2/  Lab3/  Lab4/  Lab5/  Lab6/  FinalProject/
-```
-
-Move the downloaded `.qmd` from Downloads into `PAF516/Lab1/` **before**
-opening it. Duplicate the original file and rename it with your last name
-before editing. The `../data/` paths in the file resolve correctly only
-when opened from inside the `Lab1/` folder.
-
-:::
-
-## Lab Assignment
-
-::: {.section-box}
-
-In Lab 01, you will use R to retrieve census variables with `tidycensus`, assess their reliability with `psych::alpha()`, build a composite index of neighborhood quality, and visualize the results at three geographic scales (county, tract, block group).
-
-Download the [Lab 01 Quarto template (.qmd)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/Assignment/Lab1_Assignment.qmd), complete the exercises, and submit both the .qmd and rendered .html to Canvas.
-
-:::
-
-## Your Target Deliverable
-
-::: {.section-box}
-
-The maps below are produced in **Step 8** of Lab 1. This is what you are
-building toward. No code is shown here — your job is to write the code
-that produces these results.
-
-```{r}
-#| label: target-deliverable
-#| echo: false
-#| eval: true
-library(ggplot2); library(sf); library(viridis)
-library(patchwork); library(tigris)
-options(tigris_progress_bar = FALSE)
-
-county <- readRDS("data/hardship_counties_us.rds")
-tract  <- readRDS("data/hardship_tracts_az.rds")
-cbg    <- readRDS("data/hardship_cbg_maricopa.rds")
-county_shifted <- shift_geometry(county)
-
-shared_theme <- theme_void() + theme(legend.position = "none")
-
-p1 <- ggplot(county_shifted) +
-  geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis_c(option = "inferno", name = "Hardship Index") +
-  shared_theme +
-  labs(title = "US Counties", subtitle = "ACS 2019–2023")
-
-p2 <- ggplot(tract) +
-  geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis_c(option = "inferno", name = "Hardship Index") +
-  shared_theme +
-  labs(title = "Arizona Census Tracts", subtitle = "ACS 2019–2023")
-
-p3 <- ggplot(cbg) +
-  geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis_c(option = "inferno", name = "Hardship Index") +
-  theme_void() +
-  theme(legend.position = "bottom") +
-  labs(title = "Maricopa County Block Groups", subtitle = "ACS 2019–2023")
-
-(p1 | p2 | p3) + plot_layout(widths = c(1, 1, 1))
-```
-
-*Three geographic scales. One index. Lab 1 asks you to build this from scratch.*
+- **[Lab 1 Tutorial](https://antjam-howell.github.io/paf-516-labs/lab1-tutorial.html)** — Download the tutorial file, knit it to see the complete analysis, then run chunk by chunk to understand each step.
+- **[Lab 1 Assignment](https://antjam-howell.github.io/paf-516-labs/lab1-assignment.html)** — Download the assignment file, rename it with your last name, complete the three questions, and submit to Canvas.
 
 :::
 

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 1 Assignment | PAF 516</title>
+<style>
+  :root {
+    --maroon: #8c1d40; --gold: #ffc627;
+    --light-bg: #f9f9f9; --border: #e0e0e0; --text: #1a1a1a; --muted: #555;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; color: var(--text); background: #fff; }
+  .site-header { background: var(--maroon); color: white; padding: 14px 40px; }
+  .site-header .course { font-size: 0.85rem; opacity: 0.85; }
+  .site-header .title { font-size: 1.1rem; font-weight: 600; }
+  .breadcrumb { background: #f3e8ec; padding: 10px 40px; font-size: 0.85rem; color: var(--muted); }
+  .breadcrumb a { color: var(--maroon); text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .hero {
+    background: linear-gradient(135deg, #6b1531 0%, #8c1d40 100%);
+    color: white; padding: 48px 40px 40px;
+  }
+  .hero .tag {
+    display: inline-block; background: var(--gold); color: #1a1a1a;
+    font-size: 0.75rem; font-weight: 700; padding: 3px 10px;
+    border-radius: 3px; letter-spacing: 0.05em; margin-bottom: 14px;
+  }
+  .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+  .hero p { font-size: 1.05rem; opacity: 0.9; max-width: 680px; line-height: 1.6; }
+  .container { max-width: 860px; margin: 0 auto; padding: 40px; }
+  .section { margin-bottom: 40px; }
+  .section h2 {
+    font-size: 1.25rem; font-weight: 700; color: var(--maroon);
+    border-bottom: 3px solid var(--gold); padding-bottom: 8px; margin-bottom: 20px;
+  }
+  .section h3 { font-size: 1rem; font-weight: 600; margin: 20px 0 10px; }
+  .section p { line-height: 1.7; color: #333; margin-bottom: 12px; }
+  .callout {
+    border-left: 4px solid; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 16px 0;
+  }
+  .callout.important { border-color: var(--maroon); background: #fdf0f4; }
+  .callout.tip { border-color: #2e7d32; background: #f1f8f1; }
+  .callout .callout-title { font-weight: 700; margin-bottom: 6px; }
+  .callout.important .callout-title { color: var(--maroon); }
+  .callout.tip .callout-title { color: #2e7d32; }
+
+  /* Workflow steps */
+  .workflow { display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
+  .workflow-step {
+    display: flex; gap: 16px; align-items: flex-start;
+    background: var(--light-bg); border-radius: 8px; padding: 16px 18px;
+    border: 1px solid var(--border);
+  }
+  .step-num {
+    background: var(--maroon); color: white; border-radius: 50%;
+    width: 32px; height: 32px; display: flex; align-items: center;
+    justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+  }
+  .step-body h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+  .step-body p { font-size: 0.9rem; color: #444; margin: 0; line-height: 1.5; }
+
+  /* Question cards */
+  .question-card {
+    border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden; margin: 16px 0;
+  }
+  .question-header {
+    background: var(--maroon); color: white;
+    padding: 12px 18px; display: flex; align-items: center; gap: 12px;
+  }
+  .question-header .q-num {
+    background: var(--gold); color: #1a1a1a;
+    font-weight: 800; font-size: 0.8rem; padding: 2px 9px; border-radius: 3px;
+  }
+  .question-header .q-title { font-weight: 600; font-size: 1rem; }
+  .question-header .q-type {
+    margin-left: auto; font-size: 0.75rem; opacity: 0.85;
+    border: 1px solid rgba(255,255,255,0.4); padding: 2px 8px; border-radius: 3px;
+  }
+  .question-body { padding: 18px 20px; background: #fff; }
+  .question-body p { font-size: 0.93rem; line-height: 1.65; color: #333; margin-bottom: 10px; }
+  .question-body p:last-child { margin-bottom: 0; }
+  .question-body code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 0.88rem; }
+  .question-body ul { padding-left: 20px; font-size: 0.93rem; color: #333; line-height: 1.7; }
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.9rem; }
+  th { background: var(--maroon); color: white; padding: 9px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+  tr:nth-child(even) td { background: var(--light-bg); }
+
+  .download-box {
+    background: #1e1e2e; color: #e6edf3; border-radius: 10px; padding: 28px 30px; margin: 20px 0;
+  }
+  .download-box h3 { color: var(--gold); font-size: 1.05rem; margin-bottom: 16px; }
+  .download-btn {
+    display: inline-block; background: var(--gold); color: #1a1a1a;
+    font-weight: 700; padding: 10px 22px; border-radius: 6px;
+    text-decoration: none; font-size: 0.95rem; margin: 6px 6px 6px 0;
+  }
+  .download-btn:hover { opacity: 0.85; }
+  .download-box .note { font-size: 0.82rem; color: #8b949e; margin-top: 12px; line-height: 1.5; }
+
+  .submit-box {
+    background: #f1f8f1; border: 1px solid #c8e6c9; border-radius: 8px;
+    padding: 20px 22px; margin: 20px 0;
+  }
+  .submit-box h3 { color: #2e7d32; font-size: 1rem; margin-bottom: 10px; }
+  .submit-box ul { padding-left: 20px; font-size: 0.93rem; line-height: 1.8; color: #333; }
+  .nav-footer {
+    background: #f3e8ec; border-top: 1px solid #ddd;
+    padding: 20px 40px; display: flex; justify-content: space-between;
+    align-items: center; font-size: 0.9rem;
+  }
+  .nav-footer a { color: var(--maroon); text-decoration: none; font-weight: 600; }
+  .nav-footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <div>
+    <div class="course">PAF 516 | Community Analytics</div>
+    <div class="title">Lab Materials — Arizona State University</div>
+  </div>
+</div>
+
+<div class="breadcrumb">
+  <a href="index.html">← All Labs</a> &nbsp;/&nbsp; Lab 1 &nbsp;/&nbsp; Assignment
+</div>
+
+<div class="hero">
+  <div class="tag">LAB 1 — ASSIGNMENT</div>
+  <h1>Measurement, Indexing & Multi-Scale Mapping</h1>
+  <p>Download the assignment file, complete the three questions, and submit your <code>.qmd</code> and rendered <code>.html</code> to Canvas.</p>
+</div>
+
+<div class="container">
+
+  <!-- WORKFLOW -->
+  <div class="section">
+    <h2>Assignment Workflow</h2>
+    <div class="callout important">
+      <div class="callout-title">Complete the Tutorial first</div>
+      Before starting the assignment, download and knit <a href="lab1-tutorial.html">Lab 1 Tutorial</a>. Steps 1–8 are identical in both files — the tutorial shows you exactly what the code does so you can modify it confidently in the assignment.
+    </div>
+    <div class="callout tip">
+      <div class="callout-title">Need a Census API key?</div>
+      Setup instructions are in the <a href="lab1-tutorial.html">Lab 1 Tutorial</a> under "Before You Begin." Register free at <a href="https://api.census.gov/data/key_signup.html" target="_blank">api.census.gov/data/key_signup.html</a> — key arrives by email within minutes.
+    </div>
+
+    <div class="workflow">
+      <div class="workflow-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Download the assignment file</h4>
+          <p>Use the download link below. Right-click → Save Link As. Save to your <code>PAF516/Lab1/</code> folder.</p>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Knit the file first</h4>
+          <p>Press <strong>Cmd+Shift+K</strong> (Mac) or <strong>Ctrl+Shift+K</strong> (PC). Steps 1–8 are pre-filled and render automatically — review the output to see the completed analysis before editing.</p>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Answer the three questions</h4>
+          <p>Q1 and Q3 are text answers — replace the placeholder text. Q2 requires adding code to the scaffold chunks provided.</p>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Knit and submit</h4>
+          <p>Press <strong>Cmd+Shift+K</strong> (Mac) or <strong>Ctrl+Shift+K</strong> (PC) to render. Submit both <code>Lab1_Assignment.qmd</code> and <code>Lab1_Assignment.html</code> to Canvas.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUESTIONS -->
+  <div class="section">
+    <h2>The Three Questions</h2>
+
+    <div class="question-card">
+      <div class="question-header">
+        <span class="q-num">Q1</span>
+        <span class="q-title">Interpret the Baseline Results</span>
+        <span class="q-type">Text answer — no code required</span>
+      </div>
+      <div class="question-body">
+        <p>After running Steps 1–8, answer the following in your own words:</p>
+        <ul>
+          <li>What is the Cronbach's alpha for the 5-variable index? Is it acceptable (&gt; 0.7)?</li>
+          <li>Looking at the national county map, where is hardship most concentrated?</li>
+          <li>How does the spatial pattern change as you zoom from counties → tracts → block groups?</li>
+        </ul>
+        <p>Replace the placeholder text in the Q1 section of the assignment file. A few sentences per bullet is sufficient.</p>
+      </div>
+    </div>
+
+    <div class="question-card">
+      <div class="question-header">
+        <span class="q-num">Q2</span>
+        <span class="q-title">Add a 6th Variable to the Index</span>
+        <span class="q-type">Code + output required</span>
+      </div>
+      <div class="question-body">
+        <p>Add <strong>percent of households receiving SNAP benefits</strong> as a 6th indicator variable:</p>
+        <ul>
+          <li>Numerator: <code>B19058_002</code> (households receiving SNAP)</li>
+          <li>Denominator: <code>B19058_001</code> (total households)</li>
+        </ul>
+        <p>Three scaffold chunks are provided — <code>q2-pull</code>, <code>q2-index</code>, and <code>q2-map</code>. Add code to each to:</p>
+        <ul>
+          <li>Re-pull tract data with the 6th variable included</li>
+          <li>Recompute Cronbach's alpha with all 6 variables</li>
+          <li>Rebuild the index and re-map at the tract level</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="question-card">
+      <div class="question-header">
+        <span class="q-num">Q3</span>
+        <span class="q-title">Evaluate the Addition</span>
+        <span class="q-type">Text answer — no code required</span>
+      </div>
+      <div class="question-body">
+        <p>After completing Q2, compare your results and answer:</p>
+        <ul>
+          <li>Did adding SNAP improve or weaken Cronbach's alpha? By how much?</li>
+          <li>Visually compare the 5-variable and 6-variable tract maps. Do the patterns differ?</li>
+          <li>Based on alpha and the maps, should you keep the 6th variable? Why or why not?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEYBOARD SHORTCUTS -->
+  <div class="section">
+    <h2>Quick Reference</h2>
+    <table>
+      <tr><th>Action</th><th>Mac</th><th>PC</th></tr>
+      <tr><td>Run current chunk</td><td><code>Cmd+Return</code></td><td><code>Ctrl+Enter</code></td></tr>
+      <tr><td>Knit / Render</td><td><code>Cmd+Shift+K</code></td><td><code>Ctrl+Shift+K</code></td></tr>
+    </table>
+  </div>
+
+  <!-- DOWNLOAD -->
+  <div class="section">
+    <h2>Download & Submit</h2>
+    <div class="download-box">
+      <h3>Lab 1 Assignment File</h3>
+      <a class="download-btn"
+         href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/Assignment/Lab1_Assignment.qmd"
+         download>
+        ⬇ Download Lab1_Assignment.qmd
+      </a>
+      <p class="note">Right-click → Save Link As. Save to your <code>PAF516/Lab1/</code> folder.</p>
+    </div>
+
+    <div class="submit-box">
+      <h3>✓ Submit to Canvas</h3>
+      <ul>
+        <li><code>Lab1_Assignment.qmd</code> — your edited source file</li>
+        <li><code>Lab1_Assignment.html</code> — the rendered output</li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<div class="nav-footer">
+  <a href="lab1-tutorial.html">← Lab 1 Tutorial</a>
+  <a href="index.html">All Labs →</a>
+</div>
+
+</body>
+</html>

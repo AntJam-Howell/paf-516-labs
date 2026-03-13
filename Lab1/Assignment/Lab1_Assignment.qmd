@@ -1,11 +1,12 @@
 ---
-title: "Lab 1 | PAF 516"
-subtitle: "PAF 516 | M1 Assignment"
+title: "Lab 1 Assignment | PAF 516"
+subtitle: "Measurement, Indexing & Multi-Scale Mapping"
 format:
   html:
     theme: readable
     highlight-style: tango
     toc: true
+    toc-title: "Steps & Questions"
     self-contained: true
     number-sections: false
 execute:
@@ -15,484 +16,311 @@ execute:
   fig-width: 10
 ---
 
+::: {.callout-important}
+## Before you begin
+1. Run the `packages` chunk first (Cmd+Return / Ctrl+Enter) — this installs packages and may take 5–10 minutes the first time
+2. Knit the file (Cmd+Shift+K / Ctrl+Shift+K) to see the completed Steps 1–8 before editing
+3. Fill in Q1, Q2, and Q3, then knit again and submit both `Lab1_Assignment.qmd` and `Lab1_Assignment.html` to Canvas
+:::
+
 
 ```{r}
 #| label: setup
 #| include: false
-knitr::opts_chunk$set( echo = TRUE, message=F, warning=F, fig.width=10 )
-options( tigris_use_cache = TRUE )
-options( tigris_progress_bar = FALSE )
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10)
+options(tigris_use_cache = TRUE)
+options(tigris_progress_bar = FALSE)
 ```
-
 
 ```{r}
 #| label: packages
 # ── Package Setup ──────────────────────────────────────────────────────
-# R packages update frequently and can break working code. We have saved
-# the exact package versions used to build this lab. Run the block below
-# ONCE the first time you open this file, then comment it out.
+# Run this chunk ONCE before knitting. May take 5-10 minutes first time.
+# After it finishes, comment out the four renv lines.
 if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
 download.file(
   url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/renv.lock",
   destfile = "renv.lock", mode = "wb"
 )
 renv::restore(lockfile = "renv.lock", prompt = FALSE)
-# After running once, comment out the four lines above.
-# ───────────────────────────────────────────────────────────────────────
+# ── After running once, comment out the four lines above ───────────────
 
-# ── Packages ─────────────────────────────────────────
-# Load all required packages for data, mapping, and reliability analysis
-library( tidyverse )
-library( tidycensus )
-library( sf )          # Spatial objects and st_drop_geometry
-library( tigris )      # For shift_geometry (AK/HI insets)
-library( psych )       # For Cronbach's alpha
-library( corrplot )    # For correlation matrix visualization
-library( viridis )     # For color scales on maps
-library( ggplot2 )
-library( patchwork )   # For combining multi-panel figures
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(tigris)
+library(psych)
+library(corrplot)
+library(viridis)
+library(ggplot2)
+library(patchwork)
 ```
 
 ```{r}
 #| label: api-key
-# Uncomment and add your Census API key
-# census_api_key("YOUR KEY GOES HERE")
+# Get a free Census API key at: https://api.census.gov/data/key_signup.html
+# After receiving your key by email, run this line ONCE in the RStudio console:
+# census_api_key("YOUR_KEY_HERE", install = TRUE)
+# Then restart R: Session → Restart R
+# You only need to do this once — the key is saved to your .Renviron file.
 ```
 
 ```{r}
 #| label: fallback-data
-
-# ── FALLBACK: Load pre-built datasets if Census API is down ──────
-# If the Census API is unavailable or you cannot get an API key,
-# uncomment the lines below to load pre-built spatial datasets.
-# These contain all census variables, computed rates, hardship index,
-# and geometry — ready for mapping.
-#
-# Option A — from local file:
+# ── FALLBACK: Uncomment if Census API is unavailable ──────────────────
+# Option A (local — save .rds files to PAF516/Lab1/data/ first):
 # county_complete <- readRDS("../data/hardship_counties_us.rds")
 # CenDF_complete  <- readRDS("../data/hardship_tracts_az.rds")
 # cbg_complete    <- readRDS("../data/hardship_cbg_maricopa.rds")
 #
-# Option B — from GitHub:
+# Option B (GitHub):
 # county_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_counties_us.rds"))
 # CenDF_complete  <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_tracts_az.rds"))
 # cbg_complete    <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_cbg_maricopa.rds"))
-#
-# If using fallback data, skip Steps 1-4 and go directly to Step 5.
+# If using fallback, skip to Step 5.
 ```
 
 
 # Step 1: Retrieve Census Variables
 
-We build an **economic hardship index** using 5 census variables at the tract level for Arizona. Each variable captures a different dimension of economic disadvantage.
-
-```{r}
-#| label: browse-variables
-
-# Browse available ACS variables to find relevant indicators
-# vars_available <- load_variables( 2023, "acs5", cache = TRUE )
-# View(vars_available)  # Use this interactively to search
-```
-
 ```{r}
 #| label: step.01
 #| results: hide
 
-# Define our indicator variables for an "economic hardship" construct
-# Each variable name is given a readable alias
 hardship_vars <- c(
-  pov_below50    = "C17002_002",   # Income-to-poverty ratio under .50
-  pov_50to99     = "C17002_003",   # Income-to-poverty ratio .50 to .99
-  pov_den        = "C17002_001",   # Total population (poverty universe)
-  median_income  = "B19013_001",   # Median household income
-  pct_unemp_num  = "B23025_005",   # Unemployed population
-  pct_unemp_den  = "B23025_002",   # In labor force (denominator for unemployment)
-  pct_no_hs_num  = "B15003_002",   # Population with less than high school
-  pct_no_hs_den  = "B15003_001",   # Total population 25+ (denominator for education)
-  pct_no_ins_num = "B27010_017",   # Population without health insurance (18-34)
-  pct_no_ins_den = "B27010_001"    # Total population (insurance universe)
+  pov_below50    = "C17002_002",
+  pov_50to99     = "C17002_003",
+  pov_den        = "C17002_001",
+  median_income  = "B19013_001",
+  pct_unemp_num  = "B23025_005",
+  pct_unemp_den  = "B23025_002",
+  pct_no_hs_num  = "B15003_002",
+  pct_no_hs_den  = "B15003_001",
+  pct_no_ins_num = "B27010_017",
+  pct_no_ins_den = "B27010_001"
 )
 
-# Retrieve tract-level data with geometry for mapping
-# Pull ALL Arizona tracts (not just Maricopa) for state-level analysis
 CenDF <- get_acs(
-  geography = "tract",
-  variables = hardship_vars,
-  state     = "AZ",
-  year      = 2023,
-  survey    = "acs5",
-  geometry  = TRUE,
+  geography    = "tract",
+  variables    = hardship_vars,
+  state        = "AZ",
+  year         = 2023,
+  survey       = "acs5",
+  geometry     = TRUE,
   progress_bar = FALSE
 )
-
-# Fallback: load pre-built data if API unavailable
-# (loads processed data — skip to Step 5 for mapping)
-# Option A — from local file:
-# CenDF_complete <- readRDS("../data/hardship_tracts_az.rds")
-# Option B — from GitHub:
-# CenDF_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_tracts_az.rds"))
 ```
 
-**Common error note:** If you get an API key error, make sure you have run `census_api_key("YOUR_KEY", install = TRUE)` at least once and restarted R.
-
-
-# Step 2: Select and Justify Variables
-
-We now reshape the data from long to wide format, compute percentages from numerator/denominator pairs, and standardize all variables to z-scores.
+# Step 2: Compute Rates and Standardize
 
 ```{r}
 #| label: step.02
 
-# Reshape from long to wide format using pivot_wider
 CenDF_wide <- CenDF %>%
-  select( -moe ) %>%
-  pivot_wider( names_from = variable, values_from = estimate )
-
-# Compute derived percentage variables from numerator/denominator pairs
-CenDF_wide <- CenDF_wide %>%
+  select(-moe) %>%
+  pivot_wider(names_from = variable, values_from = estimate) %>%
   mutate(
-    # Poverty rate: people below poverty / poverty universe
-    poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
-    # Unemployment rate: unemployed / in labor force
+    poverty_rate = (pov_below50 + pov_50to99) / pov_den,
     unemp_rate   = pct_unemp_num / pct_unemp_den,
-    # Percent without high school diploma
     no_hs_rate   = pct_no_hs_num / pct_no_hs_den,
-    # Percent without health insurance
     no_ins_rate  = pct_no_ins_num / pct_no_ins_den
   )
 
-# Select just the indicator variables for our index
-# Note: median_income is REVERSE CODED — high income = LOW hardship
 index_vars <- CenDF_wide %>%
-  st_drop_geometry() %>%  # drop sf geometry for psych::alpha
-  select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
-  drop_na()  # alpha() requires complete cases
+  st_drop_geometry() %>%
+  select(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income) %>%
+  drop_na()
 
-# Standardize all variables to z-scores so they are on a common scale
 index_z <- index_vars %>%
-  mutate( across( everything(), ~ as.numeric( scale(.) ) ) )
-
-# Reverse-code median_income: high income should contribute LOW hardship
-# Flipping the sign aligns its direction with the other items
-index_z <- index_z %>%
-  mutate( median_income = -1 * median_income )
-
-# Verify: all variables should now be positively correlated
-# (higher values = more hardship for all items)
+  mutate(across(everything(), ~ as.numeric(scale(.)))) %>%
+  mutate(median_income = -1 * median_income)
 ```
 
-**Variable justification:**
-
-| Variable | Census Code | Why Included |
-|----------|------------|--------------|
-| Poverty rate | C17002_002 + C17002_003 / C17002_001 | Direct measure of economic deprivation |
-| Unemployment rate | B23025_005 / B23025_002 | Reflects labor market hardship |
-| No high school diploma | B15003_002 / B15003_001 | Education is a strong predictor of economic outcomes |
-| No health insurance | B27010_017 / B27010_001 | Lack of insurance reflects economic vulnerability |
-| Median household income | B19013_001 | Core income measure (reverse coded) |
-
-
-# Step 3: Assess Reliability with Cronbach's Alpha
+# Step 3: Cronbach's Alpha
 
 ```{r}
 #| label: step.03
 
-# Calculate Cronbach's alpha to assess whether our 5 items
-# consistently measure the same underlying construct
-alpha_result <- psych::alpha( index_z )
-
-# Print the main results
-print( alpha_result )
+alpha_result <- psych::alpha(index_z)
+print(alpha_result)
+alpha_value  <- alpha_result$total$raw_alpha
+cat("Cronbach's alpha:", round(alpha_value, 3), "\n")
 ```
 
-**Interpreting the output:**
-
-- The overall `raw_alpha` is our Cronbach's alpha value
-- The "Reliability if an item is dropped" section shows what alpha would be without each item
-- If dropping an item *increases* alpha, that item may not fit the construct well
-
-```{r}
-#| label: alpha-summary
-
-# Extract the key alpha value for inline reporting
-alpha_value <- alpha_result$total$raw_alpha
-cat( "Cronbach's alpha:", round( alpha_value, 3 ), "\n" )
-```
-
-
-# Step 4: Build the Index and Visualize
+# Step 4: Build Index and Visualize
 
 ```{r}
 #| label: step.04a
 
-# Correlation matrix of indicator variables
-cor_matrix <- cor( index_z, use = "complete.obs" )
-
-# Visualize the correlation matrix
 corrplot(
-  cor_matrix,
-  method  = "color",
-  type    = "upper",
-  addCoef.col = "black",
-  tl.col  = "black",
-  tl.srt  = 45,
-  title   = "Inter-Item Correlation Matrix: Economic Hardship Index",
-  mar     = c(0, 0, 2, 0)
+  cor(index_z, use = "complete.obs"),
+  method = "color", type = "upper", addCoef.col = "black",
+  tl.col = "black", tl.srt = 45,
+  title = "Inter-Item Correlation Matrix: Economic Hardship Index",
+  mar = c(0, 0, 2, 0)
 )
 ```
-
-All items should show positive correlations (after reverse-coding income), confirming they measure a common construct.
 
 ```{r}
 #| label: step.04b
 
-# Create the composite index as the row mean of z-scores
-# This gives equal weight to each indicator
-index_z$hardship_index <- rowMeans( index_z, na.rm = TRUE )
+index_z$hardship_index <- rowMeans(index_z, na.rm = TRUE)
 
-# Histogram of the hardship index
-ggplot( index_z, aes( x = hardship_index ) ) +
-  geom_histogram( bins = 40, fill = "#8c1d40", color = "white", alpha = 0.8 ) +
-  geom_vline( xintercept = mean( index_z$hardship_index, na.rm = TRUE ),
-              linetype = "dashed", color = "#ffc627", linewidth = 1 ) +
+ggplot(index_z, aes(x = hardship_index)) +
+  geom_histogram(bins = 40, fill = "#8c1d40", color = "white", alpha = 0.8) +
+  geom_vline(xintercept = mean(index_z$hardship_index, na.rm = TRUE),
+             linetype = "dashed", color = "#ffc627", linewidth = 1) +
   theme_minimal() +
-  labs(
-    title    = "Distribution of Economic Hardship Index",
-    subtitle = "Arizona Census Tracts (ACS 2023)",
-    x        = "Hardship Index (z-score scale)",
-    y        = "Number of Tracts",
-    caption  = "Dashed line = mean"
-  )
+  labs(title = "Distribution of Economic Hardship Index",
+       subtitle = "Arizona Census Tracts (ACS 2023)",
+       x = "Hardship Index (z-score scale)", y = "Number of Tracts")
 ```
 
 ```{r}
 #| label: step.04c
 
-# Add the index back to the spatial data for mapping
-# Match rows using the complete-case subset
 CenDF_complete <- CenDF_wide %>%
-  drop_na( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income )
-
+  drop_na(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income)
 CenDF_complete$hardship_index <- index_z$hardship_index
 ```
 
-
 # Step 5: National County-Level Map
-
-We now pull the same 5 hardship variables at the **county level** for the entire US, compute the index using the same method, and map national patterns of economic hardship.
 
 ```{r}
 #| label: step.05-pull
 #| results: hide
 
-# Pull county-level data for the entire US
-# Same 5 variables, different geography
 county_df <- get_acs(
-  geography = "county",
-  variables = hardship_vars,
-  year      = 2023,
-  survey    = "acs5",
-  geometry  = TRUE,
-  progress_bar = FALSE
+  geography = "county", variables = hardship_vars,
+  year = 2023, survey = "acs5", geometry = TRUE, progress_bar = FALSE
 )
-
-# Fallback: load pre-built data if API unavailable
-# (loads processed data — skip to step.05-map for mapping)
-# Option A — from local file:
-# county_complete <- readRDS("../data/hardship_counties_us.rds")
-# Option B — from GitHub:
-# county_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_counties_us.rds"))
 ```
 
 ```{r}
 #| label: step.05-index
 
-# Reshape county data from long to wide
 county_wide <- county_df %>%
-  select( -moe ) %>%
-  pivot_wider( names_from = variable, values_from = estimate )
-
-# Compute the same rate variables as the tract level
-county_wide <- county_wide %>%
+  select(-moe) %>%
+  pivot_wider(names_from = variable, values_from = estimate) %>%
   mutate(
-    poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
+    poverty_rate = (pov_below50 + pov_50to99) / pov_den,
     unemp_rate   = pct_unemp_num / pct_unemp_den,
     no_hs_rate   = pct_no_hs_num / pct_no_hs_den,
     no_ins_rate  = pct_no_ins_num / pct_no_ins_den
   )
 
-# Z-score standardization and reverse-code income
 county_index <- county_wide %>%
   st_drop_geometry() %>%
-  select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
+  select(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income) %>%
   drop_na() %>%
-  mutate( across( everything(), ~ as.numeric( scale(.) ) ) ) %>%
-  mutate( median_income = -1 * median_income )
+  mutate(across(everything(), ~ as.numeric(scale(.)))) %>%
+  mutate(median_income = -1 * median_income)
 
-# Composite index: row mean of z-scores
-county_index$hardship_index <- rowMeans( county_index, na.rm = TRUE )
-
-# Attach index back to spatial data
+county_index$hardship_index <- rowMeans(county_index, na.rm = TRUE)
 county_complete <- county_wide %>%
-  drop_na( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income )
+  drop_na(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income)
 county_complete$hardship_index <- county_index$hardship_index
 ```
 
 ```{r}
 #| label: step.05-map
 
-# Use shift_geometry to show Alaska and Hawaii as standard insets
-county_shifted <- shift_geometry( county_complete )
+county_shifted <- shift_geometry(county_complete)
 
-# National county-level hardship map with AK/HI insets
-map_county <- ggplot( county_shifted ) +
-  geom_sf( aes( fill = hardship_index ), color = NA, linewidth = 0 ) +
-  scale_fill_viridis_c( option = "inferno",
-                        name = "Hardship\nIndex",
-                        na.value = "grey80" ) +
+ggplot(county_shifted) +
+  geom_sf(aes(fill = hardship_index), color = NA, linewidth = 0) +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship\nIndex", na.value = "grey80") +
   theme_void() +
-  labs(
-    title    = "Economic Hardship Across U.S. Counties",
-    subtitle = "ACS 5-Year (2023) | Higher values = greater hardship",
-    caption  = "Alaska and Hawaii shown as insets"
-  )
-
-map_county
+  labs(title = "Economic Hardship Across U.S. Counties",
+       subtitle = "ACS 5-Year (2023) | Higher values = greater hardship",
+       caption = "Alaska and Hawaii shown as insets")
 ```
-
 
 # Step 6: Arizona Census Tract Map
 
 ```{r}
 #| label: step.06-map
 
-# Map the hardship index across Arizona tracts
-map_tract <- ggplot( CenDF_complete ) +
-  geom_sf( aes( fill = hardship_index ), color = NA ) +
-  scale_fill_viridis( option = "inferno", direction = -1,
-                      name = "Hardship\nIndex" ) +
+ggplot(CenDF_complete) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship\nIndex") +
   theme_void() +
-  labs(
-    title    = "Economic Hardship Index by Census Tract",
-    subtitle = "Arizona — ACS 5-Year (2023)",
-    caption  = "Higher values = greater economic hardship"
-  )
-
-map_tract
+  labs(title = "Economic Hardship Index by Census Tract",
+       subtitle = "Arizona — ACS 5-Year (2023)")
 ```
 
-
 # Step 7: Maricopa County Block Group Map
-
-We zoom in further to the **block group** level within Maricopa County. Block groups are the smallest geography for which ACS data are available, revealing fine-grained variation within tracts.
 
 ```{r}
 #| label: step.07-pull
 #| results: hide
 
-# Pull block group data for Maricopa County
-# This is the finest spatial resolution available in the ACS
 cbg_df <- get_acs(
-  geography = "block group",
-  variables = hardship_vars,
-  state     = "AZ",
-  county    = "Maricopa",
-  year      = 2023,
-  survey    = "acs5",
-  geometry  = TRUE,
-  progress_bar = FALSE
+  geography = "block group", variables = hardship_vars,
+  state = "AZ", county = "Maricopa",
+  year = 2023, survey = "acs5", geometry = TRUE, progress_bar = FALSE
 )
-
-# Fallback: load pre-built data if API unavailable
-# (loads processed data — skip to step.07-map for mapping)
-# Option A — from local file:
-# cbg_complete <- readRDS("../data/hardship_cbg_maricopa.rds")
-# Option B — from GitHub:
-# cbg_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_cbg_maricopa.rds"))
 ```
 
 ```{r}
 #| label: step.07-index
 
-# Reshape and compute rates — same pipeline as tracts and counties
 cbg_wide <- cbg_df %>%
-  select( -moe ) %>%
-  pivot_wider( names_from = variable, values_from = estimate )
-
-cbg_wide <- cbg_wide %>%
+  select(-moe) %>%
+  pivot_wider(names_from = variable, values_from = estimate) %>%
   mutate(
-    poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
+    poverty_rate = (pov_below50 + pov_50to99) / pov_den,
     unemp_rate   = pct_unemp_num / pct_unemp_den,
     no_hs_rate   = pct_no_hs_num / pct_no_hs_den,
     no_ins_rate  = pct_no_ins_num / pct_no_ins_den
   )
 
-# Z-score and reverse-code income
 cbg_index <- cbg_wide %>%
   st_drop_geometry() %>%
-  select( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income ) %>%
+  select(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income) %>%
   drop_na() %>%
-  mutate( across( everything(), ~ as.numeric( scale(.) ) ) ) %>%
-  mutate( median_income = -1 * median_income )
+  mutate(across(everything(), ~ as.numeric(scale(.)))) %>%
+  mutate(median_income = -1 * median_income)
 
-cbg_index$hardship_index <- rowMeans( cbg_index, na.rm = TRUE )
-
-# Attach index to spatial data
+cbg_index$hardship_index <- rowMeans(cbg_index, na.rm = TRUE)
 cbg_complete <- cbg_wide %>%
-  drop_na( poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income )
+  drop_na(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income)
 cbg_complete$hardship_index <- cbg_index$hardship_index
 ```
 
 ```{r}
 #| label: step.07-map
 
-# Block-group-level hardship map for Maricopa County
-map_cbg <- ggplot( cbg_complete ) +
-  geom_sf( aes( fill = hardship_index ), color = NA ) +
-  scale_fill_viridis( option = "inferno", direction = -1,
-                      name = "Hardship\nIndex" ) +
+ggplot(cbg_complete) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship\nIndex") +
   theme_void() +
-  labs(
-    title    = "Economic Hardship Index by Block Group",
-    subtitle = "Maricopa County, AZ — ACS 5-Year (2023)",
-    caption  = "Higher values = greater economic hardship"
-  )
-
-map_cbg
+  labs(title = "Economic Hardship Index by Block Group",
+       subtitle = "Maricopa County, AZ — ACS 5-Year (2023)")
 ```
 
-
 # Step 8: Three-Scale Comparison
-
-Using `patchwork`, we place all three maps side by side to compare how spatial patterns of hardship appear at different geographic scales. This illustrates the **Modifiable Areal Unit Problem (MAUP)** — the same phenomenon looks different depending on the unit of analysis.
 
 ```{r}
 #| label: step.08-patchwork
 #| fig-width: 16
 #| fig-height: 6
 
-# Build compact versions of each map for the 3-panel comparison
-# Remove subtitles/captions to keep the panel clean
-p_county <- ggplot( county_shifted ) +
-  geom_sf( aes( fill = hardship_index ), color = NA, linewidth = 0 ) +
-  scale_fill_viridis_c( option = "inferno", name = "Index",
-                        na.value = "grey80" ) +
-  theme_void() +
-  labs( title = "County (US)" )
+p_county <- ggplot(county_shifted) +
+  geom_sf(aes(fill = hardship_index), color = NA, linewidth = 0) +
+  scale_fill_viridis_c(option = "inferno", name = "Index", na.value = "grey80") +
+  theme_void() + labs(title = "County (US)")
 
-p_tract <- ggplot( CenDF_complete ) +
-  geom_sf( aes( fill = hardship_index ), color = NA ) +
-  scale_fill_viridis( option = "inferno", direction = -1, name = "Index" ) +
-  theme_void() +
-  labs( title = "Tract (Arizona)" )
+p_tract <- ggplot(CenDF_complete) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(option = "inferno", direction = -1, name = "Index") +
+  theme_void() + labs(title = "Tract (Arizona)")
 
-p_cbg <- ggplot( cbg_complete ) +
-  geom_sf( aes( fill = hardship_index ), color = NA ) +
-  scale_fill_viridis( option = "inferno", direction = -1, name = "Index" ) +
-  theme_void() +
-  labs( title = "Block Group (Maricopa)" )
+p_cbg <- ggplot(cbg_complete) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis(option = "inferno", direction = -1, name = "Index") +
+  theme_void() + labs(title = "Block Group (Maricopa)")
 
-# patchwork: combine with + and collect shared legend
 p_county + p_tract + p_cbg +
   plot_annotation(
     title   = "Economic Hardship Across Three Geographic Scales",
@@ -501,85 +329,75 @@ p_county + p_tract + p_cbg +
 ```
 
 
-# Save Datasets for Offline Use
-
-The code below saves the three completed spatial datasets as `.rds` files. These files contain all census variables, computed rates, and the hardship index along with geometry. Students can load these if the Census API is unavailable.
-
-```{r}
-#| label: save-datasets
-
-# Save the three completed spatial datasets for offline use
-# Each file includes: GEOID, NAME, all census variables, computed rates,
-# hardship_index, and sf geometry
-saveRDS( county_complete,  "hardship_counties_us.rds" )
-saveRDS( CenDF_complete,   "hardship_tracts_az.rds" )
-saveRDS( cbg_complete,     "hardship_cbg_maricopa.rds" )
-
-cat( "Saved 3 datasets:\n" )
-cat( "  hardship_counties_us.rds   —", nrow(county_complete), "counties\n" )
-cat( "  hardship_tracts_az.rds     —", nrow(CenDF_complete), "tracts\n" )
-cat( "  hardship_cbg_maricopa.rds  —", nrow(cbg_complete), "block groups\n" )
-```
-
+---
 
 # Questions
 
-### Q1 — Interpret
+## Q1 — Interpret the Baseline Results {.question}
 
-> **This question requires you to modify the code from the steps above.**
-> Recommendation: re-download the Lab 1 Assignment .qmd and rename it
-> with your last name (e.g. Lab1_Assignment_Howell.qmd) before editing.
-> This preserves the master copy as a reference.
+> **Text answer — no code required.** Answer in your own words below.
+
+- **Cronbach's alpha:** What is the value? Is it acceptable (> 0.7)? What does it tell you about the 5-variable index?
+
+[YOUR ANSWER HERE]
+
+- **National patterns:** Where is economic hardship most concentrated in the US county map?
+
+[YOUR ANSWER HERE]
+
+- **Scale comparison:** How does the spatial pattern change as you zoom from counties to tracts to block groups? What does this illustrate about the MAUP?
+
+[YOUR ANSWER HERE]
+
+
+## Q2 — Add a 6th Variable {.question}
+
+> **Code + output required.** Add **percent of households receiving SNAP benefits** as a 6th indicator.
+> Census codes: numerator `B19058_002`, denominator `B19058_001`.
 >
-> **Instructions:** What is the Cronbach's alpha? Is it acceptable (>0.7)? Looking at the 3-scale maps, where is hardship concentrated nationally? How does the spatial pattern change as you zoom from counties to tracts to CBGs?
-
-- **Alpha**: [YOUR ANSWER HERE]
-
-- **National patterns**: [YOUR ANSWER HERE]
-
-- **Scale comparison**: [YOUR ANSWER HERE]
-
-
-### Q2 — Modify (FULL CODE AND OUTPUT REQUIRED)
-
-> **This question requires you to modify the code from the steps above.**
-> Recommendation: re-download the Lab 1 Assignment .qmd and rename it
-> with your last name (e.g. Lab1_Assignment_Howell.qmd) before editing.
-> This preserves the master copy as a reference.
->
-> **Instructions:** Add a 6th variable to the hardship index — percent receiving SNAP benefits (B19058_002 / B19058_001). Re-pull data at the tract level, recompute Cronbach's alpha with 6 variables, rebuild the index, and re-map at the tract level.
+> Fill in the three scaffold chunks below to: re-pull tract data with the 6th variable, recompute alpha with 6 variables, rebuild the index, and re-map at the tract level.
 
 ```{r}
 #| label: q2-pull
 #| results: hide
 
 # YOUR CODE HERE
+# Hint: add snap_num = "B19058_002" and snap_den = "B19058_001"
+# to hardship_vars, then re-run get_acs() for AZ tracts
 ```
 
 ```{r}
 #| label: q2-index
 
 # YOUR CODE HERE
+# Hint: compute snap_rate = snap_num / snap_den
+# Add snap_rate to the index_vars select() call
+# Standardize to z-scores (no reverse coding needed for SNAP)
+# Run psych::alpha() on the 6-variable index_z
+# Build hardship_index_6 as rowMeans of the 6 z-scores
 ```
 
 ```{r}
 #| label: q2-map
 
 # YOUR CODE HERE
+# Map the 6-variable hardship index at the Arizona tract level
+# Use the same ggplot / viridis style as Step 6
 ```
 
 
-### Q3 — Interpret Modified
+## Q3 — Evaluate the Addition {.question}
 
-> **This question requires you to modify the code from the steps above.**
-> Recommendation: re-download the Lab 1 Assignment .qmd and rename it
-> with your last name (e.g. Lab1_Assignment_Howell.qmd) before editing.
-> This preserves the master copy as a reference.
->
-> **Instructions:** Did adding SNAP improve or weaken Cronbach's alpha? Compare the 5-variable map to the 6-variable map. Should you keep the 6th variable? Why or why not?
+> **Text answer — no code required.**
 
-- **Alpha comparison**: [YOUR ANSWER HERE]
+- **Alpha comparison:** Did adding SNAP improve or weaken Cronbach's alpha? By how much?
 
-- **Map comparison**: [YOUR ANSWER HERE]
+[YOUR ANSWER HERE]
 
-- **Recommendation**: [YOUR ANSWER HERE]
+- **Map comparison:** Visually compare the 5-variable and 6-variable tract maps. Do the patterns differ meaningfully?
+
+[YOUR ANSWER HERE]
+
+- **Recommendation:** Based on alpha and the maps, should you keep the 6th variable in the index? Why or why not?
+
+[YOUR ANSWER HERE]
