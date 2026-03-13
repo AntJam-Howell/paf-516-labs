@@ -51,9 +51,7 @@ After completing this module, you will be able to:
 
 Download the lecture notes: [Measurement Theory --- Lecture Notes (PDF)](https://canvas.asu.edu/courses/220070/files/105139000?wrap=1)
 
-```{=html}
-<iframe src="https://www.youtube.com/embed/ra5rMqr00Ew?start=192" width="560" height="315" allowfullscreen></iframe>
-```
+[Video Lecture: Measurement Theory](https://www.youtube.com/watch?v=ra5rMqr00Ew)
 
 :::
 
@@ -182,16 +180,6 @@ alpha = var(T) / var(T + e)
 
 :::
 
-## Lab Assignment
-
-::: {.section-box}
-
-In Lab 01, you will use R to retrieve census variables with `tidycensus`, assess their reliability with `psych::alpha()`, build a composite index of neighborhood quality, and visualize the results at three geographic scales (county, tract, block group).
-
-Download the [Lab 01 Quarto template (.qmd)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/Assignment/Lab1_Assignment.qmd), complete the exercises, and submit both the .qmd and rendered .html to Canvas.
-
-:::
-
 ## Lab 1 Overview
 
 ::: {.section-box}
@@ -203,7 +191,7 @@ three geographic scales: US counties (national), Arizona census tracts
 
 ### Downloading the Lab Template
 
-Right-click the link in the **Lab Assignment** section above and choose
+Right-click the link in the **Lab Assignment** section below and choose
 **"Save Link As"** to download the `.qmd` file. Do not open it in the
 browser — save it first, then open it in RStudio.
 
@@ -230,6 +218,16 @@ when opened from inside the `Lab1/` folder.
 
 :::
 
+## Lab Assignment
+
+::: {.section-box}
+
+In Lab 01, you will use R to retrieve census variables with `tidycensus`, assess their reliability with `psych::alpha()`, build a composite index of neighborhood quality, and visualize the results at three geographic scales (county, tract, block group).
+
+Download the [Lab 01 Quarto template (.qmd)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/Assignment/Lab1_Assignment.qmd), complete the exercises, and submit both the .qmd and rendered .html to Canvas.
+
+:::
+
 ## Your Target Deliverable
 
 ::: {.section-box}
@@ -251,25 +249,28 @@ tract  <- readRDS("data/hardship_tracts_az.rds")
 cbg    <- readRDS("data/hardship_cbg_maricopa.rds")
 county_shifted <- shift_geometry(county)
 
+shared_theme <- theme_void() + theme(legend.position = "none")
+
 p1 <- ggplot(county_shifted) +
   geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis_c(option = "inferno", name = "Hardship\nIndex") +
-  theme_void() +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship Index") +
+  shared_theme +
   labs(title = "US Counties", subtitle = "ACS 2019–2023")
 
 p2 <- ggplot(tract) +
   geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis_c(option = "inferno", name = "Hardship\nIndex") +
-  theme_void() +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship Index") +
+  shared_theme +
   labs(title = "Arizona Census Tracts", subtitle = "ACS 2019–2023")
 
 p3 <- ggplot(cbg) +
   geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis_c(option = "inferno", name = "Hardship\nIndex") +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship Index") +
   theme_void() +
+  theme(legend.position = "bottom") +
   labs(title = "Maricopa County Block Groups", subtitle = "ACS 2019–2023")
 
-p1 / p2 / p3
+(p1 | p2 | p3) + plot_layout(widths = c(1, 1, 1))
 ```
 
 *Three geographic scales. One index. Lab 1 asks you to build this from scratch.*
