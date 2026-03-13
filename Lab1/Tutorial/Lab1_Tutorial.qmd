@@ -22,7 +22,7 @@ execute:
 
 **Chunk by chunk:** Place cursor inside any chunk → Cmd+Return (Mac) / Ctrl+Enter (PC).
 
-This file is for learning — do not edit it. When you are ready for the assignment, download `Lab1_Assignment.qmd` from the [Lab 1 Assignment page](lab1-assignment.html).
+This file is for learning — do not edit it. When you are ready for the assignment, download `Lab1_Assignment.qmd` from the [Lab 1 Assignment page](https://antjam-howell.github.io/paf-516-labs/lab1-assignment.html).
 :::
 
 
@@ -422,5 +422,5 @@ cat("  hardship_cbg_maricopa.rds —", nrow(cbg_complete), "block groups\n")
 
 ::: {.callout-note}
 ## Ready for the assignment?
-Head to the [Lab 1 Assignment page](lab1-assignment.html) to download `Lab1_Assignment.qmd`. You will add a 6th variable to the index and evaluate whether it improves reliability.
+Head to the [Lab 1 Assignment page](https://antjam-howell.github.io/paf-516-labs/lab1-assignment.html) to download `Lab1_Assignment.qmd`. You will add a 6th variable to the index and evaluate whether it improves reliability.
 :::

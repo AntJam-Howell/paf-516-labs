@@ -49,6 +49,7 @@
     background: var(--card-bg); border: 1px solid var(--border);
     border-radius: 10px; padding: 18px 20px;
     transition: border-color 0.2s;
+    display: flex; flex-direction: column;
   }
   .module-card.available { border-top: 3px solid #58a6ff; }
   .module-card.available:hover { border-color: #58a6ff; }
@@ -59,7 +60,7 @@
   }
   .module-card.soon .mod-num { color: var(--muted); }
   .module-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
-  .module-card p { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+  .module-card p { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 14px; flex-grow: 1; }
   .module-link {
     display: inline-block; font-size: 0.82rem; font-weight: 600;
     color: #58a6ff; text-decoration: none; padding: 5px 0;
@@ -139,14 +140,14 @@
     <div class="module-card available">
       <div class="mod-num">Module 1</div>
       <h3>Measurement &amp; Indexing</h3>
-      <p>Constructs, z-score standardization, Cronbach's alpha, composite indices.</p>
+      <p>Constructs, z-score standardization, and Cronbach's alpha.</p>
       <a class="module-link" href="Module1_Guide.html">Study Guide →</a>
     </div>
 
     <div class="module-card soon">
       <div class="mod-num">Module 2</div>
       <h3>Cartographic Design</h3>
-      <p>Classification schemes, color theory, bivariate mapping.</p>
+      <p>Classification schemes, color theory, and bivariate mapping.</p>
     </div>
 
     <div class="module-card soon">
@@ -158,7 +159,7 @@
     <div class="module-card soon">
       <div class="mod-num">Module 4</div>
       <h3>Spatial Autocorrelation</h3>
-      <p>Moran's I, LISA hot spots, spatial clustering.</p>
+      <p>Moran's I, LISA hot spots, and spatial clustering.</p>
     </div>
 
     <div class="module-card soon">
@@ -170,7 +171,7 @@
     <div class="module-card soon">
       <div class="mod-num">Module 6</div>
       <h3>Policy Communication</h3>
-      <p>Quarto policy briefs, professional formatting, multi-scale synthesis.</p>
+      <p>Quarto policy briefs and multi-scale synthesis.</p>
     </div>
 
   </div>
