@@ -258,10 +258,8 @@ Weekly Labs & 50\% &
 \rowcolor{asulightgray}
 Final Dashboard & 30\% &
   Integrate course skills into an interactive Quarto dashboard analyzing neighborhood change in a major metro area of your choosing (other than Phoenix). A detailed rubric will be distributed with the assignment. \\
-Explainer Assignment & 10\% &
-  Create a short tutorial — blog post, video, GIF, or guide — making a course concept accessible to classmates. May cover an R package, analytical framework, or data programming technique. \\
 \rowcolor{asulightgray}
-Discussion Topics & 10\% &
+Discussion Topics & 20\% &
   YellowDig board participation. Earn at least 100 points through posts, comments, reactions, and instructor badges. Maximum 20 points per week. \\
 \end{tabularx}
 ```
