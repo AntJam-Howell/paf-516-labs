@@ -51,17 +51,18 @@ format:
             \parbox{\dimexpr\textwidth+0in\relax}{%
               \vspace{3pt}%
               \hspace{4pt}%
-              \textcolor{white}{\small\textbf{PAF 516 — Community Analytics}}%
+              \textcolor{white}{\small\textbf{PAF 516 — Community Analytics | Syllabus}}%
               \hfill%
               \vspace{3pt}%
             }%
           }%
         }
 
-        % Footer
-        \fancyfoot[C]{\raisebox{8pt}{\color{asurulegray}\rule{0.9\textwidth}{0.4pt}}}
-        \fancyfoot[L]{\small\color{asugray} Course Syllabus · PAF 516}
-        \fancyfoot[R]{\small\color{asugray} Page \thepage}
+        % Footer — centered page number only
+        \fancyfoot[C]{\small\color{asugray}\thepage}
+
+        % Make first page (title page) use the same style
+        \fancypagestyle{plain}{\pagestyle{fancy}}
 
         % ── Section Styling ──────────────────────────────────────────────
         \usepackage{titlesec}
