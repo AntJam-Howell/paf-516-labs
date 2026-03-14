@@ -18,10 +18,61 @@ execute:
 
 ::: {.callout-important}
 ## Before you begin
-1. Run the `packages` chunk first (Cmd+Return / Ctrl+Enter) — this installs packages and may take 5–10 minutes the first time
-2. Knit the file (Cmd+Shift+K / Ctrl+Shift+K) to see the completed Steps 1–8 before editing
-3. Fill in Q1, Q2, and Q3, then knit again and submit both `Lab1_Assignment.qmd` and `Lab1_Assignment.html` to Canvas
+
+1. **Rename this file** to `Lab1_Assignment_YourLastName.qmd` before editing.
+2. **This file contains the same pre-filled code as the tutorial.** Steps 1--8 below produce the same output you saw in the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately (Cmd+Shift+K / Ctrl+Shift+K) and see the same results. If you placed it in a different location, run the `packages` chunk first (Cmd+Return / Ctrl+Enter), then knit.
+3. **The assignment questions are below.** Here is the workflow:
+   - **Q1** asks you to interpret results from the pre-filled steps. Knit first, review the Cronbach's alpha output and maps in Steps 3--8, then write your answers.
+   - **Q2** asks you to add a 6th variable (SNAP benefits) to the hardship index by adapting the existing code. Fill in the scaffold chunks labeled `q2-...` at the end of this document, then re-knit.
+   - **Q3** asks you to evaluate whether the 6th variable improved the index by comparing the original and modified results.
+4. Submit both `Lab1_Assignment_YourLastName.qmd` and `Lab1_Assignment_YourLastName.html` to Canvas.
 :::
+
+
+# Assignment Questions
+
+## Q1 --- Interpret the Baseline Results {.question}
+
+> **Text answer --- no code required.** Answer in your own words below.
+
+- **Cronbach's alpha:** What is the value? Is it acceptable (> 0.7)? What does it tell you about the 5-variable index?
+
+[YOUR ANSWER HERE]
+
+- **National patterns:** Where is economic hardship most concentrated in the US county map?
+
+[YOUR ANSWER HERE]
+
+- **Scale comparison:** How does the spatial pattern change as you zoom from counties to tracts to block groups? What does this illustrate about the MAUP?
+
+[YOUR ANSWER HERE]
+
+
+## Q2 --- Add a 6th Variable {.question}
+
+> **Code + output required.** Add **percent of households receiving SNAP benefits** as a 6th indicator. Census codes: numerator `B19058_002`, denominator `B19058_001`.
+>
+> Fill in the three scaffold chunks labeled `q2-pull`, `q2-index`, and `q2-map` at the **end of this document** (after Step 8), then re-knit to see your results.
+
+
+## Q3 --- Evaluate the Addition {.question}
+
+> **Text answer --- no code required.**
+
+- **Alpha comparison:** Did adding SNAP improve or weaken Cronbach's alpha? By how much?
+
+[YOUR ANSWER HERE]
+
+- **Map comparison:** Visually compare the 5-variable and 6-variable tract maps. Do the patterns differ meaningfully?
+
+[YOUR ANSWER HERE]
+
+- **Recommendation:** Based on alpha and the maps, should you keep the 6th variable in the index? Why or why not?
+
+[YOUR ANSWER HERE]
+
+
+---
 
 
 ```{r}
@@ -331,31 +382,9 @@ p_county + p_tract + p_cbg +
 
 ---
 
-# Questions
+# Q2 --- Your Code
 
-## Q1 — Interpret the Baseline Results {.question}
-
-> **Text answer — no code required.** Answer in your own words below.
-
-- **Cronbach's alpha:** What is the value? Is it acceptable (> 0.7)? What does it tell you about the 5-variable index?
-
-[YOUR ANSWER HERE]
-
-- **National patterns:** Where is economic hardship most concentrated in the US county map?
-
-[YOUR ANSWER HERE]
-
-- **Scale comparison:** How does the spatial pattern change as you zoom from counties to tracts to block groups? What does this illustrate about the MAUP?
-
-[YOUR ANSWER HERE]
-
-
-## Q2 — Add a 6th Variable {.question}
-
-> **Code + output required.** Add **percent of households receiving SNAP benefits** as a 6th indicator.
-> Census codes: numerator `B19058_002`, denominator `B19058_001`.
->
-> Fill in the three scaffold chunks below to: re-pull tract data with the 6th variable, recompute alpha with 6 variables, rebuild the index, and re-map at the tract level.
+> Fill in the three chunks below, then re-knit to see your results. Add **percent of households receiving SNAP benefits** (`B19058_002` / `B19058_001`) as a 6th indicator to the hardship index.
 
 ```{r}
 #| label: q2-pull
@@ -384,20 +413,3 @@ p_county + p_tract + p_cbg +
 # Map the 6-variable hardship index at the Arizona tract level
 # Use the same ggplot / viridis style as Step 6
 ```
-
-
-## Q3 — Evaluate the Addition {.question}
-
-> **Text answer — no code required.**
-
-- **Alpha comparison:** Did adding SNAP improve or weaken Cronbach's alpha? By how much?
-
-[YOUR ANSWER HERE]
-
-- **Map comparison:** Visually compare the 5-variable and 6-variable tract maps. Do the patterns differ meaningfully?
-
-[YOUR ANSWER HERE]
-
-- **Recommendation:** Based on alpha and the maps, should you keep the 6th variable in the index? Why or why not?
-
-[YOUR ANSWER HERE]

@@ -18,12 +18,57 @@ execute:
 
 ::: {.callout-important}
 ## Before you begin
-1. Rename this file: `Lab2_Assignment_YourLastName.qmd`
-2. Open the renamed copy — never edit the original
-3. Run the `packages` chunk first (Cmd+Return / Ctrl+Enter) — this installs packages and may take 5–10 minutes the first time
-4. Knit the file (Cmd+Shift+K / Ctrl+Shift+K) to see the completed Steps 1–6 before editing
-5. Fill in Q1, Q2, and Q3, then knit again and submit both `.qmd` and rendered `.html` to Canvas
+
+1. **Rename this file** to `Lab2_Assignment_YourLastName.qmd` before editing.
+2. **This file contains the same pre-filled code as the tutorial.** Steps 1--6 below produce the same output you saw in the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately (Cmd+Shift+K / Ctrl+Shift+K) and see the same results. If you placed it in a different location, run the `packages` chunk first (Cmd+Return / Ctrl+Enter), then knit.
+3. **The assignment questions are below.** Here is the workflow:
+   - **Q1** asks you to interpret results from the pre-filled steps. Knit first, review the maps in Steps 2, 4, and 6, then write your answers.
+   - **Q2** asks you to create a second bivariate choropleth by adapting the code from Step 3. Fill in the scaffold chunks labeled `q2.a` and `q2.b` at the end of this document, then re-knit.
+   - **Q3** asks you to compare the two bivariate maps and interpret the differences.
+4. Submit both `Lab2_Assignment_YourLastName.qmd` and `Lab2_Assignment_YourLastName.html` to Canvas.
 :::
+
+
+# Assignment Questions
+
+## Q1 --- Interpret: MAUP, Classification, and the Spatial Story {.question}
+
+> **Text answer --- no code required.**
+
+- **1a.** Zoom into Maricopa County in the interactive US county map (Step 6). Note the single hardship score assigned to the entire county. Now scroll back to the block group map in Step 4 and explore the same area. Based on what you see, would a state official relying **only** on the county-level map get an accurate picture of where economic hardship is concentrated? Explain how the **Modifiable Areal Unit Problem (MAUP)** applies here and what it means for social policy decisions --- for example, deciding where to allocate funding for job training, food assistance, or health clinics.
+
+[YOUR ANSWER HERE]
+
+- **1b.** Now look at the 2x2 classification comparison from Step 2. Which classification method makes economic hardship appear *most widespread* across Maricopa County? Which makes it appear *most concentrated*?
+
+[YOUR ANSWER HERE]
+
+- **1c.** In a policy memo arguing for increased funding to "high hardship" areas, which classification method would you choose and why? What about a memo arguing that hardship is *not* a widespread problem?
+
+[YOUR ANSWER HERE]
+
+
+## Q2 --- Modify: Bivariate Map with Hardship x % Renter-Occupied {.question}
+
+> **Code + output required.** Create a **second bivariate choropleth** using `hardship_index` and `pct_renter` (percent renter-occupied housing) instead of `pct_minority`. Use the same `biscale` workflow from Step 3: `bi_class()` → `bi_scale_fill()` → `bi_legend()` + `inset_element()`.
+>
+> Fill in the two scaffold chunks labeled `q2.a` and `q2.b` at the **end of this document** (after Step 6), then re-knit to see your map.
+
+
+## Q3 --- Interpret: Comparing the Two Bivariate Maps {.question}
+
+> **Text answer --- no code required.** Compare the bivariate map from Step 3 (hardship x % minority) with your new map from Q2 (hardship x % renter).
+
+- **3a.** Do the same areas show "double disadvantage" in both maps? Or do the spatial patterns differ?
+
+[YOUR ANSWER HERE]
+
+- **3b.** What does this comparison tell you about the relationship between economic hardship, race/ethnicity, and housing tenure in Maricopa County?
+
+[YOUR ANSWER HERE]
+
+
+---
 
 
 ```{r}
@@ -80,7 +125,7 @@ library(viridis)     # Perceptually uniform color scales
 # ── FALLBACK: If Census API is unavailable ─────────────────────────────
 # Pre-built .rds files are available for each data pull step.
 # See the commented fallback lines in Step 1b (CBG data) and
-# Step 4a (county data). Uncomment the readRDS() lines
+# Step 6a (county data). Uncomment the readRDS() lines
 # and skip the get_acs() calls in those steps.
 #
 # Option A — from local file (save .rds files to PAF516/Lab2/data/ first):
@@ -91,7 +136,7 @@ library(viridis)     # Perceptually uniform color scales
 # cbg_raw      <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/cbg_extended_2023.rds"))
 # county_raw   <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/county_hardship_2023.rds"))
 #
-# If using fallback data, skip the get_acs() calls in Steps 1b and 4a,
+# If using fallback data, skip the get_acs() calls in Steps 1b and 6a,
 # then continue from Step 1c.
 ```
 
@@ -381,143 +426,7 @@ hardship and low minority share. The off-diagonal colors show areas where the
 two variables diverge: high hardship but low minority share, or vice versa.
 
 
-# Step 4: The Modifiable Areal Unit Problem (MAUP)
-
-One of the most important lessons in spatial analysis is that **the geographic
-unit you choose changes the story your data tells.** This is called the
-**Modifiable Areal Unit Problem (MAUP)** --- the same underlying phenomenon
-looks dramatically different depending on whether you map it at the county,
-tract, or block group level.
-
-A county-level map smooths over enormous internal variation. Maricopa County ---
-home to over 4 million people --- gets a single hardship score, but that score
-masks neighborhoods where hardship is severe alongside affluent suburbs. A state
-official relying only on the county map might conclude Maricopa doesn't need
-targeted intervention, completely missing the block groups driving the county's
-overall score.
-
-Here we build the hardship index at the **US county level** and map it
-interactively. In Step 5, you will compare this county-level view to the
-**block group level** map of Maricopa County --- seeing MAUP in action.
-
-## 4a. Pull US county-level data
-
-```{r}
-#| label: step.04a
-#| results: hide
-
-# ── Pull US county-level data ─────────────────────────────────
-# This gives us ~3,200 counties across the entire US.
-county_raw <- get_acs(
-  geography = "county",
-  variables = hardship_vars,
-  year      = 2023,
-  survey    = "acs5",
-  geometry  = TRUE,
-  progress_bar = FALSE
-)
-
-# Fallback — uncomment if API unavailable:
-# county_raw <- readRDS("../data/county_hardship_2023.rds")
-# OR via URL:
-# county_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/county_hardship_2023.rds"))
-# county_raw <- county_raw %>%
-#   mutate(variable = recode(variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
-#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
-#     median_income = "med_income"))
-```
-
-## 4b. Build the hardship index at the county level
-
-```{r}
-#| label: step.04b
-
-# ── Reshape and compute hardship index ────────────────────────
-# Same pipeline as CBGs: pivot wide, compute rates,
-# z-score standardize, reverse income, take row mean.
-
-build_index <- function(df) {
-  df %>%
-    select(-moe) %>%
-    pivot_wider(names_from = variable, values_from = estimate) %>%
-    mutate(
-      poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
-      unemp_rate   = unemp_num / unemp_den,
-      no_hs_rate   = nohs_num / nohs_den,
-      no_ins_rate  = noins_num / noins_den
-    ) %>%
-    mutate(
-      across(
-        c(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, med_income),
-        ~ as.numeric(scale(.)),
-        .names = "z_{.col}"
-      ),
-      z_med_income = -1 * z_med_income,
-      hardship_index = rowMeans(
-        pick(z_poverty_rate, z_unemp_rate, z_no_hs_rate, z_no_ins_rate, z_med_income),
-        na.rm = TRUE
-      )
-    )
-}
-
-county_df <- build_index(county_raw)
-```
-
-## 4c. Interactive county-level map
-
-```{r}
-#| label: step.04c
-
-# ── Prepare county data for mapgl ─────────────────────────────
-county_map <- county_df %>%
-  filter(!is.na(hardship_index)) %>%
-  st_transform(crs = 4326) %>%
-  mutate(
-    hardship_round = round(hardship_index, 3),
-    poverty_pct    = round(poverty_rate * 100, 1)
-  )
-```
-
-```{r}
-#| label: step.04d
-
-# ── Interactive US county hardship map ────────────────────────
-# Zoom in on Maricopa County, AZ and note the single color assigned
-# to the entire county. Then compare with the block group map in
-# Step 5 to see what that single county value hides.
-
-maplibre(style = openfreemap_style("positron"),
-         bounds = c(-125, 24, -66, 50)) |>
-  add_source(id = "county-src",
-             type = "geojson",
-             data = county_map) |>
-  add_fill_layer(id = "county-fill",
-                 source = "county-src",
-                 fill_color = interpolate(
-                   column = "hardship_round",
-                   values = c(-1, 0, 1, 2),
-                   stops  = c("#1a9850", "#fee08b", "#d73027", "#67001f")
-                 ),
-                 fill_opacity = 0.7,
-                 hover_options = list(fill_opacity = 1),
-                 tooltip = concat(
-                   get_column("NAME"),
-                   " | Hardship: ", number_format(get_column("hardship_round")),
-                   " | Poverty: ", get_column("poverty_pct"), "%"
-                 ))
-```
-
-**MAUP in action:** Zoom into Maricopa County in the map above and note the
-single hardship score assigned to the entire county. Now scroll down to Step 5
-and explore the same area at the block group level --- you will see that the
-county's moderate score hides dramatic variation, with some block groups among
-the most distressed in the state and others among the least. This is the
-Modifiable Areal Unit Problem: **the unit of analysis determines the story.**
-
-
-# Step 5: Interactive Map with mapgl
+# Step 4: Interactive Map with mapgl
 
 Static maps are great for print; interactive maps let users explore. Here we
 build an interactive GPU-rendered map of Maricopa County CBGs using `mapgl`.
@@ -527,7 +436,7 @@ directly as a GeoJSON source so the map works in rendered HTML without a local
 tile server.
 
 ```{r}
-#| label: step.05a
+#| label: step.04a
 
 # ── Prepare data for mapgl ───────────────────────────────────
 # mapgl uses WGS84 (EPSG:4326) coordinate reference system.
@@ -545,7 +454,7 @@ cbg_map <- cbg %>%
 ```
 
 ```{r}
-#| label: step.05b
+#| label: step.04b
 
 # ── Build the interactive mapgl map ──────────────────────────
 # maplibre() initializes a MapLibre GL JS map with a basemap style.
@@ -577,14 +486,14 @@ maplibre(style = openfreemap_style("positron"),
 ```
 
 
-# Step 6: Export-Quality Figure with ggspatial
+# Step 5: Export-Quality Figure with ggspatial
 
 For reports and presentations you often need a polished static map with a scale
 bar and north arrow. The `ggspatial` package adds these cartographic elements to
 any `ggplot2` + `geom_sf()` map.
 
 ```{r}
-#| label: step.06
+#| label: step.05
 #| fig-height: 8
 
 # ── Publication-ready map with scale bar and north arrow ──────
@@ -621,32 +530,147 @@ ggplot(cbg %>% filter(!is.na(hardship_index))) +
 ```
 
 
+# Step 6: The Modifiable Areal Unit Problem (MAUP)
+
+One of the most important lessons in spatial analysis is that **the geographic
+unit you choose changes the story your data tells.** This is called the
+**Modifiable Areal Unit Problem (MAUP)** --- the same underlying phenomenon
+looks dramatically different depending on whether you map it at the county,
+tract, or block group level.
+
+A county-level map smooths over enormous internal variation. Maricopa County ---
+home to over 4 million people --- gets a single hardship score, but that score
+masks neighborhoods where hardship is severe alongside affluent suburbs. A state
+official relying only on the county map might conclude Maricopa doesn't need
+targeted intervention, completely missing the block groups driving the county's
+overall score.
+
+Here we build the hardship index at the **US county level** and map it
+interactively. Compare this county-level view to the **block group level** map
+you already explored in Step 4 --- that contrast is MAUP in action.
+
+## 6a. Pull US county-level data
+
+```{r}
+#| label: step.06a
+#| results: hide
+
+# ── Pull US county-level data ─────────────────────────────────
+# This gives us ~3,200 counties across the entire US.
+county_raw <- get_acs(
+  geography = "county",
+  variables = hardship_vars,
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE,
+  progress_bar = FALSE
+)
+
+# Fallback — uncomment if API unavailable:
+# county_raw <- readRDS("../data/county_hardship_2023.rds")
+# OR via URL:
+# county_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/county_hardship_2023.rds"))
+# county_raw <- county_raw %>%
+#   mutate(variable = recode(variable,
+#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
+#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
+#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
+#     median_income = "med_income"))
+```
+
+## 6b. Build the hardship index at the county level
+
+```{r}
+#| label: step.06b
+
+# ── Reshape and compute hardship index ────────────────────────
+# Same pipeline as CBGs: pivot wide, compute rates,
+# z-score standardize, reverse income, take row mean.
+
+build_index <- function(df) {
+  df %>%
+    select(-moe) %>%
+    pivot_wider(names_from = variable, values_from = estimate) %>%
+    mutate(
+      poverty_rate = ( pov_below50 + pov_50to99 ) / pov_den,
+      unemp_rate   = unemp_num / unemp_den,
+      no_hs_rate   = nohs_num / nohs_den,
+      no_ins_rate  = noins_num / noins_den
+    ) %>%
+    mutate(
+      across(
+        c(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, med_income),
+        ~ as.numeric(scale(.)),
+        .names = "z_{.col}"
+      ),
+      z_med_income = -1 * z_med_income,
+      hardship_index = rowMeans(
+        pick(z_poverty_rate, z_unemp_rate, z_no_hs_rate, z_no_ins_rate, z_med_income),
+        na.rm = TRUE
+      )
+    )
+}
+
+county_df <- build_index(county_raw)
+```
+
+## 6c. Interactive county-level map
+
+```{r}
+#| label: step.06c
+
+# ── Prepare county data for mapgl ─────────────────────────────
+county_map <- county_df %>%
+  filter(!is.na(hardship_index)) %>%
+  st_transform(crs = 4326) %>%
+  mutate(
+    hardship_round = round(hardship_index, 3),
+    poverty_pct    = round(poverty_rate * 100, 1)
+  )
+```
+
+```{r}
+#| label: step.06d
+
+# ── Interactive US county hardship map ────────────────────────
+# Zoom in on Maricopa County, AZ and note the single color assigned
+# to the entire county. Then compare with the block group map in
+# Step 4 to see what that single county value hides.
+
+maplibre(style = openfreemap_style("positron"),
+         bounds = c(-125, 24, -66, 50)) |>
+  add_source(id = "county-src",
+             type = "geojson",
+             data = county_map) |>
+  add_fill_layer(id = "county-fill",
+                 source = "county-src",
+                 fill_color = interpolate(
+                   column = "hardship_round",
+                   values = c(-1, 0, 1, 2),
+                   stops  = c("#1a9850", "#fee08b", "#d73027", "#67001f")
+                 ),
+                 fill_opacity = 0.7,
+                 hover_options = list(fill_opacity = 1),
+                 tooltip = concat(
+                   get_column("NAME"),
+                   " | Hardship: ", number_format(get_column("hardship_round")),
+                   " | Poverty: ", get_column("poverty_pct"), "%"
+                 ))
+```
+
+**MAUP in action:** Zoom into Maricopa County in the map above and note the
+single hardship score assigned to the entire county. Now scroll back to Step 4
+and explore the same area at the block group level --- you will see that the
+county's moderate score hides dramatic variation, with some block groups among
+the most distressed in the state and others among the least. This is the
+Modifiable Areal Unit Problem: **the unit of analysis determines the story.**
+
+
 ---
 
-# Questions
+# Q2 --- Your Code
 
-## Q1 — Interpret: MAUP, Classification, and the Spatial Story {.question}
-
-> **Text answer — no code required.**
-
-- **1a.** Zoom into Maricopa County in the interactive US county map (Step 4). Note the single hardship score assigned to the entire county. Now scroll down to the block group map in Step 5 and explore the same area. Based on what you see, would a state official relying **only** on the county-level map get an accurate picture of where economic hardship is concentrated? Explain how the **Modifiable Areal Unit Problem (MAUP)** applies here and what it means for social policy decisions --- for example, deciding where to allocate funding for job training, food assistance, or health clinics.
-
-[YOUR ANSWER HERE]
-
-- **1b.** Now look at the 2x2 classification comparison from Step 2. Which classification method makes economic hardship appear *most widespread* across Maricopa County? Which makes it appear *most concentrated*?
-
-[YOUR ANSWER HERE]
-
-- **1c.** In a policy memo arguing for increased funding to "high hardship" areas, which classification method would you choose and why? What about a memo arguing that hardship is *not* a widespread problem?
-
-[YOUR ANSWER HERE]
-
-
-## Q2 — Modify: Bivariate Map with Hardship x % Renter-Occupied {.question}
-
-> **Code + output required.** Create a **second bivariate choropleth** using `hardship_index` and `pct_renter` (percent renter-occupied housing) instead of `pct_minority`. Show the complete code and output.
->
-> Hint: follow the same pattern as Step 3 — use `bi_class()` to classify, `bi_scale_fill()` to map, and `bi_legend()` + `inset_element()` for the legend.
+> Fill in the two chunks below, then re-knit to see your bivariate map. Follow the same `biscale` pattern from Step 3, replacing `pct_minority` with `pct_renter`.
 
 ```{r}
 #| label: q2.a
@@ -664,16 +688,3 @@ ggplot(cbg %>% filter(!is.na(hardship_index))) +
 # Hint: build the bivariate map with bi_scale_fill(),
 # create the legend with bi_legend(), and combine with inset_element()
 ```
-
-
-## Q3 — Interpret: Comparing the Two Bivariate Maps {.question}
-
-> **Text answer — no code required.** Look at the bivariate map from Step 3 (hardship x % minority) and your new map from Q2 (hardship x % renter).
-
-- **3a.** Do the same areas show "double disadvantage" in both maps? Or do the spatial patterns differ?
-
-[YOUR ANSWER HERE]
-
-- **3b.** What does this comparison tell you about the relationship between economic hardship, race/ethnicity, and housing tenure in Maricopa County?
-
-[YOUR ANSWER HERE]
