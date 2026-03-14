@@ -1,6 +1,6 @@
 ---
 title: "Lab 5 Assignment | PAF 516"
-subtitle: "Spatio-Temporal Change (Part 1) — 2013 → 2019"
+subtitle: "Temporal Change Analysis — 2013 → 2019"
 format:
   html:
     theme: readable
@@ -25,14 +25,16 @@ options(tigris_progress_bar = FALSE)
 
 ```{r}
 #| label: packages
-if (!file.exists(".renv_done")) {
+# ── One-time course environment setup ─────────────────────────────────────
+if (!file.exists("~/.paf516_ready")) {
   if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+  tmp <- tempfile(fileext = ".lock")
   download.file(
-    url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/renv.lock",
-    destfile = "renv.lock", mode = "wb"
+    url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/renv.lock",
+    destfile = tmp, mode = "wb"
   )
-  renv::restore(lockfile = "renv.lock", prompt = FALSE)
-  file.create(".renv_done")
+  renv::restore(lockfile = tmp, prompt = FALSE)
+  file.create("~/.paf516_ready")
 }
 
 library(tidyverse)
@@ -84,15 +86,17 @@ hardship_vars <- c(
 #| label: step.02-pull-2013
 #| results: hide
 # 2009–2013 ACS | year = 2013 | 2010 TIGER/Line tract boundaries
-tract_2013_raw <- get_acs(
-  geography    = "tract",
-  variables    = hardship_vars,
-  state        = "AZ",
-  county       = "Maricopa",
-  year         = 2013,
-  survey       = "acs5",
-  geometry     = TRUE,
-  progress_bar = FALSE
+load_or_pull <- function(rds_path, pull_fn) {
+  if (file.exists(rds_path)) readRDS(rds_path)
+  else { r <- pull_fn(); dir.create(dirname(rds_path), showWarnings=FALSE, recursive=TRUE); saveRDS(r, rds_path); r }
+}
+tract_2013_raw <- load_or_pull(
+  "../data/maricopa_tracts_2013.rds",
+  function() get_acs(
+    geography = "tract", variables = hardship_vars,
+    state = "AZ", county = "Maricopa", year = 2013,
+    survey = "acs5", geometry = TRUE, progress_bar = FALSE
+  )
 )
 ```
 
@@ -100,15 +104,13 @@ tract_2013_raw <- get_acs(
 #| label: step.02-pull-2019
 #| results: hide
 # 2015–2019 ACS | year = 2019 | also 2010 TIGER/Line tract boundaries
-tract_2019_raw <- get_acs(
-  geography    = "tract",
-  variables    = hardship_vars,
-  state        = "AZ",
-  county       = "Maricopa",
-  year         = 2019,
-  survey       = "acs5",
-  geometry     = TRUE,
-  progress_bar = FALSE
+tract_2019_raw <- load_or_pull(
+  "../data/maricopa_tracts_2019.rds",
+  function() get_acs(
+    geography = "tract", variables = hardship_vars,
+    state = "AZ", county = "Maricopa", year = 2019,
+    survey = "acs5", geometry = TRUE, progress_bar = FALSE
+  )
 )
 ```
 

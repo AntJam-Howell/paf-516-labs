@@ -1,6 +1,6 @@
 ---
 title: "Lab 6 Assignment | PAF 516"
-subtitle: "Spatio-Temporal Change (Part 2) — LISA Trajectories & Space-Time Moran's I"
+subtitle: "Spatio-Temporal Analysis — LISA Trajectories & Space-Time Moran's I"
 format:
   html:
     theme: readable
@@ -25,14 +25,19 @@ options(tigris_progress_bar = FALSE)
 
 ```{r}
 #| label: packages
-if (!file.exists(".renv_done")) {
+# ── One-time course environment setup ─────────────────────────────────────
+# Sentinel lives in user home (~/.paf516_ready) — persists across all lab
+# folders. renv restores ONCE for the entire course, not once per lab.
+# To force re-install: delete ~/.paf516_ready and re-render.
+if (!file.exists("~/.paf516_ready")) {
   if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+  tmp <- tempfile(fileext = ".lock")
   download.file(
-    url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab6/renv.lock",
-    destfile = "renv.lock", mode = "wb"
+    url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/renv.lock",
+    destfile = tmp, mode = "wb"
   )
-  renv::restore(lockfile = "renv.lock", prompt = FALSE)
-  file.create(".renv_done")
+  renv::restore(lockfile = tmp, prompt = FALSE)
+  file.create("~/.paf516_ready")
 }
 
 library(tidyverse)
@@ -84,15 +89,32 @@ hardship_vars <- c(
 ```{r}
 #| label: step.01-pull
 #| results: hide
-tract_2013_raw <- get_acs(
-  geography = "tract", variables = hardship_vars,
-  state = "AZ", county = "Maricopa",
-  year = 2013, survey = "acs5", geometry = TRUE, progress_bar = FALSE
+load_or_pull <- function(rds_path, pull_fn) {
+  if (file.exists(rds_path)) {
+    readRDS(rds_path)
+  } else {
+    result <- pull_fn()
+    dir.create(dirname(rds_path), showWarnings = FALSE, recursive = TRUE)
+    saveRDS(result, rds_path)
+    result
+  }
+}
+
+tract_2013_raw <- load_or_pull(
+  "../data/maricopa_tracts_2013.rds",
+  function() get_acs(
+    geography = "tract", variables = hardship_vars,
+    state = "AZ", county = "Maricopa",
+    year = 2013, survey = "acs5", geometry = TRUE, progress_bar = FALSE
+  )
 )
-tract_2019_raw <- get_acs(
-  geography = "tract", variables = hardship_vars,
-  state = "AZ", county = "Maricopa",
-  year = 2019, survey = "acs5", geometry = TRUE, progress_bar = FALSE
+tract_2019_raw <- load_or_pull(
+  "../data/maricopa_tracts_2019.rds",
+  function() get_acs(
+    geography = "tract", variables = hardship_vars,
+    state = "AZ", county = "Maricopa",
+    year = 2019, survey = "acs5", geometry = TRUE, progress_bar = FALSE
+  )
 )
 ```
 
@@ -268,16 +290,19 @@ ggplot(tibble(z = z_chg, wz = wz_chg), aes(x = z, y = wz)) +
 ```
 
 
-# Step 7: Multi-Point Trend
+# Step 7: Three-Point Trend
 
 ```{r}
 #| label: step.07-pull-2016
 #| results: hide
 # year = 2016: 2012–2016 ACS | also uses 2010 TIGER/Line boundaries
-tract_2016_raw <- get_acs(
-  geography = "tract", variables = hardship_vars,
-  state = "AZ", county = "Maricopa",
-  year = 2016, survey = "acs5", geometry = FALSE, progress_bar = FALSE
+tract_2016_raw <- load_or_pull(
+  "../data/maricopa_tracts_2016.rds",
+  function() get_acs(
+    geography = "tract", variables = hardship_vars,
+    state = "AZ", county = "Maricopa",
+    year = 2016, survey = "acs5", geometry = FALSE, progress_bar = FALSE
+  )
 )
 ```
 
@@ -295,13 +320,13 @@ trend_df <- change_df %>%
     trend_type = case_when(
       hardship_2013 > hardship_2016 & hardship_2016 > hardship_2019 ~ "Consistently improving",
       hardship_2013 < hardship_2016 & hardship_2016 < hardship_2019 ~ "Consistently worsening",
-      hardship_2013 > hardship_2016 & hardship_2016 < hardship_2019 ~ "V-shaped",
-      hardship_2013 < hardship_2016 & hardship_2016 > hardship_2019 ~ "Inverted-V",
+      hardship_2013 > hardship_2016 & hardship_2016 < hardship_2019 ~ "V-shaped (improved mid)",
+      hardship_2013 < hardship_2016 & hardship_2016 > hardship_2019 ~ "Inverted-V (worsened mid)",
       TRUE ~ "Flat"
     )
   )
 
-cat("── Multi-point trend distribution (2013 | 2016 | 2019) ──\n")
+cat("── Three-point trend distribution (2013 | 2016 | 2019) ──\n")
 trend_df %>% count(trend_type, sort = TRUE) %>%
   mutate(pct = round(100 * n / sum(n), 1)) %>% print()
 
@@ -315,8 +340,8 @@ change_df <- change_df %>%
 trend_colors <- c(
   "Consistently improving" = "#2166AC",
   "Consistently worsening" = "#D7191C",
-  "V-shaped"               = "#74ADD1",
-  "Inverted-V"             = "#F46D43",
+  "V-shaped (improved mid)"               = "#74ADD1",
+  "Inverted-V (worsened mid)"             = "#F46D43",
   "Flat"                   = "#CCCCCC"
 )
 
@@ -325,7 +350,7 @@ ggplot(change_df) +
   scale_fill_manual(values = trend_colors, na.value = "#EEEEEE",
                     name = "Trend (2013|2016|2019)") +
   theme_void() +
-  labs(title    = "Multi-Point Hardship Trend (2013 | 2016 | 2019)",
+  labs(title    = "Three-Point Hardship Trend (2013 | 2016 | 2019)",
        subtitle = "Maricopa County Census Tracts")
 ```
 
@@ -342,7 +367,7 @@ ggplot(change_df) +
 - How many 2013 hot spots **dissolved** by 2019? What might explain their recovery?
 - Are there **emerging hot spots** — tracts that became HH between 2013 and 2019? Where do they appear spatially?
 - What does the **space-time Moran's I result** (Step 6) tell you about whether change is a spatially spreading process?
-- Does the **multi-point trend** (Step 7) give more or less confidence in the two-point change scores? What share of "improving" tracts show consistent improvement vs. non-monotone patterns?
+- Does the **three-point trend** (Step 7) give more or less confidence in the two-point change scores? What share of "improving" tracts show consistent improvement vs. non-monotone patterns?
 
 *Minimum 200 words. Reference specific numbers from the outputs above.*
 
@@ -376,7 +401,7 @@ ggplot(change_df) +
 
 ## Q3 — Policy Brief
 
-**You are advising the Maricopa County Office of Community Development. They have a fixed budget and can prioritize only two of the four trajectory types below. Using your trajectory map, space-time Moran's I result, and multi-point trend as evidence, write a policy brief paragraph recommending which two to prioritize and why.**
+**You are advising the Maricopa County Office of Community Development. They have a fixed budget and can prioritize only two of the four trajectory types below. Using your trajectory map, space-time Moran's I result, and three-point trend as evidence, write a policy brief paragraph recommending which two to prioritize and why.**
 
 Trajectory types to consider:
 
