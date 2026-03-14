@@ -1,0 +1,243 @@
+<!-- ============================================================
+     PAF 516 — Module 3 Guide
+     Canvas-compatible HTML: all styles inline, no external deps
+     ============================================================ -->
+
+<!-- ── Module Header ─────────────────────────────────────────── -->
+<div style="background:#8C1D40;border-radius:6px;padding:20px 24px 16px;margin-bottom:24px;">
+  <h2 style="color:#FFC627;font-size:22px;font-weight:700;margin:0 0 4px;">M3 Overview &amp; Learning Materials</h2>
+  <p style="color:#ffffff;font-size:15px;margin:0;font-weight:600;">Spatial Joins, Buffer Analysis &amp; Environmental Justice</p>
+</div>
+
+<!-- ── Module Overview ───────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Module Overview and Objectives</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">So far, your economic hardship index is built entirely from census variables &mdash; measures of <em>who lives</em> in a place. But neighborhood quality is also shaped by <em>what is near</em> a place. Proximity to environmental hazards, grocery stores, transit stops, or health clinics matters as much as demographic composition. This module teaches you to combine <strong>tabular census data</strong> with <strong>external point data</strong> using spatial operations.</p>
+  <p style="margin:0 0 12px;line-height:1.6;">The central challenge is that these datasets arrive in different formats, different coordinate reference systems, and different geographic units. You will learn to align them using <strong>spatial joins</strong>, <strong>buffer analysis</strong>, and <strong>coordinate transformations</strong> &mdash; the core operations of spatial data integration. Along the way, you will encounter a question every proximity analyst must answer: <strong>does it matter whether you draw your buffer at 0.5 miles or 1 mile?</strong> The answer is yes &mdash; and the reason has a name.</p>
+  <hr style="border:none;border-top:1px solid #d9c8cd;margin:12px 0;">
+  <p style="margin:0 0 8px;font-weight:700;color:#8C1D40;">After completing this module, you will be able to:</p>
+  <ul style="margin:0;padding-left:20px;line-height:1.8;">
+    <li>Explain the role of <strong>coordinate reference systems (CRS)</strong> and transform data between projections using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">st_transform()</code></li>
+    <li>Perform <strong>point-in-polygon spatial joins</strong> using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">st_join()</code> to count point features within census boundaries</li>
+    <li>Conduct <strong>buffer analysis</strong> using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">st_buffer()</code> to measure proximity to spatial features</li>
+    <li>Recognize the <strong>Uncertain Geographic Context Problem (UGCoP)</strong> and explain how buffer distance choices affect analytical conclusions</li>
+    <li>Frame spatial analysis within an <strong>environmental justice</strong> context, connecting proximity to environmental burdens with socioeconomic hardship</li>
+    <li>Create an <strong>enriched economic hardship index</strong> that incorporates spatial access variables alongside census demographics</li>
+  </ul>
+</div>
+
+<!-- ── Lecture ───────────────────────────────────────────────── -->
+<div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Lecture</h3>
+  <p style="margin:0 0 8px;line-height:1.6;">The lecture notes cover coordinate reference systems, spatial joins, buffer analysis, the UGCoP, and the environmental justice framework.</p>
+  <p style="margin:0;">📄 <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module3/Lecture/Module3_Lecture_Slides.pdf" style="color:#8C1D40;font-weight:600;">Spatial Data Integration &mdash; Lecture Notes (PDF)</a></p>
+</div>
+
+<!-- ── Section 1 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 1: Coordinate Reference Systems</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">Before you can combine spatial datasets, they must share the same <strong>coordinate reference system (CRS)</strong>. A CRS defines how locations on the curved Earth are represented on a flat surface. Two data layers that appear to be in the same location but use different CRS definitions will not align &mdash; your spatial joins will produce nonsense results.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Geographic vs. Projected CRS</h4>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
+    <li><strong>Geographic CRS</strong> (e.g., WGS 84 / EPSG:4326): Uses latitude and longitude in degrees. Good for global data and web mapping. Distances and areas are distorted because degrees are not constant-length units</li>
+    <li><strong>Projected CRS</strong> (e.g., NAD83 / EPSG:26912 &mdash; UTM Zone 12N, or Arizona Central / EPSG:2868): Projects the globe onto a flat surface with linear distance units. Distances and areas are accurate within the projection&rsquo;s valid zone. <strong>Essential for buffer analysis</strong></li>
+  </ul>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Practical Rule</h4>
+  <p style="margin:0 0 14px;line-height:1.6;">Always check CRS with <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">st_crs()</code> before any spatial operation. If layers differ, use <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">st_transform()</code> to reproject. For operations requiring accurate distances &mdash; buffers, area calculations, nearest-neighbor searches &mdash; always project to an appropriate local CRS first.</p>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
+    <p style="margin:0;line-height:1.6;"><strong>Common mistake:</strong> Creating a buffer of "1000" on data in EPSG:4326 produces a buffer of 1000 <em>degrees</em>, not 1000 meters. At the latitude of Phoenix, 1 degree of longitude is roughly 95 km. Always project first.</p>
+  </div>
+</div>
+
+<!-- ── Section 2 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 2: Spatial Joins and Overlay Operations</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">A <strong>spatial join</strong> attaches attributes from one spatial layer to another based on geographic relationship &mdash; analogous to a SQL table join, but using location instead of a shared key column.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Point-in-Polygon Joins</h4>
+  <p style="margin:0 0 8px;line-height:1.6;">The most common spatial join in community analytics: &ldquo;How many facilities, events, or resources fall within each census tract or block group?&rdquo; The <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">st_join()</code> function in the <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">sf</code> package performs this operation:</p>
+  <div style="background:#1e1e1e;color:#d4d4d4;border-radius:4px;padding:10px 16px;font-family:monospace;font-size:13px;margin-bottom:12px;">
+    joined &lt;- st_join(polygons, points, join = st_intersects)
+  </div>
+  <p style="margin:0 0 14px;line-height:1.6;">After joining, group by the polygon ID and count matched points to produce a per-area count variable you can add to the economic hardship index.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Buffer Analysis</h4>
+  <p style="margin:0 0 8px;line-height:1.6;">Buffers create a zone of specified distance around a feature. In community analytics, common uses include:</p>
+  <ul style="margin:0 0 12px;padding-left:20px;line-height:1.8;">
+    <li>Identifying census block groups within 1 mile of a hazardous facility</li>
+    <li>Counting grocery stores within 0.5 miles of each neighborhood centroid</li>
+    <li>Measuring whether a census tract is within a hospital service area</li>
+  </ul>
+  <p style="margin:0 0 14px;line-height:1.6;">In R: <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">st_buffer(points, dist = 1609)</code> creates a 1-mile (1609 meter) buffer around each point &mdash; assuming a projected CRS in meters. The choice of distance is consequential and is addressed in Section 3.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Intersection and Clipping</h4>
+  <p style="margin:0;line-height:1.6;"><code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">st_intersection()</code> returns only the portions of features that overlap between two layers. This is useful for clipping a statewide dataset to your study area, or computing the fraction of a census tract that falls within a floodplain or service area.</p>
+</div>
+
+<!-- ── Section 3 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 3: The Uncertain Geographic Context Problem (UGCoP)</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">In Module 2 we introduced the Modifiable Areal Unit Problem (MAUP) &mdash; the sensitivity of analysis results to how polygon boundaries are drawn. <strong>Buffer analysis introduces an analogous problem specific to proximity-based research</strong>: results change depending on the distance threshold you choose to define &ldquo;near.&rdquo;</p>
+  <p style="margin:0 0 14px;line-height:1.6;">This problem was formally identified and named by geographer Mei-Po Kwan in 2012 as the <strong>Uncertain Geographic Context Problem (UGCoP)</strong>.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">What UGCoP Says</h4>
+  <p style="margin:0 0 10px;line-height:1.6;">Kwan&rsquo;s argument is that in any proximity-based analysis, the spatial context we assign to individuals or geographic units &mdash; the &ldquo;exposure zone&rdquo; &mdash; is inherently uncertain. The researcher must choose a distance: 0.25 miles? 0.5 miles? 1 mile? 2 miles? There is rarely a principled theoretical basis for this choice, and different choices produce different results.</p>
+  <blockquote style="border-left:3px solid #ccb3bb;margin:0 0 14px;padding:10px 16px;background:#f2eaed;border-radius:0 4px 4px 0;font-style:italic;color:#555;">
+    <p style="margin:0 0 6px;line-height:1.6;">&ldquo;The UGCoP arises because the actual geographic context that influences people&rsquo;s behavior and health is uncertain and cannot be directly observed.&rdquo;</p>
+    <p style="margin:0;font-size:13px;">&mdash; Kwan (2012)</p>
+  </blockquote>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">UGCoP vs. MAUP: Two Distinct Problems</h4>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;"></th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">MAUP</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">UGCoP</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">What varies</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Polygon boundaries (size and shape)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Buffer radius (distance threshold)</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Mechanism</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Aggregation changes summary statistics</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Exposure zone definition changes who is &ldquo;exposed&rdquo;</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Classic form</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">County vs. tract vs. block group</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">0.5-mile vs. 1-mile vs. 2-mile buffer</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Named by</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Openshaw &amp; Taylor (1979)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Kwan (2012)</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;font-weight:600;">Applies to</td>
+        <td style="padding:8px 12px;">Census polygon analysis</td>
+        <td style="padding:8px 12px;">Point-based proximity analysis</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin:0 0 14px;line-height:1.6;">Both MAUP and UGCoP are instances of the same underlying challenge: <strong>geographic context is a methodological choice, not a given</strong>, and that choice shapes results.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Implications for Buffer Analysis</h4>
+  <p style="margin:0 0 8px;line-height:1.6;">When you report that a certain percentage of high-hardship block groups fall within 1 mile of an EPA facility, you are implicitly claiming that 1 mile is the relevant exposure distance. This claim deserves scrutiny:</p>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
+    <li><strong>Is there biological or behavioral evidence</strong> for the chosen threshold? (e.g., air dispersion models for pollution, walkability studies for food access)</li>
+    <li><strong>Do results change substantially</strong> at 0.5 miles vs. 2 miles? If so, conclusions are threshold-sensitive</li>
+    <li><strong>Is the threshold consistent</strong> with comparable studies? Maantay (2002) and the EPA EJScreen tool use varying buffers for different pollutant types</li>
+  </ul>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;margin-bottom:14px;">
+    <p style="margin:0 0 4px;font-weight:700;">Best Practice</p>
+    <p style="margin:0;line-height:1.6;">Report results at <strong>multiple buffer distances</strong> and note where conclusions are stable vs. threshold-sensitive. A result that holds at 0.5, 1.0, and 1.5 miles is far more credible than one that only appears at a single distance.</p>
+  </div>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">UGCoP in the Lab</h4>
+  <p style="margin:0;line-height:1.6;">In Lab 3, Q2 asks you to change the buffer from 1 mile to 0.5 miles and compare results. This is a direct application of UGCoP: you are testing whether the conclusion that &ldquo;certain block groups are near facilities&rdquo; is sensitive to the distance threshold. If the enriched economic hardship index changes substantially at 0.5 miles, UGCoP is at work.</p>
+</div>
+
+<!-- ── Section 4 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 4: Environmental Justice and Spatial Equity</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">The spatial operations in this module are foundational to <strong>environmental justice (EJ) research</strong> &mdash; the field that examines whether environmental burdens are disproportionately concentrated in low-income and minority communities.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">The Environmental Justice Framework</h4>
+  <p style="margin:0 0 8px;line-height:1.6;">EJ analysis connects <em>where people live</em> (census demographics) with <em>what they are exposed to</em> (environmental hazard data) using the tools you are learning:</p>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
+    <li><strong>Point-in-polygon joins</strong>: How many EPA-regulated facilities are within each census block group?</li>
+    <li><strong>Buffer analysis</strong>: What fraction of residents live within 1 mile of a Superfund site?</li>
+    <li><strong>Cumulative burden</strong>: Does proximity to hazards compound existing socioeconomic hardship &mdash; and does this burden fall disproportionately on communities of color?</li>
+  </ul>
+  <p style="margin:0 0 14px;line-height:1.6;">The core finding of decades of EJ research (Pastor et al., 2001; Mohai &amp; Saha, 2015) is that it does: environmental burdens are not randomly distributed across space but are systematically concentrated in disadvantaged communities.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Methodological Considerations</h4>
+  <p style="margin:0 0 8px;line-height:1.6;">Every analytic choice in an EJ study carries implications for the conclusions:</p>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
+    <li><strong>Buffer distance choice</strong>: A 1-mile buffer catches more facilities than a 0.25-mile buffer, changing which communities appear &ldquo;exposed&rdquo; (UGCoP, Section 3)</li>
+    <li><strong>Count vs. presence</strong>: Counting facilities vs. recording binary presence (in/out) can give different results, especially near large industrial complexes with multiple registrations</li>
+    <li><strong>Data currency</strong>: EPA TRI data updates annually; historical siting (where facilities were built) differs from current exposure &mdash; Maantay (2002) and Pastor et al. (2001) both stress the importance of temporal context</li>
+    <li><strong>Confounding by land use</strong>: Industrial zones concentrate both facilities and lower-cost housing, which independently attracts lower-income residents; separating siting effects from residential sorting requires longitudinal data (Mohai &amp; Saha, 2015)</li>
+  </ul>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">EJScreen</h4>
+  <p style="margin:0;line-height:1.6;">The EPA&rsquo;s EJScreen tool &mdash; now maintained by the Open Environmental Data Project after EPA removed it in 2025 &mdash; operationalizes cumulative burden analysis at the census block group level. It combines 11 environmental indicators (air quality, proximity to Superfund sites, wastewater discharge, etc.) with 6 demographic indicators to produce a composite score. The <strong>enriched economic hardship index</strong> you build in Lab 3 applies the same logic at a smaller scale.</p>
+</div>
+
+<!-- ── Readings ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Readings</h3>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.9;">
+    <li>Maantay, J. (2002). Mapping environmental injustices: Pitfalls and potential of geographic information systems in assessing environmental health and equity. <em>Environmental Health Perspectives</em>, 110(Suppl 2), 161&ndash;171. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC1241160/" style="color:#8C1D40;">open access</a> &mdash; The seminal article on using GIS for environmental justice analysis.</li>
+    <li>Kwan, M. P. (2012). The uncertain geographic context problem. <em>Annals of the Association of American Geographers</em>, 102(5), 958&ndash;968. <a href="https://doi.org/10.1080/00045608.2012.687349" style="color:#8C1D40;">doi:10.1080/00045608.2012.687349</a> &mdash; Introduces the UGCoP, the theoretical foundation for buffer sensitivity analysis.</li>
+    <li>Pebesma, E. (2018). Simple features for R: Standardized support for spatial vector data. <em>The R Journal</em>, 10(1), 439&ndash;446. <a href="https://journal.r-project.org/archive/2018/RJ-2018-009/" style="color:#8C1D40;">open access</a> &mdash; The technical reference for the <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">sf</code> package.</li>
+    <li>Pastor, M., Sadd, J., &amp; Hipp, J. (2001). Which came first? Toxic facilities, minority move-in, and environmental justice. <em>Journal of Urban Affairs</em>, 23(1), 1&ndash;21. <a href="https://doi.org/10.1111/0735-2166.00072" style="color:#8C1D40;">doi:10.1111/0735-2166.00072</a> &mdash; A landmark spatial analysis study testing the disproportionate siting hypothesis.</li>
+    <li>Mohai, P., &amp; Saha, R. (2015). Which came first, people or pollution? A review of theory and evidence from longitudinal environmental justice studies. <em>Environmental Research Letters</em>, 10(12), 125011. <a href="https://iopscience.iop.org/article/10.1088/1748-9326/10/12/125011" style="color:#8C1D40;">open access</a> &mdash; Reviews the methodological evolution of EJ spatial analysis.</li>
+    <li>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. <a href="https://walker-data.com/census-r/spatial-analysis-with-us-census-data.html" style="color:#8C1D40;">Chapter 7: Spatial Analysis with US Census Data</a> &mdash; The primary reference for this module.</li>
+    <li>U.S. EPA. EJScreen: Environmental Justice Screening and Mapping Tool. <a href="https://screening-tools.com/epa-ejscreen" style="color:#8C1D40;">https://screening-tools.com/epa-ejscreen</a> (maintained by Open Environmental Data Project; original EPA page removed 2025)</li>
+  </ul>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">R Package Documentation</h4>
+  <ul style="margin:0;padding-left:20px;line-height:1.9;">
+    <li><a href="https://r-spatial.github.io/sf/" style="color:#8C1D40;">sf package documentation</a> &mdash; spatial operations vignette</li>
+    <li><a href="https://walker-data.com/tidycensus/" style="color:#8C1D40;">tidycensus package</a> &mdash; Census data with geometry</li>
+    <li><a href="https://paleolimbot.github.io/ggspatial/" style="color:#8C1D40;">ggspatial package</a> &mdash; scale bars and north arrows</li>
+  </ul>
+</div>
+
+<!-- ── Key Terms ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:8px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Key Terms</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;width:30%;">Term</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Definition</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Coordinate Reference System (CRS)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A system defining how spatial coordinates map to locations on Earth</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Geographic CRS</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">CRS using latitude/longitude in angular degrees (e.g., WGS 84 / EPSG:4326)</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Projected CRS</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">CRS projecting Earth onto a flat surface with linear distance units (e.g., UTM)</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Spatial Join</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Combining attributes from two spatial layers based on geographic relationship</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Point-in-Polygon</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Spatial operation identifying which polygon contains each point</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Buffer</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A zone of specified distance around a spatial feature</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">UGCoP</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Uncertain Geographic Context Problem &mdash; sensitivity of proximity analysis results to the choice of buffer size or exposure zone definition (Kwan, 2012)</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Exposure Zone</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The geographic area within which an individual or unit is considered &ldquo;exposed&rdquo; to a feature or hazard</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Buffer Sensitivity</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The degree to which analysis results change when the buffer distance is varied</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Enriched Index</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A composite index combining demographic variables with spatial access or environmental burden variables</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Environmental Justice</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Field examining whether environmental burdens fall disproportionately on low-income or minority communities</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;font-weight:600;color:#8C1D40;">Cumulative Burden</td>
+        <td style="padding:8px 12px;">The combined effect of multiple environmental and socioeconomic disadvantages in one community</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
