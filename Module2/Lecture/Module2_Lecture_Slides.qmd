@@ -4,7 +4,7 @@
 #  PAF 516 | Community Analytics | Arizona State University
 #  Render to PDF: quarto render Module2_Lecture_Slides.qmd
 # ============================================================
-title: "Cartographic Design"
+title: "Classification & Spatial Scale"
 subtitle: "Module 2 | PAF 516 — Community Analytics"
 author: "Arizona State University"
 
@@ -21,12 +21,17 @@ format:
       text: |
         \definecolor{asuMaroon}{HTML}{8C1D40}
         \definecolor{asuGold}{HTML}{FFC627}
+        \setbeamercolor{palette primary}{bg=asuMaroon,fg=white}
+        \setbeamercolor{palette secondary}{bg=asuGold,fg=black}
+        \setbeamercolor{palette tertiary}{bg=asuMaroon!80,fg=white}
         \setbeamercolor{frametitle}{bg=asuMaroon,fg=white}
         \setbeamercolor{title}{fg=white}
         \setbeamercolor{block title}{bg=asuMaroon,fg=white}
         \setbeamercolor{alerted text}{fg=asuMaroon}
+        \setbeamercolor{section title}{fg=white}
         \setbeamertemplate{footline}[frame number]
         \setbeamerfont{frametitle}{size=\large,series=\bfseries}
+        \usepackage{booktabs}
 
 execute:
   echo: false
@@ -70,12 +75,19 @@ Every choropleth requires a decision: how to divide continuous data into discret
 This is **not a neutral technical choice** — it is an **editorial decision**.
 :::
 
-| Method | How It Works | Best For | Risk |
-|--------|-------------|----------|------|
-| **Equal Interval** | Equal-width bins | Uniform distributions | Skewed data → one bin dominates |
-| **Quantile** | Equal observations per bin | Visual variation | Groups very different values |
-| **Jenks Natural Breaks** | Minimize within-class variance | Natural clusters | Not comparable across datasets |
-| **Std. Deviation** | Bins centered on mean (±1SD) | Deviation from average | Assumes near-normal distribution |
+\begin{center}
+\small
+\begin{tabular}{p{3.2cm}p{3.8cm}p{3cm}p{4cm}}
+\toprule
+\textbf{Method} & \textbf{How It Works} & \textbf{Best For} & \textbf{Risk} \\
+\midrule
+Equal Interval & Equal-width bins & Uniform distributions & Skewed data → one bin dominates \\
+Quantile & Equal obs.\ per bin & Visual variation & Groups very different values \\
+Jenks Natural Breaks & Minimize within-class variance & Natural clusters & Not comparable across datasets \\
+Std.\ Deviation & Bins centered on mean (±1SD) & Deviation from average & Assumes near-normal distribution \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 ## Brewer & Pickle (2002)
 
@@ -94,13 +106,20 @@ The **definitive empirical study** of classification method performance (~1,700 
 
 ## Choosing a Classification Method
 
-| Your Goal | Best Method | Why |
-|-----------|-------------|-----|
-| Show relative position | Quantile | Equal visual weight per class |
-| Reveal natural clusters | Jenks Natural Breaks | Minimizes within-class variance |
-| Compare to a benchmark | Standard Deviation | Deviation from mean is the story |
-| Communicate absolute thresholds | Equal Interval | Bins have intuitive meaning |
-| Compare across multiple maps | Equal Interval or SD | Consistent bins enable fair comparison |
+\begin{center}
+\small
+\begin{tabular}{p{4.5cm}p{4cm}p{5.5cm}}
+\toprule
+\textbf{Your Goal} & \textbf{Best Method} & \textbf{Why} \\
+\midrule
+Show relative position & Quantile & Equal visual weight per class \\
+Reveal natural clusters & Jenks Natural Breaks & Minimizes within-class variance \\
+Compare to a benchmark & Standard Deviation & Deviation from mean is the story \\
+Communicate absolute thresholds & Equal Interval & Bins have intuitive meaning \\
+Compare across multiple maps & Equal Interval or SD & Consistent bins enable comparison \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 **Tip:** Examine your histogram before choosing. Run all 4 methods and compare — then justify.
 
@@ -160,8 +179,6 @@ In R: `patchwork` makes small multiples trivial:
 p1 + p2 + p3 + plot_annotation(title = "Classification Comparison")
 ```
 *(Walker, 2023, Chapter 6)*
-
----
 
 # Part 2: The Modifiable Areal Unit Problem
 
@@ -224,11 +241,18 @@ The modern cartographic treatment of MAUP:
 
 ## Census Geographies and MAUP
 
-| Geography | ~N in AZ | Reveals | Limitation |
-|-----------|----------|---------|------------|
-| **US County** | ~3,100 nationally | Broad regional patterns; tribal areas, urban cores | Suppresses within-county variation |
-| **Census Tract** | ~1,700 in AZ | Neighborhood-level variation; urban/suburban gradient | Some MOE at small population tracts |
-| **Block Group** | ~900 in Maricopa | Finest ACS geography; block-by-block variation | Highest margins of error |
+\begin{center}
+\small
+\begin{tabular}{p{2.5cm}p{2.5cm}p{4.5cm}p{4.5cm}}
+\toprule
+\textbf{Geography} & \textbf{Approx.\ N} & \textbf{Reveals} & \textbf{Limitation} \\
+\midrule
+US County & \textasciitilde3,100 nationally & Broad regional patterns; tribal areas, urban cores & Suppresses within-county variation \\
+Census Tract & \textasciitilde1,700 in AZ & Neighborhood-level variation; urban/suburban gradient & Some MOE at small population tracts \\
+Block Group & \textasciitilde900 in Maricopa & Finest ACS geography; block-by-block variation & Highest margins of error \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 **Recommended for most analyses:** Census tract.
 
@@ -238,12 +262,19 @@ The modern cartographic treatment of MAUP:
 
 Two compounding sources of map uncertainty:
 
-| Combination | What You See |
-|------------|-------------|
-| Equal Interval + County | Broad national patterns; within-county variation invisible |
-| Jenks + Block Group | Neighborhood clusters revealed; local inequality visible |
-| Quantile + Census Tract | Balanced visual variation; good for most purposes |
-| Std. Deviation + County | Only extreme outliers stand out; middle class flattened |
+\begin{center}
+\small
+\begin{tabular}{p{5cm}p{9cm}}
+\toprule
+\textbf{Combination} & \textbf{What You See} \\
+\midrule
+Equal Interval + County & Broad national patterns; within-county variation invisible \\
+Jenks + Block Group & Neighborhood clusters revealed; local inequality visible \\
+Quantile + Census Tract & Balanced visual variation; good for most purposes \\
+Std.\ Deviation + County & Only extreme outliers stand out; middle class flattened \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 > **A single index. Four combinations. Four different policy narratives.**
 > Choose deliberately and report transparently.

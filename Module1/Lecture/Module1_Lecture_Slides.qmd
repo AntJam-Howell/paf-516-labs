@@ -1,0 +1,390 @@
+---
+title: "Measurement, Indexing & Reliability"
+subtitle: "Module 1 | PAF 516 — Community Analytics"
+author: "Arizona State University"
+format:
+  beamer:
+    theme: Madrid
+    colortheme: beaver
+    fonttheme: professionalfonts
+    slide-level: 2
+    aspectratio: 169
+    toc: false
+    section-titles: true
+    include-in-header:
+      text: |
+        \definecolor{asuMaroon}{HTML}{8C1D40}
+        \definecolor{asuGold}{HTML}{FFC627}
+        \setbeamercolor{palette primary}{bg=asuMaroon,fg=white}
+        \setbeamercolor{palette secondary}{bg=asuGold,fg=black}
+        \setbeamercolor{palette tertiary}{bg=asuMaroon!80,fg=white}
+        \setbeamercolor{frametitle}{bg=asuMaroon,fg=white}
+        \setbeamercolor{title}{fg=white}
+        \setbeamercolor{block title}{bg=asuMaroon,fg=white}
+        \setbeamercolor{alerted text}{fg=asuMaroon}
+        \setbeamercolor{section title}{fg=white}
+        \setbeamertemplate{footline}[frame number]
+        \setbeamerfont{frametitle}{size=\large,series=\bfseries}
+        \usepackage{booktabs}
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Part 1: What Does the Poverty Rate Measure?
+
+## Harlem and Chinatown
+
+Consider two Manhattan neighborhoods --- both with **40--80\% poverty rates**:
+
+:::: {.columns}
+
+::: {.column width="50%"}
+**Harlem**
+
+- 40--80\% poverty
+- Mostly US-born residents
+- High rates of inter-generational poverty
+- Deep, persistent economic disadvantage
+:::
+
+::: {.column width="50%"}
+**Chinatown**
+
+- 40--80\% poverty
+- Many recent immigrants
+- Few financial assets but strong social capital
+- Children have high upward mobility
+:::
+
+::::
+
+\vspace{0.3cm}
+
+**Same poverty rate. Very different communities.** What is the poverty rate actually measuring?
+
+## The Poverty Rate Hides a Lot
+
+Two communities, both with a **25\% poverty rate**:
+
+\begin{center}
+\begin{tabular}{p{6cm}p{6cm}}
+\toprule
+\textbf{Community A} & \textbf{Community B} \\
+\midrule
+1\% enter poverty each year & 20\% enter poverty each year \\
+1\% exit poverty each year & 20\% exit poverty each year \\
+\textbf{24\% chronic poverty} & \textbf{5\% chronic poverty} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The **snapshot rate is identical** --- but the dynamics are completely different.
+
+- Community A: deep, persistent poverty with very little turnover
+- Community B: high turnover, most people cycle through quickly
+
+A single variable cannot distinguish these fundamentally different experiences.
+
+## What Does the Poverty Rate Actually Measure?
+
+The federal poverty measure uses income thresholds that vary by family size. But "poverty" could mean many things:
+
+- Lack of money?
+- Lack of economic opportunity?
+- Limited access to healthcare?
+- Lack of education?
+- Lack of mobility?
+- Position in a social hierarchy?
+
+::: {.callout-important}
+Is a college student on a fixed budget "poor"? The poverty rate says yes. A single indicator cannot capture the full dimensionality of economic hardship.
+:::
+
+## Designing a Better Measure
+
+> If you could define a new federal measure of poverty, how would you improve it?
+
+**Dimensions to consider:**
+
+1. **Financial capital** --- income, assets, debt
+2. **Human capital** --- education, skills, health
+3. **Social capital** --- networks, community ties, institutional access
+4. **Physical health** --- chronic conditions, healthcare access
+5. **Public goods** --- if you have good parks, free libraries, and public transit, do you need as much money?
+
+**The insight:** A meaningful measure of neighborhood quality requires **multiple indicators** combined into a **composite index**. This is what measurement theory teaches us to do.
+
+# Part 2: Measurement Theory
+
+## The Core Challenge
+
+> "Many variables studied by psychologists are straightforward and simple to measure... Other variables --- perhaps the majority --- are not so straightforward."
+
+In community analytics, we care about things like **economic hardship**, **social vulnerability**, and **neighborhood quality** --- but none of these can be directly measured.
+
+These are **latent constructs**: abstract concepts that must be inferred from observable indicators.
+
+**This module teaches you to:**
+
+- Define what you are measuring (the construct)
+- Select observable indicators (census variables)
+- Combine them into a reliable composite index
+- Evaluate whether the index is internally consistent
+
+## Module Learning Objectives
+
+After completing this module, you will be able to:
+
+1. Define a **construct** and distinguish it from directly measurable variables
+2. Explain why multiple indicators are combined into a composite index
+3. Apply **z-score standardization** before combining variables measured on different scales
+4. Calculate and interpret **Cronbach's alpha** as a measure of internal consistency
+5. Use `tidycensus` to retrieve census variables and `psych::alpha()` to assess reliability
+6. Visualize inter-item correlations using `corrplot`
+
+## Constructs vs. Indicators
+
+\begin{center}
+\small
+\begin{tabular}{p{3.5cm}p{5cm}p{5.5cm}}
+\toprule
+\textbf{Concept} & \textbf{Definition} & \textbf{Example} \\
+\midrule
+\textbf{Construct} & Abstract concept that cannot be directly observed & Economic hardship, social vulnerability \\
+\textbf{Indicator} & Observable variable reflecting one aspect of the construct & Poverty rate, unemployment rate \\
+\textbf{Composite Index} & Single score combining multiple indicators & Economic Hardship Index (5 variables) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+**Why not use a single variable?** No single census variable fully captures "economic hardship." Poverty rate misses the working poor; unemployment misses discouraged workers. Multiple indicators **triangulate** the construct.
+
+## Measurement Levels
+
+\begin{center}
+\small
+\begin{tabular}{p{2.5cm}p{4.5cm}p{3.5cm}p{3.5cm}}
+\toprule
+\textbf{Level} & \textbf{Properties} & \textbf{Example} & \textbf{Valid Operations} \\
+\midrule
+Nominal & Categories, no order & County name, race & Count, mode \\
+Ordinal & Ranked categories & Income quintile & Median, rank \\
+Interval & Equal intervals, no true zero & Temperature (\textdegree F) & Mean, std.\ dev. \\
+Ratio & Equal intervals + true zero & Income (\$), poverty rate & All arithmetic \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Census variables used in the Economic Hardship Index are **ratio-level** --- they have meaningful zeros and proportional relationships. This matters because z-score standardization requires at least interval-level data.
+
+# Part 3: Building Composite Indices
+
+## Why Combine Variables?
+
+Three reasons to build a composite index rather than analyzing variables individually:
+
+**1. Dimensionality Reduction**
+
+- Summarize many variables into a single, mappable score
+- Simplifies visualization and spatial comparison
+
+**2. Construct Representation**
+
+- No single variable fully captures a latent construct
+- Multiple indicators triangulate the underlying concept
+
+**3. Noise Reduction**
+
+- Random measurement error in individual items averages out
+- The composite is more reliable than any single component
+
+## Measurement Theory: Signal and Noise
+
+Each item (variable) can be decomposed:
+
+$$\text{item} = X + e$$
+
+Where $X$ is the true score and $e$ is measurement error.
+
+When we combine items into an index:
+
+$$\text{index} = T + e \quad \text{where } T = X_1 + X_2 + X_3$$
+
+The reliability of the index is the **signal-to-noise ratio**:
+
+$$\alpha = \frac{\text{Var}(T)}{\text{Var}(T + e)}$$
+
+As we add more items that measure the same construct, the signal grows faster than the noise. This is why composite indices are more reliable than single variables.
+
+## Z-Score Standardization
+
+Before combining variables on different scales, we standardize each to z-scores:
+
+$$z = \frac{x - \bar{x}}{s_x}$$
+
+This puts all variables on the same scale: **mean = 0, standard deviation = 1**.
+
+**Why this matters:**
+
+- Poverty rate is measured as a percentage (0--100)
+- Median household income is measured in dollars (0--200,000+)
+- Without standardization, income would dominate the index simply due to its larger numeric scale
+
+After z-scoring, each variable contributes equally --- differences reflect actual variation, not differences in measurement units.
+
+## The Economic Hardship Index
+
+Five census variables, z-scored and summed:
+
+\begin{center}
+\small
+\begin{tabular}{p{5.5cm}p{4cm}p{4.5cm}}
+\toprule
+\textbf{Variable} & \textbf{ACS Table} & \textbf{Direction} \\
+\midrule
+Poverty rate & B17001 & Higher = more hardship \\
+Unemployment rate & B23025 & Higher = more hardship \\
+Median household income & B19013 & \textit{Reverse-coded} (lower = more) \\
+\% No high school diploma & B15003 & Higher = more hardship \\
+\% Receiving public assistance & B19058 & Higher = more hardship \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+::: {.callout-warning}
+Median household income must be **reverse-coded** before summing: multiply the z-score by $-1$ so that lower income = higher hardship, consistent with the other four variables.
+:::
+
+## Real-World Composite Indices
+
+\begin{center}
+\small
+\begin{tabular}{p{4cm}p{3cm}p{3cm}p{4cm}}
+\toprule
+\textbf{Index} & \textbf{Variables} & \textbf{Method} & \textbf{Use} \\
+\midrule
+CDC Social Vulnerability Index (SVI) & 16 census vars & Percentile rank & Emergency preparedness \\
+Townsend Deprivation Index & 4 census vars & Z-score sum & Health disparities (UK) \\
+PAF 516 Economic Hardship Index & 5 census vars & Z-score sum & Course lab framework \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+All three share the same logic: select indicators of a latent construct, standardize, and combine.
+
+> Townsend, Phillimore \& Beattie (1987) pioneered the z-score approach using unemployment, overcrowding, non-home ownership, and non-car ownership.
+
+# Part 4: Reliability --- Cronbach's Alpha
+
+## What Is Cronbach's Alpha?
+
+> *Cronbach, L. J. (1951). Coefficient alpha and the internal structure of tests. Psychometrika, 16, 297--334.*
+
+Alpha is the most widely used measure of **internal consistency** --- it answers: **do the items in our index hang together?**
+
+If all items measure the same underlying construct, they should be **positively correlated** with each other.
+
+$$\alpha = \frac{\text{Var}(T)}{\text{Var}(T + e)}$$
+
+- $\alpha = 1.0$: all variance is signal (perfect reliability)
+- $\alpha = 0.0$: all variance is noise (no reliability)
+- In practice, $\alpha \geq 0.70$ is the standard threshold
+
+## Interpreting Alpha
+
+\begin{center}
+\begin{tabular}{p{4cm}p{4cm}}
+\toprule
+\textbf{Alpha Range} & \textbf{Interpretation} \\
+\midrule
+$\alpha > 0.90$ & Excellent \\
+$0.80 < \alpha \leq 0.90$ & Good \\
+$0.70 < \alpha \leq 0.80$ & Acceptable \\
+$0.60 < \alpha \leq 0.70$ & Questionable \\
+$\alpha \leq 0.60$ & Poor --- reconsider items \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+**In Lab 1:** You will compute alpha for the 5-variable Economic Hardship Index using `psych::alpha()`. An alpha above 0.70 confirms the five census variables measure a coherent underlying construct.
+
+::: {.callout-tip}
+The `psych::alpha()` output includes an "alpha if item dropped" column --- this tells you whether removing any single variable would improve reliability.
+:::
+
+## When Alpha Is Low
+
+If $\alpha < 0.70$, your items may not measure the same construct. Diagnostic steps:
+
+1. **Check the correlation matrix** --- are some items uncorrelated or negatively correlated with the rest?
+2. **Look at "alpha if item dropped"** --- does removing one variable substantially increase alpha?
+3. **Reconsider the construct** --- maybe the items measure two different things (e.g., economic hardship vs. social isolation)
+4. **Check for reverse-coding errors** --- a variable pointing the wrong direction will reduce alpha
+
+::: {.callout-warning}
+A high alpha does not prove construct validity --- it only shows internal consistency. Items could consistently measure the *wrong* thing.
+:::
+
+## Correlation Matrix: corrplot
+
+The correlation matrix visualizes **inter-item relationships** before computing alpha.
+
+**What to look for:**
+
+- All items should show **positive correlations** with each other (after reverse-coding)
+- Correlations in the **0.30--0.80 range** are ideal --- too low suggests items measure different things; too high suggests redundancy
+- A single item with near-zero correlations is a candidate for removal
+
+In Lab 1, you will use `corrplot::corrplot()` to visualize the 5×5 correlation matrix of your index variables. Strong positive correlations across all five variables confirm they tap the same latent construct.
+
+# Part 5: Multi-Scale Mapping
+
+## Why Map at Multiple Scales?
+
+The same index mapped at three geographic levels tells different stories:
+
+\begin{center}
+\small
+\begin{tabular}{p{3cm}p{3cm}p{4cm}p{4cm}}
+\toprule
+\textbf{Geography} & \textbf{Approx.\ N} & \textbf{What It Reveals} & \textbf{What It Hides} \\
+\midrule
+US County & \textasciitilde3,100 & National patterns, regional clusters & Within-county variation \\
+Census Tract & \textasciitilde1,700 (AZ) & Neighborhood gradients, urban/suburban & Some MOE at small tracts \\
+Block Group & \textasciitilde900 (Maricopa) & Block-level variation, hyper-local & Highest margins of error \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+::: {.callout-important}
+This is a preview of the **Modifiable Areal Unit Problem (MAUP)**, which Module 2 covers in depth. The key insight: your conclusions depend on the scale you choose.
+:::
+
+## Lab 1 Workflow
+
+Lab 1 walks you through the complete index-building process:
+
+1. **Pull census data** with `tidycensus::get_acs()` at county, tract, and block group levels
+2. **Calculate component rates** from raw count variables
+3. **Z-score standardize** each variable (reverse-code income)
+4. **Sum z-scores** into the Economic Hardship Index
+5. **Assess reliability** with `psych::alpha()` and `corrplot`
+6. **Map the index** at all three geographic scales using `ggplot2` + `sf`
+
+::: {.callout-tip}
+The tutorial file is fully executable --- knit it first, then run chunk by chunk to understand each step.
+:::
+
+## Module 1 Summary
+
+**Key takeaways:**
+
+- **Constructs require multiple indicators.** No single census variable captures economic hardship, social vulnerability, or neighborhood quality.
+- **Z-score standardization is essential.** Variables on different scales must be standardized before combining.
+- **Reverse-code opposing variables.** Income points the opposite direction from poverty --- multiply its z-score by $-1$.
+- **Cronbach's alpha validates the index.** $\alpha \geq 0.70$ confirms internal consistency. Use `psych::alpha()` and check "alpha if item dropped."
+- **Scale matters.** The same index mapped at county, tract, and block group reveals different patterns and supports different policy conclusions.
+
+**Coming up in Module 2:** Classification \& Spatial Scale --- how classification method and geographic unit interact to shape map interpretation (MAUP).

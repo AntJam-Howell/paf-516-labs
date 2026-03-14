@@ -14,10 +14,14 @@ format:
       text: |
         \definecolor{asuMaroon}{HTML}{8C1D40}
         \definecolor{asuGold}{HTML}{FFC627}
+        \setbeamercolor{palette primary}{bg=asuMaroon,fg=white}
+        \setbeamercolor{palette secondary}{bg=asuGold,fg=black}
+        \setbeamercolor{palette tertiary}{bg=asuMaroon!80,fg=white}
         \setbeamercolor{frametitle}{bg=asuMaroon,fg=white}
         \setbeamercolor{title}{fg=white}
         \setbeamercolor{block title}{bg=asuMaroon,fg=white}
         \setbeamercolor{alerted text}{fg=asuMaroon}
+        \setbeamercolor{section title}{fg=white}
         \setbeamertemplate{footline}[frame number]
         \setbeamerfont{frametitle}{size=\large,series=\bfseries}
         \usepackage{booktabs}
@@ -37,13 +41,20 @@ In Labs 1–2 you built the index entirely from census variables. This module te
 
 **What you will learn:**
 
-| Topic | Key Tool |
-|-------|----------|
-| Coordinate Reference Systems | `st_crs()`, `st_transform()` |
-| Point-in-polygon spatial joins | `st_join()` |
-| Buffer analysis | `st_buffer()` |
-| Buffer sensitivity (UGCoP) | Kwan (2012) |
-| Environmental justice framework | Maantay, Pastor et al. |
+\begin{center}
+\small
+\begin{tabular}{p{6cm}p{6cm}}
+\toprule
+\textbf{Topic} & \textbf{Key Tool} \\
+\midrule
+Coordinate Reference Systems & \texttt{st\_crs()}, \texttt{st\_transform()} \\
+Point-in-polygon spatial joins & \texttt{st\_join()} \\
+Buffer analysis & \texttt{st\_buffer()} \\
+Buffer sensitivity (UGCoP) & Kwan (2012) \\
+Environmental justice framework & Maantay, Pastor et al. \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 ## Coordinate Reference Systems
 
@@ -66,80 +77,49 @@ Before combining spatial datasets, they must share the same **CRS**.
 `st_buffer(data, dist = 1000)` on EPSG:4326 creates a buffer of 1000 **degrees** — roughly 100,000 km. Always project first.
 :::
 
-## CRS in R
+## CRS Workflow in R
 
-```{r}
-#| eval: false
-#| echo: true
-library(sf)
+**Key functions:**
 
-# Check CRS
-st_crs(cbg_data)
-st_crs(facilities_sf)
+- `st_crs()` — check the current CRS of any spatial object
+- `st_transform(data, crs = 2868)` — project to Arizona Central (US survey feet)
+- `st_make_valid()` — fix minor topology errors before spatial operations
 
-# Project to Arizona Central (US survey feet) before spatial ops
-cbg_proj        <- st_transform(cbg_data, crs = 2868)
-facilities_proj <- st_transform(facilities_sf, crs = 2868)
+**The rule:** Project → spatial operations → convert back to WGS84 for visualization.
 
-# Fix minor topology errors before joins
-cbg_proj <- st_make_valid(cbg_proj)
-
-# Convert back to WGS84 for web maps
-cbg_wgs84 <- st_transform(cbg_proj, crs = 4326)
-```
-
-**Rule:** Project → spatial operations → convert back for visualization.
+::: {.callout-warning}
+Always check CRS **before** combining datasets. Mismatched CRS = wrong results.
+:::
 
 ## Spatial Joins: st_join()
 
 A spatial join attaches attributes from one layer to another based on **geographic relationship** — not a shared column.
 
-**Point-in-polygon (most common in community analytics):**
+**Point-in-polygon** (most common in community analytics):
 
-```{r}
-#| eval: false
-#| echo: true
-# How many EPA facilities fall within each block group?
-cbg_with_fac <- st_join(cbg_proj, facilities_proj,
-                        join = st_intersects)
+- `st_join(polygons, points, join = st_intersects)` — attaches point attributes to the polygon they fall within
+- After joining, use `group_by()` + `summarise()` to count points per polygon
+- Use `left_join()` to merge counts back to the original polygon layer
 
-# Count facilities per CBG
-facility_counts <- cbg_with_fac |>
-  st_drop_geometry() |>
-  group_by(GEOID) |>
-  summarise(facility_count = sum(!is.na(name)))
-
-cbg_proj <- cbg_proj |>
-  left_join(facility_counts, by = "GEOID") |>
-  mutate(facility_count = replace_na(facility_count, 0))
-```
+**Example:** How many EPA facilities fall within each block group? The spatial join answers this without needing a shared ID column.
 
 ## Buffer Analysis: st_buffer()
 
 Buffers create a **proximity zone** around a spatial feature.
 
-```{r}
-#| eval: false
-#| echo: true
-# 1 mile = 5,280 feet (EPSG:2868 uses US survey feet)
-facility_buffers <- st_buffer(facilities_proj, dist = 5280)
+**Key functions:**
 
-# Dissolve overlapping buffers into one combined zone
-buffer_union <- st_union(facility_buffers)
+- `st_buffer(points, dist = 5280)` — creates a 1-mile buffer (EPSG:2868 uses US survey feet)
+- `st_union()` — dissolves overlapping buffers into one combined zone
+- `st_intersects()` — tests which polygons fall within the buffer (binary: exposed/not exposed)
 
-# Which CBGs intersect the buffer? (binary: 0/1)
-cbg_proj$near_facility <- as.integer(
-  lengths(st_intersects(cbg_proj, buffer_union)) > 0
-)
-```
-
-**Common uses:**
+**Common applications:**
 
 - Block groups within 1 mile of a hazardous facility
 - Grocery stores within 0.5 miles of each neighborhood centroid
 - Hospital service area coverage
 
----
+**Remember:** Distance units depend on CRS. EPSG:2868 = US survey feet. EPSG:4326 = degrees (not useful).
 
 # Part 2: The UGCoP
 
@@ -165,13 +145,20 @@ Buffer distance choice is a methodological decision — not a neutral technical 
 
 ## UGCoP vs. MAUP
 
-| | **MAUP** | **UGCoP** |
-|--|----------|-----------|
-| **What varies** | Polygon boundaries | Buffer radius |
-| **Mechanism** | Aggregation changes statistics | Exposure zone changes who is exposed |
-| **Classic example** | County vs. tract vs. block group | 0.5 mi vs. 1 mi vs. 2 mi |
-| **Named by** | Openshaw & Taylor (1979) | Kwan (2012) |
-| **Applies to** | Polygon analysis | Proximity analysis |
+\begin{center}
+\small
+\begin{tabular}{p{3cm}p{5.5cm}p{5.5cm}}
+\toprule
+ & \textbf{MAUP} & \textbf{UGCoP} \\
+\midrule
+\textbf{What varies} & Polygon boundaries & Buffer radius \\
+\textbf{Mechanism} & Aggregation changes statistics & Exposure zone changes who is exposed \\
+\textbf{Classic example} & County vs.\ tract vs.\ block group & 0.5 mi vs.\ 1 mi vs.\ 2 mi \\
+\textbf{Named by} & Openshaw \& Taylor (1979) & Kwan (2012) \\
+\textbf{Applies to} & Polygon analysis & Proximity analysis \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 Both MAUP and UGCoP share one insight: **geographic context is a methodological choice**, and that choice shapes results.
 
@@ -209,8 +196,6 @@ How to address UGCoP:
 A result that holds across multiple buffer distances is far more credible than one that only appears at a single threshold.
 :::
 
----
-
 # Part 3: Environmental Justice
 
 ## The Environmental Justice Framework
@@ -219,11 +204,18 @@ EJ research asks: are environmental burdens disproportionately concentrated in l
 
 **The three-part analysis:**
 
-| Component | Data Source | Tool |
-|-----------|-------------|------|
-| **Demographics** — who lives here | ACS census variables | `tidycensus` |
-| **Hazards** — what is near here | EPA TRI, Superfund listings | Point data |
-| **Spatial integration** — do they overlap? | Combined layers | `st_join()`, `st_buffer()` |
+\begin{center}
+\small
+\begin{tabular}{p{4.5cm}p{4.5cm}p{4cm}}
+\toprule
+\textbf{Component} & \textbf{Data Source} & \textbf{Tool} \\
+\midrule
+Demographics --- who lives here & ACS census variables & \texttt{tidycensus} \\
+Hazards --- what is near here & EPA TRI, Superfund listings & Point data \\
+Spatial integration --- overlap? & Combined layers & \texttt{st\_join()}, \texttt{st\_buffer()} \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 Lab 3 operationalizes this by combining 5 census variables measuring socioeconomic hardship with spatial proximity measures to environmental burden locations.
 
