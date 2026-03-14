@@ -157,7 +157,6 @@ This is the core danger of MAUP: **aggregation smooths away the very variation t
 
 ## Readings
 
-### Foundational Works
 
 - Brewer, C. A., & Pickle, L. (2002). Evaluation of methods for classifying epidemiological data on choropleth maps in series. *Annals of the Association of American Geographers*, 92(4), 662--681. --- The definitive empirical comparison of classification methods for choropleth maps. Demonstrates that quantile and natural breaks methods outperform equal interval for map-reading accuracy.
 
@@ -167,7 +166,6 @@ This is the core danger of MAUP: **aggregation smooths away the very variation t
 
 - Openshaw, S. (1984). *The Modifiable Areal Unit Problem*. CATMOG No. 38. Geo Books. --- The most-cited treatment of MAUP (~5,200 citations). Distinguishes the **scale effect** (results change when units are aggregated to larger sizes) from the **zoning effect** (results change when units of the same size are reconfigured). Essential reading for anyone working with aggregated spatial data.
 
-### Recent Applications
 
 - Fotheringham, A.S. & Wong, D.W.S. (1991). The modifiable areal unit problem in multivariate statistical analysis. *Environment and Planning A*, 23(7), 1025--1044. [doi:10.1068/a231025](https://doi.org/10.1068/a231025) --- Extended MAUP from bivariate correlations into multiple regression and logit models, showing that parameter estimates varied by a factor of up to nine across geographic units. Demonstrated that MAUP is not just a mapping problem but a fundamental analytical challenge.
 

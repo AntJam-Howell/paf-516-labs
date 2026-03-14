@@ -3099,8 +3099,6 @@ width: 98%;
   </ul></li>
   <li><a href="#readings" id="toc-readings" class="nav-link" data-scroll-target="#readings">Readings</a>
   <ul class="collapse">
-  <li><a href="#foundational-works" id="toc-foundational-works" class="nav-link" data-scroll-target="#foundational-works">Foundational Works</a></li>
-  <li><a href="#recent-applications" id="toc-recent-applications" class="nav-link" data-scroll-target="#recent-applications">Recent Applications</a></li>
   <li><a href="#r-package-documentation" id="toc-r-package-documentation" class="nav-link" data-scroll-target="#r-package-documentation">R Package Documentation</a></li>
   </ul></li>
   <li><a href="#lab-2" id="toc-lab-2" class="nav-link" data-scroll-target="#lab-2">Lab 2</a></li>
@@ -3274,25 +3272,17 @@ width: 98%;
 </section>
 <section id="readings" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="readings">Readings</h2>
-<section id="foundational-works" class="level3">
-<h3 class="anchored" data-anchor-id="foundational-works">Foundational Works</h3>
 <ul>
 <li><p>Brewer, C. A., &amp; Pickle, L. (2002). Evaluation of methods for classifying epidemiological data on choropleth maps in series. <em>Annals of the Association of American Geographers</em>, 92(4), 662–681. — The definitive empirical comparison of classification methods for choropleth maps. Demonstrates that quantile and natural breaks methods outperform equal interval for map-reading accuracy.</p></li>
 <li><p>Brewer, C. A. <a href="https://colorbrewer2.org/">ColorBrewer 2.0</a>. — Interactive tool for choosing cartographically sound color schemes. Provides sequential, diverging, and qualitative palettes tested for colorblind safety, print friendliness, and screen legibility.</p></li>
 <li><p>Openshaw, S. &amp; Taylor, P.J. (1979). A million or so correlation coefficients: three experiments on the modifiable areal unit problem. <em>Statistical Applications in the Spatial Sciences</em>, pp. 127–144. — The paper that coined the term “MAUP.” Using Iowa county data, Openshaw and Taylor showed that aggregating 99 counties into different 6-zone configurations produced correlations ranging from –0.97 to +0.99 for the same underlying variables.</p></li>
 <li><p>Openshaw, S. (1984). <em>The Modifiable Areal Unit Problem</em>. CATMOG No. 38. Geo Books. — The most-cited treatment of MAUP (~5,200 citations). Distinguishes the <strong>scale effect</strong> (results change when units are aggregated to larger sizes) from the <strong>zoning effect</strong> (results change when units of the same size are reconfigured). Essential reading for anyone working with aggregated spatial data.</p></li>
-</ul>
-</section>
-<section id="recent-applications" class="level3">
-<h3 class="anchored" data-anchor-id="recent-applications">Recent Applications</h3>
-<ul>
 <li><p>Fotheringham, A.S. &amp; Wong, D.W.S. (1991). The modifiable areal unit problem in multivariate statistical analysis. <em>Environment and Planning A</em>, 23(7), 1025–1044. <a href="https://doi.org/10.1068/a231025">doi:10.1068/a231025</a> — Extended MAUP from bivariate correlations into multiple regression and logit models, showing that parameter estimates varied by a factor of up to nine across geographic units. Demonstrated that MAUP is not just a mapping problem but a fundamental analytical challenge.</p></li>
 <li><p>Nelson, J.K. &amp; Brewer, C.A. (2017). Evaluating data stability in aggregation structures across spatial scales. <em>Cartography and Geographic Information Science</em>, 44(1), 35–50. <a href="https://doi.org/10.1080/15230406.2015.1093431">doi:10.1080/15230406.2015.1093431</a> — The modern cartographic treatment of MAUP, showing that tract-level data preserves spatial relationships that county-level analysis destroys. Directly relevant to the multi-scale comparisons in Lab 2.</p></li>
 <li><p>Stevens, J. (2015). <a href="http://www.joshuastevens.net/cartography/make-a-bivariate-choropleth-map/">Bivariate Choropleth Maps: A How-to Guide</a>. — Practical introduction to bivariate choropleth design with emphasis on color selection and legend construction. The design principles in this guide directly inform the <code>biscale</code> package workflow used in Lab 2.</p></li>
 <li><p>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. <a href="https://walker-data.com/census-r/mapping-census-data-with-r.html">Chapter 6: Mapping Census Data with R</a>. — Covers choropleth mapping with R including classification methods, color palettes, and interactive mapping. Directly relevant to the tidycensus + ggplot2 workflow used throughout this course.</p></li>
 <li><p>Axis Maps. <a href="https://www.axismaps.com/guide">Cartography Guide</a>. — Concise, practical reference covering color theory, classification, labeling, and layout for thematic maps. Excellent quick reference for cartographic design decisions.</p></li>
 </ul>
-</section>
 <section id="r-package-documentation" class="level3">
 <h3 class="anchored" data-anchor-id="r-package-documentation">R Package Documentation</h3>
 <ul>
