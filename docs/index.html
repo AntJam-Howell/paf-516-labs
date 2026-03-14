@@ -166,6 +166,28 @@
   }
   footer a { color: var(--muted); }
   footer a:hover { color: var(--text); }
+
+  /* ── Floating TOC ─────────────────────────────────── */
+  .floating-toc {
+    position: fixed; top: 50%; right: 24px;
+    transform: translateY(-50%);
+    z-index: 100;
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px;
+    list-style: none;
+    max-width: 200px;
+  }
+  .floating-toc li { margin-bottom: 10px; }
+  .floating-toc li:last-child { margin-bottom: 0; }
+  .floating-toc a {
+    color: var(--muted); text-decoration: none;
+    font-size: 0.78rem; font-weight: 600;
+    transition: color 0.15s;
+    display: block; line-height: 1.4;
+  }
+  .floating-toc a:hover { color: var(--gold); }
+  .floating-toc a.active { color: var(--gold); }
+  @media (max-width: 1200px) { .floating-toc { display: none; } }
 </style>
 </head>
 <body>
@@ -177,8 +199,17 @@
 
 <main>
 
+  <!-- ── FLOATING TOC ──────────────────────────────── -->
+  <ul class="floating-toc">
+    <li><a href="#introduction">Course Introduction</a></li>
+    <li><a href="#cumulative-project">Cumulative Lab Project</a></li>
+    <li><a href="#study-guides">Study Guides</a></li>
+    <li><a href="#labs">Labs</a></li>
+    <li><a href="#final-project">Final Project</a></li>
+  </ul>
+
   <!-- ── COURSE INTRODUCTION ──────────────────────── -->
-  <div class="section-header">
+  <div id="introduction" class="section-header">
     <h2>Course Introduction</h2>
     <span class="section-tag">PAF 516 &mdash; Graduate &middot; Asynchronous Online</span>
   </div>
@@ -201,8 +232,8 @@
     <a class="syllabus-btn" href="PAF516_Syllabus.pdf" target="_blank">View Full Syllabus (PDF)</a>
   </div>
 
-  <!-- ── COURSE LEARNING ARC ────────────────────────── -->
-  <div class="section-header">
+  <!-- ── CUMULATIVE LAB PROJECT ─────────────────────── -->
+  <div id="cumulative-project" class="section-header">
     <h2>Cumulative Lab Project</h2>
     <span class="section-tag">Analytical thread across all modules</span>
   </div>
@@ -228,7 +259,7 @@
   </div>
 
   <!-- ── MODULE GUIDES ─────────────────────────────── -->
-  <div class="section-header">
+  <div id="study-guides" class="section-header">
     <h2>Module Study Guides</h2>
     <span class="section-tag">Conceptual readings &amp; lecture notes</span>
   </div>
@@ -278,7 +309,7 @@
   </div>
 
   <!-- ── LAB ASSIGNMENTS ───────────────────────────── -->
-  <div class="section-header">
+  <div id="labs" class="section-header">
     <h2>Lab Assignments</h2>
     <span class="section-tag">Hands-on R coding exercises</span>
   </div>
@@ -343,7 +374,7 @@
       <div class="lab-links"></div>
     </div>
 
-    <div class="lab-card available full">
+    <div id="final-project" class="lab-card available full">
       <div class="lab-num">Final Project — Lab 7</div>
       <span class="badge available">● Available</span>
       <h3>Community Analytics Dashboard</h3>
@@ -362,5 +393,32 @@
   <a href="https://github.com/AntJam-Howell/paf-516-labs" target="_blank">Source files on GitHub</a>
 </footer>
 
+<script>
+// Scroll-spy: highlight active TOC link
+(function() {
+  const links = document.querySelectorAll('.floating-toc a');
+  const ids = Array.from(links).map(a => a.getAttribute('href').slice(1));
+  function update() {
+    let current = ids[0];
+    for (const id of ids) {
+      const el = document.getElementById(id);
+      if (el && el.getBoundingClientRect().top <= 120) current = id;
+    }
+    links.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  }
+  window.addEventListener('scroll', update);
+  update();
+  // Smooth scroll
+  links.forEach(a => {
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById(this.getAttribute('href').slice(1))
+        .scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+})();
+</script>
 </body>
 </html>
