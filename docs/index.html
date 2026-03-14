@@ -111,6 +111,16 @@
   .module-card.soon .mod-num { color: var(--muted); }
   .module-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
   .module-card p { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 14px; flex-grow: 1; }
+  .module-topics {
+    list-style: none; padding: 0; margin: 0 0 14px; flex-grow: 1;
+  }
+  .module-topics li {
+    font-size: 0.82rem; color: var(--muted); line-height: 1.5;
+    padding: 3px 0 3px 16px; position: relative;
+  }
+  .module-topics li::before {
+    content: "\25B8"; position: absolute; left: 0; color: #58a6ff; font-size: 0.7rem;
+  }
   .module-link {
     display: inline-block; font-size: 0.82rem; font-weight: 600;
     color: #58a6ff; text-decoration: none; padding: 5px 0;
@@ -271,21 +281,33 @@
     <div class="module-card available">
       <div class="mod-num">Module 1</div>
       <h3>Measurement &amp; Indexing</h3>
-      <p>Constructs, z-score standardization, and Cronbach's alpha.</p>
+      <ul class="module-topics">
+        <li>Urban Measurement</li>
+        <li>Spatial Constructs</li>
+        <li>Economic Hardship Index</li>
+      </ul>
       <a class="module-link" href="Module1_Guide.html" target="_blank">Study Guide →</a>
     </div>
 
     <div class="module-card available">
       <div class="mod-num">Module 2</div>
       <h3>Classification &amp; Spatial Scale</h3>
-      <p>Classification schemes, bivariate mapping, interactive maps, and the Modifiable Areal Unit Problem.</p>
+      <ul class="module-topics">
+        <li>Spatial Variable Classification</li>
+        <li>Spatial Scales</li>
+        <li>Modifiable Areal Unit Problem</li>
+      </ul>
       <a class="module-link" href="Module2_Guide.html" target="_blank">Study Guide &rarr;</a>
     </div>
 
     <div class="module-card available">
       <div class="mod-num">Module 3</div>
       <h3>Spatial Data Integration</h3>
-      <p>Spatial joins, buffers, integrating external datasets, and the Uncertain Geographic Context Problem.</p>
+      <ul class="module-topics">
+        <li>Spatial Joins</li>
+        <li>Uncertain Geographic Context Problem</li>
+        <li>Spatial Equity</li>
+      </ul>
       <a class="module-link" href="Module3_Guide.html" target="_blank">Study Guide &rarr;</a>
     </div>
 
@@ -322,7 +344,7 @@
       <div class="lab-num">Lab 1</div>
       <span class="badge available">● Available</span>
       <h3>Measurement &amp; Indexing</h3>
-      <p>Build a 5-variable Economic Hardship Index, assess reliability with Cronbach's &alpha;, and map at three geographic scales.</p>
+      <p>Build a standardized Economic Hardship Index, assess reliability with Cronbach&rsquo;s &alpha;, and spatial visualization at three geographic scales.</p>
       <div class="lab-links">
         <a class="lab-link tutorial"   href="lab1-tutorial.html" target="_blank">Tutorial →</a>
         <a class="lab-link assignment" href="lab1-assignment.html" target="_blank">Assignment →</a>
@@ -333,7 +355,7 @@
       <div class="lab-num">Lab 2</div>
       <span class="badge available">&bull; Available</span>
       <h3>Classification &amp; Spatial Scale</h3>
-      <p>Classification schemes, bivariate mapping, interactive maps with <code>mapgl</code>, and the Modifiable Areal Unit Problem.</p>
+      <p>Variable dichotomization and classification, bivariate and interactive mapping, and the Intraclass Correlation Coefficient (ICC).</p>
       <div class="lab-links">
         <a class="lab-link tutorial"   href="lab2-tutorial.html" target="_blank">Tutorial &rarr;</a>
         <a class="lab-link assignment" href="lab2-assignment.html" target="_blank">Assignment &rarr;</a>
@@ -344,7 +366,7 @@
       <div class="lab-num">Lab 3</div>
       <span class="badge available">&bull; Available</span>
       <h3>Spatial Data Integration</h3>
-      <p>Spatial joins, buffer analysis, integrating external data sources, and the Uncertain Geographic Context Problem.</p>
+      <p>Spatial joins and overlays, distance-decay analysis, and multi-buffer analysis.</p>
       <div class="lab-links">
         <a class="lab-link tutorial"   href="lab3-tutorial.html" target="_blank">Tutorial &rarr;</a>
         <a class="lab-link assignment" href="lab3-assignment.html" target="_blank">Assignment &rarr;</a>
