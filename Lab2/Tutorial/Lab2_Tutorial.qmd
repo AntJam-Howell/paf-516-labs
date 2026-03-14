@@ -624,6 +624,93 @@ Modifiable Areal Unit Problem: **the unit of analysis determines the story.**
 
 ---
 
+
+# Step 7: Aggregation Sensitivity — ICC Test
+
+Step 6 showed MAUP visually: a county map hides block group variation. But **how much** variation is lost? The **Intraclass Correlation Coefficient (ICC)** quantifies this by measuring what fraction of total hardship variance falls *between* tracts versus *within* them.
+
+If ICC is high, tracts are internally homogeneous and aggregating loses little. If ICC is low, most variation is *within* tracts — meaning block group geography captures meaningful differences that tract-level analysis would erase.
+
+```{r}
+#| label: step.07-icc
+
+# Extract tract ID from block group GEOID (first 11 characters)
+cbg <- cbg |>
+  mutate(
+    tract_id = str_sub(GEOID, 1, 11),
+    area     = st_area(geometry) |> as.numeric()
+  )
+
+# Remove rows with missing hardship index
+cbg_valid <- cbg |> filter(!is.na(hardship_index))
+
+# ICC via one-way ANOVA — no heavy packages required
+# Formula: (MS_between - MS_within) / (MS_between + (n0 - 1) * MS_within)
+# where n0 is the effective average group size (adjusted for unequal groups)
+aov_icc  <- aov(hardship_index ~ factor(tract_id), data = cbg_valid)
+ms       <- summary(aov_icc)[[1]][, "Mean Sq"]
+ms_b     <- ms[1]   # mean square between tracts
+ms_w     <- ms[2]   # mean square within tracts (residual)
+
+# Effective group size (Shrout & Fleiss, 1979) — accounts for unequal CBG counts per tract
+k        <- length(unique(cbg_valid$tract_id))
+n_total  <- nrow(cbg_valid)
+n0       <- (n_total - sum(table(cbg_valid$tract_id)^2) / n_total) / (k - 1)
+
+icc_val  <- round((ms_b - ms_w) / (ms_b + (n0 - 1) * ms_w), 3)
+cat("ICC:", icc_val, "\n")
+cat("(Between-tract MS:", round(ms_b, 3), "| Within-tract MS:", round(ms_w, 3), "| Avg group size:", round(n0, 1), ")\n")
+```
+
+```{r}
+#| label: step.07-maps
+#| fig-width: 14
+#| fig-height: 6
+
+# Aggregate block group hardship to tract level (area-weighted mean)
+tract_agg <- cbg_valid |>
+  st_drop_geometry() |>
+  group_by(tract_id) |>
+  summarise(hardship_tract = weighted.mean(hardship_index, w = area, na.rm = TRUE),
+            .groups = "drop")
+
+# Pull tract geometry and join aggregated values
+tract_geo <- get_acs(
+  geography = "tract", variables = "B01001_001",
+  state = "AZ", county = "Maricopa", year = 2023,
+  geometry = TRUE, progress_bar = FALSE
+) |>
+  select(GEOID, geometry) |>
+  left_join(tract_agg, by = c("GEOID" = "tract_id"))
+
+p_cbg   <- ggplot(cbg_valid) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship\n(BG)") +
+  theme_void() + labs(title = "Block Group Level")
+
+p_tract <- ggplot(tract_geo) +
+  geom_sf(aes(fill = hardship_tract), color = NA) +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship\n(Tract)") +
+  theme_void() + labs(title = "Tract Level (Aggregated)")
+
+p_cbg + p_tract +
+  plot_annotation(title = paste0("Scale Sensitivity  |  ICC = ", icc_val))
+```
+
+::: {.callout-note}
+## What the ICC tells us — and why it matters
+The ICC is the fraction of **total hardship variance** that falls *between* tracts (as opposed to *within* them). It answers: "how much does it matter which tract a block group is in?"
+
+- **ICC > 0.75**: tracts are very homogeneous — aggregating to tract loses little
+- **ICC 0.40–0.75**: moderate within-tract variation — tract analysis is usable but imprecise
+- **ICC < 0.40**: most variation is within tracts — block group geography is strongly preferred
+
+An ICC around 0.5 means roughly half the variance in block group hardship is *between* tracts and half is *within* them — a direct empirical demonstration of MAUP. Aggregating to tracts would suppress meaningful neighborhood-level variation.
+:::
+
+
+---
+
 ::: {.callout-note}
 ## Ready for the assignment?
 Head to the [Lab 2 Assignment page](https://antjam-howell.github.io/paf-516-labs/lab2-assignment.html) to download `Lab2_Assignment.qmd`. You will create a second bivariate choropleth and evaluate how the spatial patterns differ.

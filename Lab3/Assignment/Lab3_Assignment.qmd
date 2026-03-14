@@ -18,9 +18,9 @@ execute:
 
 ::: {.callout-important}
 ## Before you begin
-1. **This file contains the same pre-filled code as the tutorial.** Steps 1–9 below produce the same output you saw in the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately (Cmd+Shift+K / Ctrl+Shift+K) and see the same results. If you placed it in a different location, run the `packages` chunk first (Cmd+Return / Ctrl+Enter), then knit.
+1. **This file contains the same pre-filled code as the tutorial.** Steps 1–8 below produce the same output you saw in the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately (Cmd+Shift+K / Ctrl+Shift+K) and see the same results. If you placed it in a different location, run the `packages` chunk first (Cmd+Return / Ctrl+Enter), then knit.
 3. **The assignment questions are at the top of this document.** Here is the workflow:
-   - **Q1** asks you to interpret results from the pre-filled steps. Knit first, then review the ICC output (Step 3), the hardship + facility map (Step 7), and the distance-decay charts (Steps 8–9), then write your answers.
+   - **Q1** asks you to interpret results from the pre-filled steps. Knit first, then review the hardship + facility map (Step 6), and the distance-decay charts (Steps 7–8), then write your answers.
    - **Q2** asks you to re-run the distance-decay analysis with finer distance bands by adapting the existing code. Fill in the scaffold chunks labeled `q2-...` at the end of this document, then re-knit.
    - **Q3** asks you to connect your buffer sensitivity findings to the Uncertain Geographic Context Problem (UGCoP) and make a defended policy recommendation.
 4. Submit both `Lab3_Assignment_YourLastName.qmd` and `Lab3_Assignment_YourLastName.html` to Canvas.
@@ -28,15 +28,11 @@ execute:
 
 # Assignment Questions
 
-## Q1 — Interpret the ICC and Distance-Decay Pattern {.question}
+## Q1 — Interpret the Distance-Decay Pattern {.question}
 
-> **Text answer — no code required.** Knit the file first, then review the Step 3 ICC output and the Step 8–9 charts before writing your answers.
+> **Text answer — no code required.** Knit the file first, then review the Step 7–8 charts before writing your answers.
 
-- **ICC:** What is the ICC value? Using the interpretation guide in Step 3 (>0.75 / 0.40–0.75 / <0.40), what does it suggest about aggregating to tract level? Is block group geography justified for this analysis?
-
-[YOUR ANSWER HERE]
-
-- **Distance-decay:** Describe the pattern in Step 8. Does mean hardship decrease as distance from facilities increases? Is the pattern strong or weak? Are there any unexpected reversals?
+- **Distance-decay:** Describe the pattern in Step 7. Does mean hardship decrease as distance from facilities increases? Is the pattern strong or weak? Are there any unexpected reversals?
 
 [YOUR ANSWER HERE]
 
@@ -47,7 +43,7 @@ execute:
 
 ## Q2 — Modify the Distance Bands {.question}
 
-> **Code + output required.** Re-run the distance-decay analysis (Step 8) with **finer distance bands**:
+> **Code + output required.** Re-run the distance-decay analysis (Step 7) with **finer distance bands**:
 > `< 0.25 mi`, `0.25–0.5 mi`, `0.5–1 mi`, `1–2 mi`, `> 2 mi`
 >
 > Fill in the scaffold chunks at the end of this document to re-generate the decay summary table and bar charts with the new bands.
@@ -61,11 +57,11 @@ execute:
 
 > **Text answer — no code required.**
 
-- **Decay comparison:** How does the finer-band pattern (Q2) compare to the original 5-band version (Step 8)? Did breaking `< 0.5 mi` into two sub-bands reveal anything new about the very nearest block groups?
+- **Decay comparison:** How does the finer-band pattern (Q2) compare to the original 5-band version (Step 7)? Did breaking `< 0.5 mi` into two sub-bands reveal anything new about the very nearest block groups?
 
 [YOUR ANSWER HERE]
 
-- **UGCoP:** Look at the multi-buffer comparison table from Step 9. Is the gap between inside and outside buffer consistent across the three distances (0.5, 1.0, 2.0 miles), or does it shrink/change at one threshold? What does this tell you about the Uncertain Geographic Context Problem?
+- **UGCoP:** Look at the multi-buffer comparison table from Step 8. Is the gap between inside and outside buffer consistent across the three distances (0.5, 1.0, 2.0 miles), or does it shrink/change at one threshold? What does this tell you about the Uncertain Geographic Context Problem?
 
 [YOUR ANSWER HERE]
 
@@ -166,85 +162,7 @@ cat("CBGs with valid index:", nrow(cbg_complete), "\n")
 ```
 
 
-# Step 3: Aggregation Sensitivity — ICC Test
-
-Does geography choice matter? The ICC measures how much within-tract variation we would lose by aggregating block groups to tracts.
-
-```{r}
-#| label: step.03-icc
-
-cbg_complete <- cbg_complete |>
-  mutate(
-    tract_id = str_sub(GEOID, 1, 11),
-    area     = st_area(geometry) |> as.numeric()
-  )
-
-# ICC via one-way ANOVA — no heavy packages required
-# Formula: (MS_between - MS_within) / (MS_between + (n0 - 1) * MS_within)
-# where n0 is the effective average group size (adjusted for unequal groups)
-aov_icc  <- aov(hardship_index ~ factor(tract_id), data = cbg_complete)
-ms       <- summary(aov_icc)[[1]][, "Mean Sq"]
-ms_b     <- ms[1]   # mean square between tracts
-ms_w     <- ms[2]   # mean square within tracts (residual)
-
-# Effective group size (Shrout & Fleiss, 1979) — accounts for unequal CBG counts per tract
-k        <- length(unique(cbg_complete$tract_id))
-n_total  <- nrow(cbg_complete)
-n0       <- (n_total - sum(table(cbg_complete$tract_id)^2) / n_total) / (k - 1)
-
-icc_val  <- round((ms_b - ms_w) / (ms_b + (n0 - 1) * ms_w), 3)
-cat("ICC:", icc_val, "\n")
-cat("(Between-tract MS:", round(ms_b, 3), "| Within-tract MS:", round(ms_w, 3), "| Avg group size:", round(n0, 1), ")\n")
-```
-
-```{r}
-#| label: step.03-maps
-#| fig-width: 14
-#| fig-height: 6
-
-tract_agg <- cbg_complete |>
-  st_drop_geometry() |>
-  group_by(tract_id) |>
-  summarise(hardship_tract = weighted.mean(hardship_index, w = area, na.rm = TRUE),
-            .groups = "drop")
-
-tract_geo <- get_acs(
-  geography = "tract", variables = "B01001_001",
-  state = "AZ", county = "Maricopa", year = 2023,
-  geometry = TRUE, progress_bar = FALSE
-) |>
-  select(GEOID, geometry) |>
-  left_join(tract_agg, by = c("GEOID" = "tract_id"))
-
-p_cbg   <- ggplot(cbg_complete) +
-  geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis_c(option = "inferno", name = "Hardship\n(BG)") +
-  theme_void() + labs(title = "Block Group Level")
-
-p_tract <- ggplot(tract_geo) +
-  geom_sf(aes(fill = hardship_tract), color = NA) +
-  scale_fill_viridis_c(option = "inferno", name = "Hardship\n(Tract)") +
-  theme_void() + labs(title = "Tract Level (Aggregated)")
-
-p_cbg + p_tract +
-  plot_annotation(title = paste0("Scale Sensitivity  |  ICC = ", icc_val))
-```
-
-::: {.callout-note}
-## What the ICC tells us — and why it matters
-The ICC is the fraction of **total hardship variance** that falls *between* tracts (as opposed to *within* them). It answers: "how much does it matter which tract a block group is in?"
-
-- **ICC > 0.75**: tracts are very homogeneous — aggregating to tract loses little
-- **ICC 0.40–0.75**: moderate within-tract variation — tract analysis is usable but imprecise  
-- **ICC < 0.40**: most variation is within tracts — block group geography is strongly preferred
-
-An ICC around 0.5 means roughly half the variance in block group hardship is *between* tracts and half is *within* them — a direct empirical demonstration of the MAUP concern from Module 2. Aggregating to tracts would suppress meaningful neighborhood-level variation.
-
-**Extension for Lab 4:** Once you cover Moran's I, run it on the within-tract residuals (block group hardship minus tract mean) to test whether the within-tract variation is spatially structured. If the residuals cluster, MAUP is introducing systematic spatial bias — not just random noise.
-:::
-
-
-# Step 4: Load External Point Data (Environmental Facilities)
+# Step 3: Load External Point Data (Environmental Facilities)
 
 ```{r}
 #| label: step.04-facilities
@@ -278,7 +196,7 @@ This is a **representative sample** of 10 major EPA-regulated and Superfund site
 ```
 
 
-# Step 5: Convert to sf and Align CRS
+# Step 4: Convert to sf and Align CRS
 
 ```{r}
 #| label: step.05-crs
@@ -290,7 +208,7 @@ cat("Both layers in EPSG:2868 (Arizona Central, US survey feet)\n")
 ```
 
 
-# Step 6: Compute Distance to Nearest Facility
+# Step 5: Compute Distance to Nearest Facility
 
 Rather than just asking "is this block group inside a buffer?" we compute the **exact distance from each block group's centroid to the nearest EPA facility**. This gives a continuous proximity measure and enables the distance-decay analysis in Step 7.
 
@@ -313,7 +231,7 @@ cat("% of CBGs within 0.5 miles:", round(100 * mean(cbg_proj$dist_nearest_mi < 0
 ```
 
 
-# Step 7: Facility Density Map + Hardship Overlay
+# Step 6: Facility Density Map + Hardship Overlay
 
 The compelling EJ visual: where are facilities located, and does hardship follow the same pattern?
 
@@ -361,7 +279,7 @@ p_hardship_fac + p_distance +
 ```
 
 
-# Step 8: Distance-Decay Analysis — The EJ Finding
+# Step 7: Distance-Decay Analysis — The EJ Finding
 
 **The core environmental justice question:** Does hardship *decrease* as you move farther from EPA facilities? If yes, proximity to environmental burden compounds socioeconomic disadvantage — exactly what EJ research predicts.
 
@@ -437,7 +355,7 @@ p_decay_hardship + p_decay_poverty +
 **Reading the chart:** If hardship and poverty are highest in the "< 0.5 mi" bar and decrease across the distance bands, the data support the EJ hypothesis: **poorer, more disadvantaged communities are disproportionately located near EPA-regulated facilities**. Wealthier neighborhoods are farther away.
 
 
-# Step 9: Multi-Buffer UGCoP Comparison
+# Step 8: Multi-Buffer UGCoP Comparison
 
 **The UGCoP question:** How sensitive is this finding to the buffer threshold? We run the analysis at three distances — 0.5, 1.0, and 2.0 miles — and compare results.
 
