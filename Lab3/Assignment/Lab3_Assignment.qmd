@@ -133,7 +133,7 @@ cbg_raw <- get_acs(
 ```
 
 
-# Step 2: Build the 5-Variable Hardship Index
+# Step 2: Build the 5-Variable Economic Hardship Index
 
 ```{r}
 #| label: step.02-wrangle
@@ -408,9 +408,9 @@ p_decay_hardship <- ggplot(decay_summary, aes(x = dist_band, y = mean_hardship))
   theme_minimal(base_size = 12) +
   labs(
     title    = "Economic Hardship Decreases with Distance from EPA Facilities",
-    subtitle = "Mean hardship index by distance band | Maricopa County Block Groups",
+    subtitle = "Mean economic hardship index by distance band | Maricopa County Block Groups",
     x        = "Distance to Nearest EPA Facility",
-    y        = "Mean Hardship Index",
+    y        = "Mean Economic Hardship Index",
     caption  = "Distance-decay pattern: UGCoP predicts this relationship changes with buffer threshold choice"
   )
 
@@ -501,7 +501,7 @@ ggplot(buf_long,
     title    = "UGCoP: Mean Hardship Inside vs. Outside Buffer — Three Distances",
     subtitle = "Does the 'proximity penalty' shrink or grow as the buffer expands?",
     x        = "Buffer Distance",
-    y        = "Mean Hardship Index",
+    y        = "Mean Economic Hardship Index",
     caption  = "Red = inside buffer | Blue = outside | ACS 2023 + EPA TRI data"
   )
 ```

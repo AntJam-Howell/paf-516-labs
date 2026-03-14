@@ -26,7 +26,7 @@ execute:
 
 ## Module Overview and Objectives
 
-So far, your hardship index is built entirely from census variables — measures of *who lives* in a place. But neighborhood quality is also shaped by *what is near* a place. Proximity to environmental hazards, grocery stores, transit stops, or health clinics matters as much as demographic composition. This module teaches you to combine **tabular census data** with **external point data** using spatial operations.
+So far, your economic hardship index is built entirely from census variables — measures of *who lives* in a place. But neighborhood quality is also shaped by *what is near* a place. Proximity to environmental hazards, grocery stores, transit stops, or health clinics matters as much as demographic composition. This module teaches you to combine **tabular census data** with **external point data** using spatial operations.
 
 The central challenge is that these datasets arrive in different formats, different coordinate reference systems, and different geographic units. You will learn to align them using **spatial joins**, **buffer analysis**, and **coordinate transformations** — the core operations of spatial data integration. Along the way, you will encounter a question every proximity analyst must answer: **does it matter whether you draw your buffer at 0.5 miles or 1 mile?** The answer is yes — and the reason has a name.
 
@@ -39,7 +39,7 @@ After completing this module, you will be able to:
 - Conduct **buffer analysis** using `st_buffer()` to measure proximity to spatial features
 - Recognize the **Uncertain Geographic Context Problem (UGCoP)** and explain how buffer distance choices affect analytical conclusions
 - Frame spatial analysis within an **environmental justice** context, connecting proximity to environmental burdens with socioeconomic hardship
-- Create an **enriched hardship index** that incorporates spatial access variables alongside census demographics
+- Create an **enriched economic hardship index** that incorporates spatial access variables alongside census demographics
 
 :::
 
@@ -86,7 +86,7 @@ The most common spatial join in community analytics: "How many facilities, event
 joined <- st_join(polygons, points, join = st_intersects)
 ```
 
-After joining, group by the polygon ID and count matched points to produce a per-area count variable you can add to the hardship index.
+After joining, group by the polygon ID and count matched points to produce a per-area count variable you can add to the economic hardship index.
 
 ### Buffer Analysis
 
@@ -143,7 +143,7 @@ When you report that a certain percentage of high-hardship block groups fall wit
 
 ### UGCoP in the Lab
 
-In Lab 3, Q2 asks you to change the buffer from 1 mile to 0.5 miles and compare results. This is a direct application of UGCoP: you are testing whether the conclusion that "certain block groups are near facilities" is sensitive to the distance threshold. If the enriched hardship index changes substantially at 0.5 miles, UGCoP is at work.
+In Lab 3, Q2 asks you to change the buffer from 1 mile to 0.5 miles and compare results. This is a direct application of UGCoP: you are testing whether the conclusion that "certain block groups are near facilities" is sensitive to the distance threshold. If the enriched economic hardship index changes substantially at 0.5 miles, UGCoP is at work.
 
 :::
 
@@ -174,7 +174,7 @@ Every analytic choice in an EJ study carries implications for the conclusions:
 
 ### EJScreen
 
-The EPA's EJScreen tool — now maintained by the Open Environmental Data Project after EPA removed it in 2025 — operationalizes cumulative burden analysis at the census block group level. It combines 11 environmental indicators (air quality, proximity to Superfund sites, wastewater discharge, etc.) with 6 demographic indicators to produce a composite score. The **enriched hardship index** you build in Lab 3 applies the same logic at a smaller scale.
+The EPA's EJScreen tool — now maintained by the Open Environmental Data Project after EPA removed it in 2025 — operationalizes cumulative burden analysis at the census block group level. It combines 11 environmental indicators (air quality, proximity to Superfund sites, wastewater discharge, etc.) with 6 demographic indicators to produce a composite score. The **enriched economic hardship index** you build in Lab 3 applies the same logic at a smaller scale.
 
 :::
 

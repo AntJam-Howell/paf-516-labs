@@ -130,7 +130,7 @@ The dashboard's five-page structure mirrors the **multi-scale analytical approac
 
 Each page builds on the previous. The national map provides context ("hardship exists everywhere but concentrates regionally"). The local map zooms in ("within Maricopa, hardship varies dramatically by block group"). The hot spot map adds statistical rigor ("these specific clusters are statistically significant, not just visual patterns"). The change map adds temporal depth ("these clusters have persisted over 8 years"). The policy page demands action ("given all of this, here is what should be done").
 
-### The Hardship Index
+### The Economic Hardship Index
 
 The same five-variable composite index powers every page:
 

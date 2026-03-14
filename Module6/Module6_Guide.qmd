@@ -106,7 +106,7 @@ Label figures and tables so you can reference them in text:
 
 ```
 #| label: fig-lisa-clusters
-#| fig-cap: "LISA cluster map of hardship index, 2019-2023 ACS"
+#| fig-cap: "LISA cluster map of economic hardship index, 2019-2023 ACS"
 ```
 
 Then reference in text with `@fig-lisa-clusters`, which renders as "Figure 1" with a hyperlink.
@@ -172,7 +172,7 @@ Notice how this recommendation is **specific** (14 block groups, southeast quadr
 Every analysis has limitations. Acknowledge them briefly but directly:
 
 - ACS data has margins of error, especially at the block group level
-- The hardship index captures only the dimensions you measured --- other factors matter
+- The economic hardship index captures only the dimensions you measured --- other factors matter
 - Spatial patterns describe where hardship clusters, not why
 - Boundary changes between census vintages may affect temporal comparisons
 

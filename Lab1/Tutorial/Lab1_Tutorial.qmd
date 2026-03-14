@@ -216,7 +216,7 @@ ggplot(index_z, aes(x = hardship_index)) +
   labs(
     title    = "Distribution of Economic Hardship Index",
     subtitle = "Arizona Census Tracts (ACS 2023)",
-    x        = "Hardship Index (z-score scale)",
+    x        = "Economic Hardship Index (z-score scale)",
     y        = "Number of Tracts",
     caption  = "Dashed line = mean"
   )
@@ -485,7 +485,7 @@ p_10var <- ggplot(CenDF_complete_10) +
 
 p_5var + p_10var +
   plot_annotation(
-    title    = "Original vs. Enriched Hardship Index",
+    title    = "Original vs. Enriched Economic Hardship Index",
     subtitle = "Does expanding measurement change the spatial story?",
     caption  = "ACS 5-Year (2023) | Arizona Census Tracts"
   )

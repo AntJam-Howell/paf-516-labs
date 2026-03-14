@@ -164,7 +164,7 @@ $$
 ::: {.section-box}
 
 
-- Cronbach, L. J. (1951). Coefficient alpha and the internal structure of tests. *Psychometrika*, 16, 297--334. --- The seminal paper establishing Cronbach's alpha as the standard measure of internal consistency. This is the method you will use in Lab 1 to evaluate your hardship index.
+- Cronbach, L. J. (1951). Coefficient alpha and the internal structure of tests. *Psychometrika*, 16, 297--334. --- The seminal paper establishing Cronbach's alpha as the standard measure of internal consistency. This is the method you will use in Lab 1 to evaluate your economic hardship index.
 
 - Townsend, P., Phillimore, P., & Beattie, A. (1987). *Health and Deprivation: Inequality and the North*. Croom Helm. --- Introduced the Townsend Deprivation Index, one of the first census-based composite indices combining unemployment, overcrowding, non-home ownership, and non-car ownership using z-score standardization --- the same approach used in this course.
 

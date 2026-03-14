@@ -59,7 +59,7 @@ Moran's I tests, and classifying local clusters. Install it with
 
 ---
 
-# Step 1: Pull Maricopa County CBG Data & Build Hardship Index
+# Step 1: Pull Maricopa County CBG Data & Build Economic Hardship Index
 
 By now you have done this four times. We pull the same five ACS hardship
 variables used in Lab 1, but this time at the **Census Block Group (CBG)**
@@ -225,7 +225,7 @@ disproportionate influence.
 # Step 3: Global Moran's I
 
 Global Moran's I is a single summary statistic for the **entire study area**.
-It answers: "Overall, is the hardship index spatially clustered, randomly
+It answers: "Overall, is the economic hardship index spatially clustered, randomly
 distributed, or dispersed?"
 
 - **I near +1** = strong positive spatial autocorrelation (clustering: similar
@@ -293,8 +293,8 @@ moran.plot(
   cbg_index$hardship_index,
   lw,
   zero.policy = TRUE,
-  xlab = "Hardship Index (standardized)",
-  ylab = "Spatial Lag of Hardship Index",
+  xlab = "Economic Hardship Index (standardized)",
+  ylab = "Spatial Lag of Economic Hardship Index",
   main = "Moran Scatter Plot — Economic Hardship",
   pch  = 20,
   col  = "steelblue"
@@ -437,11 +437,11 @@ ggplot(cbg_index) +
 #| eval: true
 #| fig-height: 8
 
-# Side-by-side comparison: raw hardship index vs. LISA clusters
+# Side-by-side comparison: raw economic hardship index vs. LISA clusters
 p1 <- ggplot(cbg_index) +
   geom_sf(aes(fill = hardship_index), color = NA) +
   scale_fill_viridis(option = "inferno", name = "Hardship\nIndex") +
-  labs(title = "Hardship Index (Raw Values)") +
+  labs(title = "Economic Hardship Index (Raw Values)") +
   theme_void()
 
 p2 <- ggplot(cbg_index) +
@@ -480,7 +480,7 @@ at the 0.05 level.
 > with your last name (e.g. Lab4_Assignment_Howell.qmd) before editing.
 > This preserves the master copy as a reference.
 >
-> **Instructions:** Rerun the entire LISA analysis on a **single component variable** --- poverty rate alone --- instead of the composite hardship index. Show complete code for spatial weights, Global Moran's I, LISA classification, and the cluster map.
+> **Instructions:** Rerun the entire LISA analysis on a **single component variable** --- poverty rate alone --- instead of the composite economic hardship index. Show complete code for spatial weights, Global Moran's I, LISA classification, and the cluster map.
 
 ```{r}
 #| label: q2-poverty-morans
@@ -513,7 +513,7 @@ at the 0.05 level.
 > with your last name (e.g. Lab4_Assignment_Howell.qmd) before editing.
 > This preserves the master copy as a reference.
 >
-> **Instructions:** Compare the hot spot map for poverty alone vs. the composite hardship index. Do the hot spots shift? What does this tell you about whether the composite index captures spatial patterns differently than individual variables?
+> **Instructions:** Compare the hot spot map for poverty alone vs. the composite economic hardship index. Do the hot spots shift? What does this tell you about whether the composite index captures spatial patterns differently than individual variables?
 
 ```{r}
 #| label: q3-comparison-maps

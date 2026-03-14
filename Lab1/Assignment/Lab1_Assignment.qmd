@@ -71,7 +71,7 @@ execute:
 
 [YOUR ANSWER HERE]
 
-- **Recommendation:** At what point should you stop adding variables to a composite index? Using evidence from your alpha comparisons and difference maps, make a recommendation for how many variables this hardship index should include — and justify it.
+- **Recommendation:** At what point should you stop adding variables to a composite index? Using evidence from your alpha comparisons and difference maps, make a recommendation for how many variables this economic hardship index should include — and justify it.
 
 [YOUR ANSWER HERE]
 
@@ -239,7 +239,7 @@ ggplot(index_z, aes(x = hardship_index)) +
   labs(
     title    = "Distribution of Economic Hardship Index",
     subtitle = "Arizona Census Tracts (ACS 2023)",
-    x        = "Hardship Index (z-score scale)",
+    x        = "Economic Hardship Index (z-score scale)",
     y        = "Number of Tracts",
     caption  = "Dashed line = mean"
   )
@@ -508,7 +508,7 @@ p_10var <- ggplot(CenDF_complete_10) +
 
 p_5var + p_10var +
   plot_annotation(
-    title    = "Original vs. Enriched Hardship Index",
+    title    = "Original vs. Enriched Economic Hardship Index",
     subtitle = "Does expanding measurement change the spatial story?",
     caption  = "ACS 5-Year (2023) | Arizona Census Tracts"
   )

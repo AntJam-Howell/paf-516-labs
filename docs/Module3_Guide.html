@@ -3097,6 +3097,7 @@ padding: 5px;
 border: 1px solid #d3d3d3;
 padding: 10px;
 margin-top: 10px;
+margin-bottom: 30px;
 width: 98%;
 }
 </style>
@@ -3177,7 +3178,7 @@ width: 98%;
 </section>
 <section id="module-overview-and-objectives" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="module-overview-and-objectives">Module Overview and Objectives</h2>
-<p>So far, your hardship index is built entirely from census variables — measures of <em>who lives</em> in a place. But neighborhood quality is also shaped by <em>what is near</em> a place. Proximity to environmental hazards, grocery stores, transit stops, or health clinics matters as much as demographic composition. This module teaches you to combine <strong>tabular census data</strong> with <strong>external point data</strong> using spatial operations.</p>
+<p>So far, your economic hardship index is built entirely from census variables — measures of <em>who lives</em> in a place. But neighborhood quality is also shaped by <em>what is near</em> a place. Proximity to environmental hazards, grocery stores, transit stops, or health clinics matters as much as demographic composition. This module teaches you to combine <strong>tabular census data</strong> with <strong>external point data</strong> using spatial operations.</p>
 <p>The central challenge is that these datasets arrive in different formats, different coordinate reference systems, and different geographic units. You will learn to align them using <strong>spatial joins</strong>, <strong>buffer analysis</strong>, and <strong>coordinate transformations</strong> — the core operations of spatial data integration. Along the way, you will encounter a question every proximity analyst must answer: <strong>does it matter whether you draw your buffer at 0.5 miles or 1 mile?</strong> The answer is yes — and the reason has a name.</p>
 <hr>
 <p>After completing this module, you will be able to:</p>
@@ -3187,7 +3188,7 @@ width: 98%;
 <li>Conduct <strong>buffer analysis</strong> using <code>st_buffer()</code> to measure proximity to spatial features</li>
 <li>Recognize the <strong>Uncertain Geographic Context Problem (UGCoP)</strong> and explain how buffer distance choices affect analytical conclusions</li>
 <li>Frame spatial analysis within an <strong>environmental justice</strong> context, connecting proximity to environmental burdens with socioeconomic hardship</li>
-<li>Create an <strong>enriched hardship index</strong> that incorporates spatial access variables alongside census demographics</li>
+<li>Create an <strong>enriched economic hardship index</strong> that incorporates spatial access variables alongside census demographics</li>
 </ul>
 </section>
 <section id="lecture" class="level2">
@@ -3220,7 +3221,7 @@ width: 98%;
 <h3 class="anchored" data-anchor-id="point-in-polygon-joins">Point-in-Polygon Joins</h3>
 <p>The most common spatial join in community analytics: “How many facilities, events, or resources fall within each census tract or block group?” The <code>st_join()</code> function in the <code>sf</code> package performs this operation:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>joined <span class="ot">&lt;-</span> <span class="fu">st_join</span>(polygons, points, <span class="at">join =</span> st_intersects)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>After joining, group by the polygon ID and count matched points to produce a per-area count variable you can add to the hardship index.</p>
+<p>After joining, group by the polygon ID and count matched points to produce a per-area count variable you can add to the economic hardship index.</p>
 </section>
 <section id="buffer-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="buffer-analysis">Buffer Analysis</h3>
@@ -3305,7 +3306,7 @@ width: 98%;
 </section>
 <section id="ugcop-in-the-lab" class="level3">
 <h3 class="anchored" data-anchor-id="ugcop-in-the-lab">UGCoP in the Lab</h3>
-<p>In Lab 3, Q2 asks you to change the buffer from 1 mile to 0.5 miles and compare results. This is a direct application of UGCoP: you are testing whether the conclusion that “certain block groups are near facilities” is sensitive to the distance threshold. If the enriched hardship index changes substantially at 0.5 miles, UGCoP is at work.</p>
+<p>In Lab 3, Q2 asks you to change the buffer from 1 mile to 0.5 miles and compare results. This is a direct application of UGCoP: you are testing whether the conclusion that “certain block groups are near facilities” is sensitive to the distance threshold. If the enriched economic hardship index changes substantially at 0.5 miles, UGCoP is at work.</p>
 </section>
 </section>
 <section id="section-4-environmental-justice-and-spatial-equity" class="level2 section-box">
@@ -3333,7 +3334,7 @@ width: 98%;
 </section>
 <section id="ejscreen" class="level3">
 <h3 class="anchored" data-anchor-id="ejscreen">EJScreen</h3>
-<p>The EPA’s EJScreen tool — now maintained by the Open Environmental Data Project after EPA removed it in 2025 — operationalizes cumulative burden analysis at the census block group level. It combines 11 environmental indicators (air quality, proximity to Superfund sites, wastewater discharge, etc.) with 6 demographic indicators to produce a composite score. The <strong>enriched hardship index</strong> you build in Lab 3 applies the same logic at a smaller scale.</p>
+<p>The EPA’s EJScreen tool — now maintained by the Open Environmental Data Project after EPA removed it in 2025 — operationalizes cumulative burden analysis at the census block group level. It combines 11 environmental indicators (air quality, proximity to Superfund sites, wastewater discharge, etc.) with 6 demographic indicators to produce a composite score. The <strong>enriched economic hardship index</strong> you build in Lab 3 applies the same logic at a smaller scale.</p>
 </section>
 </section>
 <section id="readings" class="level2 section-box">

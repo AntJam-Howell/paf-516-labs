@@ -107,7 +107,7 @@ The **definitive empirical study** of classification method performance (~1,700 
 ## Color Theory for Maps
 
 **Sequential** (light → dark)
-: For ordinal/continuous data (poverty rate, hardship index). Example: viridis, ColorBrewer Blues.
+: For ordinal/continuous data (poverty rate, economic hardship index). Example: viridis, ColorBrewer Blues.
 
 **Diverging** (two hues from neutral midpoint)
 : For data with a meaningful center (change scores, deviation from mean). Example: blue–white–red.
@@ -272,4 +272,4 @@ Real-world consequences of ignoring MAUP:
 - **MAUP is unpredictable.** Fotheringham & Wong (1991): parameter estimates can vary 9×. Awareness is the defense.
 - **Census geography matters.** Nelson & Brewer (2017): tract-level data preserves relationships that county-level analysis destroys.
 
-**Coming up in Module 3:** Spatial Data Integration — spatial joins, buffer analysis, and layering external datasets onto the hardship index.
+**Coming up in Module 3:** Spatial Data Integration — spatial joins, buffer analysis, and layering external datasets onto the economic hardship index.

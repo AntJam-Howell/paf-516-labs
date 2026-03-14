@@ -1,0 +1,273 @@
+<!-- ============================================================
+     PAF 516 — Module 1 Guide
+     Canvas-compatible HTML: all styles inline, no external deps
+     ============================================================ -->
+
+<!-- ── Module Header ─────────────────────────────────────────── -->
+<div style="background:#8C1D40;border-radius:6px;padding:20px 24px 16px;margin-bottom:24px;">
+  <h2 style="color:#FFC627;font-size:22px;font-weight:700;margin:0 0 4px;">M1 Overview &amp; Learning Materials</h2>
+  <p style="color:#ffffff;font-size:15px;margin:0;font-weight:600;">Measurement, Indexing &amp; Reliability</p>
+</div>
+
+<!-- ── Module Overview ───────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Module Overview and Objectives</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">This module introduces <strong>measurement theory</strong> as it applies to community analytics. Before we can analyze neighborhoods (Modules 2–6), we need a reliable way to <em>measure</em> neighborhood quality. Many of the things we care about — economic hardship, social vulnerability, community health — are <strong>latent constructs</strong> that cannot be directly observed. Instead, we combine multiple observable indicators (census variables) into a single composite <strong>index</strong>.</p>
+  <p style="margin:0 0 12px;line-height:1.6;">This module teaches you how to build such an index and how to evaluate whether it is <em>reliable</em> using <strong>Cronbach's alpha</strong>.</p>
+  <hr style="border:none;border-top:1px solid #d9c8cd;margin:12px 0;">
+  <p style="margin:0 0 8px;font-weight:700;color:#8C1D40;">After completing this module, you will be able to:</p>
+  <ul style="margin:0;padding-left:20px;line-height:1.8;">
+    <li>Define a <strong>construct</strong> and distinguish it from directly measurable variables</li>
+    <li>Explain why multiple indicators are combined into a composite index</li>
+    <li>Apply <strong>z-score standardization</strong> before combining variables measured on different scales</li>
+    <li>Calculate and interpret <strong>Cronbach's alpha</strong> as a measure of internal consistency</li>
+    <li>Use <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">tidycensus</code> to retrieve census variables and <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">psych::alpha()</code> to assess reliability</li>
+    <li>Identify census variables that map to neighborhood constructs (e.g., economic hardship, social vulnerability)</li>
+    <li>Visualize inter-item correlations using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">corrplot</code></li>
+  </ul>
+</div>
+
+<!-- ── Lecture ───────────────────────────────────────────────── -->
+<div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Lecture</h3>
+  <p style="margin:0 0 8px;line-height:1.6;">The lecture notes provide detailed slide-by-slide annotations, with the main points expanded upon in the sections below.</p>
+  <p style="margin:0 0 6px;">📄 <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module1/Lecture/p-01-measurement.pdf" style="color:#8C1D40;font-weight:600;">Measurement Theory — Lecture Notes (PDF)</a></p>
+  <p style="margin:0;">▶️ <a href="https://www.youtube.com/watch?v=ra5rMqr00Ew" style="color:#8C1D40;font-weight:600;">Video Lecture: Measurement Theory</a></p>
+</div>
+
+<!-- ── Section 1 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 1: What Is Measurement?</h3>
+  <blockquote style="border-left:3px solid #ccb3bb;margin:0 0 14px;padding:10px 16px;background:#f2eaed;border-radius:0 4px 4px 0;font-style:italic;color:#555;">
+    <p style="margin:0 0 6px;line-height:1.6;">"Many variables studied by psychologists are straightforward and simple to measure. These include sex, age, height, weight, and birth order… Other variables — perhaps the majority — are not so straightforward or simple to measure. We cannot accurately assess people's level of intelligence by looking at them, and we certainly cannot put their self-esteem on a bathroom scale."</p>
+    <p style="margin:0;font-size:13px;">— <a href="https://opentextbc.ca/researchmethods/chapter/understanding-psychological-measurement/" style="color:#8C1D40;">Understanding Psychological Measurement</a></p>
+  </blockquote>
+  <p style="margin:0 0 10px;line-height:1.6;"><strong>These kinds of variables are called latent CONSTRUCTS</strong> and include personality traits (e.g., extraversion), emotional states (e.g., fear), attitudes (e.g., toward taxes), and abilities (e.g., athleticism).</p>
+  <p style="margin:0 0 14px;line-height:1.6;">In community analytics, we are less interested in psychological measures and more interested in constructs of <strong>neighborhood quality</strong>. But we use the same tools developed in psychometrics to build reliable measures.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Key Concepts</h4>
+  <ul style="margin:0 0 12px;padding-left:20px;line-height:1.8;">
+    <li><strong>Construct</strong>: An abstract concept that cannot be directly measured (e.g., "economic hardship")</li>
+    <li><strong>Indicator</strong>: An observable, measurable variable that reflects some aspect of the construct (e.g., poverty rate, unemployment rate)</li>
+    <li><strong>Construct Validity</strong>: Are we measuring what we think we are measuring?</li>
+    <li><strong>Measurement Levels</strong>: Nominal, ordinal, interval, ratio — determines which operations are valid</li>
+  </ul>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
+    <p style="margin:0;line-height:1.6;"><strong>Example:</strong> How does the Census measure "poverty"? The official poverty measure uses income thresholds that vary by family size and composition. But a single income variable may not capture the full experience of economic hardship. We might combine poverty rate, unemployment rate, median household income, and public assistance receipt into a composite index.</p>
+  </div>
+</div>
+
+<!-- ── Section 2 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 2: Building Composite Indices</h3>
+  <p style="margin:0 0 8px;font-weight:600;">Why combine multiple variables into one index?</p>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
+    <li><strong>Dimensionality reduction</strong>: Summarize many variables into a single score</li>
+    <li><strong>Construct representation</strong>: No single variable fully captures a latent construct; multiple indicators triangulate it</li>
+    <li><strong>Noise reduction</strong>: Random measurement error in individual items averages out when combined</li>
+  </ul>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Measurement Theory</h4>
+  <p style="margin:0 0 8px;line-height:1.6;">Each item (variable) can be decomposed into signal and noise:</p>
+  <div style="background:#1e1e1e;color:#d4d4d4;border-radius:4px;padding:12px 16px;font-family:monospace;font-size:13px;margin-bottom:12px;line-height:1.7;">
+    item = X + e<br><br>
+    index = T + e &nbsp;&nbsp;where: &nbsp;T = X1 + X2 + X3 &nbsp;&nbsp;e = e1 + e2 + e3
+  </div>
+  <p style="margin:0 0 14px;line-height:1.6;">The reliability of the index is: <em>alpha = var(T) / var(T + e)</em> — a "signal to noise" ratio.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Z-Score Standardization</h4>
+  <p style="margin:0 0 8px;line-height:1.6;">Before combining variables measured on different scales (e.g., income in dollars vs. percentage in poverty), we standardize each to z-scores:</p>
+  <div style="background:#1e1e1e;color:#d4d4d4;border-radius:4px;padding:10px 16px;font-family:monospace;font-size:13px;margin-bottom:14px;">
+    z = (x - mean(x)) / sd(x)
+  </div>
+  <p style="margin:0 0 14px;line-height:1.6;">This puts all variables on the same scale (mean = 0, sd = 1) so they contribute equally to the index.</p>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
+    <p style="margin:0 0 4px;font-weight:700;">Real-World Example: Social Vulnerability Index (SVI)</p>
+    <p style="margin:0;line-height:1.6;">The CDC's Social Vulnerability Index combines 16 census variables across 4 themes: socioeconomic status, household characteristics, racial/ethnic minority status, and housing type/transportation. Each variable is percentile-ranked and summed within themes. <a href="https://www.atsdr.cdc.gov/place-health/php/svi/index.html" style="color:#8C1D40;">Learn more about the SVI</a>.</p>
+  </div>
+</div>
+
+<!-- ── Section 3 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 3: Reliability — Cronbach's Alpha</h3>
+  <p style="margin:0 0 10px;line-height:1.6;"><strong>Internal consistency</strong> asks: do the items in our index "hang together"? If they all measure the same underlying construct, they should be correlated with each other.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">What Is Cronbach's Alpha?</h4>
+  <p style="margin:0 0 14px;line-height:1.6;">Alpha is the most common measure of internal consistency. Intuitively, it captures the average inter-item correlation, scaled by the number of items: <em>alpha = var(T) / var(T + e)</em></p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Interpreting Alpha</h4>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Alpha Range</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Interpretation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">alpha &gt; 0.9</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Excellent</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">0.8 &lt; alpha ≤ 0.9</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Good</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">0.7 &lt; alpha ≤ 0.8</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Acceptable</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">0.6 &lt; alpha ≤ 0.7</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Questionable</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;">alpha ≤ 0.6</td>
+        <td style="padding:8px 12px;">Poor — reconsider your items</td>
+      </tr>
+    </tbody>
+  </table>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">What If Alpha Is Low?</h4>
+  <ul style="margin:0;padding-left:20px;line-height:1.8;">
+    <li>Check the correlation matrix — are some items uncorrelated or negatively correlated with the rest?</li>
+    <li>Consider dropping poorly fitting items</li>
+    <li>Reconsider whether all items actually reflect the same construct</li>
+    <li>Use the <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">psych::alpha()</code> output's "alpha if item dropped" column to identify weak items</li>
+  </ul>
+</div>
+
+<!-- ── Readings ───────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Readings</h3>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 10px;">Foundational Works</h4>
+  <ul style="margin:0 0 16px;padding-left:20px;line-height:1.9;">
+    <li>Cronbach, L. J. (1951). Coefficient alpha and the internal structure of tests. <em>Psychometrika</em>, 16, 297–334. — The seminal paper establishing Cronbach's alpha as the standard measure of internal consistency.</li>
+    <li>Townsend, P., Phillimore, P., &amp; Beattie, A. (1987). <em>Health and Deprivation: Inequality and the North</em>. Croom Helm. — Introduced the Townsend Deprivation Index, one of the first census-based composite indices using z-score standardization.</li>
+    <li>Diez Roux, A. V. (2001). Investigating neighborhood and area effects on health. <em>American Journal of Public Health</em>, 91(11), 1783–1789. <a href="https://doi.org/10.2105/AJPH.91.11.1783" style="color:#8C1D40;">doi:10.2105/AJPH.91.11.1783</a></li>
+  </ul>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 10px;">Recent Applications</h4>
+  <ul style="margin:0 0 16px;padding-left:20px;line-height:1.9;">
+    <li>Messer, L. C., et al. (2006). The development of a standardized neighborhood deprivation index. <em>Journal of Urban Health</em>, 83(6), 1041–1062. <a href="https://doi.org/10.1007/s11524-006-9094-x" style="color:#8C1D40;">doi:10.1007/s11524-006-9094-x</a></li>
+    <li>Manduca, R., &amp; Sampson, R.J. (2019). Punishing and toxic neighborhood environments independently predict the intergenerational social mobility of Black and white children. <em>PNAS</em>, 116(16), 7772–7777. <a href="https://doi.org/10.1073/pnas.1820464116" style="color:#8C1D40;">doi:10.1073/pnas.1820464116</a></li>
+    <li>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. <a href="https://walker-data.com/census-r/" style="color:#8C1D40;">Free online edition</a> — The course's primary R reference.</li>
+  </ul>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 10px;">R Package Documentation</h4>
+  <ul style="margin:0;padding-left:20px;line-height:1.9;">
+    <li><a href="https://personality-project.org/r/psych/" style="color:#8C1D40;">psych package vignette</a> — includes <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">alpha()</code> for reliability analysis</li>
+    <li><a href="https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html" style="color:#8C1D40;">corrplot package vignette</a> — correlation matrix visualization</li>
+  </ul>
+</div>
+
+<!-- ── Lab 1 ──────────────────────────────────────────────────── -->
+<div style="background:#8C1D40;border-radius:6px;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#FFC627;font-size:16px;font-weight:700;margin:0 0 12px;">Lab 1</h3>
+  <p style="color:#ffffff;margin:0 0 10px;line-height:1.6;">The Lab 1 materials are on the course lab site. Visit the links below to access the tutorial and assignment.</p>
+  <p style="margin:0 0 8px;">📘 <a href="https://antjam-howell.github.io/paf-516-labs/lab1-tutorial.html" style="color:#FFC627;font-weight:600;">Lab 1 Tutorial</a> <span style="color:#ffffff;font-size:13px;">— Download the tutorial file, knit it to see the complete analysis, then run chunk by chunk to understand each step.</span></p>
+  <p style="margin:0;">📝 <a href="https://antjam-howell.github.io/paf-516-labs/lab1-assignment.html" style="color:#FFC627;font-weight:600;">Lab 1 Assignment</a> <span style="color:#ffffff;font-size:13px;">— Download the assignment file, rename it with your last name, complete the three questions, and submit to Canvas.</span></p>
+</div>
+
+<!-- ── Course Learning Arc ───────────────────────────────────── -->
+<div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Course Learning Arc</h3>
+  <p style="margin:0 0 12px;line-height:1.6;">The Economic Hardship Index you build in Lab 1 is the <strong>foundation for every subsequent module</strong>. Each lab takes the same index and asks a progressively more sophisticated analytical question:</p>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Module</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Lab</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Core Question</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:700;color:#8C1D40;">Module 1</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Lab 1</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;"><em>Is the index reliable?</em> Build the index, assess Cronbach's alpha, map at three scales</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:700;color:#8C1D40;">Module 2</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Lab 2</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;"><em>How do we communicate it?</em> Classification schemes, bivariate mapping, interactive GPU maps</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:700;color:#8C1D40;">Module 3</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Lab 3</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;"><em>What else is layered on top?</em> Spatial joins, buffer analysis, external data integration</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:700;color:#8C1D40;">Module 4</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Lab 4</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;"><em>Does hardship cluster spatially?</em> Moran's I, LISA hot spot maps, spatial autocorrelation</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:700;color:#8C1D40;">Module 5</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Lab 5</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;"><em>Is hardship getting better or worse?</em> 2015 vs 2023 ACS temporal change analysis</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:700;color:#8C1D40;">Module 6</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Lab 6</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;"><em>How do we communicate findings?</em> Professional Quarto policy brief</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;font-weight:700;color:#8C1D40;">Module 7</td>
+        <td style="padding:8px 12px;">Final Project</td>
+        <td style="padding:8px 12px;"><em>Can we build a dashboard?</em> Quarto Dashboard with dark theme, interactive maps, LISA</td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="margin-top:12px;background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:10px 14px;">
+    <p style="margin:0;line-height:1.6;"><strong>Build the index right in Lab 1.</strong> A poorly constructed index produces misleading maps in Lab 2, flawed spatial statistics in Lab 4, and uninformative policy recommendations in Lab 6.</p>
+  </div>
+</div>
+
+<!-- ── Yellowdig Discussion ──────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Yellowdig Discussion</h3>
+  <p style="margin:0 0 12px;line-height:1.6;">Manduca and Sampson (2019) built a composite "toxic neighborhood environment" scale from indicators of violence, incarceration, and lead exposure — and showed that it independently predicts lower intergenerational social mobility for children, even after accounting for concentrated poverty and racial composition. Their work illustrates both the power and the limits of index-based approaches: a well-constructed index can reveal patterns that single variables miss, but every index reflects choices about which dimensions to include, how to weight them, and whose experience counts as "hardship."</p>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
+    <p style="margin:0 0 6px;font-weight:700;color:#8C1D40;">💬 Discussion Prompt</p>
+    <p style="margin:0;line-height:1.6;">Census data can reveal <em>where</em> hardship is concentrated, but it cannot tell us <em>why</em> neighborhoods ended up that way or <em>whose priorities</em> should guide the response. Drawing on the Manduca &amp; Sampson reading and the measurement concepts from this module, what do you think is the most important limitation of using census-based composite indices alone to drive neighborhood investment decisions — and how would you address it? Consider what dimensions of neighborhood quality census data captures well, what it misses entirely, and whether equal weighting of indicators is appropriate when some dimensions (e.g., environmental toxins vs. low income) may have different causal effects on residents' well-being.</p>
+  </div>
+</div>
+
+<!-- ── Key Terms ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:8px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Key Terms</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;width:30%;">Term</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Definition</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Construct</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">An abstract concept that cannot be directly observed or measured (e.g., neighborhood quality)</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Indicator / Item</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">An observable variable used to measure an aspect of a construct</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Composite Index</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A single score created by combining multiple indicators</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Z-Score</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A standardized value: (x − mean) / sd; puts variables on a common scale</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Cronbach's Alpha</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A measure of internal consistency; how well items in an index correlate with each other</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Internal Consistency</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The degree to which items in a scale measure the same underlying construct</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Reliability</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The signal-to-noise ratio of a measurement: var(T) / var(T + e)</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;font-weight:600;color:#8C1D40;">Latent Variable</td>
+        <td style="padding:8px 12px;">An unobserved variable inferred from observed indicators</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

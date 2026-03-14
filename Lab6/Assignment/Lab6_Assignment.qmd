@@ -147,7 +147,7 @@ These are not R packages. They are built into Quarto's markdown syntax and requi
 
 # Step 1: National Context
 
-We begin at the broadest geographic scale --- all US counties --- to establish where Arizona sits in the national landscape of economic hardship. This contextualizes the state-level and local patterns we examine later. We reuse the same 5-variable hardship index from Lab 1: poverty rate, unemployment rate, percent without a high school diploma, percent without health insurance, and median household income (reverse-coded).
+We begin at the broadest geographic scale --- all US counties --- to establish where Arizona sits in the national landscape of economic hardship. This contextualizes the state-level and local patterns we examine later. We reuse the same 5-variable economic hardship index from Lab 1: poverty rate, unemployment rate, percent without a high school diploma, percent without health insurance, and median household income (reverse-coded).
 
 ```{r}
 #| label: define-vars
@@ -191,11 +191,11 @@ county_raw <- get_acs(
 ```{r}
 #| label: build-county-index
 
-# ── Reusable function to build the hardship index ────────────
+# ── Reusable function to build the economic hardship index ────────────
 # Rather than copy-pasting the same pipeline for each geographic
 # scale, we define a function (as in Lab 5). This takes the raw
 # long-format tidycensus output and returns a spatial data frame
-# with the hardship index attached.
+# with the economic hardship index attached.
 build_hardship_index <- function( df ) {
 
   # Reshape from long to wide: one column per variable
@@ -293,7 +293,7 @@ az_raw <- get_acs(
 ```{r}
 #| label: build-az-index
 
-# ── Build hardship index for Arizona tracts ──────────────────
+# ── Build economic hardship index for Arizona tracts ──────────────────
 az_complete <- build_hardship_index( az_raw )
 ```
 
@@ -348,7 +348,7 @@ cbg_raw <- get_acs(
 ```{r}
 #| label: build-cbg-index
 
-# ── Build the hardship index at the block group level ────────
+# ── Build the economic hardship index at the block group level ────────
 cbg_complete <- build_hardship_index( cbg_raw )
 ```
 
@@ -392,7 +392,7 @@ cbg_complete <- st_make_valid( cbg_complete )
 nb <- poly2nb( cbg_complete, queen = TRUE )
 lw <- nb2listw( nb, style = "W", zero.policy = TRUE )
 
-# Step 2: Run Local Moran's I (LISA) on the hardship index
+# Step 2: Run Local Moran's I (LISA) on the economic hardship index
 # This identifies block groups that are significantly similar to
 # (or different from) their neighbors.
 lisa <- localmoran( cbg_complete$hardship_index, lw, zero.policy = TRUE )
@@ -509,7 +509,7 @@ cbg_2015_raw <- get_acs(
 ```{r}
 #| label: build-temporal-index
 
-# ── Build hardship index for 2015 (Period 1) ────────────────
+# ── Build economic hardship index for 2015 (Period 1) ────────────────
 cbg_2015_complete <- build_hardship_index( cbg_2015_raw )
 
 # ── Compute change scores ────────────────────────────────────

@@ -193,7 +193,7 @@ execute:
 
 # I. Course Description
 
-This course applies data science skills to the analysis of urban communities and neighborhoods. Students work with U.S. Census Bureau data, geospatial tools in R, and visualization frameworks to operationalize theories of neighborhood quality and community change. Through a cumulative applied project, students construct a composite hardship index, map spatial patterns, detect statistically significant clusters, track change over time, and deliver an interactive policy dashboard to a stakeholder audience.
+This course applies data science skills to the analysis of urban communities and neighborhoods. Students work with U.S. Census Bureau data, geospatial tools in R, and visualization frameworks to operationalize theories of neighborhood quality and community change. Through a cumulative applied project, students construct a composite economic hardship index, map spatial patterns, detect statistically significant clusters, track change over time, and deliver an interactive policy dashboard to a stakeholder audience.
 
 The course introduces spatial analysis using R packages such as **tidycensus**, **sf**, and **spdep**, and builds toward professional communication through evidence-based policy briefs and Quarto dashboards deployed to the web.
 

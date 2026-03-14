@@ -26,7 +26,7 @@ execute:
 
 ## Module Overview and Objectives
 
-In Module 1, you built a composite hardship index and mapped it with a basic choropleth. This module asks two deceptively important questions: **does the story your map tells change depending on how you classify the data?** And **does it change depending on the geographic scale you use?** The answer to both is yes --- and the differences can be dramatic. A map using equal intervals may hide inequality that a quantile map reveals. A county-level map may mask the very neighborhood-level variation that matters most for targeted policy.
+In Module 1, you built a composite economic hardship index and mapped it with a basic choropleth. This module asks two deceptively important questions: **does the story your map tells change depending on how you classify the data?** And **does it change depending on the geographic scale you use?** The answer to both is yes --- and the differences can be dramatic. A map using equal intervals may hide inequality that a quantile map reveals. A county-level map may mask the very neighborhood-level variation that matters most for targeted policy.
 
 Beyond classification and scale, this module introduces **bivariate choropleth maps** that display two variables simultaneously, **interactive web maps** with `mapgl` that let users explore data on demand, and cartographic design principles that separate professional-quality maps from default output. You will also confront the **Modifiable Areal Unit Problem (MAUP)** --- the fundamental challenge that spatial analysis results depend on the size and shape of the geographic units used. You will move from "making a map" to *designing a visual argument*.
 
@@ -81,7 +81,7 @@ The `classInt` package in R provides functions for all four methods. The key fun
 
 A standard choropleth shows one variable. But policy questions often involve relationships between two variables: Is poverty concentrated where educational attainment is low? Do areas with high hardship also have high unemployment?
 
-A **bivariate choropleth** maps two variables simultaneously using a two-dimensional color legend. Each variable is classified into categories (typically 3x3), and the combinations produce a grid of 9 colors. For example, one axis might represent hardship index values and the other might represent the percentage of residents without a high school diploma.
+A **bivariate choropleth** maps two variables simultaneously using a two-dimensional color legend. Each variable is classified into categories (typically 3x3), and the combinations produce a grid of 9 colors. For example, one axis might represent economic hardship index values and the other might represent the percentage of residents without a high school diploma.
 
 ### The biscale Package
 
@@ -140,7 +140,7 @@ The **Modifiable Areal Unit Problem (MAUP)** is one of the most fundamental chal
 
 ### Why MAUP Matters for Policy
 
-Consider a county-level map of economic hardship across the United States. A county like Maricopa County, Arizona --- home to Phoenix and over 4 million people --- receives a single hardship score. But that single score masks enormous internal variation. Some block groups within Maricopa have hardship index values well above the national average, while others rank among the lowest in the state. A state official relying solely on the county map would see Maricopa as a moderate-hardship county and might conclude that it does not need targeted intervention --- missing the neighborhoods within the county where hardship is severe.
+Consider a county-level map of economic hardship across the United States. A county like Maricopa County, Arizona --- home to Phoenix and over 4 million people --- receives a single hardship score. But that single score masks enormous internal variation. Some block groups within Maricopa have economic hardship index values well above the national average, while others rank among the lowest in the state. A state official relying solely on the county map would see Maricopa as a moderate-hardship county and might conclude that it does not need targeted intervention --- missing the neighborhoods within the county where hardship is severe.
 
 This is the core danger of MAUP: **aggregation smooths away the very variation that matters most for targeted policy.** A county that appears "average" may contain both affluent suburbs and deeply distressed neighborhoods. The larger the unit of analysis, the more heterogeneity gets hidden.
 

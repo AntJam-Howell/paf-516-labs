@@ -108,7 +108,7 @@ hardship_vars <- c(
 ```{r}
 #| label: build-function
 
-# ── Reusable function to build the hardship index ────────────
+# ── Reusable function to build the economic hardship index ────────────
 build_hardship_index <- function( df ) {
   wide <- df %>%
     select( -moe ) %>%
@@ -411,9 +411,9 @@ county_display <- county_complete |>
   select(
     `County`  = county_label,
     `State`   = state_label,
-    `Hardship Index` = hardship_disp
+    `Economic Hardship Index` = hardship_disp
   ) |>
-  arrange(desc(`Hardship Index`))
+  arrange(desc(`Economic Hardship Index`))
 
 n_matched      <- sum(!is.na(tract_change$hardship_2015) & !is.na(tract_change$hardship_2023))
 n_worsened     <- sum(tract_change$hardship_change > 0, na.rm = TRUE)
@@ -928,7 +928,7 @@ ggplot(county_ts,
   labs(
     title    = "Mean Economic Hardship Index by County",
     subtitle = "Arizona census tracts · ACS 2011–2015 vs 2019–2023",
-    x = NULL, y = "Mean Hardship Index", color = NULL
+    x = NULL, y = "Mean Economic Hardship Index", color = NULL
   ) +
   theme_dark_dash() +
   theme(
@@ -1171,7 +1171,7 @@ ggplot(top_tracts, aes(x = hardship_index, y = label)) +
   labs(
     title    = "Top 10 Highest-Hardship Tracts",
     subtitle = "Maricopa County · ACS 2019–2023",
-    x = "Hardship Index", y = NULL
+    x = "Economic Hardship Index", y = NULL
   ) +
   theme_dark_dash() +
   theme(

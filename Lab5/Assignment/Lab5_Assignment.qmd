@@ -153,17 +153,17 @@ cbg_2023 <- get_acs(
 ```
 
 
-# Step 2: Build Hardship Index for Each Period
+# Step 2: Build Economic Hardship Index for Each Period
 
-We now reshape each dataset from long to wide, compute rates, standardize to z-scores, reverse-code median income, and create the composite hardship index. This is the same pipeline from Lab 1, applied twice.
+We now reshape each dataset from long to wide, compute rates, standardize to z-scores, reverse-code median income, and create the composite economic hardship index. This is the same pipeline from Lab 1, applied twice.
 
 ```{r}
 #| label: step.02-function
 
-# ── Reusable function to build the hardship index ─────
+# ── Reusable function to build the economic hardship index ─────
 # Rather than copy-pasting the same code twice, we write a function.
 # This takes the raw long-format tidycensus output and returns a
-# spatial data frame with the hardship index attached.
+# spatial data frame with the economic hardship index attached.
 
 build_hardship_index <- function( df ) {
 
@@ -303,7 +303,7 @@ ggplot( change_df, aes( x = hardship_change ) ) +
   labs(
     title    = "Distribution of Hardship Change Scores (2015 → 2023)",
     subtitle = "Maricopa County CBGs | Positive = worsening, Negative = improving",
-    x        = "Change in Hardship Index",
+    x        = "Change in Economic Hardship Index",
     y        = "Number of CBGs",
     caption  = "Dashed yellow = zero change | Solid blue = mean change"
   )
@@ -348,7 +348,7 @@ map_change
 
 # Step 6: Side-by-Side Maps with Patchwork
 
-We create a three-panel figure: the hardship index for Period 1, the index for Period 2, and the change map. This lets us see not just *where* change occurred, but *what the starting and ending conditions looked like*.
+We create a three-panel figure: the economic hardship index for Period 1, the index for Period 2, and the change map. This lets us see not just *where* change occurred, but *what the starting and ending conditions looked like*.
 
 ```{r}
 #| label: step.06-sidebyside
@@ -362,7 +362,7 @@ p1_map <- ggplot( change_df ) +
   scale_fill_viridis( option = "inferno", direction = -1,
                       name = "Index" ) +
   theme_void() +
-  labs( title = "Hardship Index 2015" )
+  labs( title = "Economic Hardship Index 2015" )
 
 # ── Period 2 level map ────────────────────────────────
 p2_map <- ggplot( change_df ) +
@@ -370,7 +370,7 @@ p2_map <- ggplot( change_df ) +
   scale_fill_viridis( option = "inferno", direction = -1,
                       name = "Index" ) +
   theme_void() +
-  labs( title = "Hardship Index 2023" )
+  labs( title = "Economic Hardship Index 2023" )
 
 # ── Change map (compact version) ─────────────────────
 p_change <- ggplot( change_df ) +

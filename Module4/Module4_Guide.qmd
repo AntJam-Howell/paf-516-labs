@@ -24,7 +24,7 @@ execute:
 
 ## Module Overview and Objectives
 
-In Modules 1--3, you built and mapped a hardship index. You probably noticed clusters --- groups of nearby block groups with similarly high or low values. But are those clusters **statistically significant**, or could they have occurred by chance? This module gives you the tools to answer that question.
+In Modules 1--3, you built and mapped a economic hardship index. You probably noticed clusters --- groups of nearby block groups with similarly high or low values. But are those clusters **statistically significant**, or could they have occurred by chance? This module gives you the tools to answer that question.
 
 **Spatial autocorrelation** is the tendency for nearby locations to have similar values --- a formalization of **Tobler's First Law of Geography**: "Everything is related to everything else, but near things are more related than distant things." This module teaches you to measure spatial autocorrelation globally (across the entire study area) and locally (at each individual location), enabling you to identify statistically significant **hot spots**, **cold spots**, and **spatial outliers**.
 
@@ -135,10 +135,10 @@ When testing hundreds of locations simultaneously, some will appear significant 
 
 ## Lab Assignment
 
-In Lab 04, you will apply spatial statistics to your hardship index to identify where high- and low-hardship neighborhoods cluster. Specifically, you will:
+In Lab 04, you will apply spatial statistics to your economic hardship index to identify where high- and low-hardship neighborhoods cluster. Specifically, you will:
 
 1. **Build a spatial weights matrix**: Construct queen contiguity neighbors from your CBG boundaries and convert to a row-standardized weights list
-2. **Test Global Moran's I**: Compute the global statistic and interpret whether your hardship index is significantly spatially clustered
+2. **Test Global Moran's I**: Compute the global statistic and interpret whether your economic hardship index is significantly spatially clustered
 3. **Compute Local Moran's I (LISA)**: Calculate local statistics for each block group and classify them into HH, LL, HL, LH, or not significant
 4. **Create a LISA cluster map**: Map the four cluster types using the conventional color scheme (red = HH hot spots, blue = LL cold spots, pink = HL outliers, light blue = LH outliers, gray = not significant)
 5. **Interpret the results**: Write a brief analysis identifying where hot spots and cold spots occur and what demographic or geographic factors might explain them

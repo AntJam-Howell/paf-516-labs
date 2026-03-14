@@ -141,7 +141,7 @@ library(viridis)     # Perceptually uniform color scales
 ```
 
 
-# Step 1: Pull Data & Build the Hardship Index
+# Step 1: Pull Data & Build the Economic Hardship Index
 
 We reuse the exact same index construction from Lab 1: five ACS variables
 measuring economic hardship, z-score standardized, with median income reversed.
@@ -154,7 +154,7 @@ mapping later.
 ```{r}
 #| label: step.01a
 
-# The 5 hardship index variables (identical to Lab 1)
+# The 5 economic hardship index variables (identical to Lab 1)
 hardship_vars <- c(
   pov_below50  = "C17002_002",   # Income-to-poverty ratio under .50
   pov_50to99   = "C17002_003",   # Income-to-poverty ratio .50 to .99
@@ -246,7 +246,7 @@ cbg <- cbg %>%
     ),
     # Reverse median income so higher = more hardship
     z_med_income = -1 * z_med_income,
-    # Composite hardship index: mean of the 5 z-scores
+    # Composite economic hardship index: mean of the 5 z-scores
     hardship_index = rowMeans(
       pick(z_poverty_rate, z_unemp_rate, z_no_hs_rate, z_no_ins_rate, z_med_income),
       na.rm = TRUE
@@ -255,7 +255,7 @@ cbg <- cbg %>%
 
 # Quick summary — how many CBGs, what's the index range?
 cat("CBGs:", nrow(cbg), "\n")
-cat("Hardship index range:",
+cat("Economic Hardship Index range:",
     round(min(cbg$hardship_index, na.rm = TRUE), 2), "to",
     round(max(cbg$hardship_index, na.rm = TRUE), 2), "\n")
 ```
@@ -265,7 +265,7 @@ cat("Hardship index range:",
 
 A choropleth map's story depends heavily on how you **classify** continuous
 values into discrete color bins. Here we apply four common methods to the
-hardship index and compare them side-by-side.
+economic hardship index and compare them side-by-side.
 
 | Method | Logic | Effect |
 |--------|-------|--------|
@@ -545,7 +545,7 @@ official relying only on the county map might conclude Maricopa doesn't need
 targeted intervention, completely missing the block groups driving the county's
 overall score.
 
-Here we build the hardship index at the **US county level** and map it
+Here we build the economic hardship index at the **US county level** and map it
 interactively. Compare this county-level view to the **block group level** map
 you already explored in Step 4 --- that contrast is MAUP in action.
 
@@ -578,12 +578,12 @@ county_raw <- get_acs(
 #     median_income = "med_income"))
 ```
 
-## 6b. Build the hardship index at the county level
+## 6b. Build the economic hardship index at the county level
 
 ```{r}
 #| label: step.06b
 
-# ── Reshape and compute hardship index ────────────────────────
+# ── Reshape and compute economic hardship index ────────────────────────
 # Same pipeline as CBGs: pivot wide, compute rates,
 # z-score standardize, reverse income, take row mean.
 

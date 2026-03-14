@@ -30,7 +30,7 @@ execute:
 
 ## Module Overview
 
-> "Your hardship index measures *who lives* in a place. This module adds *what is near* a place."
+> "Your economic hardship index measures *who lives* in a place. This module adds *what is near* a place."
 
 In Labs 1–2 you built the index entirely from census variables. This module teaches you to enrich it with **external point data** — EPA facilities, grocery stores, transit stops — using spatial operations.
 
@@ -217,7 +217,7 @@ EJ research asks: are environmental burdens disproportionately concentrated in l
 | **Hazards** — what is near here | EPA TRI, Superfund listings | Point data |
 | **Spatial integration** — do they overlap? | Combined layers | `st_join()`, `st_buffer()` |
 
-The **enriched hardship index** you build in Lab 3 operationalizes this: 5 census variables measuring socioeconomic hardship + 2 spatial variables measuring environmental burden proximity.
+The **enriched economic hardship index** you build in Lab 3 operationalizes this: 5 census variables measuring socioeconomic hardship + 2 spatial variables measuring environmental burden proximity.
 
 ## Pastor, Sadd & Hipp (2001)
 
@@ -249,7 +249,7 @@ Maantay (2002) and Mohai & Saha (2015) both document how distance threshold choi
 **Lab 3, Q3** asks you to connect buffer sensitivity to UGCoP and cite Maantay (2002) and Mohai & Saha (2015). This is the theoretical payoff of Q2's empirical test.
 :::
 
-## The Enriched Hardship Index
+## The Enriched Economic Hardship Index
 
 Lab 3 adds two spatial variables to the 5-variable census index:
 

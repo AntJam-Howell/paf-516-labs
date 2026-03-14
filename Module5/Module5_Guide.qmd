@@ -26,7 +26,7 @@ execute:
 
 ### Module Overview and Objectives
 
-Modules 1--4 analyzed your study area at a single point in time. But neighborhoods are not static --- they gentrify, decline, stabilize, or fluctuate over years and decades. This module adds the **time dimension** to your analysis. You will compare hardship index values across two American Community Survey (ACS) vintages to identify neighborhoods that are **improving**, **deteriorating**, or **stable**.
+Modules 1--4 analyzed your study area at a single point in time. But neighborhoods are not static --- they gentrify, decline, stabilize, or fluctuate over years and decades. This module adds the **time dimension** to your analysis. You will compare economic hardship index values across two American Community Survey (ACS) vintages to identify neighborhoods that are **improving**, **deteriorating**, or **stable**.
 
 Temporal analysis with census data introduces unique methodological challenges. Census boundaries can change between years. Margins of error can make small changes statistically meaningless. Diverging color palettes must be chosen carefully to communicate the direction and magnitude of change. This module addresses all of these issues while building directly on the index and spatial analysis skills from previous labs.
 
@@ -53,7 +53,7 @@ The American Community Survey (ACS) provides rolling 5-year estimates. The `tidy
 
 #### Computing Change Scores
 
-The simplest approach is a **raw change score**: the value at time 2 minus the value at time 1. For the hardship index:
+The simplest approach is a **raw change score**: the value at time 2 minus the value at time 1. For the economic hardship index:
 
 ```
 change = hardship_2023 - hardship_2015
@@ -187,7 +187,7 @@ where SE = MOE / 1.645 for 90% confidence intervals. If |z| > 1.645, the change 
 In Lab 05, you will add a temporal dimension to your hardship analysis. Specifically, you will:
 
 1. **Retrieve multi-year data**: Pull the same census variables for two ACS vintages (e.g., 2011--2015 and 2019--2023) using `tidycensus`
-2. **Compute change scores**: Calculate the change in hardship index between the two periods, addressing standardization decisions explicitly
+2. **Compute change scores**: Calculate the change in economic hardship index between the two periods, addressing standardization decisions explicitly
 3. **Map change with diverging palettes**: Create a change map using a diverging color scale centered on zero, with symmetric limits
 4. **Assess statistical significance**: Use margins of error to identify which block groups experienced statistically significant change
 5. **Compare to Lab 04 hot spots**: Overlay or juxtapose your LISA clusters with your change map --- are the hot spots stable, growing, or shrinking?
