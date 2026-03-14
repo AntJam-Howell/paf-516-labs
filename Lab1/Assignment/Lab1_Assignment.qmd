@@ -18,8 +18,7 @@ execute:
 
 ::: {.callout-important}
 ## Before you begin
-1. **Rename this file** to `Lab1_Assignment_YourLastName.qmd` before editing.
-2. **This file contains the same pre-filled code as the tutorial.** Steps 1–8 below produce the same output you saw in the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately (Cmd+Shift+K / Ctrl+Shift+K) and see the same results. If you placed it in a different location, run the `packages` chunk first (Cmd+Return / Ctrl+Enter), then knit.
+1. **This file contains the same pre-filled code as the tutorial.** Steps 1–8 below produce the same output you saw in the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately (Cmd+Shift+K / Ctrl+Shift+K) and see the same results. If you placed it in a different location, run the `packages` chunk first (Cmd+Return / Ctrl+Enter), then knit.
 3. **The assignment questions are at the top of this document.** Here is the workflow:
    - **Q1** asks you to interpret results from the pre-filled steps. Knit first, then review the Cronbach's alpha output and maps in Steps 3–8, then write your answers.
    - **Q2** asks you to extend the enriched index by adding SNAP benefits as an 11th variable by adapting the existing code. Fill in the scaffold chunks labeled `q2-...` at the end of this document, then re-knit.

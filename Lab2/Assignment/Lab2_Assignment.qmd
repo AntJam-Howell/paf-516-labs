@@ -19,8 +19,7 @@ execute:
 ::: {.callout-important}
 ## Before you begin
 
-1. **Rename this file** to `Lab2_Assignment_YourLastName.qmd` before editing.
-2. **This file contains the same pre-filled code as the tutorial.** Steps 1--6 below produce the same output you saw in the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately (Cmd+Shift+K / Ctrl+Shift+K) and see the same results. If you placed it in a different location, run the `packages` chunk first (Cmd+Return / Ctrl+Enter), then knit.
+1. **This file contains the same pre-filled code as the tutorial.** Steps 1--6 below produce the same output you saw in the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately (Cmd+Shift+K / Ctrl+Shift+K) and see the same results. If you placed it in a different location, run the `packages` chunk first (Cmd+Return / Ctrl+Enter), then knit.
 3. **The assignment questions are below.** Here is the workflow:
    - **Q1** asks you to interpret results from the pre-filled steps. Knit first, review the maps in Steps 2, 4, and 6, then write your answers.
    - **Q2** asks you to create a second bivariate choropleth by adapting the code from Step 3. Fill in the scaffold chunks labeled `q2.a` and `q2.b` at the end of this document, then re-knit.
