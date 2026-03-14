@@ -80,18 +80,16 @@ library(viridis)     # Perceptually uniform color scales
 # ── FALLBACK: If Census API is unavailable ─────────────────────────────
 # Pre-built .rds files are available for each data pull step.
 # See the commented fallback lines in Step 1b (CBG data) and
-# Step 4a (county + tract data). Uncomment the readRDS() lines
+# Step 4a (county data). Uncomment the readRDS() lines
 # and skip the get_acs() calls in those steps.
 #
 # Option A — from local file (save .rds files to PAF516/Lab2/data/ first):
 # cbg_raw      <- readRDS("../data/cbg_extended_2023.rds")
 # county_raw   <- readRDS("../data/county_hardship_2023.rds")
-# tract_raw    <- readRDS("../data/az_tract_hardship_2023.rds")
 #
 # Option B — directly from GitHub:
 # cbg_raw      <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/cbg_extended_2023.rds"))
 # county_raw   <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/county_hardship_2023.rds"))
-# tract_raw    <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/az_tract_hardship_2023.rds"))
 #
 # If using fallback data, skip the get_acs() calls in Steps 1b and 4a,
 # then continue from Step 1c.
@@ -383,14 +381,26 @@ hardship and low minority share. The off-diagonal colors show areas where the
 two variables diverge: high hardship but low minority share, or vice versa.
 
 
-# Step 4: Small Multiples Across Scales
+# Step 4: The Modifiable Areal Unit Problem (MAUP)
 
-One of the most important lessons in spatial analysis is that **patterns change
-with scale**. A national county map reveals broad regional divides; a tract map
-shows neighborhood variation; a CBG map exposes block-level inequity. Here we
-build the hardship index at all three scales and compare.
+One of the most important lessons in spatial analysis is that **the geographic
+unit you choose changes the story your data tells.** This is called the
+**Modifiable Areal Unit Problem (MAUP)** --- the same underlying phenomenon
+looks dramatically different depending on whether you map it at the county,
+tract, or block group level.
 
-## 4a. Pull and compute at county and tract levels
+A county-level map smooths over enormous internal variation. Maricopa County ---
+home to over 4 million people --- gets a single hardship score, but that score
+masks neighborhoods where hardship is severe alongside affluent suburbs. A state
+official relying only on the county map might conclude Maricopa doesn't need
+targeted intervention, completely missing the block groups driving the county's
+overall score.
+
+Here we build the hardship index at the **US county level** and map it
+interactively. In Step 5, you will compare this county-level view to the
+**block group level** map of Maricopa County --- seeing MAUP in action.
+
+## 4a. Pull US county-level data
 
 ```{r}
 #| label: step.04a
@@ -417,36 +427,15 @@ county_raw <- get_acs(
 #     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
 #     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
 #     median_income = "med_income"))
-
-# ── Pull AZ tract-level data ─────────────────────────────────
-# Census tracts within Arizona (~1,800 tracts).
-tract_raw <- get_acs(
-  geography = "tract",
-  variables = hardship_vars,
-  state     = "AZ",
-  year      = 2023,
-  survey    = "acs5",
-  geometry  = TRUE,
-  progress_bar = FALSE
-)
-
-# Fallback — uncomment if API unavailable:
-# tract_raw <- readRDS("../data/az_tract_hardship_2023.rds")
-# OR via URL:
-# tract_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/az_tract_hardship_2023.rds"))
-# tract_raw <- tract_raw %>%
-#   mutate(variable = recode(variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
-#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
-#     median_income = "med_income"))
 ```
+
+## 4b. Build the hardship index at the county level
 
 ```{r}
 #| label: step.04b
 
-# ── Reshape and compute hardship index at each scale ──────────
-# We apply the same pipeline used for CBGs: pivot wide, compute rates,
+# ── Reshape and compute hardship index ────────────────────────
+# Same pipeline as CBGs: pivot wide, compute rates,
 # z-score standardize, reverse income, take row mean.
 
 build_index <- function(df) {
@@ -474,77 +463,58 @@ build_index <- function(df) {
 }
 
 county_df <- build_index(county_raw)
-tract_df  <- build_index(tract_raw)
-# CBG already built above — we reuse 'cbg'
 ```
 
-## 4b. Create the small-multiple comparison
+## 4c. Interactive county-level map
 
 ```{r}
 #| label: step.04c
-#| fig-height: 5
 
-# ── National county map ───────────────────────────────────────
-# shift_geometry() moves Alaska and Hawaii into inset positions
-# for a clean national layout without filtering states out.
-
-county_shifted <- shift_geometry(county_df)
-
-p_county <- ggplot(county_shifted) +
-  geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship") +
-  coord_sf(datum = NA) +
-  theme_void(base_size = 10) +
-  labs(title = "US Counties")
+# ── Prepare county data for mapgl ─────────────────────────────
+county_map <- county_df %>%
+  filter(!is.na(hardship_index)) %>%
+  st_transform(crs = 4326) %>%
+  mutate(
+    hardship_round = round(hardship_index, 3),
+    poverty_pct    = round(poverty_rate * 100, 1)
+  )
 ```
 
 ```{r}
 #| label: step.04d
-#| fig-height: 5
 
-# ── Arizona tract map ────────────────────────────────────────
-p_tract <- ggplot(tract_df) +
-  geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship") +
-  coord_sf(datum = NA) +
-  theme_void(base_size = 10) +
-  labs(title = "Arizona Tracts")
+# ── Interactive US county hardship map ────────────────────────
+# Zoom in on Maricopa County, AZ and note the single color assigned
+# to the entire county. Then compare with the block group map in
+# Step 5 to see what that single county value hides.
+
+maplibre(style = openfreemap_style("positron"),
+         bounds = c(-125, 24, -66, 50)) |>
+  add_source(id = "county-src",
+             type = "geojson",
+             data = county_map) |>
+  add_fill_layer(id = "county-fill",
+                 source = "county-src",
+                 fill_color = interpolate(
+                   column = "hardship_round",
+                   values = c(-1, 0, 1, 2),
+                   stops  = c("#1a9850", "#fee08b", "#d73027", "#67001f")
+                 ),
+                 fill_opacity = 0.7,
+                 hover_options = list(fill_opacity = 1),
+                 tooltip = concat(
+                   get_column("NAME"),
+                   " | Hardship: ", number_format(get_column("hardship_round")),
+                   " | Poverty: ", get_column("poverty_pct"), "%"
+                 ))
 ```
 
-```{r}
-#| label: step.04e
-#| fig-height: 5
-
-# ── Maricopa CBG map ─────────────────────────────────────────
-p_cbg <- ggplot(cbg) +
-  geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship") +
-  coord_sf(datum = NA) +
-  theme_void(base_size = 10) +
-  labs(title = "Maricopa CBGs")
-```
-
-```{r}
-#| label: step.04f
-#| fig-height: 6
-
-# ── Combine the three scales into one figure ──────────────────
-# patchwork layout: national on top spanning full width, state and
-# local side-by-side below.
-
-p_county / (p_tract + p_cbg) +
-  plot_annotation(
-    title    = "Economic Hardship Across Three Geographic Scales",
-    subtitle = "ACS 5-Year Estimates, 2019-2023",
-    caption  = "Source: ACS 5-Year Estimates, 2019-2023"
-  )
-```
-
-**Scale matters.** The county map shows broad regional patterns (e.g., the
-Mississippi Delta, Appalachia, the Southwest border). The tract map reveals
-within-Arizona variation that is invisible at the county level. The CBG map
-exposes block-level heterogeneity *within* tracts --- some tracts that appear
-moderate at the tract level contain both very-high and very-low hardship CBGs.
+**MAUP in action:** Zoom into Maricopa County in the map above and note the
+single hardship score assigned to the entire county. Now scroll down to Step 5
+and explore the same area at the block group level --- you will see that the
+county's moderate score hides dramatic variation, with some block groups among
+the most distressed in the state and others among the least. This is the
+Modifiable Areal Unit Problem: **the unit of analysis determines the story.**
 
 
 # Step 5: Interactive Map with mapgl
@@ -655,15 +625,19 @@ ggplot(cbg %>% filter(!is.na(hardship_index))) +
 
 # Questions
 
-## Q1 — Interpret: Classification and the Spatial Story {.question}
+## Q1 — Interpret: MAUP, Classification, and the Spatial Story {.question}
 
-> **Text answer — no code required.** Look at the 2x2 classification comparison from Step 2.
+> **Text answer — no code required.**
 
-- **1a.** Which classification method makes economic hardship appear *most widespread* across Maricopa County? Which makes it appear *most concentrated*?
+- **1a.** Zoom into Maricopa County in the interactive US county map (Step 4). Note the single hardship score assigned to the entire county. Now scroll down to the block group map in Step 5 and explore the same area. Based on what you see, would a state official relying **only** on the county-level map get an accurate picture of where economic hardship is concentrated? Explain how the **Modifiable Areal Unit Problem (MAUP)** applies here and what it means for social policy decisions --- for example, deciding where to allocate funding for job training, food assistance, or health clinics.
 
 [YOUR ANSWER HERE]
 
-- **1b.** In a policy memo arguing for increased funding to "high hardship" areas, which classification method would you choose and why? What about a memo arguing that hardship is *not* a widespread problem?
+- **1b.** Now look at the 2x2 classification comparison from Step 2. Which classification method makes economic hardship appear *most widespread* across Maricopa County? Which makes it appear *most concentrated*?
+
+[YOUR ANSWER HERE]
+
+- **1c.** In a policy memo arguing for increased funding to "high hardship" areas, which classification method would you choose and why? What about a memo arguing that hardship is *not* a widespread problem?
 
 [YOUR ANSWER HERE]
 

@@ -1,0 +1,275 @@
+---
+# ============================================================
+#  MODULE 2 LECTURE SLIDES — SOURCE FILE
+#  PAF 516 | Community Analytics | Arizona State University
+#  Render to PDF: quarto render Module2_Lecture_Slides.qmd
+# ============================================================
+title: "Cartographic Design"
+subtitle: "Module 2 | PAF 516 — Community Analytics"
+author: "Arizona State University"
+
+format:
+  beamer:
+    theme: Madrid
+    colortheme: beaver
+    fonttheme: professionalfonts
+    slide-level: 2
+    aspectratio: 169
+    toc: false
+    section-titles: true
+    include-in-header:
+      text: |
+        \definecolor{asuMaroon}{HTML}{8C1D40}
+        \definecolor{asuGold}{HTML}{FFC627}
+        \setbeamercolor{frametitle}{bg=asuMaroon,fg=white}
+        \setbeamercolor{title}{fg=white}
+        \setbeamercolor{block title}{bg=asuMaroon,fg=white}
+        \setbeamercolor{alerted text}{fg=asuMaroon}
+        \setbeamertemplate{footline}[frame number]
+        \setbeamerfont{frametitle}{size=\large,series=\bfseries}
+
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Part 1: Classification & Design
+
+## The Core Question
+
+> "Does the story your map tells change depending on how you classify the data?"
+
+**Answer: Yes — and the differences can be dramatic.**
+
+In Module 1 you built the index and produced a basic choropleth. This module asks harder questions:
+
+- Which **classification method** best represents your data?
+- Can one map display **two variables simultaneously**?
+- Do your conclusions survive a **change of geographic unit**? *(MAUP)*
+- What separates a **professional map** from default output?
+
+**We move from making maps → designing visual arguments.**
+
+## Module Learning Objectives
+
+After completing this module, you will be able to:
+
+1. Apply and compare **four classification methods**: quantile, Jenks, equal interval, standard deviation
+2. Explain how classification affects **map interpretation and policy conclusions**
+3. Create a **bivariate choropleth** using the `biscale` package
+4. Build an **interactive mapgl map** with tooltips and hover effects
+5. Apply cartographic design principles: **visual hierarchy**, figure-ground, color ramps
+6. Recognize and account for the **Modifiable Areal Unit Problem (MAUP)**
+
+## Classification Methods
+
+Every choropleth requires a decision: how to divide continuous data into discrete color bins?
+
+::: {.callout-important}
+This is **not a neutral technical choice** — it is an **editorial decision**.
+:::
+
+| Method | How It Works | Best For | Risk |
+|--------|-------------|----------|------|
+| **Equal Interval** | Equal-width bins | Uniform distributions | Skewed data → one bin dominates |
+| **Quantile** | Equal observations per bin | Visual variation | Groups very different values |
+| **Jenks Natural Breaks** | Minimize within-class variance | Natural clusters | Not comparable across datasets |
+| **Std. Deviation** | Bins centered on mean (±1SD) | Deviation from average | Assumes near-normal distribution |
+
+## Brewer & Pickle (2002)
+
+> *Brewer, C. A., & Pickle, L. (2002). Evaluation of methods for classifying epidemiological data on choropleth maps in series. Annals of the AAG, 92(4), 662–681.*
+
+The **definitive empirical study** of classification method performance (~1,700 citations):
+
+- **Quantile and natural breaks outperform equal interval** for map-reading accuracy
+- Equal interval performed worst when data distributions are skewed — common in census data
+- Classification method affects **policy interpretation**: same data, different conclusions
+- No single method is universally best
+
+::: {.callout-warning}
+**"I used the default" is not a justification.** You must be able to defend your classification choice.
+:::
+
+## Choosing a Classification Method
+
+| Your Goal | Best Method | Why |
+|-----------|-------------|-----|
+| Show relative position | Quantile | Equal visual weight per class |
+| Reveal natural clusters | Jenks Natural Breaks | Minimizes within-class variance |
+| Compare to a benchmark | Standard Deviation | Deviation from mean is the story |
+| Communicate absolute thresholds | Equal Interval | Bins have intuitive meaning |
+| Compare across multiple maps | Equal Interval or SD | Consistent bins enable fair comparison |
+
+**Tip:** Examine your histogram before choosing. Run all 4 methods and compare — then justify.
+
+## Color Theory for Maps
+
+**Sequential** (light → dark)
+: For ordinal/continuous data (poverty rate, hardship index). Example: viridis, ColorBrewer Blues.
+
+**Diverging** (two hues from neutral midpoint)
+: For data with a meaningful center (change scores, deviation from mean). Example: blue–white–red.
+
+**Qualitative** (distinct hues, equal visual weight)
+: For categorical data with no implied order. Example: county type, administrative region.
+
+::: {.callout-tip}
+**ColorBrewer 2.0** (colorbrewer2.org) — all palettes tested for colorblind safety, print friendliness, and screen legibility.
+:::
+
+## Bivariate Choropleth Maps
+
+A bivariate choropleth maps **two variables simultaneously** using a 3×3 color grid:
+
+- `bi_class()` — classifies two variables into a combined column (e.g., "1-1", "2-3")
+- `bi_scale_fill()` — applies the 2D color palette to ggplot
+- `bi_legend()` — generates the 3×3 legend (compose with map using patchwork)
+
+::: {.callout-note}
+Stevens (2015): "Keep it 3×3. Color selection and legend design are the two most critical decisions in bivariate mapping."
+:::
+
+## Cartographic Design Principles
+
+**Visual Hierarchy** — Most important data = most visually prominent. Basemap labels should recede.
+
+**Figure-Ground** — Study area stands out from surrounding context.
+
+**Color Choice** — Sequential → ordinal. Diverging → centered. Qualitative → categorical. Always colorblind-safe.
+
+**Required Map Elements** — Every thematic map needs: title, legend, scale bar, north arrow, data source citation.
+
+> Before opening R, answer these 5 questions *(Axis Maps Cartography Guide)*:
+> 1. What is the message?  2. Who is the audience?  3. What data type?  4. What is the distribution?  5. Where will it be shown?
+
+## Small Multiples
+
+Small multiples place the same map design side-by-side with one element varied. The eye does the comparison.
+
+**When to use:**
+
+- **Classification comparison** — map same data with 4 methods
+- **Temporal comparison** — map 2015 and 2023 side-by-side
+- **Variable comparison** — map all 5 index components
+- **Scale comparison** — county → tract → block group *(illustrates MAUP)*
+
+In R: `patchwork` makes small multiples trivial:
+```r
+p1 + p2 + p3 + plot_annotation(title = "Classification Comparison")
+```
+*(Walker, 2023, Chapter 6)*
+
+---
+
+# Part 2: The Modifiable Areal Unit Problem
+
+## What Is MAUP?
+
+> *Openshaw, S. & Taylor, P.J. (1979). A million or so correlation coefficients: three experiments on the modifiable areal unit problem. Statistical Applications in the Spatial Sciences, pp. 127–144.* (~1,700 citations — coined the term)
+
+**The foundational finding:** Using Iowa county data, aggregating 99 counties into 6-zone configurations produced correlations ranging from **−0.97 to +0.99**.
+
+**Two components:**
+
+- **Scale Effect** — Results change as data are aggregated into progressively larger units
+- **Zonation Effect** — Results change with alternative boundary configurations at the SAME scale
+
+::: {.callout-important}
+MAUP means there is **no single "correct" set of areal units**. Every boundary system is arbitrary and modifiable.
+:::
+
+## Openshaw (1984) — The Full Framework
+
+> *Openshaw, S. (1984). The Modifiable Areal Unit Problem. CATMOG No. 38. Geo Books.* (~5,200 citations — most-cited MAUP reference)
+
+Key contributions:
+
+- Traced MAUP back to Gehlke & Biehl (1934) — the problem predates GIS by decades
+- Connected MAUP to the **ecological fallacy**: area-level correlations ≠ individual-level relationships
+- Showed correlations can be "manufactured" across the full range from −1 to +1
+- Proposed the **Automatic Zoning Procedure (AZP)** as a computational partial solution
+
+> **Openshaw's warning:** *"Areal units are arbitrary, modifiable, and subject to the whims and fancies of whoever did the aggregating."*
+
+## MAUP in Multivariate Analysis
+
+> *Fotheringham, A.S. & Wong, D.W.S. (1991). The modifiable areal unit problem in multivariate statistical analysis. Environment and Planning A, 23(7), 1025–1044.* DOI: 10.1068/a231025
+
+Fotheringham and Wong extended MAUP from bivariate correlations into **multiple regression and logit models**:
+
+- Parameter estimates varied by a factor of up to **nine** across geographic units
+- MAUP effects in multivariate contexts are **"essentially unpredictable in their intensity and effects"**
+- Coefficient signs can **reverse** depending on the aggregation unit chosen
+- The regressions you run on census tracts give different results at county or block group level
+
+::: {.callout-warning}
+No mathematical correction fully resolves MAUP in multivariate analysis. **Awareness and sensitivity checks are the primary defenses.**
+:::
+
+## MAUP in Choropleth Mapping
+
+> *Nelson, J.K. & Brewer, C.A. (2017). Evaluating data stability in aggregation structures across spatial scales. Cartography and Geographic Information Science, 44(1), 35–50.* DOI: 10.1080/15230406.2015.1093431
+
+The modern cartographic treatment of MAUP:
+
+- Used LISA statistics to measure how spatial patterns change across Census aggregation levels
+- Tested median income (PA) and cancer rates (NY) at block group, tract, and county
+- **Census-tract level data preserves statistical relationships far better than county-level data**
+- Aggregating to county suppresses meaningful neighborhood variation
+- Directly bridges MAUP theory and choropleth map design practice
+
+**For PAF 516:** This is why Lab 1 maps hardship at county, tract, and block group. The patterns — and the policy conclusions — depend on which scale you choose.
+
+## Census Geographies and MAUP
+
+| Geography | ~N in AZ | Reveals | Limitation |
+|-----------|----------|---------|------------|
+| **US County** | ~3,100 nationally | Broad regional patterns; tribal areas, urban cores | Suppresses within-county variation |
+| **Census Tract** | ~1,700 in AZ | Neighborhood-level variation; urban/suburban gradient | Some MOE at small population tracts |
+| **Block Group** | ~900 in Maricopa | Finest ACS geography; block-by-block variation | Highest margins of error |
+
+**Recommended for most analyses:** Census tract.
+
+**Used for LISA hot spots:** Block group — denser spatial units improve clustering detection.
+
+## Classification + Scale Together
+
+Two compounding sources of map uncertainty:
+
+| Combination | What You See |
+|------------|-------------|
+| Equal Interval + County | Broad national patterns; within-county variation invisible |
+| Jenks + Block Group | Neighborhood clusters revealed; local inequality visible |
+| Quantile + Census Tract | Balanced visual variation; good for most purposes |
+| Std. Deviation + County | Only extreme outliers stand out; middle class flattened |
+
+> **A single index. Four combinations. Four different policy narratives.**
+> Choose deliberately and report transparently.
+
+## Why MAUP Matters for Policy
+
+Real-world consequences of ignoring MAUP:
+
+- **Redistricting & gerrymandering** — Legislative boundaries are constructed to produce specific outcomes
+- **Enterprise zone targeting** — Which neighborhoods qualify depends on the geographic unit and classification method chosen
+- **Health disparity research** — Fotheringham & Wong showed income-health regression coefficients can reverse sign across geographic units
+- **School district analysis** — District-level poverty rates mask extreme within-district variation
+
+::: {.callout-tip}
+**Practical guidance:** Always report which geographic unit you used and justify the choice. Run sensitivity checks at multiple scales when possible.
+:::
+
+## Module 2 Summary
+
+**Key takeaways:**
+
+- **Classification is editorial.** Brewer & Pickle (2002): quantile and Jenks outperform equal interval for most census data.
+- **Color carries meaning.** Use ColorBrewer 2.0 for tested, accessible palettes.
+- **Two variables, one map.** Bivariate choropleths reveal relationships single-variable maps miss. Keep it 3×3.
+- **MAUP: scale is not neutral.** Openshaw & Taylor (1979); Openshaw (1984): the same data aggregated differently produces different results.
+- **MAUP is unpredictable.** Fotheringham & Wong (1991): parameter estimates can vary 9×. Awareness is the defense.
+- **Census geography matters.** Nelson & Brewer (2017): tract-level data preserves relationships that county-level analysis destroys.
+
+**Coming up in Module 3:** Spatial Data Integration — spatial joins, buffer analysis, and layering external datasets onto the hardship index.

@@ -124,6 +124,27 @@ The `ggspatial` package adds professional cartographic elements to ggplot maps: 
 
 ::: {.section-box}
 
+## Section 5: The Modifiable Areal Unit Problem (MAUP)
+
+The **Modifiable Areal Unit Problem (MAUP)** is one of the most fundamental challenges in spatial analysis. It refers to the fact that the results of any analysis using aggregated spatial data depend on how the boundaries of those spatial units are drawn. The same underlying phenomenon can look dramatically different depending on whether you map it at the county, tract, or block group level.
+
+### Why MAUP Matters for Policy
+
+Consider a county-level map of economic hardship across the United States. A county like Maricopa County, Arizona --- home to Phoenix and over 4 million people --- receives a single hardship score. But that single score masks enormous internal variation. Some block groups within Maricopa have hardship index values well above the national average, while others rank among the lowest in the state. A state official relying solely on the county map would see Maricopa as a moderate-hardship county and might conclude that it does not need targeted intervention --- missing the neighborhoods within the county where hardship is severe.
+
+This is the core danger of MAUP: **aggregation smooths away the very variation that matters most for targeted policy.** A county that appears "average" may contain both affluent suburbs and deeply distressed neighborhoods. The larger the unit of analysis, the more heterogeneity gets hidden.
+
+### Implications for Practice
+
+- **Use the most granular geography available** when you expect important within-unit variation. Census tracts and block groups reveal neighborhood-level patterns that county-level data cannot
+- **Compare across scales** to understand what aggregation hides. If the pattern changes substantially when you move from counties to tracts to block groups, MAUP is at work
+- **Be explicit about scale choices** in reports and policy briefs. Always state the geographic unit of analysis and acknowledge what within-unit variation it may conceal
+- **Interactive maps help** because users can zoom from broad regional patterns down to neighborhood detail, seeing MAUP in action rather than being locked into a single scale
+
+:::
+
+::: {.section-box}
+
 ## Lecture
 
 <!-- PLACEHOLDER: Record lecture on classification methods and cartographic design principles -->
@@ -197,5 +218,6 @@ Find a published choropleth map from a news article, government report, nonprofi
 | **Visual Hierarchy** | The arrangement of map elements so the most important data draws the most attention |
 | **Sequential Palette** | A color ramp from light to dark representing low-to-high values |
 | **Diverging Palette** | A color ramp with two hues diverging from a neutral midpoint (e.g., blue-white-red) |
+| **Modifiable Areal Unit Problem (MAUP)** | The sensitivity of spatial analysis results to the size and shape of the geographic units used; aggregation to larger units can mask important within-unit variation |
 
 :::
