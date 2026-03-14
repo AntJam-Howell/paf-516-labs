@@ -59,9 +59,9 @@ format:
         }
 
         % Footer
+        \fancyfoot[C]{\raisebox{8pt}{\color{asurulegray}\rule{0.9\textwidth}{0.4pt}}}
         \fancyfoot[L]{\small\color{asugray} Course Syllabus · PAF 516}
         \fancyfoot[R]{\small\color{asugray} Page \thepage}
-        \fancyfoot[C]{\color{asurulegray}\rule{0.9\textwidth}{0.4pt}}
 
         % ── Section Styling ──────────────────────────────────────────────
         \usepackage{titlesec}
