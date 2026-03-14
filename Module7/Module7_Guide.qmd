@@ -267,7 +267,7 @@ For Lab 7, you will complete the Quarto Dashboard template by writing three orig
 
 1. Download the template and save it in your `PAF516/FinalProject/` folder
 2. Install your Census API key if you haven't already: `census_api_key("YOUR_KEY", install = TRUE)`
-3. Run the renv block once to install required packages, then comment it out
+3. Render the file &mdash; the renv block installs required packages automatically on first run
 4. Render the dashboard to verify it works before writing your recommendations
 5. Study the National Context, Local Patterns, Hot Spots, and Change Over Time pages
 6. Write your three recommendations on the Policy page

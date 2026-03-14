@@ -84,17 +84,17 @@ options(tigris_progress_bar = FALSE)
 
 ```{r}
 #| label: packages
-# ── Package Setup ──────────────────────────────────────────────────────
-# Run this chunk ONCE the first time you open this file.
-# It downloads the exact package versions used to build this lab.
-# After it finishes, comment out the four renv lines below.
-if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
-download.file(
-  url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/renv.lock",
-  destfile = "renv.lock", mode = "wb"
-)
-renv::restore(lockfile = "renv.lock", prompt = FALSE)
-# ── After running once, comment out the four lines above ───────────────
+# ── Package Setup (runs automatically on first knit) ─────────────────
+# Downloads the exact package versions used to build this lab.
+# The if-guard ensures this only runs once — no need to comment out.
+if (!file.exists("renv.lock")) {
+  if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+  download.file(
+    url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/renv.lock",
+    destfile = "renv.lock", mode = "wb"
+  )
+  renv::restore(lockfile = "renv.lock", prompt = FALSE)
+}
 
 # Core data & spatial
 library(tidyverse)

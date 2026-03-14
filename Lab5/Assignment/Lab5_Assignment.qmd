@@ -27,18 +27,17 @@ options( tigris_progress_bar = FALSE )
 
 ```{r}
 #| label: packages
-# ── Package Setup ──────────────────────────────────────────────────────
-# R packages update frequently and can break working code. We have saved
-# the exact package versions used to build this lab. Run the block below
-# ONCE the first time you open this file, then comment it out.
-if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
-download.file(
-  url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/renv.lock",
-  destfile = "renv.lock", mode = "wb"
-)
-renv::restore(lockfile = "renv.lock", prompt = FALSE)
-# After running once, comment out the four lines above.
-# ───────────────────────────────────────────────────────────────────────
+# ── Package Setup (runs automatically on first knit) ─────────────────
+# Downloads the exact package versions used to build this lab.
+# The if-guard ensures this only runs once — no need to comment out.
+if (!file.exists("renv.lock")) {
+  if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+  download.file(
+    url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/renv.lock",
+    destfile = "renv.lock", mode = "wb"
+  )
+  renv::restore(lockfile = "renv.lock", prompt = FALSE)
+}
 
 # ── Packages ─────────────────────────────────────────
 library( tidyverse )
