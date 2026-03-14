@@ -1,0 +1,277 @@
+---
+title: "Spatial Data Integration"
+subtitle: "Module 3 | PAF 516 — Community Analytics"
+author: "Arizona State University"
+format:
+  beamer:
+    theme: Madrid
+    colortheme: beaver
+    fonttheme: professionalfonts
+    slide-level: 2
+    aspectratio: 169
+    toc: false
+    include-in-header:
+      text: |
+        \definecolor{asuMaroon}{HTML}{8C1D40}
+        \definecolor{asuGold}{HTML}{FFC627}
+        \setbeamercolor{frametitle}{bg=asuMaroon,fg=white}
+        \setbeamercolor{title}{fg=white}
+        \setbeamercolor{block title}{bg=asuMaroon,fg=white}
+        \setbeamercolor{alerted text}{fg=asuMaroon}
+        \setbeamertemplate{footline}[frame number]
+        \setbeamerfont{frametitle}{size=\large,series=\bfseries}
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Part 1: CRS, Spatial Joins & Buffer Analysis
+
+## Module Overview
+
+> "Your hardship index measures *who lives* in a place. This module adds *what is near* a place."
+
+In Labs 1–2 you built the index entirely from census variables. This module teaches you to enrich it with **external point data** — EPA facilities, grocery stores, transit stops — using spatial operations.
+
+**What you will learn:**
+
+| Topic | Key Tool |
+|-------|----------|
+| Coordinate Reference Systems | `st_crs()`, `st_transform()` |
+| Point-in-polygon spatial joins | `st_join()` |
+| Buffer analysis | `st_buffer()` |
+| Buffer sensitivity (UGCoP) | Kwan (2012) |
+| Environmental justice framework | Maantay, Pastor et al. |
+
+## Coordinate Reference Systems
+
+Before combining spatial datasets, they must share the same **CRS**.
+
+**Geographic CRS (EPSG:4326 — WGS84)**
+
+- Latitude/longitude in degrees
+- Global — good for web maps and data exchange
+- Distances distorted (1 degree ≠ constant length)
+- Default for most downloaded data
+
+**Projected CRS (EPSG:2868 — Arizona Central)**
+
+- Flat surface with linear units (US survey feet)
+- Accurate distances and areas in Maricopa County
+- Required for `st_buffer()` to produce meaningful distances
+
+::: {.callout-warning}
+`st_buffer(data, dist = 1000)` on EPSG:4326 creates a buffer of 1000 **degrees** — roughly 100,000 km. Always project first.
+:::
+
+## CRS in R
+
+```{r}
+#| eval: false
+#| echo: true
+library(sf)
+
+# Check CRS
+st_crs(cbg_data)
+st_crs(facilities_sf)
+
+# Project to Arizona Central (US survey feet) before spatial ops
+cbg_proj        <- st_transform(cbg_data, crs = 2868)
+facilities_proj <- st_transform(facilities_sf, crs = 2868)
+
+# Fix minor topology errors before joins
+cbg_proj <- st_make_valid(cbg_proj)
+
+# Convert back to WGS84 for web maps
+cbg_wgs84 <- st_transform(cbg_proj, crs = 4326)
+```
+
+**Rule:** Project → spatial operations → convert back for visualization.
+
+## Spatial Joins: st_join()
+
+A spatial join attaches attributes from one layer to another based on **geographic relationship** — not a shared column.
+
+**Point-in-polygon (most common in community analytics):**
+
+```{r}
+#| eval: false
+#| echo: true
+# How many EPA facilities fall within each block group?
+cbg_with_fac <- st_join(cbg_proj, facilities_proj,
+                        join = st_intersects)
+
+# Count facilities per CBG
+facility_counts <- cbg_with_fac |>
+  st_drop_geometry() |>
+  group_by(GEOID) |>
+  summarise(facility_count = sum(!is.na(name)))
+
+cbg_proj <- cbg_proj |>
+  left_join(facility_counts, by = "GEOID") |>
+  mutate(facility_count = replace_na(facility_count, 0))
+```
+
+## Buffer Analysis: st_buffer()
+
+Buffers create a **proximity zone** around a spatial feature.
+
+```{r}
+#| eval: false
+#| echo: true
+# 1 mile = 5,280 feet (EPSG:2868 uses US survey feet)
+facility_buffers <- st_buffer(facilities_proj, dist = 5280)
+
+# Dissolve overlapping buffers into one combined zone
+buffer_union <- st_union(facility_buffers)
+
+# Which CBGs intersect the buffer? (binary: 0/1)
+cbg_proj$near_facility <- as.integer(
+  lengths(st_intersects(cbg_proj, buffer_union)) > 0
+)
+```
+
+**Common uses:**
+
+- Block groups within 1 mile of a hazardous facility
+- Grocery stores within 0.5 miles of each neighborhood centroid
+- Hospital service area coverage
+
+---
+
+# Part 2: The Uncertain Geographic Context Problem
+
+## What Is UGCoP?
+
+> *Kwan, M.P. (2012). The uncertain geographic context problem. Annals of the AAG, 102(5), 958–968.*
+> doi:10.1080/00045608.2012.687349
+
+**Core argument:**
+
+> "The actual geographic context that influences people's behavior and health is **uncertain** and cannot be directly observed."
+
+In practice:
+
+- The researcher must choose a buffer size: 0.25 mi? 0.5 mi? 1 mi? 2 mi?
+- There is rarely a principled theoretical basis for this choice
+- Different buffer sizes change which units are classified as "exposed"
+- Different classifications produce different statistical results
+
+::: {.callout-important}
+Buffer distance choice is a methodological decision — not a neutral technical step.
+:::
+
+## UGCoP vs. MAUP
+
+| | **MAUP** | **UGCoP** |
+|--|----------|-----------|
+| **What varies** | Polygon boundaries | Buffer radius |
+| **Mechanism** | Aggregation changes statistics | Exposure zone changes who is exposed |
+| **Classic example** | County vs. tract vs. block group | 0.5 mi vs. 1 mi vs. 2 mi |
+| **Named by** | Openshaw & Taylor (1979) | Kwan (2012) |
+| **Applies to** | Polygon analysis | Proximity analysis |
+
+Both MAUP and UGCoP share one insight: **geographic context is a methodological choice**, and that choice shapes results.
+
+## Buffer Sensitivity in Practice
+
+Consider three block groups near an EPA facility:
+
+| Buffer Distance | CBG A (0.3 mi) | CBG B (0.7 mi) | CBG C (1.1 mi) |
+|-----------------|----------------|----------------|----------------|
+| 0.5 mile | ✓ Exposed | Not exposed | Not exposed |
+| 1.0 mile | ✓ Exposed | ✓ Exposed | Not exposed |
+| 2.0 mile | ✓ Exposed | ✓ Exposed | ✓ Exposed |
+
+The same three block groups produce **three different exposure classifications** depending on buffer distance. This is UGCoP in action.
+
+**Lab 3, Q2:** Change the buffer from 1 mile to 0.5 miles. Compare results. This tests whether your conclusions are threshold-sensitive.
+
+## Best Practices for Buffer Analysis
+
+How to address UGCoP:
+
+1. **Use a theoretically grounded distance** — air dispersion models, walkability studies, and physical hazard decay rates each suggest specific distances
+2. **Report results at multiple distances** — if conclusions hold at 0.5, 1.0, and 1.5 miles, the result is robust; if only one distance produces findings, flag the sensitivity
+3. **Match distances from comparable studies** — Maantay (2002) and EPA EJScreen use facility-specific distances; consistency aids comparability
+4. **Be explicit in reporting** — state the buffer distance, justify the choice, acknowledge sensitivity
+
+::: {.callout-tip}
+A result that holds across multiple buffer distances is far more credible than one that only appears at a single threshold.
+:::
+
+---
+
+# Part 3: Environmental Justice
+
+## The Environmental Justice Framework
+
+EJ research asks: are environmental burdens disproportionately concentrated in low-income and minority communities?
+
+**The three-part analysis:**
+
+| Component | Data Source | Tool |
+|-----------|-------------|------|
+| **Demographics** — who lives here | ACS census variables | `tidycensus` |
+| **Hazards** — what is near here | EPA TRI, Superfund listings | Point data |
+| **Spatial integration** — do they overlap? | Combined layers | `st_join()`, `st_buffer()` |
+
+The **enriched hardship index** you build in Lab 3 operationalizes this: 5 census variables measuring socioeconomic hardship + 2 spatial variables measuring environmental burden proximity.
+
+## Pastor, Sadd & Hipp (2001)
+
+> *Which came first? Toxic facilities, minority move-in, and environmental justice. Journal of Urban Affairs, 23(1), 1–21.*
+
+**The central EJ research question:**
+
+- Were hazardous facilities **sited** in minority neighborhoods? *(disproportionate siting)*
+- Or did minorities **move in** after facilities were built? *(market dynamics)*
+
+**Key findings:**
+
+- Used longitudinal data for LA County census tracts (1970–1990)
+- Applied buffer-based proximity measures to track siting over time
+- Minority and low-income communities had disproportionate exposure **before** move-in
+- **Supports disproportionate siting hypothesis** over residential sorting
+- Uses point-in-polygon joins + buffers — the same tools in Lab 3
+
+## UGCoP in EJ Research
+
+Maantay (2002) and Mohai & Saha (2015) both document how distance threshold choice affects EJ findings:
+
+- **Results can flip across distances** — a community appears "exposed" at 1 mile but not at 0.5 miles, or vice versa
+- **No single distance is universally correct** — air, water, and noise hazards have different physical decay rates
+- **Smaller buffers concentrate findings** — a 0.25-mile buffer identifies only immediately adjacent communities
+- **Policy consequences** — if a 1-mile buffer determines EJ remediation funding eligibility, the threshold choice has direct resource allocation implications
+
+::: {.callout-warning}
+**Lab 3, Q3** asks you to connect buffer sensitivity to UGCoP and cite Maantay (2002) and Mohai & Saha (2015). This is the theoretical payoff of Q2's empirical test.
+:::
+
+## The Enriched Hardship Index
+
+Lab 3 adds two spatial variables to the 5-variable census index:
+
+**5-Variable Census Index (Labs 1–2):**
+Poverty rate, unemployment rate, no HS diploma, no health insurance, median income (reverse-coded)
+
+**+ 2 Spatial Variables (Lab 3):**
+
+- `facility_count` — number of EPA facilities in the block group
+- `near_facility` — binary: within 1-mile buffer zone (0/1)
+
+Both are z-score standardized before inclusion. **Cronbach's alpha** tests whether the spatial variables hang together with census hardship — if alpha improves, environmental burden is measuring the same underlying construct as socioeconomic disadvantage.
+
+## Module 3 Summary
+
+**Key takeaways:**
+
+- **CRS before everything.** Mismatched coordinate systems produce wrong results. Always check and transform before spatial operations.
+- **Spatial joins count by location.** `st_join()` attaches attributes using geographic relationship — no shared column needed.
+- **Buffers define exposure.** `st_buffer()` creates proximity zones. The distance threshold is consequential.
+- **UGCoP: buffers have a problem too.** Kwan (2012): different distances produce different classifications. Test multiple distances and report sensitivity.
+- **EJ connects burden to hardship.** Spatial integration reveals whether environmental hazards compound census-measured disadvantage in the same communities.
+- **Enriched index, honest alpha.** Adding spatial variables should improve Cronbach's alpha if they reflect the same underlying construct.
+
+**Coming up in Module 4:** Spatial Autocorrelation — Moran's I, LISA hot spots, and whether hardship clusters spatially across Maricopa County.

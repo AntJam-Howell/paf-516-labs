@@ -3112,17 +3112,38 @@ width: 98%;
   <ul>
   <li><a href="#m3-overview-learning-materials" id="toc-m3-overview-learning-materials" class="nav-link active" data-scroll-target="#m3-overview-learning-materials"><strong>M3 Overview &amp; Learning Materials</strong></a></li>
   <li><a href="#module-overview-and-objectives" id="toc-module-overview-and-objectives" class="nav-link" data-scroll-target="#module-overview-and-objectives">Module Overview and Objectives</a></li>
-  <li><a href="#section-1-coordinate-reference-systems" id="toc-section-1-coordinate-reference-systems" class="nav-link" data-scroll-target="#section-1-coordinate-reference-systems">Section 1: Coordinate Reference Systems</a></li>
-  <li><a href="#section-2-spatial-joins-and-overlay-operations" id="toc-section-2-spatial-joins-and-overlay-operations" class="nav-link" data-scroll-target="#section-2-spatial-joins-and-overlay-operations">Section 2: Spatial Joins and Overlay Operations</a></li>
-  <li><a href="#section-3-the-modifiable-areal-unit-problem-maup" id="toc-section-3-the-modifiable-areal-unit-problem-maup" class="nav-link" data-scroll-target="#section-3-the-modifiable-areal-unit-problem-maup">Section 3: The Modifiable Areal Unit Problem (MAUP)</a></li>
   <li><a href="#lecture" id="toc-lecture" class="nav-link" data-scroll-target="#lecture">Lecture</a></li>
+  <li><a href="#section-1-coordinate-reference-systems" id="toc-section-1-coordinate-reference-systems" class="nav-link" data-scroll-target="#section-1-coordinate-reference-systems">Section 1: Coordinate Reference Systems</a>
+  <ul class="collapse">
+  <li><a href="#geographic-vs.-projected-crs" id="toc-geographic-vs.-projected-crs" class="nav-link" data-scroll-target="#geographic-vs.-projected-crs">Geographic vs. Projected CRS</a></li>
+  <li><a href="#practical-rule" id="toc-practical-rule" class="nav-link" data-scroll-target="#practical-rule">Practical Rule</a></li>
+  </ul></li>
+  <li><a href="#section-2-spatial-joins-and-overlay-operations" id="toc-section-2-spatial-joins-and-overlay-operations" class="nav-link" data-scroll-target="#section-2-spatial-joins-and-overlay-operations">Section 2: Spatial Joins and Overlay Operations</a>
+  <ul class="collapse">
+  <li><a href="#point-in-polygon-joins" id="toc-point-in-polygon-joins" class="nav-link" data-scroll-target="#point-in-polygon-joins">Point-in-Polygon Joins</a></li>
+  <li><a href="#buffer-analysis" id="toc-buffer-analysis" class="nav-link" data-scroll-target="#buffer-analysis">Buffer Analysis</a></li>
+  <li><a href="#intersection-and-clipping" id="toc-intersection-and-clipping" class="nav-link" data-scroll-target="#intersection-and-clipping">Intersection and Clipping</a></li>
+  </ul></li>
+  <li><a href="#section-3-the-uncertain-geographic-context-problem-ugcop" id="toc-section-3-the-uncertain-geographic-context-problem-ugcop" class="nav-link" data-scroll-target="#section-3-the-uncertain-geographic-context-problem-ugcop">Section 3: The Uncertain Geographic Context Problem (UGCoP)</a>
+  <ul class="collapse">
+  <li><a href="#what-ugcop-says" id="toc-what-ugcop-says" class="nav-link" data-scroll-target="#what-ugcop-says">What UGCoP Says</a></li>
+  <li><a href="#ugcop-vs.-maup-two-distinct-problems" id="toc-ugcop-vs.-maup-two-distinct-problems" class="nav-link" data-scroll-target="#ugcop-vs.-maup-two-distinct-problems">UGCoP vs. MAUP: Two Distinct Problems</a></li>
+  <li><a href="#implications-for-buffer-analysis" id="toc-implications-for-buffer-analysis" class="nav-link" data-scroll-target="#implications-for-buffer-analysis">Implications for Buffer Analysis</a></li>
+  <li><a href="#ugcop-in-the-lab" id="toc-ugcop-in-the-lab" class="nav-link" data-scroll-target="#ugcop-in-the-lab">UGCoP in the Lab</a></li>
+  </ul></li>
+  <li><a href="#section-4-environmental-justice-and-spatial-equity" id="toc-section-4-environmental-justice-and-spatial-equity" class="nav-link" data-scroll-target="#section-4-environmental-justice-and-spatial-equity">Section 4: Environmental Justice and Spatial Equity</a>
+  <ul class="collapse">
+  <li><a href="#the-environmental-justice-framework" id="toc-the-environmental-justice-framework" class="nav-link" data-scroll-target="#the-environmental-justice-framework">The Environmental Justice Framework</a></li>
+  <li><a href="#methodological-considerations" id="toc-methodological-considerations" class="nav-link" data-scroll-target="#methodological-considerations">Methodological Considerations</a></li>
+  <li><a href="#ejscreen" id="toc-ejscreen" class="nav-link" data-scroll-target="#ejscreen">EJScreen</a></li>
+  </ul></li>
   <li><a href="#readings" id="toc-readings" class="nav-link" data-scroll-target="#readings">Readings</a>
   <ul class="collapse">
   <li><a href="#foundational-works" id="toc-foundational-works" class="nav-link" data-scroll-target="#foundational-works">Foundational Works</a></li>
   <li><a href="#recent-applications" id="toc-recent-applications" class="nav-link" data-scroll-target="#recent-applications">Recent Applications</a></li>
   <li><a href="#r-package-documentation" id="toc-r-package-documentation" class="nav-link" data-scroll-target="#r-package-documentation">R Package Documentation</a></li>
   </ul></li>
-  <li><a href="#lab-assignment" id="toc-lab-assignment" class="nav-link" data-scroll-target="#lab-assignment">Lab Assignment</a></li>
+  <li><a href="#lab-3" id="toc-lab-3" class="nav-link" data-scroll-target="#lab-3">Lab 3</a></li>
   <li><a href="#yellowdig-discussion" id="toc-yellowdig-discussion" class="nav-link" data-scroll-target="#yellowdig-discussion">Yellowdig Discussion</a></li>
   <li><a href="#key-terms" id="toc-key-terms" class="nav-link" data-scroll-target="#key-terms">Key Terms</a></li>
   </ul>
@@ -3153,80 +3174,169 @@ width: 98%;
 <section id="m3-overview-learning-materials" class="level2 module-header">
 <h2 class="anchored" data-anchor-id="m3-overview-learning-materials"><strong>M3 Overview &amp; Learning Materials</strong></h2>
 <div class="module-subtitle">
-<p><strong>Spatial Data Integration &amp; Overlay Analysis</strong></p>
+<p><strong>Spatial Joins, Buffer Analysis &amp; Environmental Justice</strong></p>
 </div>
 </section>
-<section id="module-overview-and-objectives" class="level3 section-box">
-<h3 class="anchored" data-anchor-id="module-overview-and-objectives">Module Overview and Objectives</h3>
-<p>So far, your hardship index is built entirely from census variables — measures of who lives in a place. But neighborhood quality is also shaped by <strong>what is near</strong> a place. Proximity to environmental hazards, grocery stores, transit stops, or health clinics matters as much as demographic composition. This module teaches you to combine <strong>tabular census data</strong> with <strong>external point data</strong> using spatial operations.</p>
-<p>The central challenge is that these data sources live in different formats, different coordinate reference systems, and different geographic units. You will learn to align them using <strong>spatial joins</strong>, <strong>buffer analysis</strong>, and <strong>coordinate transformations</strong> — the core operations of spatial data integration. Along the way, you will confront the <strong>Modifiable Areal Unit Problem (MAUP)</strong>, one of the most important methodological issues in spatial analysis.</p>
+<section id="module-overview-and-objectives" class="level2 section-box">
+<h2 class="anchored" data-anchor-id="module-overview-and-objectives">Module Overview and Objectives</h2>
+<p>So far, your hardship index is built entirely from census variables — measures of <em>who lives</em> in a place. But neighborhood quality is also shaped by <em>what is near</em> a place. Proximity to environmental hazards, grocery stores, transit stops, or health clinics matters as much as demographic composition. This module teaches you to combine <strong>tabular census data</strong> with <strong>external point data</strong> using spatial operations.</p>
+<p>The central challenge is that these datasets arrive in different formats, different coordinate reference systems, and different geographic units. You will learn to align them using <strong>spatial joins</strong>, <strong>buffer analysis</strong>, and <strong>coordinate transformations</strong> — the core operations of spatial data integration. Along the way, you will encounter a question every proximity analyst must answer: <strong>does it matter whether you draw your buffer at 0.5 miles or 1 mile?</strong> The answer is yes — and the reason has a name.</p>
 <hr>
 <p>After completing this module, you will be able to:</p>
 <ul>
 <li>Explain the role of <strong>coordinate reference systems (CRS)</strong> and transform data between projections using <code>st_transform()</code></li>
 <li>Perform <strong>point-in-polygon spatial joins</strong> using <code>st_join()</code> to count point features within census boundaries</li>
 <li>Conduct <strong>buffer analysis</strong> using <code>st_buffer()</code> to measure proximity to spatial features</li>
-<li>Use <code>st_intersection()</code> to clip and combine spatial layers</li>
-<li>Describe the <strong>Modifiable Areal Unit Problem</strong> and its implications for spatial analysis</li>
+<li>Recognize the <strong>Uncertain Geographic Context Problem (UGCoP)</strong> and explain how buffer distance choices affect analytical conclusions</li>
+<li>Frame spatial analysis within an <strong>environmental justice</strong> context, connecting proximity to environmental burdens with socioeconomic hardship</li>
 <li>Create an <strong>enriched hardship index</strong> that incorporates spatial access variables alongside census demographics</li>
-<li>Integrate external data sources (e.g., EPA facility data, USDA food access data) with census geographies</li>
 </ul>
 </section>
-<section id="section-1-coordinate-reference-systems" class="level3 section-box">
-<h3 class="anchored" data-anchor-id="section-1-coordinate-reference-systems">Section 1: Coordinate Reference Systems</h3>
+<section id="lecture" class="level2">
+<h2 class="anchored" data-anchor-id="lecture">Lecture</h2>
+<div class="section-box">
+<p>The lecture notes cover coordinate reference systems, spatial joins, buffer analysis, the UGCoP, and the environmental justice framework.</p>
+<p>Download the lecture notes: <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module3/Lecture/Module3_Lecture_Slides.pdf">Spatial Data Integration — Lecture Notes (PDF)</a></p>
+</div>
+</section>
+<section id="section-1-coordinate-reference-systems" class="level2 section-box">
+<h2 class="anchored" data-anchor-id="section-1-coordinate-reference-systems">Section 1: Coordinate Reference Systems</h2>
 <p>Before you can combine spatial datasets, they must share the same <strong>coordinate reference system (CRS)</strong>. A CRS defines how locations on the curved Earth are represented on a flat surface. Two data layers that appear to be in the same location but use different CRS definitions will not align — your spatial joins will produce nonsense results.</p>
-<section id="geographic-vs.-projected-crs" class="level4">
-<h4 class="anchored" data-anchor-id="geographic-vs.-projected-crs">Geographic vs. Projected CRS</h4>
+<section id="geographic-vs.-projected-crs" class="level3">
+<h3 class="anchored" data-anchor-id="geographic-vs.-projected-crs">Geographic vs. Projected CRS</h3>
 <ul>
 <li><strong>Geographic CRS</strong> (e.g., WGS 84 / EPSG:4326): Uses latitude and longitude in degrees. Good for global data and web mapping. Distances and areas are distorted because degrees are not constant-length units</li>
-<li><strong>Projected CRS</strong> (e.g., NAD83 UTM Zone 12N / EPSG:26912): Projects the globe onto a flat surface. Distances and areas are accurate within the projection’s valid zone. Essential for buffer analysis and area calculations</li>
+<li><strong>Projected CRS</strong> (e.g., NAD83 / EPSG:26912 — UTM Zone 12N, or Arizona Central / EPSG:2868): Projects the globe onto a flat surface with linear distance units. Distances and areas are accurate within the projection’s valid zone. <strong>Essential for buffer analysis</strong></li>
 </ul>
 </section>
-<section id="practical-rule" class="level4">
-<h4 class="anchored" data-anchor-id="practical-rule">Practical Rule</h4>
-<p>Always check CRS with <code>st_crs()</code> before performing any spatial operation. If your layers have different CRS values, use <code>st_transform()</code> to reproject one to match the other. For operations that require accurate distances (buffers, area calculations), use a projected CRS appropriate for your study area.</p>
-<p><strong>Common mistake:</strong> Creating a buffer of “1000” on data in EPSG:4326. This produces a buffer of 1000 <em>degrees</em>, not 1000 meters. Always project first.</p>
+<section id="practical-rule" class="level3">
+<h3 class="anchored" data-anchor-id="practical-rule">Practical Rule</h3>
+<p>Always check CRS with <code>st_crs()</code> before any spatial operation. If layers differ, use <code>st_transform()</code> to reproject. For operations requiring accurate distances — buffers, area calculations, nearest-neighbor searches — always project to an appropriate local CRS first.</p>
+<p><strong>Common mistake:</strong> Creating a buffer of “1000” on data in EPSG:4326 produces a buffer of 1000 <em>degrees</em>, not 1000 meters. At the latitude of Phoenix, 1 degree of longitude is roughly 95 km. Always project first.</p>
 </section>
 </section>
-<section id="section-2-spatial-joins-and-overlay-operations" class="level3 section-box">
-<h3 class="anchored" data-anchor-id="section-2-spatial-joins-and-overlay-operations">Section 2: Spatial Joins and Overlay Operations</h3>
-<p>A <strong>spatial join</strong> attaches attributes from one spatial layer to another based on their geographic relationship — analogous to a table join in SQL, but using location instead of a key column.</p>
-<section id="point-in-polygon-joins" class="level4">
-<h4 class="anchored" data-anchor-id="point-in-polygon-joins">Point-in-Polygon Joins</h4>
-<p>The most common spatial join in community analytics: “How many [facilities/events/resources] fall within each [census tract/block group]?” The <code>st_join()</code> function in the <code>sf</code> package performs this operation:</p>
+<section id="section-2-spatial-joins-and-overlay-operations" class="level2 section-box">
+<h2 class="anchored" data-anchor-id="section-2-spatial-joins-and-overlay-operations">Section 2: Spatial Joins and Overlay Operations</h2>
+<p>A <strong>spatial join</strong> attaches attributes from one spatial layer to another based on geographic relationship — analogous to a SQL table join, but using location instead of a shared key column.</p>
+<section id="point-in-polygon-joins" class="level3">
+<h3 class="anchored" data-anchor-id="point-in-polygon-joins">Point-in-Polygon Joins</h3>
+<p>The most common spatial join in community analytics: “How many facilities, events, or resources fall within each census tract or block group?” The <code>st_join()</code> function in the <code>sf</code> package performs this operation:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>joined <span class="ot">&lt;-</span> <span class="fu">st_join</span>(polygons, points, <span class="at">join =</span> st_intersects)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>After joining, you typically group by the polygon ID and count the number of matched points.</p>
+<p>After joining, group by the polygon ID and count matched points to produce a per-area count variable you can add to the hardship index.</p>
 </section>
-<section id="buffer-analysis" class="level4">
-<h4 class="anchored" data-anchor-id="buffer-analysis">Buffer Analysis</h4>
-<p>Buffers create a zone of specified distance around a feature. Common uses include:</p>
+<section id="buffer-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="buffer-analysis">Buffer Analysis</h3>
+<p>Buffers create a zone of specified distance around a feature. In community analytics, common uses include:</p>
 <ul>
-<li>Identifying census tracts within 1 mile of a hazardous facility</li>
-<li>Counting the number of grocery stores within 0.5 miles of each neighborhood centroid</li>
-<li>Measuring overlap between service areas and target populations</li>
+<li>Identifying census block groups within 1 mile of a hazardous facility</li>
+<li>Counting grocery stores within 0.5 miles of each neighborhood centroid</li>
+<li>Measuring whether a census tract is within a hospital service area</li>
 </ul>
-<p>In R: <code>st_buffer(points, dist = 1609)</code> creates a 1-mile (1609 meter) buffer around each point (assuming a projected CRS in meters).</p>
+<p>In R: <code>st_buffer(points, dist = 1609)</code> creates a 1-mile (1609 meter) buffer around each point — assuming a projected CRS in meters. The choice of distance is consequential and is addressed in Section 3.</p>
 </section>
-<section id="intersection-and-clipping" class="level4">
-<h4 class="anchored" data-anchor-id="intersection-and-clipping">Intersection and Clipping</h4>
-<p><code>st_intersection()</code> returns only the portions of features that overlap between two layers. This is useful for clipping a statewide dataset to your study area or computing the area of overlap between buffers and census geographies.</p>
+<section id="intersection-and-clipping" class="level3">
+<h3 class="anchored" data-anchor-id="intersection-and-clipping">Intersection and Clipping</h3>
+<p><code>st_intersection()</code> returns only the portions of features that overlap between two layers. This is useful for clipping a statewide dataset to your study area, or computing the fraction of a census tract that falls within a floodplain or service area.</p>
 </section>
 </section>
-<section id="section-3-the-modifiable-areal-unit-problem-maup" class="level3 section-box">
-<h3 class="anchored" data-anchor-id="section-3-the-modifiable-areal-unit-problem-maup">Section 3: The Modifiable Areal Unit Problem (MAUP)</h3>
-<p>The <strong>MAUP</strong> is a fundamental issue in spatial analysis: the results of statistical analyses can change depending on <em>how</em> geographic areas are defined. It has two components:</p>
+<section id="section-3-the-uncertain-geographic-context-problem-ugcop" class="level2 section-box">
+<h2 class="anchored" data-anchor-id="section-3-the-uncertain-geographic-context-problem-ugcop">Section 3: The Uncertain Geographic Context Problem (UGCoP)</h2>
+<p>In Module 2 we introduced the Modifiable Areal Unit Problem (MAUP) — the sensitivity of analysis results to how polygon boundaries are drawn. <strong>Buffer analysis introduces an analogous problem specific to proximity-based research</strong>: results change depending on the distance threshold you choose to define “near.”</p>
+<p>This problem was formally identified and named by geographer Mei-Po Kwan in 2012 as the <strong>Uncertain Geographic Context Problem (UGCoP)</strong>.</p>
+<section id="what-ugcop-says" class="level3">
+<h3 class="anchored" data-anchor-id="what-ugcop-says">What UGCoP Says</h3>
+<p>Kwan’s argument is that in any proximity-based analysis, the spatial context we assign to individuals or geographic units — the “exposure zone” — is inherently uncertain. The researcher must choose a distance: 0.25 miles? 0.5 miles? 1 mile? 2 miles? There is rarely a principled theoretical basis for this choice, and different choices produce different results.</p>
+<blockquote class="blockquote">
+<p><em>“The UGCoP arises because the actual geographic context that influences people’s behavior and health is uncertain and cannot be directly observed.”</em> — Kwan (2012)</p>
+</blockquote>
+</section>
+<section id="ugcop-vs.-maup-two-distinct-problems" class="level3">
+<h3 class="anchored" data-anchor-id="ugcop-vs.-maup-two-distinct-problems">UGCoP vs. MAUP: Two Distinct Problems</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 40%">
+<col style="width: 46%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>MAUP</th>
+<th>UGCoP</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>What varies</strong></td>
+<td>Polygon boundaries (size and shape)</td>
+<td>Buffer radius (distance threshold)</td>
+</tr>
+<tr class="even">
+<td><strong>Mechanism</strong></td>
+<td>Aggregation changes summary statistics</td>
+<td>Exposure zone definition changes who is “exposed”</td>
+</tr>
+<tr class="odd">
+<td><strong>Classic form</strong></td>
+<td>County vs. tract vs. block group</td>
+<td>0.5-mile vs. 1-mile vs. 2-mile buffer</td>
+</tr>
+<tr class="even">
+<td><strong>Named by</strong></td>
+<td>Openshaw &amp; Taylor (1979)</td>
+<td>Kwan (2012)</td>
+</tr>
+<tr class="odd">
+<td><strong>Applies to</strong></td>
+<td>Census polygon analysis</td>
+<td>Point-based proximity analysis</td>
+</tr>
+</tbody>
+</table>
+<p>Both MAUP and UGCoP are instances of the same underlying challenge: <strong>geographic context is a methodological choice, not a given</strong>, and that choice shapes results.</p>
+</section>
+<section id="implications-for-buffer-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="implications-for-buffer-analysis">Implications for Buffer Analysis</h3>
+<p>When you report that a certain percentage of high-hardship block groups fall within 1 mile of an EPA facility, you are implicitly claiming that 1 mile is the relevant exposure distance. This claim deserves scrutiny:</p>
 <ul>
-<li><strong>Scale effect</strong>: Aggregating data to larger units (e.g., from block groups to tracts to counties) changes summary statistics. Correlations that appear at one scale may vanish at another</li>
-<li><strong>Zoning effect</strong>: Even at the same scale, different boundary configurations can produce different results. Congressional districts drawn two different ways yield different demographic profiles</li>
+<li><strong>Is there biological or behavioral evidence</strong> for the chosen threshold? (e.g., air dispersion models for pollution, walkability studies for food access)</li>
+<li><strong>Do results change substantially</strong> at 0.5 miles vs. 2 miles? If so, conclusions are threshold-sensitive</li>
+<li><strong>Is the threshold consistent</strong> with comparable studies? Maantay (2002) and the EPA EJScreen tool use varying buffers for different pollutant types</li>
 </ul>
-<p><strong>Why it matters for this course:</strong> When you count environmental facilities per census block group, the result depends entirely on where the Census Bureau drew the block group boundaries. A facility sitting right on a boundary could be counted in either unit. The hardship index values themselves are sensitive to the choice of geographic unit.</p>
-<p>There is no perfect solution to the MAUP, but awareness is the first defense. Best practices include: analyzing at multiple scales, using the finest available geography, and being transparent about the units used.</p>
+<p><strong>Best practice:</strong> Report results at <strong>multiple buffer distances</strong> and note where conclusions are stable vs. threshold-sensitive. A result that holds at 0.5, 1.0, and 1.5 miles is far more credible than one that only appears at a single distance.</p>
 </section>
-<section id="lecture" class="level2 section-box">
-<h2 class="anchored" data-anchor-id="lecture">Lecture</h2>
-<!-- PLACEHOLDER: Record lecture on spatial joins, CRS, buffer analysis, and MAUP -->
-<iframe role="img" src width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture">
-</iframe>
+<section id="ugcop-in-the-lab" class="level3">
+<h3 class="anchored" data-anchor-id="ugcop-in-the-lab">UGCoP in the Lab</h3>
+<p>In Lab 3, Q2 asks you to change the buffer from 1 mile to 0.5 miles and compare results. This is a direct application of UGCoP: you are testing whether the conclusion that “certain block groups are near facilities” is sensitive to the distance threshold. If the enriched hardship index changes substantially at 0.5 miles, UGCoP is at work.</p>
+</section>
+</section>
+<section id="section-4-environmental-justice-and-spatial-equity" class="level2 section-box">
+<h2 class="anchored" data-anchor-id="section-4-environmental-justice-and-spatial-equity">Section 4: Environmental Justice and Spatial Equity</h2>
+<p>The spatial operations in this module are foundational to <strong>environmental justice (EJ) research</strong> — the field that examines whether environmental burdens are disproportionately concentrated in low-income and minority communities.</p>
+<section id="the-environmental-justice-framework" class="level3">
+<h3 class="anchored" data-anchor-id="the-environmental-justice-framework">The Environmental Justice Framework</h3>
+<p>EJ analysis connects <em>where people live</em> (census demographics) with <em>what they are exposed to</em> (environmental hazard data) using the tools you are learning:</p>
+<ul>
+<li><strong>Point-in-polygon joins</strong>: How many EPA-regulated facilities are within each census block group?</li>
+<li><strong>Buffer analysis</strong>: What fraction of residents live within 1 mile of a Superfund site?</li>
+<li><strong>Cumulative burden</strong>: Does proximity to hazards compound existing socioeconomic hardship — and does this burden fall disproportionately on communities of color?</li>
+</ul>
+<p>The core finding of decades of EJ research (Pastor et al., 2001; Mohai &amp; Saha, 2015) is that it does: environmental burdens are not randomly distributed across space but are systematically concentrated in disadvantaged communities.</p>
+</section>
+<section id="methodological-considerations" class="level3">
+<h3 class="anchored" data-anchor-id="methodological-considerations">Methodological Considerations</h3>
+<p>Every analytic choice in an EJ study carries implications for the conclusions:</p>
+<ul>
+<li><strong>Buffer distance choice</strong>: A 1-mile buffer catches more facilities than a 0.25-mile buffer, changing which communities appear “exposed” (UGCoP, Section 3)</li>
+<li><strong>Count vs. presence</strong>: Counting facilities vs. recording binary presence (in/out) can give different results, especially near large industrial complexes with multiple registrations</li>
+<li><strong>Data currency</strong>: EPA TRI data updates annually; historical siting (where facilities were built) differs from current exposure — Maantay (2002) and Pastor et al. (2001) both stress the importance of temporal context</li>
+<li><strong>Confounding by land use</strong>: Industrial zones concentrate both facilities and lower-cost housing, which independently attracts lower-income residents; separating siting effects from residential sorting requires longitudinal data (Mohai &amp; Saha, 2015)</li>
+</ul>
+</section>
+<section id="ejscreen" class="level3">
+<h3 class="anchored" data-anchor-id="ejscreen">EJScreen</h3>
+<p>The EPA’s EJScreen tool — now maintained by the Open Environmental Data Project after EPA removed it in 2025 — operationalizes cumulative burden analysis at the census block group level. It combines 11 environmental indicators (air quality, proximity to Superfund sites, wastewater discharge, etc.) with 6 demographic indicators to produce a composite score. The <strong>enriched hardship index</strong> you build in Lab 3 applies the same logic at a smaller scale.</p>
+</section>
 </section>
 <section id="readings" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="readings">Readings</h2>
@@ -3235,75 +3345,66 @@ width: 98%;
 <ul>
 <li>Maantay, J. (2002). Mapping environmental injustices: Pitfalls and potential of geographic information systems in assessing environmental health and equity. <em>Environmental Health Perspectives</em>, 110(Suppl 2), 161–171. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC1241160/">open access</a>
 <ul>
-<li>The seminal article on using GIS for environmental justice analysis. Maantay examines how spatial methods can reveal disproportionate environmental burdens while cautioning against methodological pitfalls such as inadequate exposure indices and the choice of geographic unit.</li>
+<li>The seminal article on using GIS for environmental justice analysis. Examines how spatial methods reveal disproportionate environmental burdens while cautioning against pitfalls — including buffer distance choice and geographic unit selection.</li>
 </ul></li>
-<li>Pastor, M., Sadd, J., &amp; Hipp, J. (2001). Which came first? Toxic facilities, minority move-in, and environmental justice. <em>Journal of Urban Affairs</em>, 23(1), 1–21. <a href="https://onlinelibrary.wiley.com/doi/abs/10.1111/0735-2166.00072">link</a>
+<li>Kwan, M. P. (2012). The uncertain geographic context problem. <em>Annals of the Association of American Geographers</em>, 102(5), 958–968. <a href="https://doi.org/10.1080/00045608.2012.687349">doi:10.1080/00045608.2012.687349</a>
 <ul>
-<li>A landmark study using longitudinal data and spatial analysis to test whether hazardous facilities were disproportionately sited in minority communities or whether minorities moved in after siting. Findings support the disproportionate siting hypothesis.</li>
+<li>Introduces the UGCoP — the spatial analog to MAUP for distance-based analysis. Argues that the geographic context assigned to individuals or areal units is inherently uncertain and that different context definitions produce different results. The theoretical foundation for buffer sensitivity analysis.</li>
 </ul></li>
-<li>Openshaw, S. (1984). The modifiable areal unit problem. <em>Concepts and Techniques in Modern Geography</em>, 38. Norwich: GeoBooks.
+<li>Pebesma, E. (2018). Simple features for R: Standardized support for spatial vector data. <em>The R Journal</em>, 10(1), 439–446. <a href="https://journal.r-project.org/archive/2018/RJ-2018-009/">open access</a>
 <ul>
-<li>The foundational monograph defining MAUP. Essential background for understanding why spatial analysis results depend on the choice of geographic boundaries.</li>
+<li>The technical reference for the <code>sf</code> package. Explains <code>st_join()</code>, <code>st_buffer()</code>, <code>st_intersection()</code>, <code>st_transform()</code>, and the simple features standard underlying all spatial operations in this course.</li>
 </ul></li>
 </ul>
 </section>
 <section id="recent-applications" class="level3">
 <h3 class="anchored" data-anchor-id="recent-applications">Recent Applications</h3>
 <ul>
-<li>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. Chapter 7: Spatial Analysis with US Census Data. <a href="https://walker-data.com/census-r/spatial-analysis-with-us-census-data.html">free online</a>
+<li>Pastor, M., Sadd, J., &amp; Hipp, J. (2001). Which came first? Toxic facilities, minority move-in, and environmental justice. <em>Journal of Urban Affairs</em>, 23(1), 1–21. <a href="https://doi.org/10.1111/0735-2166.00072">doi:10.1111/0735-2166.00072</a>
 <ul>
-<li>The primary reference for this module. Covers spatial joins, distance and proximity analysis, and exploratory spatial data analysis using tidycensus and sf in R.</li>
-</ul></li>
-<li>Pebesma, E. (2018). Simple features for R: Standardized support for spatial vector data. <em>The R Journal</em>, 10(1), 439–446. <a href="https://journal.r-project.org/archive/2018/RJ-2018-009/">open access</a>
-<ul>
-<li>The technical reference for the sf package that powers all spatial operations in this course. Explains how <code>st_join()</code>, <code>st_buffer()</code>, <code>st_intersection()</code>, and other functions work.</li>
+<li>A landmark spatial analysis study using longitudinal data and buffer-based proximity measures to test whether hazardous facilities were disproportionately sited in minority communities. Findings support the disproportionate siting hypothesis.</li>
 </ul></li>
 <li>Mohai, P., &amp; Saha, R. (2015). Which came first, people or pollution? A review of theory and evidence from longitudinal environmental justice studies. <em>Environmental Research Letters</em>, 10(12), 125011. <a href="https://iopscience.iop.org/article/10.1088/1748-9326/10/12/125011">open access</a>
 <ul>
-<li>A comprehensive review of longitudinal EJ studies using distance-based spatial methods. Directly relevant to this module’s focus on proximity analysis and buffer-based exposure assessment.</li>
+<li>Reviews the methodological evolution of EJ spatial analysis, including the shift from unit-based to distance-based proximity measures. Directly relevant to this module’s buffer analysis workflow.</li>
 </ul></li>
-<li>Dark, S. J., &amp; Bram, D. (2007). The modifiable areal unit problem (MAUP) in physical geography. <em>Progress in Physical Geography</em>, 31(5), 471–479. <a href="https://journals.sagepub.com/doi/10.1177/0309133307083294">link</a>
+<li>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. <a href="https://walker-data.com/census-r/spatial-analysis-with-us-census-data.html">Chapter 7: Spatial Analysis with US Census Data</a>.
 <ul>
-<li>An accessible review of MAUP with examples and potential solutions. Useful companion to Openshaw’s original monograph.</li>
+<li>The primary reference for this module. Covers spatial joins, distance and proximity analysis, and exploratory spatial data analysis using <code>tidycensus</code> and <code>sf</code>.</li>
 </ul></li>
-<li>U.S. EPA. EJScreen: Environmental Justice Screening and Mapping Tool. <a href="https://screening-tools.com/epa-ejscreen">https://screening-tools.com/epa-ejscreen</a> (reconstructed by the Open Environmental Data Project; the original EPA page was removed in February 2025)
+<li>U.S. EPA. EJScreen: Environmental Justice Screening and Mapping Tool. <a href="https://screening-tools.com/epa-ejscreen">https://screening-tools.com/epa-ejscreen</a> (maintained by Open Environmental Data Project; original EPA page removed 2025)
 <ul>
-<li>EPA’s national screening tool that combines environmental and demographic indicators at the census block group level. Demonstrates a real-world application of the spatial data integration methods covered in this module.</li>
+<li>A national screening tool combining 11 environmental and 6 demographic indicators at the block group level. A real-world application of the spatial integration methods in this module.</li>
 </ul></li>
 </ul>
 </section>
 <section id="r-package-documentation" class="level3">
 <h3 class="anchored" data-anchor-id="r-package-documentation">R Package Documentation</h3>
 <ul>
-<li><a href="https://r-spatial.github.io/sf/">sf package documentation</a> — especially the spatial operations vignette</li>
-<li><a href="https://walker-data.com/tidycensus/">tidycensus package</a> — for retrieving census data with geometry</li>
+<li><a href="https://r-spatial.github.io/sf/">sf package documentation</a> — spatial operations vignette</li>
+<li><a href="https://walker-data.com/tidycensus/">tidycensus package</a> — Census data with geometry</li>
+<li><a href="https://paleolimbot.github.io/ggspatial/">ggspatial package</a> — scale bars and north arrows</li>
 </ul>
 </section>
 </section>
-<section id="lab-assignment" class="level2 section-box">
-<h2 class="anchored" data-anchor-id="lab-assignment">Lab Assignment</h2>
-<p>In Lab 03, you will extend your hardship index by integrating external spatial data. Specifically, you will:</p>
-<ol type="1">
-<li><strong>Load and project external point data</strong>: Import a dataset of environmental facilities (e.g., EPA-regulated sites or food retailers) and ensure it shares a CRS with your census boundaries</li>
-<li><strong>Perform point-in-polygon spatial joins</strong>: Use <code>st_join()</code> to count how many facilities fall within each census block group</li>
-<li><strong>Conduct buffer analysis</strong>: Create 1-mile buffers around facilities and identify which block groups intersect these buffers</li>
-<li><strong>Build an enriched hardship index</strong>: Add your new spatial access variables (facility counts, buffer proximity) to the original index from Lab 01</li>
-<li><strong>Map and compare</strong>: Visualize the original vs. enriched index side by side to see how spatial access changes the picture</li>
-</ol>
-<p><strong>Connection to previous labs:</strong> You will load your Lab 01 hardship index data and apply the cartographic techniques learned in Lab 02 to visualize the results.</p>
-<p>Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/Assignment/Lab3_Assignment.qmd">Lab 03 Quarto template (.qmd)</a>, complete the exercises, and submit both the .qmd and rendered .html to Canvas.</p>
-<p><strong>Download:</strong> <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/Assignment/Lab3_Assignment.qmd">Lab3_Assignment.qmd</a></p>
+<section id="lab-3" class="level2 section-box">
+<h2 class="anchored" data-anchor-id="lab-3">Lab 3</h2>
+<p>The Lab 3 materials are on the course lab site.</p>
+<ul>
+<li><strong><a href="https://antjam-howell.github.io/paf-516-labs/lab3-tutorial.html">Lab 3 Tutorial</a></strong> — Download the tutorial file, knit it to see the complete analysis, then run chunk by chunk to understand each step.</li>
+<li><strong><a href="https://antjam-howell.github.io/paf-516-labs/lab3-assignment.html">Lab 3 Assignment</a></strong> — Download the assignment file, rename it with your last name, complete the three questions, and submit to Canvas.</li>
+</ul>
 </section>
 <section id="yellowdig-discussion" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="yellowdig-discussion">Yellowdig Discussion</h2>
-<p>Environmental justice research depends on spatial methods to connect <em>where people live</em> with <em>what they are exposed to</em>. This module introduced the core tools — spatial joins, buffer analysis, and CRS alignment — but every methodological choice (buffer distance, geographic unit, data source) shapes the conclusions.</p>
-<p><strong>Discussion prompt:</strong> Choose a real environmental or public health concern in a community you are familiar with (e.g., proximity to industrial sites, food deserts, lack of transit access, flood risk). Drawing on the readings and this module’s concepts, discuss:</p>
+<p>Environmental justice research depends on spatial methods to connect <em>where people live</em> with <em>what they are exposed to</em>. Every methodological choice — buffer distance, geographic unit, data source — shapes the conclusions drawn.</p>
+<p><strong>Discussion prompt:</strong> Choose a real environmental or public health concern in a community you are familiar with (e.g., proximity to industrial sites, food deserts, lack of transit access, flood risk). Drawing on the readings and module concepts:</p>
 <ul>
-<li>What spatial data sources would you combine with census data to measure this concern, and at what geographic scale (block group, tract, county)? Why does the scale choice matter?</li>
-<li>How would you operationalize “proximity” or “exposure” — through point-in-polygon counts, buffer distances, or some other spatial measure? What are the trade-offs?</li>
-<li>Reflect on how the MAUP and the choice of buffer distance could lead different analysts to reach different conclusions about the same community. What steps would you take to make your analysis more transparent and defensible?</li>
+<li>What spatial data sources would you combine with census data to measure this concern, and at what geographic scale? Why does scale choice matter?</li>
+<li>How would you operationalize “proximity” — through point-in-polygon counts, buffer distances, or another measure? What are the trade-offs?</li>
+<li>Drawing on Kwan (2012), how would the UGCoP affect your analysis? What buffer distance would you choose, and how would you justify it?</li>
 </ul>
-<p>Engage with at least two classmates’ posts. Look for cases where a different spatial method or scale would change the interpretation.</p>
+<p>Engage with at least two classmates’ posts. Look for cases where a different buffer distance or data source would change the interpretation.</p>
 </section>
 <section id="key-terms" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="key-terms">Key Terms</h2>
@@ -3321,7 +3422,7 @@ width: 98%;
 <tbody>
 <tr class="odd">
 <td><strong>Coordinate Reference System (CRS)</strong></td>
-<td>A system that defines how spatial coordinates relate to locations on the Earth</td>
+<td>A system defining how spatial coordinates map to locations on Earth</td>
 </tr>
 <tr class="even">
 <td><strong>Geographic CRS</strong></td>
@@ -3329,31 +3430,43 @@ width: 98%;
 </tr>
 <tr class="odd">
 <td><strong>Projected CRS</strong></td>
-<td>CRS that maps the Earth onto a flat surface with linear distance units (e.g., UTM)</td>
+<td>CRS projecting Earth onto a flat surface with linear distance units (e.g., UTM)</td>
 </tr>
 <tr class="even">
 <td><strong>Spatial Join</strong></td>
-<td>Combining attributes from two spatial layers based on their geographic relationship</td>
+<td>Combining attributes from two spatial layers based on geographic relationship</td>
 </tr>
 <tr class="odd">
 <td><strong>Point-in-Polygon</strong></td>
-<td>A spatial operation that identifies which polygon contains each point</td>
+<td>Spatial operation identifying which polygon contains each point</td>
 </tr>
 <tr class="even">
 <td><strong>Buffer</strong></td>
 <td>A zone of specified distance around a spatial feature</td>
 </tr>
 <tr class="odd">
-<td><strong>MAUP</strong></td>
-<td>Modifiable Areal Unit Problem — the sensitivity of spatial analysis results to the definition of geographic boundaries</td>
+<td><strong>UGCoP</strong></td>
+<td>Uncertain Geographic Context Problem — sensitivity of proximity analysis results to the choice of buffer size or exposure zone definition (Kwan, 2012)</td>
 </tr>
 <tr class="even">
-<td><strong>Scale Effect</strong></td>
-<td>Changes in analysis results when data is aggregated to larger or smaller geographic units</td>
+<td><strong>Exposure Zone</strong></td>
+<td>The geographic area within which an individual or unit is considered “exposed” to a feature or hazard</td>
 </tr>
 <tr class="odd">
+<td><strong>Buffer Sensitivity</strong></td>
+<td>The degree to which analysis results change when the buffer distance is varied</td>
+</tr>
+<tr class="even">
 <td><strong>Enriched Index</strong></td>
-<td>A composite index that combines demographic variables with spatial access or proximity variables</td>
+<td>A composite index combining demographic variables with spatial access or environmental burden variables</td>
+</tr>
+<tr class="odd">
+<td><strong>Environmental Justice</strong></td>
+<td>Field examining whether environmental burdens fall disproportionately on low-income or minority communities</td>
+</tr>
+<tr class="even">
+<td><strong>Cumulative Burden</strong></td>
+<td>The combined effect of multiple environmental and socioeconomic disadvantages in one community</td>
 </tr>
 </tbody>
 </table>
