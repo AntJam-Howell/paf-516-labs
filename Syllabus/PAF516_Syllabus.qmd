@@ -1,0 +1,438 @@
+---
+title: "Community Analytics"
+subtitle: "PAF 516 | Program Evaluation & Data Analytics"
+author: "Anthony Howell, PhD"
+
+format:
+  pdf:
+    documentclass: article
+    papersize: letter
+    fontsize: 10pt
+    geometry:
+      - top=1in
+      - bottom=1in
+      - left=0.85in
+      - right=0.85in
+    colorlinks: true
+    linkcolor: asumaroon
+    urlcolor: asumaroon
+    include-in-header:
+      text: |
+        % ── ASU Color Palette ────────────────────────────────────────────
+        \usepackage{xcolor}
+        \definecolor{asumaroon}{HTML}{8C1D40}
+        \definecolor{asugold}{HTML}{FFC627}
+        \definecolor{asudark}{HTML}{191919}
+        \definecolor{asugray}{HTML}{747474}
+        \definecolor{asulightgray}{HTML}{F4F4F4}
+        \definecolor{asurulegray}{HTML}{D0D0D0}
+        \definecolor{white}{HTML}{FFFFFF}
+
+        % ── Fonts ────────────────────────────────────────────────────────
+        \usepackage{fontspec}
+        \setmainfont{HelveticaNeue}[
+          BoldFont    = HelveticaNeue-Bold,
+          ItalicFont  = HelveticaNeue-LightItalic,
+          Ligatures   = TeX
+        ]
+        \usepackage{microtype}
+
+        % ── Page Layout ──────────────────────────────────────────────────
+        \usepackage{geometry}
+        \usepackage{fancyhdr}
+        \pagestyle{fancy}
+        \fancyhf{}
+        \renewcommand{\headrulewidth}{0pt}
+        \renewcommand{\footrulewidth}{0pt}
+
+        % Header bar
+        \fancyhead[L]{%
+          \colorbox{asumaroon}{%
+            \parbox{\dimexpr\textwidth+1.2in\relax}{%
+              \vspace{3pt}%
+              \hspace{4pt}%
+              \textcolor{white}{\small\textbf{PAF 516 — Community Analytics}}%
+              \hfill%
+              \textcolor{white}{\small Arizona State University}%
+              \hspace{4pt}%
+              \vspace{3pt}%
+            }%
+          }%
+        }
+
+        % Footer
+        \fancyfoot[L]{\small\color{asugray} Course Syllabus · PAF 516}
+        \fancyfoot[R]{\small\color{asugray} Page \thepage}
+        \fancyfoot[C]{\color{asurulegray}\rule{0.9\textwidth}{0.4pt}}
+
+        % ── Section Styling ──────────────────────────────────────────────
+        \usepackage{titlesec}
+        \usepackage{titling}
+
+        % Helper commands — defined outside \titleformat to avoid #1 parameter clash
+        \newcommand{\secbox}[1]{%
+          \colorbox{asumaroon}{\parbox{\dimexpr\textwidth\relax}{%
+            \vspace{3pt}\hspace{6pt}\textcolor{white}{#1}\vspace{3pt}%
+          }}%
+        }
+        \newcommand{\subsecfmt}[1]{{\color{asudark}#1}}
+        \newcommand{\subsubsecfmt}[1]{{\itshape\color{asumaroon}#1}}
+
+        % H1 → Maroon band (uses helper to avoid illegal parameter error)
+        \titleformat{\section}[block]
+          {\normalfont\fontsize{11}{13}\bfseries}
+          {}
+          {0pt}
+          {\secbox}
+        \titlespacing{\section}{0pt}{14pt}{6pt}
+
+        % H2
+        \titleformat{\subsection}
+          {\normalfont\fontsize{10}{12}\bfseries\color{asudark}}
+          {}
+          {0pt}
+          {\subsecfmt}
+        \titlespacing{\subsection}{0pt}{10pt}{3pt}
+
+        % H3
+        \titleformat{\subsubsection}
+          {\normalfont\normalsize\itshape\color{asumaroon}}
+          {}
+          {0pt}
+          {\subsubsecfmt}
+        \titlespacing{\subsubsection}{0pt}{6pt}{2pt}
+
+        % ── Title Block ──────────────────────────────────────────────────
+        \pretitle{%
+          \begin{center}
+            \colorbox{asumaroon}{\parbox{0.98\textwidth}{%
+              \vspace{10pt}
+              \centering
+              \textcolor{asugold}{\Huge\textbf{PAF 516}}\\[4pt]
+              \textcolor{white}{\LARGE\textbf{Community Analytics}}\\[6pt]
+              \textcolor{white}{\normalsize Program Evaluation \& Data Analytics · Graduate · Asynchronous Online}\\[8pt]
+            }}
+          \end{center}
+          \vspace{4pt}
+          \begin{flushleft}\Large\bfseries\color{asumaroon}
+        }
+        \posttitle{\end{flushleft}}
+        \preauthor{\begin{flushleft}\normalsize\color{asudark}}
+        \postauthor{\end{flushleft}}
+        \predate{}
+        \postdate{}
+
+        % ── Tables ───────────────────────────────────────────────────────
+        \usepackage{longtable}
+        \usepackage{booktabs}
+        \usepackage{array}
+        \usepackage{colortbl}
+        \usepackage{tabularx}
+
+        % ── Lists ────────────────────────────────────────────────────────
+        \usepackage{enumitem}
+        \setlist[itemize]{leftmargin=1.4em, itemsep=2pt, topsep=4pt}
+        \setlist[enumerate]{leftmargin=1.4em, itemsep=2pt, topsep=4pt}
+
+        % ── Misc ─────────────────────────────────────────────────────────
+        \usepackage{mdframed}
+        \usepackage{parskip}
+        \setlength{\parskip}{5pt}
+        \setlength{\parindent}{0pt}
+
+        % Callout box style
+        \newmdenv[
+          backgroundcolor=asulightgray,
+          linecolor=asumaroon,
+          linewidth=2pt,
+          leftline=true, rightline=false, topline=false, bottomline=false,
+          innerleftmargin=10pt,
+          innerrightmargin=8pt,
+          innertopmargin=6pt,
+          innerbottommargin=6pt,
+          skipabove=6pt,
+          skipbelow=6pt
+        ]{infobox}
+
+        % Module card style  
+        \newmdenv[
+          backgroundcolor=asulightgray,
+          linecolor=asurulegray,
+          linewidth=0.5pt,
+          innerleftmargin=10pt,
+          innerrightmargin=8pt,
+          innertopmargin=6pt,
+          innerbottommargin=6pt,
+          skipabove=3pt,
+          skipbelow=3pt
+        ]{modulebody}
+
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+\vspace{-10pt}
+
+```{=latex}
+\begin{infobox}
+\begin{tabularx}{\textwidth}{@{} p{1.8in} X @{}}
+\textbf{\color{asumaroon}Course Number}   & PAF 516 \\[2pt]
+\textbf{\color{asumaroon}Level}           & Graduate \\[2pt]
+\textbf{\color{asumaroon}Format}          & Asynchronous Online \\[2pt]
+\textbf{\color{asumaroon}Prerequisites}   & Introductory data programming in R (or equivalent) \\[2pt]
+\textbf{\color{asumaroon}Course Website}  & Canvas (ASU Online) \\[8pt]
+\textbf{\color{asumaroon}Instructor}      & Anthony Howell, PhD \\[2pt]
+\textbf{\color{asumaroon}Email}           & Anthony.Howell@asu.edu \\[2pt]
+\textbf{\color{asumaroon}GitHub}          & github.com/AntJam-Howell \\[2pt]
+\textbf{\color{asumaroon}Scholar}         & scholar.google.com/citations?user=am1zI6cAAAAJ \\[2pt]
+\textbf{\color{asumaroon}Office Hours}    & Flexible — by appointment via Zoom \\
+\end{tabularx}
+\end{infobox}
+```
+
+# I. Course Description
+
+This course applies data science skills to the analysis of urban communities and neighborhoods. Students work with U.S. Census Bureau data, geospatial tools in R, and visualization frameworks to operationalize theories of neighborhood quality and community change. Through a cumulative applied project, students construct a composite hardship index, map spatial patterns, detect statistically significant clusters, track change over time, and deliver an interactive policy dashboard to a stakeholder audience.
+
+The course introduces spatial analysis using R packages such as **tidycensus**, **sf**, and **spdep**, and builds toward professional communication through evidence-based policy briefs and Quarto dashboards deployed to the web.
+
+Students will replicate and extend results from lectures using Census data from a metropolitan area of their choosing.
+
+# II. Course Learning Objectives
+
+Upon successful completion of this course, students will be able to:
+
+- Construct reliable composite indices from census data using measurement theory principles (Cronbach's alpha, z-score standardization)
+- Apply cartographic design principles to create professional, audience-appropriate choropleth maps
+- Integrate tabular and spatial datasets using joins, buffers, and proximity operations in R
+- Detect and interpret spatial autocorrelation using Moran's I and LISA statistics
+- Analyze demographic and economic neighborhood change across multiple ACS survey years
+- Communicate analytical findings to non-technical stakeholders through policy briefs and dashboards
+- Deploy interactive Quarto dashboards to GitHub Pages for public access
+
+# III. Course Structure & Pedagogical Approach
+
+Mastering advanced analytics is like learning a language — progress requires consistency and practice. Lectures are delivered in short, modular units with embedded comprehension questions. Weekly labs apply techniques to real Census data. A **cumulative project thread** runs across all seven modules, building toward a final interactive dashboard.
+
+Students are encouraged to engage the material daily rather than in occasional long sessions. Online discussion boards (YellowDig) support peer-to-peer learning and help build professional networks among future colleagues in the field.
+
+**Readings:** There is no required textbook. All readings, references, and lab materials are available on the course website and Canvas.
+
+## Communications & Instructor Feedback
+
+- Post technical and coding questions to the course discussion board
+- Use the Calendly link in Canvas to schedule individual office hours (Zoom)
+- Email the instructor directly for private matters — allow 24–48 hours for replies
+- Graded feedback is returned within 5–10 business days
+
+# IV. Assessments & Grading
+
+## Grading Scale
+
+```{=latex}
+\begin{center}
+\begin{tabular}{>{\bfseries\color{asumaroon}}l l}
+\rowcolor{asumaroon}\textcolor{white}{\textbf{Grade}} & \textcolor{white}{\textbf{Range}} \\
+A+  & 99–100\% \quad (at instructor's discretion) \\
+\rowcolor{asulightgray}
+A   & 94–98\% \\
+A$-$ & 90–93\% \\
+\rowcolor{asulightgray}
+B+  & 87–89\% \\
+B   & 84–86\% \\
+\rowcolor{asulightgray}
+B$-$ & 80–83\% \\
+C/D/F & Below 80\% \\
+\end{tabular}
+\end{center}
+```
+
+## Assignment Overview
+
+```{=latex}
+\begin{tabularx}{\textwidth}{>{\bfseries\color{asumaroon}}p{1.6in} >{\bfseries\color{asugold}}p{0.5in} X}
+\rowcolor{asumaroon}
+\textcolor{white}{\textbf{Assignment}} & \textcolor{white}{\textbf{Weight}} & \textcolor{white}{\textbf{Description}} \\
+Weekly Labs & 50\% &
+  Each week includes a lab synthesizing lecture content through data exercises. Graded \textbf{pass/fail}: credit awarded when a sincere attempt is made and more than half of responses are correct. Once answer keys are posted, late submissions are not accepted. \\
+\rowcolor{asulightgray}
+Final Dashboard & 30\% &
+  Integrate course skills into an interactive Quarto dashboard analyzing neighborhood change in a major metro area of your choosing (other than Phoenix). A detailed rubric will be distributed with the assignment. \\
+Explainer Assignment & 10\% &
+  Create a short tutorial — blog post, video, GIF, or guide — making a course concept accessible to classmates. May cover an R package, analytical framework, or data programming technique. \\
+\rowcolor{asulightgray}
+Discussion Topics & 10\% &
+  YellowDig board participation. Earn at least 100 points through posts, comments, reactions, and instructor badges. Maximum 20 points per week. \\
+\end{tabularx}
+```
+
+\vspace{6pt}
+
+### YellowDig Point Allocation
+
+```{=latex}
+\begin{tabular}{>{\bfseries\color{asugold}}p{0.6in} l}
+\rowcolor{asumaroon}
+\textcolor{white}{\textbf{Points}} & \textcolor{white}{\textbf{Activity}} \\
+5 pts  & New post with at least 50 words \\
+\rowcolor{asulightgray}
+2 pts  & Comment on another student's post \\
+2 pts  & Receive a comment on your own post \\
+\rowcolor{asulightgray}
+1 pt   & Like another student's post \\
+5 pts  & Earn an instructor badge for an especially informative post \\
+\end{tabular}
+```
+
+# V. Course Policies
+
+## Late & Missing Work
+
+Each assignment is accompanied by detailed instructions and adequate time for completion. Once solutions are posted, no credit can be awarded for late submissions. Contact the instructor in advance if complications arise.
+
+## Academic Integrity
+
+ASU expects the highest standards of academic integrity. Violations — including plagiarism, fabrication, and facilitation — will be reported to the College of Public Programs. **Plagiarized work receives zero points and risks course failure.** See [provost.asu.edu/academicintegrity](https://provost.asu.edu/academicintegrity).
+
+All course content, including lectures, is copyrighted. Students may not share, upload, sell, or distribute course materials outside the class. Written permission from the instructor is required before any course content may be reproduced or sold as notes (per ACD 304-06).
+
+## Professional Conduct
+
+Respectful dialogue is expected at all times. Threatening, harassing, or otherwise inappropriate behavior during discussion may result in administrative removal from the course per ASU policy USI 201-10.
+
+## Disability Accommodations
+
+Students seeking academic accommodations must contact the ASU Disability Resources Center directly at [eoss.asu.edu/drc](https://eoss.asu.edu/drc). The Center will coordinate appropriate accommodations with the instructor.
+
+## Religious & Military Accommodations
+
+Students will not be penalized for absences due to religious observance or military activation. Notify the instructor as far in advance as possible to arrange alternatives. See ASU policy USI 201-18 for military-related withdrawals and incompletes.
+
+## Workload Expectations
+
+Per Arizona Board of Regents policy, a 3-credit course requires approximately **135 hours** of total student effort — roughly 9 hours per week for a 15-week semester, or 18 hours per week for a 7.5-week accelerated session. Plan accordingly when registering for multiple courses.
+
+\newpage
+
+# VI. Course Schedule
+
+The course runs for seven modules. Each module includes lecture content, a weekly lab, and discussion board activity. Specific due dates are posted in Canvas. The instructor may adjust assigned readings or due dates as circumstances warrant; core learning objectives will not change.
+
+---
+
+```{=latex}
+
+%% ── Module card macro ────────────────────────────────────────────────────
+%% Usage: \modulecard{number}{color}{title}{subtitle}{topics}
+\newcommand{\modulecard}[5]{%
+  \vspace{4pt}
+  \noindent\colorbox{#2}{\parbox{\dimexpr\textwidth\relax}{%
+    \vspace{5pt}
+    \hspace{6pt}%
+    \textcolor{white}{\Large\textbf{M#1}}\quad
+    \textcolor{white}{\normalsize\textbf{#3}}\quad
+    \textcolor{white!70!black}{\small\itshape #4}%
+    \vspace{5pt}
+  }}%
+  \begin{modulebody}
+    #5
+  \end{modulebody}
+  \vspace{2pt}
+}
+
+%% ── Modules ──────────────────────────────────────────────────────────────
+
+\modulecard{1}{asumaroon}
+  {Measurement, Indexing \& Multi-Scale Mapping}
+  {Census Data · Reliability · Composite Indices}
+  {%
+    \begin{itemize}[nosep, leftmargin=1.2em]
+      \item Latent constructs and composite index building
+      \item Z-score standardization and Cronbach's alpha
+      \item \texttt{tidycensus} data retrieval and \texttt{corrplot} visualization
+      \item Multi-scale choropleth mapping (county $\to$ tract $\to$ CBG)
+    \end{itemize}
+  }
+
+\modulecard{2}{asugold}
+  {Cartographic Design}
+  {Classification Schemes · Visual Communication}
+  {%
+    \begin{itemize}[nosep, leftmargin=1.2em]
+      \item Data classification: equal interval, quantile, Jenks, standard deviation
+      \item Color theory and ColorBrewer palettes
+      \item Diverging vs.\ sequential vs.\ qualitative schemes
+      \item Designing maps that accurately communicate inequality
+    \end{itemize}
+  }
+
+\modulecard{3}{asumaroon}
+  {Spatial Data Integration}
+  {Spatial Joins · Point Data · Environmental Context}
+  {%
+    \begin{itemize}[nosep, leftmargin=1.2em]
+      \item Joining tabular census data with external point datasets
+      \item Spatial operations: buffers, proximity, containment
+      \item Incorporating environmental hazards and community amenities
+      \item Building enriched neighborhood quality measures
+    \end{itemize}
+  }
+
+\modulecard{4}{asugold}
+  {Spatial Autocorrelation}
+  {Cluster Detection · Moran's I · LISA}
+  {%
+    \begin{itemize}[nosep, leftmargin=1.2em]
+      \item Global vs.\ local spatial autocorrelation
+      \item Moran's I statistic and interpretation
+      \item LISA: Local Indicators of Spatial Association
+      \item Identifying statistically significant hotspots and coldspots
+    \end{itemize}
+  }
+
+\modulecard{5}{asumaroon}
+  {Temporal Change Analysis}
+  {ACS Vintages · Neighborhood Trajectories}
+  {%
+    \begin{itemize}[nosep, leftmargin=1.2em]
+      \item Comparing American Community Survey data across two time periods
+      \item Constructing change scores and difference maps
+      \item Classifying neighborhoods: improving, deteriorating, or stable
+      \item Visualizing demographic and economic trajectories
+    \end{itemize}
+  }
+
+\modulecard{6}{asugold}
+  {Policy Brief \& Multi-Scale Synthesis}
+  {Applied Communication · Stakeholder-Facing Outputs}
+  {%
+    \begin{itemize}[nosep, leftmargin=1.2em]
+      \item Translating spatial analysis for non-technical audiences
+      \item Structuring evidence-based policy recommendations
+      \item Multi-scale synthesis across geographic units
+      \item Professional report and brief design with Quarto
+    \end{itemize}
+  }
+
+\modulecard{7}{asumaroon}
+  {Final Project Dashboard}
+  {Quarto Dashboard · Integration · Deployment}
+  {%
+    \begin{itemize}[nosep, leftmargin=1.2em]
+      \item Assembling all prior analyses into an interactive Quarto dashboard
+      \item Layout, widgets, and interactivity design
+      \item Deploying to GitHub Pages for public access
+      \item Presenting findings to a policy-maker audience
+    \end{itemize}
+  }
+```
+
+\vspace{10pt}
+
+```{=latex}
+\begin{infobox}
+\textbf{\color{asumaroon}Note on Dates:} Specific due dates for labs, the explainer assignment, discussion posts, and the final dashboard are posted on Canvas at the start of the session. The instructor may adjust deadlines as circumstances warrant with advance notice to students.
+\end{infobox}
+```

@@ -38,6 +38,31 @@
   .section-sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 24px;
     padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 
+  /* ── Course intro ───────────────────────────────── */
+  .course-intro {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 30px; margin-bottom: 52px;
+    border-top: 3px solid var(--maroon);
+  }
+  .course-intro p { font-size: 0.92rem; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+  .course-intro p:last-of-type { margin-bottom: 18px; }
+  .course-intro .objectives { list-style: none; padding: 0; margin: 0 0 18px; }
+  .course-intro .objectives li {
+    padding: 5px 0 5px 22px; position: relative;
+    font-size: 0.88rem; color: var(--muted); line-height: 1.6;
+    border-bottom: 1px solid var(--border);
+  }
+  .course-intro .objectives li:last-child { border-bottom: none; }
+  .course-intro .objectives li::before {
+    content: "\2713"; position: absolute; left: 0; color: #3fb950; font-weight: 700;
+  }
+  .syllabus-btn {
+    display: inline-block; background: var(--maroon); color: #fff;
+    font-weight: 700; padding: 9px 20px; border-radius: 6px;
+    text-decoration: none; font-size: 0.88rem; transition: opacity 0.15s;
+  }
+  .syllabus-btn:hover { opacity: 0.85; }
+
   /* ── Module grid ─────────────────────────────────── */
   .modules-grid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 52px;
@@ -127,6 +152,30 @@
 </header>
 
 <main>
+
+  <!-- ── COURSE INTRODUCTION ──────────────────────── -->
+  <div class="section-header">
+    <h2>Course Introduction</h2>
+    <span class="section-tag">PAF 516 &mdash; Graduate &middot; Asynchronous Online</span>
+  </div>
+  <p class="section-sub">Anthony Howell, PhD &nbsp;&bull;&nbsp; Program Evaluation &amp; Data Analytics &nbsp;&bull;&nbsp; Arizona State University</p>
+
+  <div class="course-intro">
+    <p>This course applies data science skills to the analysis of urban communities and neighborhoods. Students work with U.S. Census Bureau data, geospatial tools in R, and visualization frameworks to operationalize theories of neighborhood quality and community change. Through a cumulative applied project, students construct a composite hardship index, map spatial patterns, detect statistically significant clusters, track change over time, and deliver an interactive policy dashboard to a stakeholder audience.</p>
+
+    <p><strong style="color:var(--text);">Learning Objectives</strong></p>
+    <ul class="objectives">
+      <li>Construct reliable composite indices from census data using measurement theory principles</li>
+      <li>Apply cartographic design principles to create professional, audience-appropriate choropleth maps</li>
+      <li>Integrate tabular and spatial datasets using joins, buffers, and proximity operations in R</li>
+      <li>Detect and interpret spatial autocorrelation using Moran's I and LISA statistics</li>
+      <li>Analyze demographic and economic neighborhood change across multiple ACS survey years</li>
+      <li>Communicate analytical findings to non-technical stakeholders through policy briefs and dashboards</li>
+      <li>Deploy interactive Quarto dashboards to GitHub Pages for public access</li>
+    </ul>
+
+    <a class="syllabus-btn" href="PAF516_Syllabus.pdf" target="_blank">View Full Syllabus (PDF)</a>
+  </div>
 
   <!-- ── MODULE GUIDES ─────────────────────────────── -->
   <div class="section-header">
