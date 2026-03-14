@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Lab 4 Assignment | PAF 516</title>
+<title>Lab 4 Tutorial | PAF 516</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -3084,23 +3084,16 @@ vertical-align: -.125em;
 <div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
 <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
   <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">Steps &amp; Questions</h2>
+    <h2 id="toc-title">Steps</h2>
    
   <ul>
-  <li><a href="#assignment-questions" id="toc-assignment-questions" class="nav-link active" data-scroll-target="#assignment-questions">Assignment Questions</a>
-  <ul class="collapse">
-  <li><a href="#q1-interpret-the-global-morans-i-and-lisa-results" id="toc-q1-interpret-the-global-morans-i-and-lisa-results" class="nav-link" data-scroll-target="#q1-interpret-the-global-morans-i-and-lisa-results">Q1 — Interpret the Global Moran’s I and LISA Results</a></li>
-  <li><a href="#q2-lisa-analysis-on-poverty-rate-alone" id="toc-q2-lisa-analysis-on-poverty-rate-alone" class="nav-link" data-scroll-target="#q2-lisa-analysis-on-poverty-rate-alone">Q2 — LISA Analysis on Poverty Rate Alone</a></li>
-  <li><a href="#q3-compare-poverty-hot-spots-vs.-composite-index-hot-spots" id="toc-q3-compare-poverty-hot-spots-vs.-composite-index-hot-spots" class="nav-link" data-scroll-target="#q3-compare-poverty-hot-spots-vs.-composite-index-hot-spots">Q3 — Compare Poverty Hot Spots vs. Composite Index Hot Spots</a></li>
-  </ul></li>
-  <li><a href="#step-1-pull-maricopa-county-block-group-data" id="toc-step-1-pull-maricopa-county-block-group-data" class="nav-link" data-scroll-target="#step-1-pull-maricopa-county-block-group-data">Step 1: Pull Maricopa County Block Group Data</a></li>
+  <li><a href="#step-1-pull-maricopa-county-block-group-data" id="toc-step-1-pull-maricopa-county-block-group-data" class="nav-link active" data-scroll-target="#step-1-pull-maricopa-county-block-group-data">Step 1: Pull Maricopa County Block Group Data</a></li>
   <li><a href="#step-2-build-the-5-variable-economic-hardship-index" id="toc-step-2-build-the-5-variable-economic-hardship-index" class="nav-link" data-scroll-target="#step-2-build-the-5-variable-economic-hardship-index">Step 2: Build the 5-Variable Economic Hardship Index</a></li>
   <li><a href="#step-3-build-spatial-weights" id="toc-step-3-build-spatial-weights" class="nav-link" data-scroll-target="#step-3-build-spatial-weights">Step 3: Build Spatial Weights</a></li>
   <li><a href="#step-4-global-morans-i" id="toc-step-4-global-morans-i" class="nav-link" data-scroll-target="#step-4-global-morans-i">Step 4: Global Moran’s I</a></li>
   <li><a href="#step-5-moran-scatter-plot" id="toc-step-5-moran-scatter-plot" class="nav-link" data-scroll-target="#step-5-moran-scatter-plot">Step 5: Moran Scatter Plot</a></li>
   <li><a href="#step-6-local-morans-i-lisa" id="toc-step-6-local-morans-i-lisa" class="nav-link" data-scroll-target="#step-6-local-morans-i-lisa">Step 6: Local Moran’s I (LISA)</a></li>
   <li><a href="#step-7-lisa-cluster-map" id="toc-step-7-lisa-cluster-map" class="nav-link" data-scroll-target="#step-7-lisa-cluster-map">Step 7: LISA Cluster Map</a></li>
-  <li><a href="#scaffold-chunks" id="toc-scaffold-chunks" class="nav-link" data-scroll-target="#scaffold-chunks">Scaffold Chunks</a></li>
   </ul>
 </nav>
 </div>
@@ -3108,7 +3101,7 @@ vertical-align: -.125em;
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Lab 4 Assignment | PAF 516</h1>
+<h1 class="title">Lab 4 Tutorial | PAF 516</h1>
 <p class="subtitle lead">Spatial Autocorrelation &amp; Hot Spot Analysis</p>
 </div>
 
@@ -3126,85 +3119,20 @@ vertical-align: -.125em;
 </header>
 
 
-<div class="callout callout-style-default callout-important callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Before you begin
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<ol type="1">
-<li><strong>This file contains the same pre-filled code as the tutorial.</strong> Steps 1–7 below produce the same output you saw in the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately (Cmd+Shift+K / Ctrl+Shift+K) and see the same results. If you placed it in a different location, run the <code>packages</code> chunk first (Cmd+Return / Ctrl+Enter), then knit.</li>
-<li><strong>The assignment questions are at the top of this document.</strong> Here is the workflow:
-<ul>
-<li><strong>Q1</strong> asks you to interpret the Global Moran’s I result and identify hot spot areas from the LISA map. Knit first, then review Step 4 (Moran’s I output) and Step 7 (LISA cluster map), then write your answers.</li>
-<li><strong>Q2</strong> asks you to re-run the full LISA analysis on <strong>poverty rate alone</strong> instead of the composite index. Fill in the scaffold chunks labeled <code>q2-...</code> at the end of this document, then re-knit.</li>
-<li><strong>Q3</strong> asks you to compare the poverty-rate hot spots to the composite index hot spots and discuss what this tells you about measurement.</li>
-</ul></li>
-<li>Submit both <code>Lab4_Assignment_YourLastName.qmd</code> and <code>Lab4_Assignment_YourLastName.html</code> to Canvas.</li>
-</ol>
-</div>
-</div>
-<section id="assignment-questions" class="level1">
-<h1>Assignment Questions</h1>
-<section id="q1-interpret-the-global-morans-i-and-lisa-results" class="level2 question">
-<h2 class="question anchored" data-anchor-id="q1-interpret-the-global-morans-i-and-lisa-results">Q1 — Interpret the Global Moran’s I and LISA Results</h2>
-<blockquote class="blockquote">
-<p><strong>Text answer — no code required.</strong> Knit the file first, then review the Step 4 output and Step 7 maps before writing your answers.</p>
-</blockquote>
-<ul>
-<li><strong>Global Moran’s I:</strong> What is the Moran’s I value and is it statistically significant? What does this tell you about the spatial distribution of economic hardship in Maricopa County?</li>
-</ul>
-<p>[YOUR ANSWER HERE]</p>
-<ul>
-<li><strong>Hot spot identification:</strong> From the LISA cluster map, identify 2–3 specific hot spot (HH) areas. Where in the county are they concentrated? Do they correspond to areas you would expect based on your knowledge of the Phoenix metro area?</li>
-</ul>
-<p>[YOUR ANSWER HERE]</p>
-<ul>
-<li><strong>Cold spots and outliers:</strong> Where are the cold spots (LL)? Are there any spatial outliers (HL or LH), and what might explain them?</li>
-</ul>
-<p>[YOUR ANSWER HERE]</p>
-</section>
-<section id="q2-lisa-analysis-on-poverty-rate-alone" class="level2 question">
-<h2 class="question anchored" data-anchor-id="q2-lisa-analysis-on-poverty-rate-alone">Q2 — LISA Analysis on Poverty Rate Alone</h2>
-<blockquote class="blockquote">
-<p><strong>Code + output required.</strong> Rerun the entire LISA analysis on a <strong>single component variable</strong> — poverty rate alone — instead of the composite economic hardship index. Fill in the scaffold chunks at the end of this document to produce: (1) Global Moran’s I for poverty rate, (2) LISA classification, (3) a LISA cluster map, and (4) a side-by-side comparison of poverty vs. composite hot spots.</p>
-</blockquote>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Tip
+How to use this file
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>Hint:</strong> The spatial weights (<code>lw</code>) are already built in Step 3. You only need to rerun <code>moran.test()</code>, <code>localmoran()</code>, and the classification/mapping code — substituting <code>poverty_rate</code> for <code>hardship_index</code>.</p>
+<p><strong>First time:</strong> Click <strong>Render</strong> (Cmd+Shift+K / Ctrl+Shift+K) to see all results. Then run chunk by chunk to understand each step.</p>
+<p>This file is for learning — do not edit it. When ready for the assignment, go to: <a href="https://antjam-howell.github.io/paf-516-labs/lab4-assignment.html">https://antjam-howell.github.io/paf-516-labs/lab4-assignment.html</a></p>
 </div>
 </div>
-</section>
-<section id="q3-compare-poverty-hot-spots-vs.-composite-index-hot-spots" class="level2 question">
-<h2 class="question anchored" data-anchor-id="q3-compare-poverty-hot-spots-vs.-composite-index-hot-spots">Q3 — Compare Poverty Hot Spots vs. Composite Index Hot Spots</h2>
-<blockquote class="blockquote">
-<p><strong>Text answer — no code required.</strong></p>
-</blockquote>
-<ul>
-<li><strong>Pattern comparison:</strong> Do the hot spots shift when you use poverty rate alone vs. the 5-variable composite index? Are some areas identified as hot spots by one measure but not the other?</li>
-</ul>
-<p>[YOUR ANSWER HERE]</p>
-<ul>
-<li><strong>Measurement implications:</strong> What does this comparison tell you about using a single variable vs. a composite index for spatial analysis? Refer back to the Module 1 discussion of constructs vs. indicators.</li>
-</ul>
-<p>[YOUR ANSWER HERE]</p>
-<ul>
-<li><strong>Policy relevance:</strong> If you were advising a city agency on where to target neighborhood investment, would you use the poverty-rate hot spots or the composite-index hot spots? Why?</li>
-</ul>
-<p>[YOUR ANSWER HERE]</p>
-<hr>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">&quot;.renv_done&quot;</span>)) {</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">requireNamespace</span>(<span class="st">&quot;renv&quot;</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) <span class="fu">install.packages</span>(<span class="st">&quot;renv&quot;</span>)</span>
@@ -3224,7 +3152,7 @@ Tip
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidycensus)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(spdep)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(spdep)        <span class="co"># Spatial dependence: weights, Moran&#39;s I, LISA</span></span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(viridis)</span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -3233,72 +3161,77 @@ Tip
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Run ONCE in RStudio console: census_api_key(&quot;YOUR_KEY_HERE&quot;, install = TRUE)</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Then restart R.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-</section>
-</section>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Option A (local): cbg_raw &lt;- readRDS(&quot;../data/cbg_hardship_maricopa_2023.rds&quot;)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Option B (GitHub):</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># cbg_raw &lt;- readRDS(url(&quot;https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/data/cbg_hardship_maricopa_2023.rds&quot;))</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># If using fallback, skip to Step 2.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <section id="step-1-pull-maricopa-county-block-group-data" class="level1">
 <h1>Step 1: Pull Maricopa County Block Group Data</h1>
+<p>By now you have done this four times. We pull the same five ACS hardship variables used in Lab 1, but this time at the <strong>Census Block Group (CBG)</strong> level for Maricopa County. CBGs are smaller than tracts (roughly 600–3,000 people), giving us finer spatial resolution to detect local clustering.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>hardship_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">pov_below50    =</span> <span class="st">&quot;C17002_002&quot;</span>,  <span class="at">pov_50to99  =</span> <span class="st">&quot;C17002_003&quot;</span>,</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">pov_den        =</span> <span class="st">&quot;C17002_001&quot;</span>,  <span class="at">median_income =</span> <span class="st">&quot;B19013_001&quot;</span>,</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">unemp_num      =</span> <span class="st">&quot;B23025_005&quot;</span>,  <span class="at">unemp_den   =</span> <span class="st">&quot;B23025_002&quot;</span>,</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">no_hs_num      =</span> <span class="st">&quot;B15003_002&quot;</span>,  <span class="at">no_hs_den   =</span> <span class="st">&quot;B15003_001&quot;</span>,</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">no_ins_num     =</span> <span class="st">&quot;B27010_017&quot;</span>,  <span class="at">no_ins_den  =</span> <span class="st">&quot;B27010_001&quot;</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>hardship_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">pov_below50    =</span> <span class="st">&quot;C17002_002&quot;</span>,  <span class="at">pov_50to99  =</span> <span class="st">&quot;C17002_003&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">pov_den        =</span> <span class="st">&quot;C17002_001&quot;</span>,  <span class="at">median_income =</span> <span class="st">&quot;B19013_001&quot;</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">unemp_num      =</span> <span class="st">&quot;B23025_005&quot;</span>,  <span class="at">unemp_den   =</span> <span class="st">&quot;B23025_002&quot;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">no_hs_num      =</span> <span class="st">&quot;B15003_002&quot;</span>,  <span class="at">no_hs_den   =</span> <span class="st">&quot;B15003_001&quot;</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">no_ins_num     =</span> <span class="st">&quot;B27010_017&quot;</span>,  <span class="at">no_ins_den  =</span> <span class="st">&quot;B27010_001&quot;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>cbg_raw <span class="ot">&lt;-</span> <span class="fu">get_acs</span>(</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">geography =</span> <span class="st">&quot;block group&quot;</span>, <span class="at">variables =</span> hardship_vars,</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">state =</span> <span class="st">&quot;AZ&quot;</span>, <span class="at">county =</span> <span class="st">&quot;Maricopa&quot;</span>,</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> <span class="dv">2023</span>, <span class="at">survey =</span> <span class="st">&quot;acs5&quot;</span>, <span class="at">geometry =</span> <span class="cn">TRUE</span>, <span class="at">progress_bar =</span> <span class="cn">FALSE</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>cbg_raw <span class="ot">&lt;-</span> <span class="fu">get_acs</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">geography =</span> <span class="st">&quot;block group&quot;</span>, <span class="at">variables =</span> hardship_vars,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">state =</span> <span class="st">&quot;AZ&quot;</span>, <span class="at">county =</span> <span class="st">&quot;Maricopa&quot;</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> <span class="dv">2023</span>, <span class="at">survey =</span> <span class="st">&quot;acs5&quot;</span>, <span class="at">geometry =</span> <span class="cn">TRUE</span>, <span class="at">progress_bar =</span> <span class="cn">FALSE</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="step-2-build-the-5-variable-economic-hardship-index" class="level1">
 <h1>Step 2: Build the 5-Variable Economic Hardship Index</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>cbg_wide <span class="ot">&lt;-</span> cbg_raw <span class="sc">%&gt;%</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>moe) <span class="sc">%&gt;%</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> variable, <span class="at">values_from =</span> estimate) <span class="sc">%&gt;%</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">poverty_rate =</span> (pov_below50 <span class="sc">+</span> pov_50to99) <span class="sc">/</span> pov_den,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">unemp_rate   =</span> unemp_num <span class="sc">/</span> unemp_den,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">no_hs_rate   =</span> no_hs_num <span class="sc">/</span> no_hs_den,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">no_ins_rate  =</span> no_ins_num <span class="sc">/</span> no_ins_den</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>cbg_index <span class="ot">&lt;-</span> cbg_wide <span class="sc">%&gt;%</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(poverty_rate),</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(unemp_rate),</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(no_hs_rate),</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(no_ins_rate),</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(median_income)) <span class="sc">%&gt;%</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">z_poverty =</span> <span class="fu">as.numeric</span>(<span class="fu">scale</span>(poverty_rate)),</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">z_unemp   =</span> <span class="fu">as.numeric</span>(<span class="fu">scale</span>(unemp_rate)),</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">z_no_hs   =</span> <span class="fu">as.numeric</span>(<span class="fu">scale</span>(no_hs_rate)),</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">z_no_ins  =</span> <span class="fu">as.numeric</span>(<span class="fu">scale</span>(no_ins_rate)),</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">z_income  =</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">*</span> <span class="fu">as.numeric</span>(<span class="fu">scale</span>(median_income))</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">hardship_index =</span> (z_poverty <span class="sc">+</span> z_unemp <span class="sc">+</span> z_no_hs <span class="sc">+</span> z_no_ins <span class="sc">+</span> z_income) <span class="sc">/</span> <span class="dv">5</span></span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;CBGs with valid index:&quot;</span>, <span class="fu">nrow</span>(cbg_index), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>cbg_wide <span class="ot">&lt;-</span> cbg_raw <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>moe) <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> variable, <span class="at">values_from =</span> estimate) <span class="sc">%&gt;%</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">poverty_rate =</span> (pov_below50 <span class="sc">+</span> pov_50to99) <span class="sc">/</span> pov_den,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">unemp_rate   =</span> unemp_num <span class="sc">/</span> unemp_den,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">no_hs_rate   =</span> no_hs_num <span class="sc">/</span> no_hs_den,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">no_ins_rate  =</span> no_ins_num <span class="sc">/</span> no_ins_den</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>cbg_index <span class="ot">&lt;-</span> cbg_wide <span class="sc">%&gt;%</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(poverty_rate),</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(unemp_rate),</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(no_hs_rate),</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(no_ins_rate),</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(median_income)) <span class="sc">%&gt;%</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">z_poverty =</span> <span class="fu">as.numeric</span>(<span class="fu">scale</span>(poverty_rate)),</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">z_unemp   =</span> <span class="fu">as.numeric</span>(<span class="fu">scale</span>(unemp_rate)),</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">z_no_hs   =</span> <span class="fu">as.numeric</span>(<span class="fu">scale</span>(no_hs_rate)),</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">z_no_ins  =</span> <span class="fu">as.numeric</span>(<span class="fu">scale</span>(no_ins_rate)),</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">z_income  =</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">*</span> <span class="fu">as.numeric</span>(<span class="fu">scale</span>(median_income))</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">hardship_index =</span> (z_poverty <span class="sc">+</span> z_unemp <span class="sc">+</span> z_no_hs <span class="sc">+</span> z_no_ins <span class="sc">+</span> z_income) <span class="sc">/</span> <span class="dv">5</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;CBGs with valid index:&quot;</span>, <span class="fu">nrow</span>(cbg_index), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>CBGs with valid index: 2658 </code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(cbg_index) <span class="sc">+</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> hardship_index), <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis</span>(<span class="at">option =</span> <span class="st">&quot;inferno&quot;</span>, <span class="at">name =</span> <span class="st">&quot;Hardship</span><span class="sc">\n</span><span class="st">Index&quot;</span>) <span class="sc">+</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title    =</span> <span class="st">&quot;Economic Hardship Index — Maricopa County CBGs&quot;</span>,</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">&quot;Higher values = greater hardship (z-score composite)&quot;</span>,</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption  =</span> <span class="st">&quot;Source: ACS 2019-2023 5-Year Estimates&quot;</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(cbg_index) <span class="sc">+</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> hardship_index), <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis</span>(<span class="at">option =</span> <span class="st">&quot;inferno&quot;</span>, <span class="at">name =</span> <span class="st">&quot;Hardship</span><span class="sc">\n</span><span class="st">Index&quot;</span>) <span class="sc">+</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title    =</span> <span class="st">&quot;Economic Hardship Index — Maricopa County CBGs&quot;</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">&quot;Higher values = greater hardship (z-score composite)&quot;</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption  =</span> <span class="st">&quot;Source: ACS 2019-2023 5-Year Estimates&quot;</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3307,13 +3240,22 @@ Tip
 </div>
 </div>
 </div>
+<p>The map shows a clear visual pattern: high-hardship CBGs appear to cluster together in certain parts of the county, particularly in south Phoenix and parts of the west valley. But is this clustering statistically significant, or could it be random? That is the question spatial autocorrelation answers.</p>
 </section>
 <section id="step-3-build-spatial-weights" class="level1">
 <h1>Step 3: Build Spatial Weights</h1>
+<p>Before we can test for spatial clustering, we need to define what “neighbor” means. We use <strong>queen contiguity</strong>: two CBGs are neighbors if they share any boundary point (including corners), similar to how a queen moves in chess.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>cbg_index <span class="ot">&lt;-</span> <span class="fu">st_make_valid</span>(cbg_index)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>nb <span class="ot">&lt;-</span> <span class="fu">poly2nb</span>(cbg_index, <span class="at">queen =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>lw <span class="ot">&lt;-</span> <span class="fu">nb2listw</span>(nb, <span class="at">style =</span> <span class="st">&quot;W&quot;</span>, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fix any geometry errors before building neighbor lists</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>cbg_index <span class="ot">&lt;-</span> <span class="fu">st_make_valid</span>(cbg_index)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># poly2nb(): identify which CBGs share a boundary</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>nb <span class="ot">&lt;-</span> <span class="fu">poly2nb</span>(cbg_index, <span class="at">queen =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># nb2listw(): convert to row-standardized spatial weights</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="co"># style=&quot;W&quot; means each neighbor gets weight 1/n (n = number of neighbors)</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co"># zero.policy=TRUE handles any island CBGs with no neighbors</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>lw <span class="ot">&lt;-</span> <span class="fu">nb2listw</span>(nb, <span class="at">style =</span> <span class="st">&quot;W&quot;</span>, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -3331,14 +3273,20 @@ Row-standardization explained
 </section>
 <section id="step-4-global-morans-i" class="level1">
 <h1>Step 4: Global Moran’s I</h1>
+<p>Global Moran’s I is a single summary statistic for the <strong>entire study area</strong>. It answers: “Overall, is the economic hardship index spatially clustered, randomly distributed, or dispersed?”</p>
+<ul>
+<li><strong>I near +1</strong> = strong positive spatial autocorrelation (clustering)</li>
+<li><strong>I near 0</strong> = spatial randomness</li>
+<li><strong>I near -1</strong> = spatial dispersion (checkerboard)</li>
+</ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>moran_global <span class="ot">&lt;-</span> <span class="fu">moran.test</span>(</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  cbg_index<span class="sc">$</span>hardship_index,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  lw,</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">zero.policy =</span> <span class="cn">TRUE</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>moran_global</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>moran_global <span class="ot">&lt;-</span> <span class="fu">moran.test</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  cbg_index<span class="sc">$</span>hardship_index,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  lw,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">zero.policy =</span> <span class="cn">TRUE</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>moran_global</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
     Moran I test under randomisation
@@ -3354,33 +3302,42 @@ Moran I statistic       Expectation          Variance
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Moran&#39;s I statistic:&quot;</span>, <span class="fu">round</span>(moran_global<span class="sc">$</span>estimate[<span class="st">&quot;Moran I statistic&quot;</span>], <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Moran&#39;s I statistic:&quot;</span>, <span class="fu">round</span>(moran_global<span class="sc">$</span>estimate[<span class="st">&quot;Moran I statistic&quot;</span>], <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Moran&#39;s I statistic: 0.4742 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Expected I under randomness:&quot;</span>, <span class="fu">round</span>(moran_global<span class="sc">$</span>estimate[<span class="st">&quot;Expectation&quot;</span>], <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Expected I under randomness:&quot;</span>, <span class="fu">round</span>(moran_global<span class="sc">$</span>estimate[<span class="st">&quot;Expectation&quot;</span>], <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Expected I under randomness: -4e-04 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;p-value:&quot;</span>, <span class="fu">format.pval</span>(moran_global<span class="sc">$</span>p.value, <span class="at">digits =</span> <span class="dv">3</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;p-value:&quot;</span>, <span class="fu">format.pval</span>(moran_global<span class="sc">$</span>p.value, <span class="at">digits =</span> <span class="dv">3</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>p-value: &lt;2e-16 </code></pre>
 </div>
 </div>
+<p><strong>Interpretation:</strong> The Global Moran’s I is positive and the p-value is extremely small (well below 0.05), meaning we reject the null hypothesis of spatial randomness. Hardship values are <strong>significantly clustered</strong> in Maricopa County — CBGs with high hardship tend to be surrounded by other high-hardship CBGs, and vice versa.</p>
 </section>
 <section id="step-5-moran-scatter-plot" class="level1">
 <h1>Step 5: Moran Scatter Plot</h1>
+<p>The Moran scatter plot visualizes the relationship between each CBG’s hardship value (x-axis) and the average hardship of its neighbors — the <strong>spatial lag</strong> (y-axis). The slope of the fitted line equals Global Moran’s I.</p>
+<p>The four quadrants define the type of spatial association:</p>
+<ul>
+<li><strong>HH (upper-right):</strong> High value surrounded by high neighbors (hot spot)</li>
+<li><strong>LL (lower-left):</strong> Low value surrounded by low neighbors (cold spot)</li>
+<li><strong>HL (lower-right):</strong> High value surrounded by low neighbors (spatial outlier)</li>
+<li><strong>LH (upper-left):</strong> Low value surrounded by high neighbors (spatial outlier)</li>
+</ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">moran.plot</span>(</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  cbg_index<span class="sc">$</span>hardship_index,</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  lw,</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">zero.policy =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">&quot;Economic Hardship Index (standardized)&quot;</span>,</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">ylab =</span> <span class="st">&quot;Spatial Lag of Economic Hardship Index&quot;</span>,</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Moran Scatter Plot — Economic Hardship&quot;</span>,</span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">pch  =</span> <span class="dv">20</span>,</span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">col  =</span> <span class="st">&quot;steelblue&quot;</span></span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">moran.plot</span>(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  cbg_index<span class="sc">$</span>hardship_index,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  lw,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">zero.policy =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">xlab =</span> <span class="st">&quot;Economic Hardship Index (standardized)&quot;</span>,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">ylab =</span> <span class="st">&quot;Spatial Lag of Economic Hardship Index&quot;</span>,</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">&quot;Moran Scatter Plot — Economic Hardship&quot;</span>,</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">pch  =</span> <span class="dv">20</span>,</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">col  =</span> <span class="st">&quot;steelblue&quot;</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3389,39 +3346,48 @@ Moran I statistic       Expectation          Variance
 </div>
 </div>
 </div>
+<p>Most points fall in the HH and LL quadrants, confirming positive spatial autocorrelation. The relatively few points in the HL and LH quadrants are spatial outliers — CBGs that differ markedly from their neighbors.</p>
 </section>
 <section id="step-6-local-morans-i-lisa" class="level1">
 <h1>Step 6: Local Moran’s I (LISA)</h1>
+<p>Global Moran’s I tells us clustering exists <em>overall</em>, but not <em>where</em>. <strong>Local Indicators of Spatial Association (LISA)</strong> decompose the global statistic into a value for <strong>each CBG</strong>, telling us:</p>
+<ol type="1">
+<li>Whether that specific CBG is part of a significant cluster</li>
+<li>What <em>type</em> of cluster it belongs to (HH, LL, HL, or LH)</li>
+</ol>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>lisa <span class="ot">&lt;-</span> <span class="fu">localmoran</span>(</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  cbg_index<span class="sc">$</span>hardship_index,</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  lw,</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">zero.policy =</span> <span class="cn">TRUE</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>cbg_index<span class="sc">$</span>lisa_i     <span class="ot">&lt;-</span> lisa[, <span class="st">&quot;Ii&quot;</span>]</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>cbg_index<span class="sc">$</span>lisa_z     <span class="ot">&lt;-</span> lisa[, <span class="st">&quot;Z.Ii&quot;</span>]</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>cbg_index<span class="sc">$</span>lisa_p     <span class="ot">&lt;-</span> lisa[, <span class="st">&quot;Pr(z != E(Ii))&quot;</span>]</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>cbg_index<span class="sc">$</span>lag_hardship <span class="ot">&lt;-</span> <span class="fu">lag.listw</span>(lw, cbg_index<span class="sc">$</span>hardship_index, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>lisa <span class="ot">&lt;-</span> <span class="fu">localmoran</span>(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  cbg_index<span class="sc">$</span>hardship_index,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  lw,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">zero.policy =</span> <span class="cn">TRUE</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Attach LISA results to the spatial data frame</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>cbg_index<span class="sc">$</span>lisa_i     <span class="ot">&lt;-</span> lisa[, <span class="st">&quot;Ii&quot;</span>]</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>cbg_index<span class="sc">$</span>lisa_z     <span class="ot">&lt;-</span> lisa[, <span class="st">&quot;Z.Ii&quot;</span>]</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>cbg_index<span class="sc">$</span>lisa_p     <span class="ot">&lt;-</span> lisa[, <span class="st">&quot;Pr(z != E(Ii))&quot;</span>]</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the spatial lag for quadrant classification</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>cbg_index<span class="sc">$</span>lag_hardship <span class="ot">&lt;-</span> <span class="fu">lag.listw</span>(lw, cbg_index<span class="sc">$</span>hardship_index, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>cbg_index <span class="ot">&lt;-</span> cbg_index <span class="sc">%&gt;%</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">val_centered =</span> hardship_index <span class="sc">-</span> <span class="fu">mean</span>(hardship_index, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">lag_centered =</span> lag_hardship   <span class="sc">-</span> <span class="fu">mean</span>(lag_hardship, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">quadrant =</span> <span class="fu">case_when</span>(</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>      val_centered <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> lag_centered <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;HH&quot;</span>,</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>      val_centered <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> lag_centered <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;LL&quot;</span>,</span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>      val_centered <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> lag_centered <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;HL&quot;</span>,</span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>      val_centered <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> lag_centered <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;LH&quot;</span>,</span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">&quot;NS&quot;</span></span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">lisa_cluster =</span> <span class="fu">if_else</span>(lisa_p <span class="sc">&lt;=</span> <span class="fl">0.05</span>, quadrant, <span class="st">&quot;NS&quot;</span>)</span>
-<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(cbg_index<span class="sc">$</span>lisa_cluster)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>cbg_index <span class="ot">&lt;-</span> cbg_index <span class="sc">%&gt;%</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">val_centered =</span> hardship_index <span class="sc">-</span> <span class="fu">mean</span>(hardship_index, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">lag_centered =</span> lag_hardship   <span class="sc">-</span> <span class="fu">mean</span>(lag_hardship, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">quadrant =</span> <span class="fu">case_when</span>(</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>      val_centered <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> lag_centered <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;HH&quot;</span>,</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>      val_centered <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> lag_centered <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;LL&quot;</span>,</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>      val_centered <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> lag_centered <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;HL&quot;</span>,</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>      val_centered <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> lag_centered <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;LH&quot;</span>,</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">&quot;NS&quot;</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">lisa_cluster =</span> <span class="fu">if_else</span>(lisa_p <span class="sc">&lt;=</span> <span class="fl">0.05</span>, quadrant, <span class="st">&quot;NS&quot;</span>)</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(cbg_index<span class="sc">$</span>lisa_cluster)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
   HH   HL   LH   LL   NS 
@@ -3431,38 +3397,46 @@ Moran I statistic       Expectation          Variance
 </section>
 <section id="step-7-lisa-cluster-map" class="level1">
 <h1>Step 7: LISA Cluster Map</h1>
+<p>This is the payoff map. Each CBG is colored by its LISA classification:</p>
+<ul>
+<li><strong>Red (HH):</strong> Hot spots — high-hardship CBGs surrounded by high-hardship neighbors</li>
+<li><strong>Blue (LL):</strong> Cold spots — low-hardship CBGs surrounded by low-hardship neighbors</li>
+<li><strong>Light coral (HL):</strong> High-hardship outliers in low-hardship areas</li>
+<li><strong>Light blue (LH):</strong> Low-hardship outliers in high-hardship areas</li>
+<li><strong>Grey (NS):</strong> Not statistically significant at p &lt;= 0.05</li>
+</ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>lisa_colors <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;HH&quot;</span> <span class="ot">=</span> <span class="st">&quot;red&quot;</span>,</span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;LL&quot;</span> <span class="ot">=</span> <span class="st">&quot;blue&quot;</span>,</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;HL&quot;</span> <span class="ot">=</span> <span class="st">&quot;#F08080&quot;</span>,</span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;LH&quot;</span> <span class="ot">=</span> <span class="st">&quot;#ADD8E6&quot;</span>,</span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;NS&quot;</span> <span class="ot">=</span> <span class="st">&quot;grey90&quot;</span></span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>cbg_index<span class="sc">$</span>lisa_cluster <span class="ot">&lt;-</span> <span class="fu">factor</span>(</span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  cbg_index<span class="sc">$</span>lisa_cluster,</span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;HH&quot;</span>, <span class="st">&quot;LL&quot;</span>, <span class="st">&quot;HL&quot;</span>, <span class="st">&quot;LH&quot;</span>, <span class="st">&quot;NS&quot;</span>)</span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(cbg_index) <span class="sc">+</span></span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> lisa_cluster), <span class="at">color =</span> <span class="st">&quot;white&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.05</span>) <span class="sc">+</span></span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(</span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">values =</span> lisa_colors,</span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;HH (Hot Spot)&quot;</span>,</span>
-<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;LL (Cold Spot)&quot;</span>,</span>
-<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;HL (High-Low Outlier)&quot;</span>,</span>
-<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;LH (Low-High Outlier)&quot;</span>,</span>
-<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;NS (Not Significant)&quot;</span>),</span>
-<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">name   =</span> <span class="st">&quot;LISA Cluster&quot;</span></span>
-<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">title    =</span> <span class="st">&quot;LISA Cluster Map — Economic Hardship Index&quot;</span>,</span>
-<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">&quot;Maricopa County CBGs | Queen contiguity, p &lt;= 0.05&quot;</span>,</span>
-<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption  =</span> <span class="st">&quot;Source: ACS 2019-2023 5-Year Estimates&quot;</span></span>
-<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
-<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;right&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>lisa_colors <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;HH&quot;</span> <span class="ot">=</span> <span class="st">&quot;red&quot;</span>,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;LL&quot;</span> <span class="ot">=</span> <span class="st">&quot;blue&quot;</span>,</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;HL&quot;</span> <span class="ot">=</span> <span class="st">&quot;#F08080&quot;</span>,</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;LH&quot;</span> <span class="ot">=</span> <span class="st">&quot;#ADD8E6&quot;</span>,</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;NS&quot;</span> <span class="ot">=</span> <span class="st">&quot;grey90&quot;</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>cbg_index<span class="sc">$</span>lisa_cluster <span class="ot">&lt;-</span> <span class="fu">factor</span>(</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  cbg_index<span class="sc">$</span>lisa_cluster,</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;HH&quot;</span>, <span class="st">&quot;LL&quot;</span>, <span class="st">&quot;HL&quot;</span>, <span class="st">&quot;LH&quot;</span>, <span class="st">&quot;NS&quot;</span>)</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(cbg_index) <span class="sc">+</span></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> lisa_cluster), <span class="at">color =</span> <span class="st">&quot;white&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.05</span>) <span class="sc">+</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">values =</span> lisa_colors,</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;HH (Hot Spot)&quot;</span>,</span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;LL (Cold Spot)&quot;</span>,</span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;HL (High-Low Outlier)&quot;</span>,</span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;LH (Low-High Outlier)&quot;</span>,</span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;NS (Not Significant)&quot;</span>),</span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">name   =</span> <span class="st">&quot;LISA Cluster&quot;</span></span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">title    =</span> <span class="st">&quot;LISA Cluster Map — Economic Hardship Index&quot;</span>,</span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">&quot;Maricopa County CBGs | Queen contiguity, p &lt;= 0.05&quot;</span>,</span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption  =</span> <span class="st">&quot;Source: ACS 2019-2023 5-Year Estimates&quot;</span></span>
+<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;right&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3472,19 +3446,19 @@ Moran I statistic       Expectation          Variance
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(cbg_index) <span class="sc">+</span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> hardship_index), <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis</span>(<span class="at">option =</span> <span class="st">&quot;inferno&quot;</span>, <span class="at">name =</span> <span class="st">&quot;Hardship</span><span class="sc">\n</span><span class="st">Index&quot;</span>) <span class="sc">+</span></span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Economic Hardship Index (Raw Values)&quot;</span>) <span class="sc">+</span></span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(cbg_index) <span class="sc">+</span></span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> lisa_cluster), <span class="at">color =</span> <span class="st">&quot;white&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.05</span>) <span class="sc">+</span></span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> lisa_colors, <span class="at">name =</span> <span class="st">&quot;LISA</span><span class="sc">\n</span><span class="st">Cluster&quot;</span>) <span class="sc">+</span></span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;LISA Clusters (Significant Only)&quot;</span>) <span class="sc">+</span></span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">+</span> p2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(cbg_index) <span class="sc">+</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> hardship_index), <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis</span>(<span class="at">option =</span> <span class="st">&quot;inferno&quot;</span>, <span class="at">name =</span> <span class="st">&quot;Hardship</span><span class="sc">\n</span><span class="st">Index&quot;</span>) <span class="sc">+</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Economic Hardship Index (Raw Values)&quot;</span>) <span class="sc">+</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(cbg_index) <span class="sc">+</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> lisa_cluster), <span class="at">color =</span> <span class="st">&quot;white&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.05</span>) <span class="sc">+</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> lisa_colors, <span class="at">name =</span> <span class="st">&quot;LISA</span><span class="sc">\n</span><span class="st">Cluster&quot;</span>) <span class="sc">+</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;LISA Clusters (Significant Only)&quot;</span>) <span class="sc">+</span></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">+</span> p2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3493,30 +3467,20 @@ Moran I statistic       Expectation          Variance
 </div>
 </div>
 </div>
+<p>The side-by-side comparison shows the power of LISA analysis: the left map shows the raw pattern (which we could see visually), while the right map tells us which parts of that pattern are <strong>statistically significant</strong>. Many areas that <em>look</em> like they might be clusters turn out to be not significant at the 0.05 level.</p>
 <hr>
-</section>
-<section id="scaffold-chunks" class="level1">
-<h1>Scaffold Chunks</h1>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Hint: use moran.test() with cbg_index$poverty_rate</span></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="co"># and the same lw weights object from Step 3</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Hint: use localmoran() with cbg_index$poverty_rate,</span></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="co"># then classify into HH/LL/HL/LH/NS using the same</span></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="co"># centering + quadrant logic from Step 6</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout-title-container flex-fill">
+Ready for the assignment?
 </div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Hint: create a LISA cluster map for poverty_rate</span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="co"># using the same color scheme as Step 7</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Hint: put the composite LISA map and poverty LISA map</span></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="co"># side by side using patchwork (p1 + p2)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout-body-container callout-body">
+<p>Head to the <a href="https://antjam-howell.github.io/paf-516-labs/lab4-assignment.html">Lab 4 Assignment page</a> to download <code>Lab4_Assignment.qmd</code>. The assignment asks you to run LISA on a single component variable (poverty rate) and compare the hot spot pattern to the composite index.</p>
+</div>
 </div>
 </section>
 
