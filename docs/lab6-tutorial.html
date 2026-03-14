@@ -119,8 +119,8 @@
 
 <div class="hero">
   <div class="tag">LAB 6 &mdash; TUTORIAL</div>
-  <h1>Policy Brief &amp; Multi-Scale Synthesis</h1>
-  <p>Download the tutorial file, knit it to see the complete policy brief, then run it chunk by chunk to understand each step.</p>
+  <h1>Spatio-Temporal Analysis</h1>
+  <p>Download the tutorial file, knit it to see the complete analysis, then run it chunk by chunk to understand each step.</p>
 </div>
 
 <div class="container">
@@ -128,19 +128,19 @@
   <!-- WHAT YOU WILL BUILD -->
   <div class="section">
     <h2>What You Will Build</h2>
-    <p>In this capstone lab you will assemble findings from all prior labs into a coherent policy brief. You will build a multi-scale spatial analysis spanning US counties, Arizona tracts, and Maricopa County block groups, apply LISA hot spot analysis, compare two time periods, and use Quarto formatting features to structure your findings for a non-technical audience.</p>
+    <p>Lab 5 answered <strong>what changed</strong> in Maricopa County between 2013 and 2019. Lab 6 asks the deeper question: <strong>is change spatially structured?</strong> You will classify each tract by how its LISA cluster membership changed over time, test whether change scores are spatially autocorrelated using space-time Moran&rsquo;s I, and add a 2016 middle observation to distinguish sustained trends from noise.</p>
     <p>The tutorial walks through every step with fully working code. Knit it first to see the finished product, then go back and run chunk by chunk to understand how it works.</p>
 
     <div class="callout tip">
       <div class="callout-title">Learning Objectives</div>
       <div class="objectives">
         <ul>
-          <li>Build a multi-scale spatial analysis (US counties &rarr; AZ tracts &rarr; Maricopa CBGs)</li>
-          <li>Apply LISA hot spot analysis to identify significant hardship clusters</li>
-          <li>Compare hardship across two time periods using temporal change analysis</li>
-          <li>Use Quarto formatting features: callout blocks, tabbed panels, cross-references</li>
-          <li>Create a multi-scale summary figure with <code>patchwork</code></li>
-          <li>Structure analytical findings as a policy brief</li>
+          <li>Rebuild the Lab 5 change dataset (3-variable index, pooled standardization, 2013 &amp; 2019)</li>
+          <li>Run LISA on each period separately and classify tracts into HH/LL/HL/LH/NS</li>
+          <li>Build a LISA transition matrix to compare 2013 and 2019 cluster membership</li>
+          <li>Classify tracts into trajectories: Persistent HH, Emerging HH, Dissolving HH, and more</li>
+          <li>Test whether change scores are spatially autocorrelated with <code>moran.mc()</code></li>
+          <li>Add a 2016 middle observation for three-point trend analysis</li>
         </ul>
       </div>
     </div>
@@ -188,7 +188,7 @@
     </ol></div>
     <div class="callout tip">
       <div class="callout-title">No API key? Use the fallback data.</div>
-      Fallback data files are embedded in the QMD as commented GitHub URLs &mdash; see the <code>fallback-data</code> chunk at the top of the file. Uncomment the relevant lines and skip the <code>get_acs()</code> calls.
+      Fallback <code>.rds</code> files are available from the download section below. Save them to <code>PAF516/Lab6/data/</code> and uncomment the fallback lines in the QMD.
     </div>
   </div>
 
@@ -197,7 +197,7 @@
     <h2>Running the Tutorial</h2>
 
     <h3>Option A &mdash; Knit First (Recommended)</h3>
-    <p>Click the <strong>Render</strong> button (blue arrow, top of editor) or press <strong>Cmd+Shift+K</strong> / <strong>Ctrl+Shift+K</strong>. This produces <code>Lab6_Tutorial.html</code> with all results &mdash; national, state, and local maps, LISA hot spot clusters, temporal change panels, and the multi-scale summary figure. Review the output to see what the completed policy brief looks like.</p>
+    <p>Click the <strong>Render</strong> button (blue arrow, top of editor) or press <strong>Cmd+Shift+K</strong> / <strong>Ctrl+Shift+K</strong>. This produces <code>Lab6_Tutorial.html</code> with all results &mdash; LISA cluster maps, transition matrices, trajectory maps, Moran scatterplots, and three-point trend classifications. Review the output to see what the completed analysis looks like.</p>
 
     <h3>Option B &mdash; Run Chunk by Chunk (Best for Learning)</h3>
     <p>Place your cursor inside any code chunk and press the run shortcut. Output appears inline. Fix any errors before moving on. This is how you understand what each step does.</p>
@@ -215,12 +215,14 @@
     <h2>What&rsquo;s Inside</h2>
     <table>
       <tr><th>Step</th><th>What It Does</th></tr>
-      <tr><td>Step 1</td><td>National Context &mdash; pull US county data and map economic hardship</td></tr>
-      <tr><td>Step 2</td><td>State Patterns &mdash; pull Arizona tract data and map within-state variation</td></tr>
-      <tr><td>Step 3</td><td>Local Hot Spots &mdash; pull Maricopa CBG data, run LISA analysis, create cluster map</td></tr>
-      <tr><td>Step 4</td><td>Temporal Change &mdash; compare 2015 and 2023 data with tabbed panels</td></tr>
-      <tr><td>Step 5</td><td>Policy Recommendations &mdash; structure findings as actionable recommendations</td></tr>
-      <tr><td>Step 6</td><td>Multi-Scale Summary &mdash; create three-panel comparison figure</td></tr>
+      <tr><td>Step 1</td><td>Rebuild the Lab 5 dataset &mdash; pull 2013 and 2019 data, compute pooled-standardized change scores</td></tr>
+      <tr><td>Step 2</td><td>Build queen contiguity spatial weights matrix</td></tr>
+      <tr><td>Step 3</td><td>Run LISA separately on the 2013 and 2019 hardship indices</td></tr>
+      <tr><td>Step 4</td><td>Build a LISA transition matrix (rows = 2013, columns = 2019)</td></tr>
+      <tr><td>Step 5</td><td>Classify tracts into trajectories: Persistent HH, Emerging HH, Dissolving HH, etc.</td></tr>
+      <tr><td>Step 6</td><td>Trajectory map and side-by-side comparison (2013 LISA | 2019 LISA | Trajectories)</td></tr>
+      <tr><td>Step 7</td><td>Space-time Moran&rsquo;s I &mdash; test whether change scores are spatially autocorrelated</td></tr>
+      <tr><td>Step 8</td><td>Three-point trend analysis &mdash; add 2016 to distinguish sustained trends from noise</td></tr>
     </table>
   </div>
 
@@ -235,8 +237,6 @@
         Download Lab6_Tutorial.qmd
       </a>
       <p class="note">Right-click &rarr; Save Link As. Save directly to your <code>PAF516/Lab6/</code> folder. Do not open in the browser.</p>
-      <p class="note" style="margin-top:14px;"><strong style="color:#e6edf3;">Fallback data</strong></p>
-      <p class="note">Fallback data files are embedded in the QMD as commented GitHub URLs &mdash; see the <code>fallback-data</code> chunk at the top of the file.</p>
     </div>
   </div>
 

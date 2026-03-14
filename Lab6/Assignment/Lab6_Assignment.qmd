@@ -330,18 +330,6 @@ ggplot(change_df) +
 ```
 
 
-# Step 8: Policy Summary
-
-```{r}
-#| label: step.08-summary
-change_df %>% st_drop_geometry() %>%
-  group_by(trajectory) %>%
-  summarise(n = n(),
-            mean_change  = round(mean(hardship_change, na.rm = TRUE), 3),
-            pct_worsened = round(mean(hardship_change > 0.10, na.rm = TRUE) * 100, 1)) %>%
-  arrange(desc(mean_change)) %>% print()
-```
-
 ---
 
 # Questions

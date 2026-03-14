@@ -128,18 +128,19 @@
   <!-- WHAT YOU WILL BUILD -->
   <div class="section">
     <h2>What You Will Build</h2>
-    <p>In this lab you will compare economic hardship across two ACS time periods &mdash; 2011&ndash;2015 and 2019&ndash;2023 &mdash; to identify where conditions are worsening, improving, or stable. You will build a reusable index function, join datasets across census boundary vintages, compute change scores, and create diverging color palette maps centered on zero change.</p>
+    <p>In this lab you will compare economic hardship across two ACS time periods &mdash; 2009&ndash;2013 and 2015&ndash;2019 &mdash; to identify where conditions are worsening, improving, or stable. Both periods use 2010 TIGER/Line tract boundaries so GEOIDs match perfectly. You will apply pooled standardization, test whether changes exceed sampling noise using margin-of-error significance testing, and overlay LISA hot spots from Lab 4 on the change map.</p>
     <p>The tutorial walks through every step with fully working code. Knit it first to see the finished product, then go back and run chunk by chunk to understand how it works.</p>
 
     <div class="callout tip">
       <div class="callout-title">Learning Objectives</div>
       <div class="objectives">
         <ul>
-          <li>Pull ACS data from two different time periods using <code>tidycensus</code></li>
-          <li>Build a reusable <code>build_hardship_index()</code> function</li>
-          <li>Join two time periods by GEOID and handle boundary vintage changes</li>
-          <li>Compute change scores between period 1 and period 2</li>
+          <li>Pull ACS data from two time periods (2013 and 2019) using <code>tidycensus</code></li>
+          <li>Build a 3-variable economic hardship index with pooled standardization</li>
+          <li>Compute change scores on a common scale so years are directly comparable</li>
+          <li>Test statistical significance of changes using MOE-based z-tests</li>
           <li>Create diverging color palette maps centered on zero change</li>
+          <li>Overlay LISA hot spots on change maps to connect spatial and temporal patterns</li>
           <li>Build side-by-side comparison figures with <code>patchwork</code></li>
         </ul>
       </div>
@@ -188,7 +189,7 @@
     </ol></div>
     <div class="callout tip">
       <div class="callout-title">No API key? Use the fallback data.</div>
-      The <code>fallback-data</code> chunk at the top of the tutorial has pre-built <code>.rds</code> files hosted on GitHub. Uncomment the Option B lines and skip the <code>get_acs()</code> calls in Step 1.
+      Fallback <code>.rds</code> files are available from the download section below. Save them to <code>PAF516/Lab5/data/</code> and uncomment the fallback lines in the QMD.
     </div>
   </div>
 
@@ -197,7 +198,7 @@
     <h2>Running the Tutorial</h2>
 
     <h3>Option A &mdash; Knit First (Recommended)</h3>
-    <p>Click the <strong>Render</strong> button (blue arrow, top of editor) or press <strong>Cmd+Shift+K</strong> / <strong>Ctrl+Shift+K</strong>. This produces <code>Lab5_Tutorial.html</code> with all results &mdash; change score summaries, diverging color maps, histograms, and side-by-side comparison figures. Review the output to see what the completed analysis looks like.</p>
+    <p>Click the <strong>Render</strong> button (blue arrow, top of editor) or press <strong>Cmd+Shift+K</strong> / <strong>Ctrl+Shift+K</strong>. This produces <code>Lab5_Tutorial.html</code> with all results &mdash; change score summaries, diverging color maps, MOE significance maps, LISA overlay, and side-by-side comparison figures. Review the output to see what the completed analysis looks like.</p>
 
     <h3>Option B &mdash; Run Chunk by Chunk (Best for Learning)</h3>
     <p>Place your cursor inside any code chunk and press the run shortcut. Output appears inline. Fix any errors before moving on. This is how you understand what each step does.</p>
@@ -215,13 +216,15 @@
     <h2>What&rsquo;s Inside</h2>
     <table>
       <tr><th>Step</th><th>What It Does</th></tr>
-      <tr><td>Step 1</td><td>Define hardship variables and pull Period 1 (2015) block group data</td></tr>
-      <tr><td>Step 2</td><td>Pull Period 2 (2023) block group data</td></tr>
-      <tr><td>Step 3</td><td>Build economic hardship index for each period using reusable function</td></tr>
-      <tr><td>Step 4</td><td>Join on GEOID (inner join to keep matched CBGs)</td></tr>
-      <tr><td>Step 5</td><td>Compute change scores and summarize the distribution</td></tr>
-      <tr><td>Step 6</td><td>Map change with diverging palette (blue = improved, red = worsened)</td></tr>
-      <tr><td>Step 7</td><td>Create side-by-side three-panel comparison with patchwork</td></tr>
+      <tr><td>Step 1</td><td>Define 3-variable hardship index and pull 2013 and 2019 Maricopa County tract data</td></tr>
+      <tr><td>Step 2</td><td>Reshape long-to-wide and compute poverty rate and unemployment rate</td></tr>
+      <tr><td>Step 3</td><td>Pooled standardization &mdash; compute z-scores on the combined 2013+2019 scale</td></tr>
+      <tr><td>Step 4</td><td>Join periods by GEOID and compute change scores (2019 &minus; 2013)</td></tr>
+      <tr><td>Step 5</td><td>MOE significance test &mdash; identify tracts where poverty change exceeds sampling noise</td></tr>
+      <tr><td>Step 6</td><td>Change maps with diverging palette (blue = improved, red = worsened) and significance overlay</td></tr>
+      <tr><td>Step 7</td><td>Side-by-side three-panel comparison: 2013, 2019, and change</td></tr>
+      <tr><td>Step 8</td><td>LISA overlay &mdash; outline 2019 hot spots on the change map</td></tr>
+      <tr><td>Step 9</td><td>Histogram of change score distribution</td></tr>
     </table>
   </div>
 
@@ -236,11 +239,6 @@
         Download Lab5_Tutorial.qmd
       </a>
       <p class="note">Right-click &rarr; Save Link As. Save directly to your <code>PAF516/Lab5/</code> folder. Do not open in the browser.</p>
-      <p class="note" style="margin-top:14px;"><strong style="color:#e6edf3;">Fallback data files</strong> (if Census API is unavailable &mdash; save to <code>PAF516/Lab5/data/</code>):</p>
-      <ul>
-        <li><a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/data/cbg_hardship_2015.rds">cbg_hardship_2015.rds</a></li>
-        <li><a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/data/cbg_hardship_2023.rds">cbg_hardship_2023.rds</a></li>
-      </ul>
     </div>
   </div>
 

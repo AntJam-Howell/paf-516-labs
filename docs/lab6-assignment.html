@@ -131,7 +131,7 @@
 
 <div class="hero">
   <div class="tag">LAB 6 &mdash; ASSIGNMENT</div>
-  <h1>Policy Brief &amp; Multi-Scale Synthesis</h1>
+  <h1>Spatio-Temporal Analysis</h1>
   <p>Download the assignment file, complete the three questions, and submit your <code>.qmd</code> and rendered <code>.html</code> to Canvas.</p>
 </div>
 
@@ -142,7 +142,7 @@
     <h2>Assignment Workflow</h2>
     <div class="callout important">
       <div class="callout-title">This file is identical to the tutorial</div>
-      The pre-filled code (Steps 1&ndash;6) produces the same output as the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately and see the same results. If you placed it in a different location, run the <code>packages</code> chunk first, then knit.
+      The pre-filled code (Steps 1&ndash;7) produces the same output as the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately and see the same results. If you placed it in a different location, run the <code>packages</code> chunk first, then knit.
     </div>
     <div class="callout tip">
       <div class="callout-title">Need a Census API key?</div>
@@ -161,14 +161,14 @@
         <div class="step-num">2</div>
         <div class="step-body">
           <h4>Knit the file first</h4>
-          <p>Press <strong>Cmd+Shift+K</strong> (Mac) or <strong>Ctrl+Shift+K</strong> (PC). Steps 1&ndash;6 render automatically. Review the multi-scale maps, LISA hot spots, temporal change panels, and summary figure &mdash; you will interpret these for Q1.</p>
+          <p>Press <strong>Cmd+Shift+K</strong> (Mac) or <strong>Ctrl+Shift+K</strong> (PC). Steps 1&ndash;7 render automatically. Review the trajectory map (Step 5), the space-time Moran&rsquo;s I (Step 6), and the three-point trend map (Step 7) &mdash; you will interpret these for Q1.</p>
         </div>
       </div>
       <div class="workflow-step">
         <div class="step-num">3</div>
         <div class="step-body">
           <h4>Answer the three questions</h4>
-          <p><strong>Q1:</strong> Identify your top 3 findings and the scales that revealed them (text). <strong>Q2:</strong> Rewrite the executive summary for a community nonprofit audience (text). <strong>Q3:</strong> Reflect on how audience changes emphasis and what that reveals about policy communication (text). Re-knit after completing all questions.</p>
+          <p><strong>Q1:</strong> Interpret the trajectory map and transition matrix (text). <strong>Q2:</strong> Rerun LISA at <code>p &lt; 0.01</code> and compare to <code>p &lt; 0.05</code> (code + text). <strong>Q3:</strong> Write a policy brief paragraph recommending 2 of 4 trajectory types to prioritize (text). Re-knit after completing Q2.</p>
         </div>
       </div>
       <div class="workflow-step">
@@ -188,27 +188,34 @@
     <div class="question-card">
       <div class="question-header">
         <span class="q-num">Q1</span>
-        <span class="q-title">Top 3 Multi-Scale Findings</span>
+        <span class="q-title">Interpret the Trajectory Map and Transition Matrix</span>
         <span class="q-type">Text answer &mdash; no code required</span>
       </div>
       <div class="question-body">
-        <p>After knitting, review the maps and analysis from all six steps, then answer:</p>
-        <p>What are the top 3 findings from your multi-scale analysis? For each, explain what geographic scale revealed it and why that scale was necessary.</p>
+        <p>After knitting, review the trajectory map (Step 5), transition matrix (Step 4), space-time Moran&rsquo;s I (Step 6), and three-point trend (Step 7), then answer:</p>
+        <ul>
+          <li>How many tracts are <strong>persistent hot spots</strong> (HH&rarr;HH)? What does this suggest about structural hardship?</li>
+          <li>How many 2013 hot spots <strong>dissolved</strong> by 2019? What might explain their recovery?</li>
+          <li>Are there <strong>emerging hot spots</strong> &mdash; tracts that became HH between 2013 and 2019?</li>
+          <li>What does the <strong>space-time Moran&rsquo;s I</strong> tell you about whether change is spatially spreading?</li>
+          <li>Does the <strong>three-point trend</strong> give more or less confidence in the two-point change scores?</li>
+        </ul>
+        <p>Minimum 200 words. Reference specific numbers from the outputs.</p>
       </div>
     </div>
 
     <div class="question-card">
       <div class="question-header">
         <span class="q-num">Q2</span>
-        <span class="q-title">Rewrite Executive Summary for a Nonprofit Audience</span>
-        <span class="q-type">Text answer &mdash; full text required</span>
+        <span class="q-title">Stricter Significance Threshold (p &lt; 0.01)</span>
+        <span class="q-type">Code + output required</span>
       </div>
       <div class="question-body">
-        <p>Rewrite the executive summary for a <strong>different audience</strong> &mdash; a community nonprofit instead of county government:</p>
+        <p>Rerun the LISA classification using <code>p &lt; 0.01</code> instead of <code>p &lt; 0.05</code>:</p>
         <ul>
-          <li>The original executive summary (written for county government) is provided in the QMD as a reference</li>
-          <li>Write the complete revised text targeting a community nonprofit audience</li>
-          <li>Consider what a nonprofit would need to know vs. what a county agency would prioritize</li>
+          <li>The <code>classify_lisa()</code> function in Step 3 accepts a <code>p_thresh</code> argument &mdash; use it</li>
+          <li>Reclassify trajectories and produce the trajectory map at <code>p &lt; 0.01</code></li>
+          <li>Write a comparison paragraph (min. 100 words): How does the map differ? Which categories shrink most?</li>
         </ul>
       </div>
     </div>
@@ -216,16 +223,18 @@
     <div class="question-card">
       <div class="question-header">
         <span class="q-num">Q3</span>
-        <span class="q-title">Reflect on Audience and Communication</span>
+        <span class="q-title">Policy Brief Recommendation</span>
         <span class="q-type">Text answer &mdash; no code required</span>
       </div>
       <div class="question-body">
-        <p>Compare your Q2 rewrite to the original executive summary:</p>
+        <p>You are advising the Maricopa County Office of Community Development. They can prioritize only <strong>two</strong> of these four trajectory types:</p>
         <ul>
-          <li><strong>Emphasis shifts:</strong> How did changing the audience change what you emphasized?</li>
-          <li><strong>Findings vs. communication:</strong> What does this reveal about the difference between analytical findings and policy communication?</li>
-          <li><strong>Broader lesson:</strong> Why does the same data require different framing for different stakeholders?</li>
+          <li><strong>Persistent Hot Spots (HH&rarr;HH):</strong> Deep, long-standing hardship clusters</li>
+          <li><strong>Emerging Hot Spots (&rarr;HH):</strong> Deteriorating areas where clustering is forming</li>
+          <li><strong>Dissolving Hot Spots (HH&rarr;):</strong> Recovering areas that may need displacement protection</li>
+          <li><strong>HL Outliers:</strong> Isolated pockets of high hardship within low-hardship surroundings</li>
         </ul>
+        <p>Minimum 150 words. Ground your recommendation in specific numbers from your analysis. Cite at least one reading from Module 5 or Module 6.</p>
       </div>
     </div>
   </div>

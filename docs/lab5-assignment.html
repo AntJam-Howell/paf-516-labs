@@ -142,7 +142,7 @@
     <h2>Assignment Workflow</h2>
     <div class="callout important">
       <div class="callout-title">This file is identical to the tutorial</div>
-      The pre-filled code (Steps 1&ndash;7) produces the same output as the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately and see the same results. If you placed it in a different location, run the <code>packages</code> chunk first, then knit.
+      The pre-filled code (Steps 1&ndash;9) produces the same output as the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately and see the same results. If you placed it in a different location, run the <code>packages</code> chunk first, then knit.
     </div>
     <div class="callout tip">
       <div class="callout-title">Need a Census API key?</div>
@@ -161,14 +161,14 @@
         <div class="step-num">2</div>
         <div class="step-body">
           <h4>Knit the file first</h4>
-          <p>Press <strong>Cmd+Shift+K</strong> (Mac) or <strong>Ctrl+Shift+K</strong> (PC). Steps 1&ndash;7 render automatically. Review the change score summary (Step 5) and the diverging change map (Step 6) &mdash; you will interpret these for Q1.</p>
+          <p>Press <strong>Cmd+Shift+K</strong> (Mac) or <strong>Ctrl+Shift+K</strong> (PC). Steps 1&ndash;9 render automatically. Review the change score summary (Step 4), the significance map (Step 6), and the LISA overlay (Step 8) &mdash; you will interpret these for Q1.</p>
         </div>
       </div>
       <div class="workflow-step">
         <div class="step-num">3</div>
         <div class="step-body">
           <h4>Answer the three questions</h4>
-          <p><strong>Q1:</strong> Interpret the overall direction and patterns of change (text). <strong>Q2:</strong> Rerun the temporal change analysis at the Arizona tract level using the scaffold chunks (code). <strong>Q3:</strong> Compare the statewide tract map to the Maricopa CBG map (text). Re-knit after completing Q2.</p>
+          <p><strong>Q1:</strong> Interpret the overall direction and patterns of change (text). <strong>Q2:</strong> Rerun the temporal change analysis at the Arizona statewide tract level using the scaffold chunks (code). <strong>Q3:</strong> Compare the statewide tract map to the Maricopa County map (text). Re-knit after completing Q2.</p>
         </div>
       </div>
       <div class="workflow-step">
@@ -192,22 +192,27 @@
         <span class="q-type">Text answer &mdash; no code required</span>
       </div>
       <div class="question-body">
-        <p>After knitting, review the change score summary (Step 5) and the diverging change map (Step 6), then answer:</p>
-        <p>What is the overall direction of change &mdash; is hardship generally increasing or decreasing across Maricopa County CBGs? Are the patterns from Lab 4 (hot spots) worsening, improving, or stable?</p>
+        <p>After knitting, review the change score summary (Step 4), the significance map (Step 6), and the LISA overlay (Step 8), then answer:</p>
+        <ul>
+          <li>What is the overall direction of hardship change across Maricopa County between 2013 and 2019?</li>
+          <li>Are the 2019 hot spots largely worsening, improving, or stable compared to 2013?</li>
+          <li>What does the significance map tell you about which changes are real vs. sampling noise?</li>
+        </ul>
+        <p>Minimum 150 words. Reference specific numbers from the step outputs.</p>
       </div>
     </div>
 
     <div class="question-card">
       <div class="question-header">
         <span class="q-num">Q2</span>
-        <span class="q-title">Temporal Change at the Arizona Tract Level</span>
+        <span class="q-title">Temporal Change at the Arizona Statewide Tract Level</span>
         <span class="q-type">Code + output required</span>
       </div>
       <div class="question-body">
-        <p>Rerun the temporal change analysis at the <strong>Arizona TRACT level</strong> (<code>geography = "tract"</code>, <code>state = "AZ"</code>) instead of Maricopa CBGs:</p>
+        <p>Rerun the temporal change analysis at the <strong>Arizona statewide tract level</strong> (<code>geography = "tract"</code>, <code>state = "AZ"</code>, no county filter) for both 2013 and 2019:</p>
         <ul>
-          <li>Seven scaffold chunks are provided: <code>q2-pull-p1</code>, <code>q2-pull-p2</code>, <code>q2-build-index</code>, <code>q2-join</code>, <code>q2-summary</code>, <code>q2-change-map</code>, and <code>q2-sidebyside</code></li>
-          <li>Pull both periods (2015 and 2023), compute the change score, and map statewide</li>
+          <li>Six scaffold chunks are provided: <code>q2-pull-2013</code>, <code>q2-pull-2019</code>, <code>q2-widen</code>, <code>q2-pooled</code>, <code>q2-join</code>, and <code>q2-sidebyside</code></li>
+          <li>Apply pooled standardization, compute change scores, and produce the side-by-side three-panel map</li>
           <li>Show complete code and output</li>
         </ul>
       </div>
@@ -216,16 +221,16 @@
     <div class="question-card">
       <div class="question-header">
         <span class="q-num">Q3</span>
-        <span class="q-title">Compare Statewide Tracts vs. Maricopa CBGs</span>
+        <span class="q-title">Compare Maricopa County vs. Arizona Statewide</span>
         <span class="q-type">Text answer &mdash; no code required</span>
       </div>
       <div class="question-body">
-        <p>Compare the results from Q2 with the Maricopa CBG maps from Steps 5&ndash;7:</p>
+        <p>Compare the results from Q2 with the Maricopa County maps from Steps 7&ndash;8:</p>
         <ul>
-          <li><strong>Pattern comparison:</strong> Does the statewide view reveal different patterns? Where is change most concentrated?</li>
-          <li><strong>Scale comparison:</strong> What does comparing tracts (statewide) to block groups (single county) reveal about how geographic scale affects what you can see?</li>
-          <li><strong>Policy relevance:</strong> When would you use each scale for policy analysis?</li>
+          <li><strong>Pattern comparison:</strong> Does the statewide view reveal regional patterns hidden at the county level? Where is change most concentrated?</li>
+          <li><strong>Scale comparison:</strong> What does comparing two geographic scales reveal about the limits of a single-county analysis?</li>
         </ul>
+        <p>Minimum 100 words.</p>
       </div>
     </div>
   </div>
