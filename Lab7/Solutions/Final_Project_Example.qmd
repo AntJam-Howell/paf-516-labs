@@ -26,13 +26,14 @@ options( tigris_progress_bar = FALSE )
 # Downloads the exact package versions used to build this lab.
 # The if-guard ensures this only runs once — no need to comment out.
 # Uncomment the block below if you need to restore packages:
-# if (!file.exists("renv.lock")) {
+# if (!file.exists(".renv_done")) {
 #   if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
 #   download.file(
 #     url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/renv.lock",
 #     destfile = "renv.lock", mode = "wb"
 #   )
 #   renv::restore(lockfile = "renv.lock", prompt = FALSE)
+#   file.create(".renv_done")
 # }
 
 # ── Packages ─────────────────────────────────────────
