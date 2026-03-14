@@ -94,25 +94,29 @@ Why combine multiple variables into one index?
 
 Each item (variable) can be decomposed into signal and noise:
 
-```
-item = X + e
-```
+$$
+\text{item} = X + e \tag{1}
+$$
 
-Where **X** is the true score component and **e** is measurement error. When we combine items into an index:
+Where $X$ is the true score component and $e$ is measurement error. When we combine items into an index:
 
-```
-index = T + e   where:  T = X1 + X2 + X3   e = e1 + e2 + e3
-```
+$$
+\text{index} = T + e \quad \text{where: } T = X_1 + X_2 + X_3, \quad e = e_1 + e_2 + e_3 \tag{2}
+$$
 
-The reliability of the index is: *alpha = var(T) / var(T + e)* --- a "signal to noise" ratio.
+The reliability of the index is a "signal to noise" ratio:
+
+$$
+\alpha = \frac{\text{Var}(T)}{\text{Var}(T + e)} \tag{3}
+$$
 
 ### Z-Score Standardization
 
 Before combining variables measured on different scales (e.g., income in dollars vs. percentage in poverty), we standardize each to z-scores:
 
-```
-z = (x - mean(x)) / sd(x)
-```
+$$
+z = \frac{x - \bar{x}}{s_x} \tag{4}
+$$
 
 This puts all variables on the same scale (mean = 0, sd = 1) so they contribute equally to the index.
 
@@ -132,9 +136,9 @@ The CDC's Social Vulnerability Index combines 16 census variables across 4 theme
 
 Alpha is the most common measure of internal consistency. Intuitively, it captures the average inter-item correlation, scaled by the number of items:
 
-```
-alpha = var(T) / var(T + e)
-```
+$$
+\alpha = \frac{\text{Var}(T)}{\text{Var}(T + e)} \tag{5}
+$$
 
 ### Interpreting Alpha
 
