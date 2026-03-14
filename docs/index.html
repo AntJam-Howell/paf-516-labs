@@ -431,6 +431,12 @@
   const links = document.querySelectorAll('.floating-toc a');
   const ids = Array.from(links).map(a => a.getAttribute('href').slice(1));
   function update() {
+    // If scrolled to bottom, highlight last item (Final Project)
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) {
+      links.forEach(a => a.classList.remove('active'));
+      links[links.length - 1].classList.add('active');
+      return;
+    }
     let current = ids[0];
     for (const id of ids) {
       const el = document.getElementById(id);
