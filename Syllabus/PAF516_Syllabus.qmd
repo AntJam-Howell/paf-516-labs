@@ -233,7 +233,7 @@ Students are encouraged to engage the material daily rather than in occasional l
 \begin{center}
 \begin{tabular}{>{\bfseries\color{asumaroon}}l l}
 \rowcolor{asumaroon}\textcolor{white}{\textbf{Grade}} & \textcolor{white}{\textbf{Range}} \\
-A+  & 99–100\% \quad (at instructor's discretion) \\
+A+  & 99–100\% \\
 \rowcolor{asulightgray}
 A   & 94–98\% \\
 A$-$ & 90–93\% \\
