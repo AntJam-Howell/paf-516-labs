@@ -1,5 +1,5 @@
 ---
-title: "Final Project — Policy Brief & Dashboard"
+title: "Module 6 — Spatio-Temporal Analysis"
 subtitle: "PAF 516 | Community Analytics"
 format:
   html:
@@ -15,280 +15,241 @@ execute:
 ---
 
 ::: {.module-header}
-## **Final Project Overview & Learning Materials**
+## **M6 Overview & Learning Materials**
 
 ::: {.module-subtitle}
-**Policy Brief & Interactive Dashboard**
+**Spatio-Temporal Analysis & Neighborhood Trajectories**
 :::
 :::
 
 ::: {.section-box}
-## Final Project Overview and Objectives
 
-You have spent five modules building a progressively richer analysis: measuring neighborhood hardship (Lab 1), visualizing it with professional cartography (Lab 2), enriching it with spatial data (Lab 3), testing for statistically significant clusters (Lab 4), and tracking change over time (Lab 5). Now you must do the hardest part: **translate all of that analysis into deliverables that a non-technical decision-maker can understand and act on**.
+## Module Overview and Objectives
 
-The final project has **two deliverables**:
+Module 5 answered the question: *what changed?* This module asks the deeper question: *how does spatial structure shape change?* Two neighborhoods can both show improving hardship scores, but if one is a persistent hot spot surrounded by other high-hardship areas while the other is a spatial outlier that has successfully transitioned, they are on fundamentally different trajectories and call for fundamentally different interventions.
 
-1. **Policy Brief** --- A professional written report with an executive summary, key findings (including static figures from your analysis), evidence-based recommendations, and a limitations discussion. This is the document a decision-maker reads.
-2. **Interactive Dashboard** --- A Quarto Dashboard with multi-scale maps, temporal change analysis, LISA hot spot detection, and interactive tables. This is the tool a decision-maker explores.
-
-Both deliverables use the **same custom economic hardship index** that you design. The study guide below covers the policy communication skills needed for the policy brief; the dashboard example and template provide the technical framework for the interactive component.
+This module introduces **spatio-temporal analysis** — methods that treat space and time jointly rather than separately. You will classify block groups by their **LISA trajectory** (how their cluster membership changes between 2010 and 2019), test whether change itself is **spatially autocorrelated** (does decline spread from neighborhood to neighborhood?), and build a **multi-point trend** using three time observations to distinguish sustained improvement from noise. The result is a policy-ready map that answers not just *where hardship is* but *where it is heading* and *whether that trajectory is spreading to neighboring areas*.
 
 ---
 
 After completing this module, you will be able to:
 
-- Structure a **policy brief** with executive summary, background, findings, and recommendations
-- Write for a **non-technical audience** --- translating statistical findings into actionable insights
-- Use Quarto document features: **callout blocks**, **cross-references**, and **figure captions**
-- Create **multi-scale visualizations** that provide both overview and detail
-- Formulate **evidence-based policy recommendations** grounded in your spatial analysis
-- Build an **interactive Quarto Dashboard** with dark theme, mapgl maps, and data tables
-- Critically evaluate the **limitations** of your analysis and communicate uncertainty honestly
+- Classify block groups into **LISA trajectory categories** by cross-tabulating cluster membership across two time periods
+- Interpret the policy implications of **persistent hot spots**, **emerging hot spots**, **dissolving hot spots**, and **spatial outliers** across time
+- Test whether change scores are **spatially autocorrelated** using space-time Moran's I
+- Interpret a significant space-time Moran's I as evidence of **spatial diffusion of decline or recovery**
+- Construct a **three-point hardship trend** and classify block groups as consistently improving, consistently worsening, or non-monotone
+- Build a **trajectory map** communicating neighborhood change pathways for policy audiences
+
 :::
+
 
 ::: {.section-box}
-## Section 1: Writing for Policy Audiences
 
-Academic writing and policy writing are fundamentally different. Academic writing explains methodology in detail and hedges conclusions carefully. Policy writing **leads with the answer**, provides just enough evidence to be credible, and ends with concrete actions.
+## Section 1: LISA Trajectory Analysis
 
-### The Inverted Pyramid
+Module 4 classified each block group by its LISA cluster membership at a single point in time: HH (hot spot), LL (cold spot), HL (spatial outlier), LH (spatial outlier), or NS (not significant). Running LISA separately at two time points generates a **transition matrix** — a cross-tabulation of where each block group started and where it ended up.
 
-Policy documents follow an **inverted pyramid** structure --- the most important information comes first:
+### The Transition Matrix
 
-1. **Executive Summary** (1 paragraph): What did you find? What should be done? A busy decision-maker may read only this
-2. **Key Findings** (2--3 paragraphs with maps): The spatial patterns, hot spots, and temporal trends with visualizations
-3. **Recommendations** (bulleted list): Specific, actionable steps tied directly to the evidence
-4. **Methods and Limitations** (brief): Enough for credibility, not a tutorial
+If we run LISA on the 2010 hardship index and again on the 2019 hardship index, each block group belongs to one of 5 × 5 = 25 possible transition cells. Most cells will be empty or near-empty. The policy-relevant categories are:
 
-### Common Mistakes to Avoid
+| Trajectory | 2013 → 2019 | Policy Meaning |
+|-----------|-------------|----------------|
+| **Persistent HH** | HH → HH | Deep structural hardship; spatial clustering persists. Needs sustained, place-based investment. |
+| **Emerging HH** | NS/LL → HH | Deteriorating neighborhood; cluster is forming. Early intervention window is open. |
+| **Dissolving HH** | HH → NS | Recovery underway; cluster has broken up. Study these: what worked? |
+| **Persistent LL** | LL → LL | Stably low hardship; little policy urgency from an equity standpoint. |
+| **Emerging LL** | HH/NS → LL | Rapid improvement; risk of gentrification-driven displacement. |
+| **Persistent NS** | NS → NS | No significant spatial clustering in either period. |
+| **HL Outlier** | HL in either period | Pocket of high hardship within a low-hardship area. Isolation compounds vulnerability. |
 
-- **Leading with methods**: "We used tidycensus to retrieve ACS 5-year estimates..." --- No. Lead with findings
-- **Jargon without translation**: "Global Moran's I = 0.45 (p < 0.001)" means nothing to a city manager. Instead: "Hardship is strongly concentrated in specific neighborhoods rather than spread evenly across the city"
-- **Maps without interpretation**: Every map must be accompanied by a sentence that tells the reader what to see
-- **Vague recommendations**: "The city should address inequality" is not actionable. "The city should prioritize the 12 block groups in south Phoenix identified as persistent hot spots for targeted infrastructure investment" is
+### Why Trajectories Matter More Than Snapshots
+
+A LISA map at a single point in time cannot distinguish a neighborhood that has always been a hot spot from one that just became a hot spot last year. The trajectory map makes this distinction explicit. Policy implications differ dramatically:
+
+- A **persistent hot spot** likely reflects deep structural conditions — historical disinvestment, infrastructure gaps, school district boundaries — that require multi-year, multi-sector intervention.
+- An **emerging hot spot** is a neighborhood in transition. The cluster has not yet consolidated; targeted early investment may reverse the trajectory at lower cost.
+- A **dissolving hot spot** is the most important category for learning: *what happened here that broke up the cluster?* These neighborhoods are natural experiments.
+
 :::
+
 
 ::: {.section-box}
-## Section 2: Quarto Document Features for Professional Output
 
-Quarto extends standard R Markdown with features designed for professional documents. Your policy brief should use these features to improve readability and navigation.
+## Section 2: Space-Time Moran's I
 
-### Callout Blocks
+Module 4 tested whether hardship values were spatially autocorrelated at a single time point. A natural extension is to ask: **are the change scores themselves spatially autocorrelated?** If block groups that worsened tend to be located next to other block groups that also worsened, that is evidence of **spatial diffusion** — decline spreading across the urban landscape like a contagion. If change is spatially random, that suggests neighborhood-specific idiosyncratic factors rather than spreading processes.
 
-Callout blocks highlight important information. Use them for key findings, warnings, or recommendations:
+### The Test
 
+Space-time Moran's I applies the same `moran.mc()` function from Module 4, but with the **change score** (not the level) as the input variable:
+
+```r
+moran.mc(change_df$hardship_change, w, nsim = 999)
 ```
-::: {.callout-note}
-## Key Finding
-Hardship hot spots in south Phoenix have persisted across both ACS vintages,
-suggesting entrenched structural disadvantage rather than temporary fluctuation.
+
+The same weights matrix `w` from Lab 4 (queen contiguity, row-standardized) is used.
+
+### Interpreting the Result
+
+- **Significant positive I**: Change is spatially clustered. Neighborhoods that improved tend to be near other improving neighborhoods; neighborhoods that worsened tend to cluster. This suggests **spatial diffusion** — economic recovery or decline propagates spatially, likely through housing markets, business investment, or demographic flows.
+- **Non-significant I**: Change appears spatially random, driven by neighborhood-specific factors (a new employer, a school closure, a redevelopment project) rather than spatial spread.
+
+A significant space-time Moran's I has direct policy implications: if decline is spreading spatially, intervening at the boundary of the expanding hot spot (before it fully consolidates) is more cost-effective than intervening only at the core.
+
 :::
-```
 
-Available types: `.callout-note`, `.callout-warning`, `.callout-important`, `.callout-tip`
-
-### Tabsets
-
-Tabsets let readers switch between views without scrolling. Ideal for showing the same geography mapped with different variables or time periods:
-
-```
-::: {.panel-tabset}
-## 2015 Hardship
-[map code]
-
-## 2023 Hardship
-[map code]
-
-## Change
-[map code]
-:::
-```
-
-### Cross-References and Figure Captions
-
-Label figures and tables so you can reference them in text:
-
-```
-#| label: fig-lisa-clusters
-#| fig-cap: "LISA cluster map of economic hardship index, 2019-2023 ACS"
-```
-
-Then reference in text with `@fig-lisa-clusters`, which renders as "Figure 1" with a hyperlink.
-
-### YAML Header for Policy Briefs
-
-Set up your document header for professional output:
-
-```yaml
----
-title: "Neighborhood Hardship in [Your County]"
-subtitle: "A Spatial Analysis and Policy Brief"
-author: "[Your Name]"
-date: today
-format:
-  html:
-    theme: cosmo
-    toc: true
-    toc-depth: 2
-    code-fold: true
-    embed-resources: true
----
-```
-
-The `code-fold: true` option hides code by default but lets technical readers expand it. The `embed-resources: true` option creates a standalone HTML file with no external dependencies.
-:::
 
 ::: {.section-box}
-## Section 3: Multi-Scale Synthesis
 
-Your policy brief should present findings at **multiple scales** --- from the county-wide overview to the neighborhood-level detail. This serves different readers and different purposes:
+## Section 3: Three-Point Trend Analysis
 
-### Scale Hierarchy for Your Brief
+Two time points give us a change score but not a trend. A neighborhood could show apparent improvement from 2010 to 2019 because of a one-time shock in 2010 (a factory closure, a flood) rather than sustained structural change. Adding a **middle time point** — the 2012–2016 ACS 5-year estimate (`year = 2016`) — lets us distinguish genuine sustained improvement from noise.
 
-| Scale | What It Shows | Map Type | From Which Lab |
-|---|---|---|---|
-| **County overview** | Overall spatial distribution of hardship | Choropleth with Jenks classification | Lab 2 |
-| **Enriched context** | How spatial access variables modify the picture | Bivariate choropleth or side-by-side comparison | Labs 2--3 |
-| **Hot spot analysis** | Statistically significant clusters | LISA cluster map | Lab 4 |
-| **Temporal change** | Where hardship is increasing or decreasing | Diverging change map | Lab 5 |
-| **Neighborhood detail** | Deep dive into specific hot spots | Interactive mapgl map with tooltips | Lab 2 |
+### Classifying Trends
 
-Each map should build on the previous one, creating a narrative arc: "Here is the overall picture. Here is where it is worst. Here is where it is changing. Here is what we should do about it."
+With three observations ($h_{2010}$, $h_{2016}$, $h_{2019}$), we can classify each block group by the monotonicity of its trajectory:
+
+| Classification | Condition | Interpretation |
+|---------------|-----------|----------------|
+| **Consistently improving** | $h_{2010} > h_{2016} > h_{2019}$ | Sustained decline in hardship across the decade |
+| **Consistently worsening** | $h_{2010} < h_{2016} < h_{2019}$ | Sustained increase in hardship across the decade |
+| **V-shaped** (recovery) | $h_{2010} > h_{2016}$, then $h_{2016} < h_{2019}$ | Worsened mid-decade, recovered by 2019 |
+| **Inverted V** (spike) | $h_{2010} < h_{2016}$, then $h_{2016} > h_{2019}$ | Peaked mid-decade, improved by 2019 |
+| **Non-monotone / flat** | Neither of the above | No clear trend; within sampling noise |
+
+The three-point trend is more robust than a two-point change score because a single outlier year has less leverage. Block groups classified as "consistently improving" represent genuine multi-year recovery trajectories, not just a one-year blip.
+
+### The Trend Slope
+
+For a continuous measure of trajectory, you can fit a simple regression for each block group:
+
+```r
+library(purrr)
+
+trend_df <- bind_rows(
+  r2013_z %>% mutate(year = 2013),
+  r2016_z %>% mutate(year = 2016),
+  r2019_z %>% mutate(year = 2019)
+) %>%
+  group_by(GEOID) %>%
+  summarise(
+    trend_slope = coef(lm(hardship_index ~ year))[["year"]],
+    .groups = "drop"
+  )
+```
+
+A positive slope means hardship increased on average across the decade; a negative slope means it decreased. The slope is measured in pooled z-score units per year — a slope of +0.05 means hardship increased by 0.05 standard deviations per year on average.
+
 :::
 
+
 ::: {.section-box}
-## Section 4: Formulating Evidence-Based Recommendations
 
-The recommendations section is where your analysis becomes **actionable**. Each recommendation should follow this pattern:
+## Section 4: From Trajectories to Policy Design
 
-1. **State the finding**: What did the data show?
-2. **Explain the implication**: Why does this matter for the community?
-3. **Propose the action**: What specifically should be done, by whom, and where?
+The trajectory map is not an end in itself — it is a decision support tool. Different trajectory types call for different policy responses:
 
-### Example
+### Persistent Hot Spots
+These neighborhoods have been spatially clustered in high hardship for at least a decade. The depth and persistence of clustering suggests structural causes — historical disinvestment, school quality gaps, environmental burden, lack of transit access. Single-program interventions are unlikely to be sufficient. Evidence-based approaches include comprehensive community development (housing + economic development + schools + health simultaneously), place-based funding like Promise Zones or Opportunity Zones, and long-term community wealth-building strategies.
 
-*"Our LISA analysis identified 14 block groups in the southeast quadrant of the county as persistent hardship hot spots across both ACS vintages. These areas contain 23% of the county's population living below poverty but only 8% of its public transit stops. **We recommend that the county transit authority prioritize route expansion in these 14 block groups**, starting with connections to the three nearest employment centers identified in our spatial access analysis."*
+### Emerging Hot Spots
+These neighborhoods are deteriorating and their spatial clustering is intensifying. The early-intervention window is open. Research on neighborhood tipping points (Schelling, 1969; Galster, 2012) suggests that once a neighborhood crosses certain thresholds of disinvestment, self-reinforcing feedback loops make recovery much costlier. Prevention is cheaper than remediation. Targeted interventions include code enforcement, small business lending, anchor institution engagement, and proactive tenant protection before displacement accelerates.
 
-Notice how this recommendation is **specific** (14 block groups, southeast quadrant), **evidence-based** (LISA hot spots, persistent over time), and **actionable** (transit authority, route expansion, specific connections).
+### Dissolving Hot Spots
+The cluster has broken up. Hardship is declining and the spatial concentration is dissipating. This does not mean the neighborhood's work is done — it may be in the early stages of displacement-driven gentrification. Policy priorities shift from stimulating investment to protecting existing residents: anti-displacement measures, community land trusts, affordable housing preservation.
 
-### Limitations and Honest Uncertainty
+### Spatial Outliers (HL across time)
+High-hardship islands within low-hardship areas. These communities are spatially isolated from the diffusion of nearby recovery. They may face additional barriers not captured in the hardship index: concentrated public housing, language isolation, lack of transportation connectivity to jobs. They are often systematically undercounted and underserved by place-based programs that target larger contiguous areas.
 
-Every analysis has limitations. Acknowledge them briefly but directly:
-
-- ACS data has margins of error, especially at the block group level
-- The economic hardship index captures only the dimensions you measured --- other factors matter
-- Spatial patterns describe where hardship clusters, not why
-- Boundary changes between census vintages may affect temporal comparisons
-
-Acknowledging limitations builds credibility. Ignoring them undermines it.
 :::
 
+
 ::: {.section-box}
+
 ## Lecture
 
-<!-- PLACEHOLDER: Record lecture on policy brief writing, audience-aware communication, and Quarto features -->
+<!-- PLACEHOLDER: Record lecture on LISA trajectories, space-time Moran's I, trend analysis, and policy design -->
 
 <iframe src="" width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+
 :::
 
+
 ::: {.section-box}
+
 ## Readings
 
-### Foundational Works
+### Spatio-Temporal Methods
 
-- Wilson, W. J. (1987). *The Truly Disadvantaged: The Inner City, the Underclass, and Public Policy*. University of Chicago Press. --- The foundational text on concentrated urban poverty and neighborhood effects. Wilson demonstrates how the out-migration of middle-class Black families from inner-city neighborhoods created "concentration effects" that compounded disadvantage --- the theoretical backbone of why spatial analysis of hardship matters for policy.
+- Rey, S. J., & Ye, X. (2010). Comparative spatial dynamics of regional systems. In A. Páez et al. (Eds.), *Spatial Statistics: Methodological Aspects and Applications* (pp. 441–463). Springer. — Introduces the LISA transition matrix framework and its application to regional convergence analysis. The theoretical basis for trajectory classification used in Lab 6.
 
-- Briggs, X. de S. (Ed.). (2005). *The Geography of Opportunity: Race and Housing Choice in Metropolitan America*. Brookings Institution Press. --- A landmark edited volume examining how place shapes life chances through housing markets, school quality, and access to employment. Directly relevant to the policy brief's task of connecting spatial patterns to actionable recommendations.
+- Anselin, L., Syabri, I., & Smirnov, O. (2002). Visualizing multivariate spatial correlation with dynamically linked windows. In W. Getis et al. (Eds.), *Spatial Econometrics and Spatial Statistics*. Palgrave Macmillan. — Formal treatment of space-time LISA and the interpretation of spatial clustering dynamics.
 
-### Recent Applications
+- Bivand, R. S., & Wong, D. W. S. (2018). Comparing implementations of global and local indicators of spatial association. *TEST*, 27(3), 716–748. [DOI](https://doi.org/10.1007/s11749-018-0599-x) — Already assigned in Module 4; the LISA implementation details are directly relevant to the two-period analysis in Lab 6.
 
-- Sampson, R. J. (2012). *Great American City: Chicago and the Enduring Neighborhood Effect*. University of Chicago Press. --- Drawing on decades of research in Chicago, Sampson demonstrates that neighborhood-level inequality is durable and self-reinforcing. His concept of "collective efficacy" and evidence on persistent spatial stratification provide the empirical foundation for place-based policy interventions like those you propose in your policy brief.
+### Neighborhood Change Theory
 
-- Desmond, M., & Gershenson, C. (2016). Housing and employment insecurity among the working poor. *Social Problems*, 63(1), 46--67. --- Shows how housing instability cascades into job loss and deeper poverty, reinforcing the spatial hardship clusters your analysis identifies. Essential reading for understanding why neighborhood-level hardship is self-perpetuating and why policy responses must address multiple dimensions simultaneously.
+- Galster, G. (2012). The mechanism(s) of neighbourhood effects: Theory, evidence, and policy implications. In M. van Ham et al. (Eds.), *Neighbourhood Effects Research: New Perspectives* (pp. 23–56). Springer. — Systematic review of how neighborhood conditions affect resident outcomes; essential theoretical grounding for interpreting trajectory maps.
 
-- Schwabish, J. A. (2014). An economist's guide to visualizing data. *Journal of Economic Perspectives*, 28(1), 209--234. --- Practical guidance on designing figures and maps for policy audiences. Directly applicable to the data visualization choices in your policy brief.
+- Sampson, R. J. (2012). *Great American City: Chicago and the Enduring Neighborhood Effect*. University of Chicago Press. — Chapter 3 ("The Durable Effects of Concentrated Poverty") — The definitive account of why persistent hot spots are not just correlated with poverty but causally amplify it; motivates the distinction between persistent and emerging hot spots.
 
-- Kneebone, E., & Berube, A. (2013). *Confronting Suburban Poverty in America*. Brookings Institution Press. --- Uses census data to reframe poverty as a metropolitan-wide spatial phenomenon rather than a purely inner-city issue. An excellent model for how to translate spatial analysis into a policy narrative.
+- Ellen, I. G., & Turner, M. A. (1997). Does neighborhood matter? Assessing recent evidence. *Housing Policy Debate*, 8(4), 833–866. — Classic review establishing that neighborhood context matters for outcomes independently of individual characteristics; justifies place-based policy targeting.
 
-- Walker, K. (2023). *Analyzing US Census Data: Methods, Maps, and Models in R*. CRC Press. [Free online version](https://walker-data.com/census-r/) --- The authoritative reference for the tidycensus workflow used throughout this course. Chapter 6 on mapping and Chapter 7 on spatial analysis are particularly relevant to producing the visualizations in your policy brief.
+### Policy Applications
 
-### Policy Brief Writing Guides
+- Galster, G., & Tatian, P. (2009). Modeling housing appreciation dynamics in disadvantaged neighborhoods. *Journal of Planning Education and Research*, 29(1), 7–22. — Demonstrates that housing value trajectories in declining neighborhoods exhibit spatial autocorrelation — the spatial diffusion mechanism that space-time Moran's I detects.
 
-- Young, E., & Quinn, L. (2002). *Writing Effective Public Policy Papers: A Guide for Policy Advisers in Central and Eastern Europe*. Open Society Institute. Chapter 6 on policy briefs is particularly useful. [[free PDF]](https://caw.ceu.edu/sites/caw.ceu.edu/files/attachment/basicpage/116/writingeffectivepublicpolicypapersyoungquinn.pdf)
-
-- Herman, L. (2013). Tips for writing policy papers. Stanford Law School. [[PDF]](https://law.stanford.edu/wp-content/uploads/2015/04/White-Papers-Guidelines.pdf) --- Concise, practical guidance on structure and argumentation for policy documents.
-
-- Schwabish, J., & Feng, A. (2021). *Do No Harm Guide: Applying Equity Awareness in Data Visualization*. Urban Institute. [[free online]](https://www.urban.org/research/publication/do-no-harm-guide-applying-equity-awareness-data-visualization) --- Essential guidance on presenting data about communities ethically, particularly when mapping disadvantage.
-
-### Quarto Documentation
-
-- [Quarto: Callout Blocks](https://quarto.org/docs/authoring/callouts.html)
-- [Quarto: Tabset Panels](https://quarto.org/docs/interactive/layout.html#tabset-panel)
-- [Quarto: Cross-References](https://quarto.org/docs/authoring/cross-references.html)
-- [Quarto: HTML Output Options](https://quarto.org/docs/output-formats/html-basics.html)
 :::
 
+
 ::: {.section-box}
-## Final Project Deliverables
 
-The final project has two deliverables that work together. Both use the **same custom economic hardship index** --- you choose your own ACS variables, study area, and policy focus.
+## Lab 6
 
-### Deliverable 1: Policy Brief
+In Lab 6 you will extend the temporal analysis from Lab 5 into a full spatio-temporal analysis. Using the same 2010 and 2019 datasets (same boundaries, same pooled standardization), you will:
 
-A professional written report synthesizing your spatial analysis into a document for a non-technical audience. The policy brief includes:
+1. **Run LISA on both periods**: Classify each CBG into HH/LL/HL/LH/NS for both 2010 and 2019
+2. **Build the transition matrix**: Cross-tabulate cluster membership to identify trajectories
+3. **Map trajectories**: Produce a 6-category trajectory map with policy-interpretable colors
+4. **Space-time Moran's I**: Test whether change scores are spatially autocorrelated; interpret the result for spatial diffusion
+5. **Three-point trend**: Pull the 2016 ACS (`year = 2016`, also on 2010 boundaries) and classify each CBG as consistently improving, worsening, or non-monotone
+6. **Policy brief**: Write a structured paragraph recommending how to allocate a hypothetical intervention budget given the trajectory map
 
-1. **Executive Summary** (1 paragraph): The most important finding and primary recommendation
-2. **Background**: Context on your study area and why neighborhood hardship matters
-3. **Key Findings**: Two static figures (LISA cluster map and top-10 hardship bar chart) with written interpretation
-4. **Recommendations** (3 items): Each tied to a specific finding, naming a responsible entity and target geography
-5. **Limitations**: Honest assessment of what the analysis can and cannot tell us
+**Connection to Module 5:** Lab 5 showed *where* hardship changed. Lab 6 shows whether change is *spatially structured* — whether decline and recovery are spreading processes or idiosyncratic neighborhood events.
 
-The policy brief uses `code-fold: true` so the document reads like a professional report. The two figures are static versions of content that also appears in your dashboard.
+**Download:** [Lab6_Assignment.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab6/Assignment/Lab6_Assignment.qmd)
 
-- [Policy Brief Assignment](https://antjam-howell.github.io/paf-516-labs/Policy_Brief_Assignment.html)
-
-### Deliverable 2: Interactive Dashboard
-
-A Quarto Dashboard with dark theme, interactive mapgl maps, LISA hot spot detection, temporal change analysis, and data tables. The dashboard lets stakeholders explore your analysis interactively.
-
-- [View Example Dashboard](https://antjam-howell.github.io/paf-516-labs/Final_Project_Example.html) --- A completed dashboard showing the full analysis
-- [Download Dashboard Template](https://antjam-howell.github.io/paf-516-labs/Final_Project_Template.html) --- Your starting point; replace the `define-vars` chunk with your own variables
-
-### What to Submit
-
-Submit **four files** to Canvas:
-
-1. `Policy_Brief_YourLastName.qmd`
-2. `Policy_Brief_YourLastName.html`
-3. `Dashboard_YourLastName.qmd`
-4. `Dashboard_YourLastName.html`
 :::
 
+
 ::: {.section-box}
+
 ## Yellowdig Discussion
 
-Throughout this course you have built a spatial analysis pipeline that moves from raw Census data to neighborhood-level hot spot maps. In this final Yellowdig post, step back from the technical work and consider the challenge of **translating spatial analysis into policy action**.
+Spatial trajectory analysis reveals something that neither a static map nor a simple change map can show: the difference between a neighborhood on a sustained recovery path and one that experienced a one-year blip. But the categories themselves — "persistent hot spot," "dissolving hot spot," "emerging hot spot" — are statistical labels, not explanations.
 
-Find a real policy brief, data-driven report, or spatial equity analysis published by a government agency, think tank, or nonprofit (e.g., Urban Institute, Brookings, a municipal planning department, or a community development organization). Post a link to the document and write a response that addresses the following:
+**Your prompt:** Select one specific trajectory category from your Lab 6 map (persistent HH, emerging HH, dissolving HH, or HL outlier) and identify at least two block groups in Maricopa County that fall into that category. Research those areas briefly — what do you know about them? What historical, institutional, or policy factors might explain why they followed that trajectory over the 2013–2019 decade? Drawing on the readings from Modules 5 and 6 (especially Galster 2012 and Sampson 2012), discuss what kinds of interventions would be most appropriate given that trajectory type. Be specific: not "invest in the community" but what type of investment, at what scale, targeting what mechanisms.
 
-- **Audience and format**: Who is the intended reader, and how does the document's structure, language, and visual design signal that audience? Consider whether the document follows the inverted pyramid structure discussed in this module.
-- **Evidence-to-action translation**: Select one specific recommendation from the document and evaluate it using the finding-implication-action framework. Does the recommendation name a specific geography, a responsible entity, and a concrete action? How could it be strengthened?
-- **Spatial analysis and equity**: Does the document use maps or spatial data to identify where interventions should be targeted? If so, how effectively does it connect spatial patterns to policy responses? If not, how would adding a spatial dimension improve the argument?
-- **Connection to your own work**: Reflect on one lesson from this document that you will apply to your own policy brief and dashboard. What will you do differently as a result of reading this example?
 :::
 
+
 ::: {.section-box}
+
 ## Key Terms
 
 | Term | Definition |
-|---|---|
-| **Policy Brief** | A concise document that presents research findings and recommendations to a non-technical decision-making audience |
-| **Executive Summary** | A brief overview (1--2 paragraphs) capturing the most important findings and recommendations |
-| **Inverted Pyramid** | A writing structure that places the most important information first |
-| **Callout Block** | A Quarto feature that visually highlights important content (notes, warnings, tips) |
-| **Tabset** | A Quarto layout that organizes content into clickable tabs within a single page section |
-| **Cross-Reference** | A labeled reference to a figure, table, or section that auto-numbers and hyperlinks |
-| **Evidence-Based Recommendation** | A proposed action grounded in specific empirical findings rather than general intuition |
-| **Code-Fold** | A Quarto option that hides source code by default while allowing readers to expand it |
+|------|-----------|
+| **LISA Trajectory** | A block group's LISA cluster membership at two time points (e.g., HH→HH = persistent hot spot) |
+| **Transition Matrix** | A cross-tabulation of LISA cluster membership at period 1 vs. period 2 |
+| **Persistent Hot Spot** | A block group classified HH in both periods — deep structural clustering |
+| **Emerging Hot Spot** | A block group that becomes HH between periods — a deteriorating neighborhood |
+| **Dissolving Hot Spot** | A block group that was HH in period 1 but not in period 2 — recovery underway |
+| **Space-Time Moran's I** | Moran's I computed on change scores rather than levels; tests whether change is spatially clustered |
+| **Spatial Diffusion** | The process by which neighborhood decline or recovery spreads to adjacent areas |
+| **Three-Point Trend** | Using three time observations to classify trajectory as monotone (consistent) or non-monotone |
+| **Trend Slope** | The regression coefficient of hardship on year across three time points; sign indicates improving (-) or worsening (+) |
+| **Tipping Point** | A threshold level of neighborhood disinvestment beyond which self-reinforcing decline becomes difficult to reverse |
+
 :::
