@@ -1,5 +1,5 @@
 ---
-title: "Module 2 — Variable Classification & Spatial Scale"
+title: "Module 2 — Classification & Spatial Scale"
 subtitle: "PAF 516 | Community Analytics"
 format:
   html:
@@ -18,7 +18,7 @@ execute:
 ## **M2 Overview & Learning Materials**
 
 ::: {.module-subtitle}
-**Variable Classification, Cartographic Design & Spatial Scale**
+**Classification & Spatial Scale**
 :::
 :::
 

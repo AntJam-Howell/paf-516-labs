@@ -331,7 +331,7 @@ The course runs for seven modules. Each module includes lecture content, a weekl
   }
 
 \modulecard{2}{asugold}
-  {Variable Classification \& Spatial Scale}
+  {Classification \& Spatial Scale}
   {Classification Schemes · Visual Communication}
   {%
     \begin{itemize}[nosep, leftmargin=0em]
