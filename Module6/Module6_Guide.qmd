@@ -1,5 +1,5 @@
 ---
-title: "Module 6 — Spatio-Temporal Analysis"
+title: "Module 6 — Spatio-Temporal Change (Part 2)"
 subtitle: "PAF 516 | Community Analytics"
 format:
   html:
@@ -18,7 +18,7 @@ execute:
 ## **M6 Overview & Learning Materials**
 
 ::: {.module-subtitle}
-**Spatio-Temporal Analysis & Neighborhood Trajectories**
+**Spatio-Temporal Change (Part 2) — Neighborhood Trajectories**
 :::
 :::
 
@@ -38,7 +38,7 @@ After completing this module, you will be able to:
 - Interpret the policy implications of **persistent hot spots**, **emerging hot spots**, **dissolving hot spots**, and **spatial outliers** across time
 - Test whether change scores are **spatially autocorrelated** using space-time Moran's I
 - Interpret a significant space-time Moran's I as evidence of **spatial diffusion of decline or recovery**
-- Construct a **three-point hardship trend** and classify block groups as consistently improving, consistently worsening, or non-monotone
+- Construct a **multi-point hardship trend** and classify block groups as consistently improving, consistently worsening, or non-monotone
 - Build a **trajectory map** communicating neighborhood change pathways for policy audiences
 
 :::
@@ -47,7 +47,7 @@ After completing this module, you will be able to:
 
 ::: {.section-box}
 
-The lecture notes cover LISA trajectory analysis, transition matrices, space-time Moran's I, three-point trend classification, and policy design for different neighborhood trajectory types.
+The lecture notes cover LISA trajectory analysis, transition matrices, space-time Moran's I, multi-point trend classification, and policy design for different neighborhood trajectory types.
 
 Download the lecture notes: [Spatio-Temporal Analysis — Lecture Notes (PDF)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module6/Lecture/Module6_Lecture_Slides.pdf)
 
@@ -112,7 +112,7 @@ A significant space-time Moran's I has direct policy implications: if decline is
 
 ::: {.section-box}
 
-## Section 3: Three-Point Trend Analysis
+## Section 3: Multi-Point Trend Analysis
 
 Two time points give us a change score but not a trend. A neighborhood could show apparent improvement from 2010 to 2019 because of a one-time shock in 2010 (a factory closure, a flood) rather than sustained structural change. Adding a **middle time point** — the 2012–2016 ACS 5-year estimate (`year = 2016`) — lets us distinguish genuine sustained improvement from noise.
 
@@ -128,7 +128,7 @@ With three observations ($h_{2010}$, $h_{2016}$, $h_{2019}$), we can classify ea
 | **Inverted V** (spike) | $h_{2010} < h_{2016}$, then $h_{2016} > h_{2019}$ | Peaked mid-decade, improved by 2019 |
 | **Non-monotone / flat** | Neither of the above | No clear trend; within sampling noise |
 
-The three-point trend is more robust than a two-point change score because a single outlier year has less leverage. Block groups classified as "consistently improving" represent genuine multi-year recovery trajectories, not just a one-year blip.
+The multi-point trend is more robust than a two-point change score because a single outlier year has less leverage. Block groups classified as "consistently improving" represent genuine multi-year recovery trajectories, not just a one-year blip.
 
 ### The Trend Slope
 
@@ -238,7 +238,7 @@ Spatial trajectory analysis reveals something that neither a static map nor a si
 | **Dissolving Hot Spot** | A block group that was HH in period 1 but not in period 2 — recovery underway |
 | **Space-Time Moran's I** | Moran's I computed on change scores rather than levels; tests whether change is spatially clustered |
 | **Spatial Diffusion** | The process by which neighborhood decline or recovery spreads to adjacent areas |
-| **Three-Point Trend** | Using three time observations to classify trajectory as monotone (consistent) or non-monotone |
+| **Multi-Point Trend** | Using three time observations to classify trajectory as monotone (consistent) or non-monotone |
 | **Trend Slope** | The regression coefficient of hardship on year across three time points; sign indicates improving (-) or worsening (+) |
 | **Tipping Point** | A threshold level of neighborhood disinvestment beyond which self-reinforcing decline becomes difficult to reverse |
 

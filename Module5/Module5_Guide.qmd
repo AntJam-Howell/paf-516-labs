@@ -1,5 +1,5 @@
 ---
-title: "Module 5 — Temporal Change Analysis"
+title: "Module 5 — Spatio-Temporal Change (Part 1)"
 subtitle: "PAF 516 | Community Analytics"
 format:
   html:
@@ -18,7 +18,7 @@ execute:
 ## **M5 Overview & Learning Materials**
 
 ::: {.module-subtitle}
-**Temporal Change Analysis**
+**Spatio-Temporal Change (Part 1)**
 :::
 :::
 
@@ -26,54 +26,85 @@ execute:
 
 ## Module Overview and Objectives
 
-Modules 1–4 analyzed your study area at a single point in time. But neighborhoods are not static — they gentrify, decline, stabilize, or fluctuate over years and decades. This module adds the **time dimension** to your analysis by comparing economic hardship index values across **two ACS 5-year vintages**: the 2009–2013 ACS and the 2015–2019 ACS. These two periods bracket the entire post-recession decade in Maricopa County — 2013 captures neighborhoods still in mid-recovery of the housing crisis, and 2019 captures the peak of the recovery just before COVID disrupts everything. That is a substantively compelling policy window.
+Modules 1–4 gave you a snapshot — the economic hardship landscape of Maricopa County at a single point in time. But Phoenix is one of the most dynamic urban metros in the United States, and any snapshot captures only a fragment of a much larger story. This module adds the **time dimension**.
 
-Temporal analysis with census data introduces unique methodological challenges. Census boundaries can change between decennial censuses. Z-score indices must be standardized on a common scale before comparing them across years. Margins of error can make small changes statistically meaningless. This module addresses all of these issues while building directly on the index and spatial skills from previous labs.
+The post-recession decade in Phoenix is a natural experiment in neighborhood change. The 2008 housing crisis hit Maricopa County harder than almost anywhere else in the country — foreclosure rates peaked near 10%, unemployment reached 9%, and entire subdivisions stood empty. By 2019 the metro had largely recovered: unemployment had fallen below 4%, home values had rebounded, and population growth had resumed at its pre-crisis pace. But **recovery was not uniform**. Some neighborhoods absorbed the full force of the recovery and emerged transformed. Others remained stranded — their hardship persisting even as the broader economy lifted around them. Still others showed apparent improvement that may reflect displacement rather than genuine uplift.
+
+Mapping the economic hardship index at two time points and comparing them is how we begin to sort out which story applies to which neighborhood.
+
+**Two time points — both on 2010 TIGER/Line boundaries:**
+
+- **2013** (2009–2013 ACS 5-year): mid-recovery — unemployment still ~7%, housing prices still depressed, foreclosure stress still visible in the data
+- **2019** (2015–2019 ACS 5-year): recovery peak — unemployment ~3.5%, pre-COVID, the best labor market conditions since before the crisis
+
+This module addresses the methodological challenges that make this comparison valid — boundary consistency, pooled standardization, significance testing, diverging color design — and the interpretive challenges that make the comparison honest: what a change score can tell you, and what it fundamentally cannot.
 
 ---
 
 After completing this module, you will be able to:
 
-- Retrieve and compare ACS data from **two different vintages** using `tidycensus`
-- Understand why **boundary vintage consistency** is essential for direct comparison — and how choosing years that share the same boundaries avoids the problem entirely
-- Apply **pooled standardization** to produce z-scores that are comparable across time periods
-- Compute **change scores** for a composite hardship index
-- Construct a **MOE-based significance test** to distinguish real change from sampling noise
-- Apply **diverging color scales** to communicate the direction and magnitude of change
-- Evaluate the **temporal stability** of spatial patterns identified in Module 4
+- Retrieve and compare ACS data from **two different vintages** using `tidycensus`, selecting years that share the same boundary vintage
+- Explain why **pooled standardization** is required for valid change scores and how it differs from year-specific standardization
+- Compute a **composite change score** and interpret its sign and magnitude
+- Apply a **MOE-based significance test** to distinguish real neighborhood change from sampling noise
+- Design a **diverging color scale** centered on zero with symmetric limits
+- Interpret the **LISA overlay** — understanding what it means when hot spots are improving, stable, or worsening
+- Articulate the **displacement paradox** and explain why census change scores alone cannot resolve it
 
 :::
 
-## Lecture
 
 ::: {.section-box}
 
-The lecture notes cover choosing ACS time periods, the boundary vintage problem, pooled standardization, significance testing with margins of error, and diverging color scales for change maps.
+## Lecture
 
-Download the lecture notes: [Temporal Change Analysis — Lecture Notes (PDF)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module5/Lecture/Module5_Lecture_Slides.pdf)
+The lecture covers the full analytical pipeline — from ACS vintage selection through LISA overlay interpretation. Key topics: the boundary vintage problem and why mixing 2010/2020 boundaries creates silent data loss; the difference between year-specific and pooled standardization with a worked numerical example showing how year-specific methods can report "worsening" when the underlying rate never changed; MOE significance testing; diverging palette design; and the displacement paradox — why a "blue" tract on your change map may not mean what it appears to mean.
+
+Download the lecture slides: **[Module 5 Lecture Slides (PDF)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module5/Lecture/Module5_Lecture_Slides.pdf)**
+
+The slides include worked numerical examples and annotated R code. Review them alongside this guide — each section below corresponds directly to a slide sequence.
 
 :::
+
 
 ::: {.section-box}
 
 ## Section 1: Choosing the Right Time Period
 
-The American Community Survey (ACS) provides rolling 5-year estimates. The `tidycensus` package lets you pull data from any available vintage by setting the `year` argument in `get_acs()`. For temporal comparison, the most important constraint is **geographic consistency**.
-
 ### The Boundary Vintage Problem
 
-Census block group boundaries are redrawn with each decennial census (2010, 2020). This means:
+Census tract boundaries are redrawn with each decennial census. This creates a hidden trap in temporal analysis:
 
-- ACS vintages 2013–2019 use **2010 TIGER/Line boundaries**
-- ACS vintages 2020–present use **2020 TIGER/Line boundaries**
+- ACS vintages **2013–2019** use **2010 TIGER/Line boundaries**
+- ACS vintages **2020–present** use **2020 TIGER/Line boundaries**
 
-If you compare a year on 2010 boundaries to a year on 2020 boundaries, many GEOIDs will not match — some block groups were split, merged, or renumbered. An `inner_join()` on GEOID silently drops these CBGs, creating a map full of holes (missing units) that look like missing data but are actually a methodological artifact.
+If you pull `year = 2013` and `year = 2023` and join them on GEOID, a large fraction of tracts won't match — some were split, merged, or renumbered between decennial censuses. The `inner_join(by = "GEOID")` silently drops every unmatched tract, producing a map full of white gaps that look like missing data but are a methodological artifact. In Maricopa County, which saw substantial growth and boundary revision between 2010 and 2020, this can silently remove 15–25% of all tracts.
 
-**The solution is simple: compare two years that share the same boundary vintage.** Using `year = 2013` and `year = 2019` gives you 2006–2010 and 2015–2019 ACS data, both on 2010 TIGER boundaries. Every GEOID in the 2010 file exists in the 2019 file — the inner join works cleanly and the map is complete.
+**The fix: compare two years that share the same boundary vintage.**
+
+```r
+# Both use 2010 TIGER/Line tract boundaries — every GEOID matches
+tract_2013 <- get_acs(geography = "tract", year = 2013, ...)  # 2009–2013 ACS
+tract_2019 <- get_acs(geography = "tract", year = 2019, ...)  # 2015–2019 ACS
+```
+
+Every GEOID in the 2013 file exists in the 2019 file. The join is clean and the map is complete.
+
+### Why Tracts, Not Block Groups
+
+Census tracts (population ~2,500–8,000) have larger denominators than block groups (~600–3,000) and consequently much smaller margins of error. For change analysis, block groups have an additional problem: denominators for rate variables can be zero in small-population areas, producing NA rates that silently drop units. Maricopa County block groups carry a ~15–20% NA rate for a 3-variable index. Census tracts carry roughly ~1–2%. The significance maps in Lab 5 would be dominated by noise at the block group level; at the tract level, they are interpretable.
 
 ### Variable Consistency Across Vintages
 
-A second constraint is that census table structures change across years. Lab 5 uses a **4-variable index** — poverty rate, unemployment rate, share without a high school diploma, and median household income — all drawn from tables that have been consistently available across ACS vintages. The health insurance variable used in Labs 1–4 (`B27010_017`) did not exist in the 2010 ACS, so it is dropped here. This is itself a lesson: real analysts routinely adjust their indicator sets when building cross-time comparisons.
+Lab 5 uses a **3-variable economic hardship index** selected for consistent availability and near-complete coverage across both 2013 and 2019:
+
+| Variable | Tables | Direction |
+|---|---|---|
+| Poverty rate | C17002_002 + C17002_003 / C17002_001 | ↑ = more hardship |
+| Unemployment rate | B23025_005 / B23025_002 | ↑ = more hardship |
+| Median household income | B19013_001 | ↑ = LESS hardship (reversed) |
+
+All three have been available in every ACS vintage since 2009. Education variables (B15003) are excluded — `B15003_002` captures only "no schooling completed," a single narrow cell that dramatically undercounts the "less than HS diploma" population and produces unstable tract-level estimates. Documenting what you dropped and why is part of the analysis.
 
 :::
 
@@ -82,82 +113,147 @@ A second constraint is that census table structures change across years. Lab 5 u
 
 ## Section 2: Pooled Standardization
 
-When comparing z-score-based indices across time, you must decide: do you standardize each year's data using *that year's* mean and standard deviation, or using a *pooled* mean and standard deviation across both years combined?
+This is the most common methodological mistake in temporal hardship analysis. It is worth understanding precisely, because getting it wrong means your change scores are measuring something other than what you think.
 
-### Why Year-Specific Standardization Fails for Change Analysis
+### Why Year-Specific Standardization Fails
 
-If you standardize each year separately, a z-score of 1.0 in 2010 and a z-score of 1.0 in 2019 both mean "one standard deviation above that year's mean" — but the absolute level of hardship could be very different. Phoenix in 2010 was at the trough of the worst housing crisis in modern history. Poverty rates, unemployment rates, and uninsured rates were all elevated. If you standardize 2010 data to mean 0, you are hiding the fact that 2010 was a genuinely worse year on average. Subtracting the two standardized indices would then tell you that most neighborhoods "had no change" — because you've already removed the year-level mean difference.
+Suppose you standardize 2013 data using 2013's mean and SD, and 2019 data using 2019's mean and SD. A z-score of 1.0 in 2013 means "one standard deviation above **2013's** average." A z-score of 1.0 in 2019 means "one standard deviation above **2019's** average." These are not the same thing. In 2013, Phoenix was still in the early stages of recovery from the worst housing crisis in a generation — the countywide average poverty rate was substantially higher than in 2019. Year-specific standardization removes this mean difference, effectively reporting how each tract ranks *within its own year* rather than measuring change on a common scale.
+
+**The numerical consequence is striking.** A tract with a poverty rate of 10% in both 2013 and 2019 — literally no change — would show apparent "improvement" under year-specific standardization if the 2013 county mean was 12.3% and the 2019 mean was 6.8%. The poverty rate didn't change; only the average around it did. Year-specific standardization mistakes this contextual shift for individual change.
 
 ### The Pooled Approach
 
-**Pooled standardization** computes a single mean and standard deviation from the combined 2010 and 2019 observations together, then applies that common scale to both years:
+**Pooled standardization** computes a single mean and SD from observations across *both* years combined, then applies that common scale to each period:
 
 ```r
-# Pool all rate values from both years
-pooled_mean_poverty <- mean(c(rates_2010$poverty_rate, rates_2019$poverty_rate))
-pooled_sd_poverty   <- sd(c(rates_2010$poverty_rate,   rates_2019$poverty_rate))
+# Pool values from both years together
+pooled_mean <- mean(c(r2013$poverty_rate, r2019$poverty_rate))
+pooled_sd   <- sd(c(r2013$poverty_rate,   r2019$poverty_rate))
 
-# Apply the same scale to both years
-z_poverty_2010 <- (rates_2010$poverty_rate - pooled_mean_poverty) / pooled_sd_poverty
-z_poverty_2019 <- (rates_2019$poverty_rate - pooled_mean_poverty) / pooled_sd_poverty
+# Apply the SAME scale to both years
+z_pov_2013 <- (r2013$poverty_rate - pooled_mean) / pooled_sd
+z_pov_2019 <- (r2019$poverty_rate - pooled_mean) / pooled_sd
 ```
 
-Now a z-score of 1.0 in 2010 and a z-score of 1.0 in 2019 mean the same thing: "one standard deviation above the combined average." Change scores computed from pooled z-scores are directly interpretable as movements on a common scale.
+Now z = 1.0 in 2013 and z = 1.0 in 2019 both mean "one standard deviation above the combined 2013+2019 average." A change score of Δ = −0.5 means the tract moved half a pooled standard deviation toward less hardship — a substantively interpretable quantity that captures real movement, not just relative standing.
 
 :::
 
 
 ::: {.section-box}
 
-## Section 3: Computing Change Scores and Testing Significance
+## Section 3: Change Scores and Significance Testing
 
 ### The Change Score
 
-The change score is simply the difference between the period 2 and period 1 hardship indices:
+$$\Delta_i = h_{i,2019} - h_{i,2013}$$
 
-```
-change = hardship_2019 - hardship_2013
-```
+**Sign convention:** positive Δ = hardship increased (worsened); negative Δ = hardship decreased (improved). Higher index values mean more hardship, so a positive change moves in the bad direction.
 
-- **Positive change**: Hardship increased (neighborhood deteriorated over the decade)
-- **Negative change**: Hardship decreased (neighborhood improved over the decade)
-- **Near zero**: Neighborhood was stable
+Because both indices use pooled z-scores, magnitude is interpretable across tracts and time. A change of −1.0 is a large improvement — a full pooled standard deviation toward less hardship. A change of −0.05 is within noise. This is why significance testing matters.
 
-Because we are using pooled z-scores, a change score of +0.5 means "moved half a pooled standard deviation toward greater hardship" — a substantively interpretable magnitude.
+### Significance Testing with ACS Margins of Error
 
-### Testing Significance with Margins of Error
+Every ACS estimate comes with a **margin of error (MOE)** — the half-width of a 90% confidence interval. A change from 15% to 18% poverty looks like a 3-point increase. But if both estimates carry MOEs of ±5 percentage points, the observed change is entirely within sampling uncertainty. We cannot distinguish it from zero.
 
-ACS estimates come with **margins of error (MOE)**, and these margins can be substantial for small geographies like block groups. A change from 15% to 18% poverty may look meaningful on a map, but if both estimates have MOEs of ±5 percentage points, the "change" is well within sampling noise.
+The Census Bureau provides a standard z-test for the difference between two ACS estimates:
 
-The Census Bureau provides guidance for computing a z-test for the difference between two ACS estimates:
+$$z = \frac{\hat{p}_{2019} - \hat{p}_{2013}}{\sqrt{SE_{2013}^2 + SE_{2019}^2}}, \quad SE = \frac{MOE}{1.645}$$
 
-```
-z = (estimate_2019 - estimate_2010) / sqrt(SE_2019² + SE_2010²)
-```
+If |z| > 1.645, the change is statistically significant at the 90% level. For a rate like the poverty rate, the MOE must first be propagated through the ratio formula:
 
-where SE = MOE / 1.645 (for 90% confidence intervals). If |z| > 1.645, the change is statistically significant at the 90% level.
+$$MOE_{rate} = \frac{\sqrt{MOE_{num}^2 + rate^2 \cdot MOE_{den}^2}}{den}$$
 
-In Lab 5, you will compute this test for the poverty rate (the most interpretable individual variable) and use it to distinguish **statistically significant change** from noise. Block groups where change is significant will be highlighted on the map.
+In Lab 5, this test is applied to the poverty rate. Tracts where change is not significant are grayed out on the significance overlay map — a visual reminder that not everything that looks different on a change map is actually different. At the census tract level with a strong countywide trend, expect roughly 40–60% of tracts to show statistically significant poverty rate change.
 
 :::
 
 
 ::: {.section-box}
 
-## Section 4: Diverging Color Scales for Change Maps
+## Section 4: Diverging Color Scales
 
-Change data has a meaningful midpoint (zero = no change), which calls for a **diverging color palette** rather than the sequential viridis palette used in previous labs. Diverging palettes use two distinct hues radiating from a neutral center:
+Change data has a natural center — zero means no change — which demands a different visual treatment than the level maps in Labs 1–4. Sequential palettes like viridis go from low to high in one direction. A change map needs to communicate two directions simultaneously: improvement and deterioration.
 
-- **Blue → White → Red**: Common convention where red signals alarm (increasing hardship) and blue signals improvement. This is the convention used in Lab 5 — consistent with the traffic-light metaphor most audiences already know.
-- **Purple → White → Orange**: A colorblind-friendly alternative with similar visual logic.
+**Diverging palettes** radiate outward from a neutral center using two distinct hues:
 
-### Critical Design Decisions
+```r
+scale_fill_gradient2(
+  low      = "#2C7BB6",   # blue  = hardship decreased (improved)
+  mid      = "white",     # white = no change
+  high     = "#D7191C",   # red   = hardship increased (worsened)
+  midpoint = 0,           # center on ZERO, not the data mean
+  limits   = c(-k, k)     # symmetric: equal visual weight both directions
+)
+```
 
-**Center the midpoint on zero.** The neutral color must correspond to "no change," not the median of your data. In ggplot2, use `scale_fill_gradient2(midpoint = 0)` — not the default which centers on the data mean.
+**Three non-negotiable design rules:**
 
-**Use symmetric limits.** Set `limits = c(-max_abs, max_abs)` where `max_abs = max(abs(change_df$hardship_change))`. This ensures the visual weight of positive and negative change is balanced — a map that goes from -0.5 to +2.0 will visually exaggerate worsening even if most change is small.
+1. **Center on zero.** The `scale_fill_gradient2` default centers on the data mean, not zero. Always specify `midpoint = 0` explicitly. If mean change is −0.3, a mean-centered palette makes everything look roughly neutral, obscuring the improvement story.
 
-**Handle outliers with winsorizing.** Extreme values compress the rest of the scale. Cap values at the 2nd and 98th percentiles before mapping so that a few outlier block groups don't wash out the signal for everyone else.
+2. **Symmetric limits.** Set `limits = c(-max_abs, max_abs)`. Equal visual weight on both sides of zero ensures that the magnitude of improvement and worsening are visually comparable.
+
+3. **Winsorize before plotting.** One outlier tract with change = +4.0 compresses everything else into a narrow pale band near zero. Cap at the 2nd and 98th percentiles:
+
+```r
+max_abs <- max(abs(quantile(change_df$hardship_change, c(0.02, 0.98), na.rm = TRUE)))
+change_df <- change_df %>%
+  mutate(change_plot = pmax(pmin(hardship_change, max_abs), -max_abs))
+```
+
+:::
+
+
+::: {.section-box}
+
+## Section 5: The LISA Overlay — Reading Two Measurements at Once
+
+The overlay map in Step 8 of Lab 5 combines two distinct measurements that students often conflate. Reading it correctly is essential for policy interpretation.
+
+- **Fill color** = change in economic hardship index from **2013 to 2019** (blue = improved, red = worsened)
+- **Black outline** = LISA HH hot spot classification based on the **2019 level** of hardship (the tract has high hardship and is surrounded by high-hardship neighbors in 2019)
+
+A tract that is **outlined in black AND filled light blue** was a spatial hot spot in 2019 but improved compared to its own 2013 position. This is precisely what you would expect to find in central and south Phoenix. These neighborhoods were at their worst in 2013 — ground zero of the foreclosure crisis — and they did recover during the decade. But they haven't recovered enough to escape the spatial cluster of concentrated disadvantage surrounding them. They are better off than they were in 2013. They are not better off *relative to the rest of the metro*.
+
+The significance map (gray = not statistically significant) is an entirely separate question from the LISA overlay. The significance map asks: is the poverty rate change in this tract large enough to distinguish from sampling noise? The LISA overlay asks: is this tract a spatial cluster of high hardship in 2019? These are measured differently, test different things, and should not be conflated.
+
+**Three policy-relevant findings from the overlay:**
+
+| Pattern | What it means | Policy implication |
+|---|---|---|
+| Outlined + blue fill | Hot spot in 2019, but improved 2013→2019 | Recovery is reaching these areas but hasn't broken the cluster — watch for displacement |
+| Outlined + near-white fill | Hot spot in both periods, little change | Recovery bypassed these tracts — persistent structural hardship |
+| Outlined + red fill | Hot spot in 2019 and worsened 2013→2019 | Hardship deepening spatially — urgent attention |
+
+:::
+
+
+::: {.section-box}
+
+## Section 6: What Change Maps Cannot Tell You
+
+Census change maps are powerful analytic tools. They are also systematically incomplete in ways that matter enormously for policy.
+
+### The Displacement Paradox
+
+Consider a census tract in Phoenix where the poverty rate fell from 32% to 14% between 2013 and 2019. On your change map, this appears deep blue — a large improvement. Two completely different processes could produce this:
+
+**Genuine recovery:** Long-time residents found employment, incomes rose, families stabilized. The community is better off.
+
+**Displacement:** The original low-income residents were priced out by rising rents. Wealthier newcomers moved in. The poverty rate fell because the poor people *left*, not because their circumstances improved. The poverty didn't disappear — it moved to another neighborhood, one with fewer resources and farther from services.
+
+**The census change score cannot distinguish these two processes.** The aggregate statistic measures the average hardship of whoever happens to live in that tract at each time point. It does not follow individuals. Freeman (2005) found that displacement rates in gentrifying neighborhoods were not dramatically higher than elsewhere — much demographic change is driven by the relative affluence of in-movers, not forced departures. But Ding, Hwang, and Divringi (2016) found that when vulnerable residents *do* move from gentrifying areas, they tend to relocate to lower-income neighborhoods — a welfare loss that aggregate census statistics are completely blind to.
+
+Both findings can be true simultaneously, in different neighborhoods, at different moments in a recovery cycle. Your change map cannot tell you which story is operating in any given tract.
+
+| What census change scores **CAN** tell you | What they **CANNOT** tell you |
+|---|---|
+| Average hardship of whoever lives there in 2019 | Whether original 2013 residents improved or left |
+| Whether the spatial pattern of hardship shifted | Where displaced residents relocated |
+| Whether changes exceed sampling noise | Whether change benefited existing residents or newcomers |
+| How this tract moved relative to its 2013 position | Who moved in vs. who stayed |
+
+**The practical implication:** Your change map is a hypothesis-generating tool, not causal evidence. A blue tract is a signal to ask harder questions — not a finding that recovery reached existing residents.
 
 :::
 
@@ -168,23 +264,23 @@ Change data has a meaningful midpoint (zero = no change), which calls for a **di
 
 ### Foundational Works
 
-- Temkin, K., & Rohe, W. (1996). Neighborhood change and urban policy. *Journal of Planning Education and Research*, 15(3), 159–170. [Link](https://journals.sagepub.com/doi/10.1177/0739456X9601500301) — A foundational framework for understanding neighborhood change processes, integrating institutional actors, social fabric, and metropolitan-level forces.
+- **Temkin, K., & Rohe, W. (1996).** Neighborhood change and urban policy. *Journal of Planning Education and Research*, 15(3), 159–170. [Link](https://journals.sagepub.com/doi/10.1177/0739456X9601500301) — The multi-factor model: change is driven by institutional actors (banks, city agencies), social fabric (resident stability, community organizations), and metropolitan forces (housing markets, employment). The framework explains why single-intervention policies often fail — and why the same neighborhood can respond very differently to investment at different moments in its trajectory.
 
-- Freeman, L. (2005). Displacement or succession? Residential mobility in gentrifying neighborhoods. *Urban Affairs Review*, 40(4), 463–491. [Link](https://journals.sagepub.com/doi/10.1177/1078087404273341) — Seminal study examining whether gentrification causes displacement; finding that demographic change is driven more by the relative affluence of in-movers than by displacement of existing residents.
+- **Freeman, L. (2005).** Displacement or succession? Residential mobility in gentrifying neighborhoods. *Urban Affairs Review*, 40(4), 463–491. [Link](https://journals.sagepub.com/doi/10.1177/1078087404273341) — Uses longitudinal data to show displacement rates in gentrifying neighborhoods are not dramatically higher than elsewhere. Most demographic change is driven by the relative affluence of in-movers rather than forced departures. Directly relevant to reading your change map — demographic change and displacement are not synonymous.
 
 ### Recent Applications
 
-- Landis, J. D. (2016). Tracking and explaining neighborhood socioeconomic change in U.S. metropolitan areas between 1990 and 2010. *Housing Policy Debate*, 26(1), 2–52. [Link](https://www.tandfonline.com/doi/full/10.1080/10511482.2014.993677) — Large-scale empirical study measuring gentrification and socioeconomic neighborhood change across U.S. metros using census tract data over two decades.
+- **Landis, J. D. (2016).** Tracking and explaining neighborhood socioeconomic change in U.S. metropolitan areas between 1990 and 2010. *Housing Policy Debate*, 26(1), 2–52. [Link](https://www.tandfonline.com/doi/full/10.1080/10511482.2014.993677) — The most comprehensive empirical study of neighborhood change in modern U.S. cities. Gentrification is just one of several upward-mobility pathways — employment growth, anchor institutions, and infrastructure investment also drive improvement in neighborhoods that never fit the classic gentrification narrative.
 
-- Ding, L., Hwang, J., & Divringi, E. (2016). Gentrification and residential mobility in Philadelphia. *Regional Science and Urban Economics*, 61, 38–51. [Link](https://www.sciencedirect.com/science/article/abs/pii/S0166046216301223) — Shows that when vulnerable residents move from gentrifying areas, they tend to relocate to lower-income neighborhoods — a finding invisible in aggregate census statistics.
+- **Ding, L., Hwang, J., & Divringi, E. (2016).** Gentrification and residential mobility in Philadelphia. *Regional Science and Urban Economics*, 61, 38–51. [Link](https://www.sciencedirect.com/science/article/abs/pii/S0166046216301223) — Individual-level longitudinal data shows that when vulnerable residents leave gentrifying neighborhoods, they tend to move to *worse* neighborhoods — lower income, fewer services. The aggregate census statistic shows improvement; the individual trajectory shows welfare loss. The empirical grounding for the displacement paradox.
 
 ### Census Data and Methods
 
-- Walker, K. (2023). *Analyzing US Census Data: Methods, Maps, and Models in R*. CRC Press. [[free online]](https://walker-data.com/census-r/) — Chapters 2–4 cover pulling multi-year ACS data, wrangling time series, and visualizing temporal change.
+- **Walker, K. (2023).** *Analyzing US Census Data: Methods, Maps, and Models in R.* CRC Press. [[free online]](https://walker-data.com/census-r/) — Chapters 2–4 cover pulling multi-year ACS data and visualizing temporal change. Chapter 8 covers margins of error and significance testing. Essential reference for Lab 5.
 
-- U.S. Census Bureau. [Comparing ACS Data](https://www.census.gov/programs-surveys/acs/guidance/comparing-acs-data.html) — Official guidance on making valid comparisons across ACS vintages, including boundary changes and margins of error.
+- **U.S. Census Bureau.** [Comparing ACS Data](https://www.census.gov/programs-surveys/acs/guidance/comparing-acs-data.html) — Official guidance on valid comparisons across vintages, including the boundary problem and MOE significance testing. The formula used in Lab 5 comes from this resource.
 
-- Spielman, S. E., Folch, D. C., & Nagle, N. N. (2014). Patterns and causes of uncertainty in the American Community Survey. *Applied Geography*, 46, 147–157. [DOI](https://doi.org/10.1016/j.apgeog.2013.11.002) — Systematic analysis of where and why MOEs are largest in small-geography ACS data. Essential reading for understanding when change scores are reliable.
+- **Spielman, S. E., Folch, D. C., & Nagle, N. N. (2014).** Patterns and causes of uncertainty in the American Community Survey. *Applied Geography*, 46, 147–157. [DOI](https://doi.org/10.1016/j.apgeog.2013.11.002) — Roughly 30% of block group estimates have MOE larger than the estimate itself. Census tracts perform substantially better. The empirical basis for the Lab 5 decision to use tracts over block groups.
 
 :::
 
@@ -193,10 +289,11 @@ Change data has a meaningful midpoint (zero = no change), which calls for a **di
 
 ## Lab 5
 
-The Lab 5 materials are on the course lab site.
+Lab 5 implements the full temporal change analysis pipeline at the Maricopa County census tract level for 2013 and 2019.
 
-- **[Lab 5 Tutorial](https://antjam-howell.github.io/paf-516-labs/lab5-tutorial.html)** — Download the tutorial file, knit it to see the complete analysis, then run chunk by chunk to understand each step.
-- **[Lab 5 Assignment](https://antjam-howell.github.io/paf-516-labs/lab5-assignment.html)** — Download the assignment file, rename it with your last name, complete the three questions, and submit to Canvas.
+- **[Lab 5 Tutorial](https://antjam-howell.github.io/paf-516-labs/lab5-tutorial.html)** — Nine steps from data pull through LISA overlay. Render the complete file first to see all outputs, then work through it chunk by chunk. Pay particular attention to Steps 3 (pooled standardization) and 5 (MOE significance) — these are where temporal analysis most commonly goes wrong.
+
+- **[Lab 5 Assignment](https://antjam-howell.github.io/paf-516-labs/lab5-assignment.html)** — Three questions: Q1 interprets the overall direction of change and evaluates whether hot spots are persisting or dissolving. Q2 reruns the analysis at the Arizona statewide tract level. Q3 interprets what the scale comparison reveals.
 
 :::
 
@@ -205,11 +302,11 @@ The Lab 5 materials are on the course lab site.
 
 ## Yellowdig Discussion
 
-Neighborhood change is often framed as either "improvement" or "decline," but these labels depend heavily on whose perspective you center. A block group where poverty drops from 35% to 15% over eight years could represent genuine upward mobility for long-time residents — or it could signal displacement, with the original community replaced by wealthier newcomers while the poverty simply moved elsewhere.
+A census tract in south Phoenix where poverty fell from 32% to 18% between 2013 and 2019 shows up blue on your change map. Recovery, right? Maybe. But a blue tract could also mean longtime residents priced out by rising rents, replaced by younger, more affluent newcomers, while the original community scattered to lower-income neighborhoods on the suburban fringe — farther from employment, farther from services, with less political voice. The census change score shows the same pattern in both scenarios. The experiences of the people involved are radically different.
 
-This tension sits at the heart of temporal analysis with census data. The numbers show *what changed*, but they cannot tell us *who benefited* or *who was harmed*. Freeman (2005) found that displacement rates in gentrifying neighborhoods were not dramatically higher than in non-gentrifying ones, yet Ding, Hwang, and Divringi (2016) showed that when vulnerable residents *do* move from gentrifying areas, they tend to land in lower-income neighborhoods — a finding invisible in aggregate census statistics.
+Freeman (2005) found displacement was less common than assumed. Ding et al. (2016) found that when it did happen, it was more harmful than aggregate statistics revealed. Both findings are consistent. They describe different neighborhoods, different moments, different thresholds in the recovery cycle.
 
-**Your prompt:** Drawing on this week's readings and your own change map, discuss the policy implications of temporal change analysis. Should public investment target neighborhoods where hardship is *currently highest*, or neighborhoods where hardship is *increasing fastest*? What are the trade-offs of each approach? Use at least one specific example — from the readings, from your lab results, or from a real Maricopa County community — to ground your argument. Consider what census data can and cannot reveal about whether neighborhood change benefits existing residents or displaces them.
+**Your prompt:** Drawing on this week's readings and your own Lab 5 change map, discuss the policy implications of temporal change analysis in Maricopa County. Should public investment target neighborhoods where hardship is *currently highest*, or neighborhoods where hardship is *increasing fastest*? What are the trade-offs of each approach? Ground your argument in at least one specific piece of evidence — a number from your lab output, a finding from the readings, or a specific Maricopa County community you can name. Engage directly with the displacement question: when a tract shows improvement on your map, what would you need to know to determine whether existing residents benefited?
 
 :::
 
@@ -220,15 +317,16 @@ This tension sits at the heart of temporal analysis with census data. The number
 
 | Term | Definition |
 |------|-----------|
-| **ACS Vintage** | A specific 5-year period of American Community Survey data (e.g., 2015–2019, labeled `year = 2019` in tidycensus) |
-| **Boundary Vintage** | The decennial census year whose TIGER/Line boundaries underlie a given ACS vintage (2010 or 2020) |
-| **Pooled Standardization** | Standardizing two years of data against a single combined mean and SD, so z-scores are directly comparable across time |
-| **Change Score** | The difference between a variable's value at two time points (period 2 minus period 1) |
-| **Margin of Error (MOE)** | The range around an ACS estimate within which the true value likely falls at 90% confidence |
-| **Significance Test for Change** | z = (est₂ − est₁) / √(SE₁² + SE₂²); if |z| > 1.645, the change is significant at 90% |
-| **Diverging Color Scale** | A color palette with two hues radiating from a neutral midpoint; appropriate when data has a meaningful center (zero change) |
+| **ACS Vintage** | A specific 5-year ACS period (e.g., 2015–2019, accessed with `year = 2019` in tidycensus) |
+| **Boundary Vintage** | The decennial census year whose TIGER/Line geometries underlie a given ACS vintage (2010 or 2020) |
+| **Pooled Standardization** | Standardizing data from two years against a single combined mean and SD, so z-scores are directly comparable across time |
+| **Change Score (Δ)** | Economic hardship index at period 2 minus period 1; positive = worsened, negative = improved |
+| **Margin of Error (MOE)** | Half-width of the 90% confidence interval around an ACS estimate |
+| **MOE Significance Test** | z = (est₂ − est₁) / √(SE₁² + SE₂²); \|z\| > 1.645 indicates significant change at 90% confidence |
+| **Diverging Color Scale** | A palette with two hues radiating from a neutral center; required for change data where zero is meaningful |
 | **Winsorizing** | Capping extreme values at a specified percentile to prevent outliers from compressing the color scale |
-| **Temporal Stability** | The degree to which spatial patterns (e.g., LISA hot spots) persist across time periods |
-| **Gentrification** | Neighborhood change characterized by rising incomes, property values, and demographic shifts — often at the expense of existing lower-income residents |
+| **Displacement Paradox** | The impossibility of distinguishing genuine resident improvement from demographic displacement using aggregate census change scores alone |
+| **LISA Overlay** | Placing LISA hot spot outlines on a change map to simultaneously show spatial clustering (2019 level) and change direction (2013→2019) |
+| **Temporal Stability** | Whether spatial patterns (e.g., LISA hot spots) persist, dissolve, or intensify across time periods |
 
 :::

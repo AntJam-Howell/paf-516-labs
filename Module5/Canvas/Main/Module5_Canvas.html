@@ -6,79 +6,87 @@
 <!-- ── Module Header ─────────────────────────────────────────── -->
 <div style="background:#8C1D40;border-radius:6px;padding:20px 24px 16px;margin-bottom:24px;">
   <h2 style="color:#FFC627;font-size:22px;font-weight:700;margin:0 0 4px;">M5 Overview &amp; Learning Materials</h2>
-  <p style="color:#ffffff;font-size:15px;margin:0;font-weight:600;">Temporal Change Analysis</p>
+  <p style="color:#ffffff;font-size:15px;margin:0;font-weight:600;">Spatio-Temporal Change (Part 1)</p>
 </div>
 
 <!-- ── Module Overview ───────────────────────────────────────── -->
 <div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
   <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Module Overview and Objectives</h3>
-  <p style="margin:0 0 10px;line-height:1.6;">Modules 1&ndash;4 analyzed your study area at a single point in time. But neighborhoods are not static &mdash; they gentrify, decline, stabilize, or fluctuate over years and decades. This module adds the <strong>time dimension</strong> to your analysis by comparing economic hardship index values across <strong>two ACS 5-year vintages</strong>: the 2009&ndash;2013 ACS and the 2015&ndash;2019 ACS. These two periods bracket the entire post-recession decade in Maricopa County &mdash; 2013 captures neighborhoods still in mid-recovery of the housing crisis, and 2019 captures the peak of the recovery just before COVID disrupts everything. That is a substantively compelling policy window.</p>
-  <p style="margin:0 0 12px;line-height:1.6;">Temporal analysis with census data introduces unique methodological challenges. Census boundaries can change between decennial censuses. Z-score indices must be standardized on a common scale before comparing them across years. Margins of error can make small changes statistically meaningless. This module addresses all of these issues while building directly on the index and spatial skills from previous labs.</p>
+  <p style="margin:0 0 10px;line-height:1.6;">Modules 1&ndash;4 gave you a snapshot &mdash; the economic hardship landscape of Maricopa County at a single point in time. But Phoenix is one of the most dynamic urban metros in the United States, and any snapshot captures only a fragment of a much larger story. This module adds the <strong>time dimension</strong>.</p>
+  <p style="margin:0 0 10px;line-height:1.6;">The post-recession decade in Phoenix is a natural experiment in neighborhood change. The 2008 housing crisis hit Maricopa County harder than almost anywhere else in the country &mdash; foreclosure rates peaked near 10%, unemployment reached 9%, and entire subdivisions stood empty. By 2019 the metro had largely recovered: unemployment had fallen below 4%, home values had rebounded, and population growth had resumed at its pre-crisis pace. But <strong>recovery was not uniform</strong>. Some neighborhoods absorbed the full force of the recovery and emerged transformed. Others remained stranded &mdash; their hardship persisting even as the broader economy lifted around them. Still others showed apparent improvement that may reflect displacement rather than genuine uplift.</p>
+  <p style="margin:0 0 10px;line-height:1.6;">Mapping the economic hardship index at two time points and comparing them is how we begin to sort out which story applies to which neighborhood.</p>
+  <p style="margin:0 0 10px;line-height:1.6;"><strong>Two time points &mdash; both on 2010 TIGER/Line boundaries:</strong></p>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
+    <li><strong>2013</strong> (2009&ndash;2013 ACS 5-year): mid-recovery &mdash; unemployment still ~7%, housing prices still depressed, foreclosure stress still visible in the data</li>
+    <li><strong>2019</strong> (2015&ndash;2019 ACS 5-year): recovery peak &mdash; unemployment ~3.5%, pre-COVID, the best labor market conditions since before the crisis</li>
+  </ul>
+  <p style="margin:0 0 12px;line-height:1.6;">This module addresses the methodological challenges that make this comparison valid &mdash; boundary consistency, pooled standardization, significance testing, diverging color design &mdash; and the interpretive challenges that make the comparison honest: what a change score can tell you, and what it fundamentally cannot.</p>
   <hr style="border:none;border-top:1px solid #d9c8cd;margin:12px 0;">
   <p style="margin:0 0 8px;font-weight:700;color:#8C1D40;">After completing this module, you will be able to:</p>
   <ul style="margin:0;padding-left:20px;line-height:1.8;">
-    <li>Retrieve and compare ACS data from <strong>two different vintages</strong> using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">tidycensus</code></li>
-    <li>Understand why <strong>boundary vintage consistency</strong> is essential for direct comparison &mdash; and how choosing years that share the same boundaries avoids the problem entirely</li>
-    <li>Apply <strong>pooled standardization</strong> to produce z-scores that are comparable across time periods</li>
-    <li>Compute <strong>change scores</strong> for a composite hardship index</li>
-    <li>Construct a <strong>MOE-based significance test</strong> to distinguish real change from sampling noise</li>
-    <li>Apply <strong>diverging color scales</strong> to communicate the direction and magnitude of change</li>
-    <li>Evaluate the <strong>temporal stability</strong> of spatial patterns identified in Module 4</li>
+    <li>Retrieve and compare ACS data from <strong>two different vintages</strong> using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">tidycensus</code>, selecting years that share the same boundary vintage</li>
+    <li>Explain why <strong>pooled standardization</strong> is required for valid change scores and how it differs from year-specific standardization</li>
+    <li>Compute a <strong>composite change score</strong> and interpret its sign and magnitude</li>
+    <li>Apply a <strong>MOE-based significance test</strong> to distinguish real neighborhood change from sampling noise</li>
+    <li>Design a <strong>diverging color scale</strong> centered on zero with symmetric limits</li>
+    <li>Interpret the <strong>LISA overlay</strong> &mdash; understanding what it means when hot spots are improving, stable, or worsening</li>
+    <li>Articulate the <strong>displacement paradox</strong> and explain why census change scores alone cannot resolve it</li>
   </ul>
 </div>
 
 <!-- ── Lecture ───────────────────────────────────────────────── -->
 <div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
   <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Lecture</h3>
-  <p style="margin:0 0 8px;line-height:1.6;">The lecture notes cover choosing ACS time periods, the boundary vintage problem, pooled standardization, significance testing with margins of error, and diverging color scales for change maps.</p>
-  <p style="margin:0;">&#x1F4C4; <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module5/Lecture/Module5_Lecture_Slides.pdf" style="color:#8C1D40;font-weight:600;">Temporal Change Analysis &mdash; Lecture Notes (PDF)</a></p>
+  <p style="margin:0 0 8px;line-height:1.6;">The lecture covers the full analytical pipeline &mdash; from ACS vintage selection through LISA overlay interpretation. Key topics: the boundary vintage problem and why mixing 2010/2020 boundaries creates silent data loss; the difference between year-specific and pooled standardization with a worked numerical example; MOE significance testing; diverging palette design; and the displacement paradox.</p>
+  <p style="margin:0;">&#x1F4C4; <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module5/Lecture/Module5_Lecture_Slides.pdf" style="color:#8C1D40;font-weight:600;">Spatio-Temporal Change (Part 1) &mdash; Lecture Notes (PDF)</a></p>
 </div>
 
 <!-- ── Section 1 ─────────────────────────────────────────────── -->
 <div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
   <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 1: Choosing the Right Time Period</h3>
-  <p style="margin:0 0 10px;line-height:1.6;">The American Community Survey (ACS) provides rolling 5-year estimates. The <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">tidycensus</code> package lets you pull data from any available vintage by setting the <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">year</code> argument in <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">get_acs()</code>. For temporal comparison, the most important constraint is <strong>geographic consistency</strong>.</p>
   <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">The Boundary Vintage Problem</h4>
-  <p style="margin:0 0 10px;line-height:1.6;">Census block group boundaries are redrawn with each decennial census (2010, 2020). This means:</p>
+  <p style="margin:0 0 10px;line-height:1.6;">Census tract boundaries are redrawn with each decennial census. This creates a hidden trap in temporal analysis:</p>
   <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
-    <li>ACS vintages 2013&ndash;2019 use <strong>2010 TIGER/Line boundaries</strong></li>
-    <li>ACS vintages 2020&ndash;present use <strong>2020 TIGER/Line boundaries</strong></li>
+    <li>ACS vintages <strong>2013&ndash;2019</strong> use <strong>2010 TIGER/Line boundaries</strong></li>
+    <li>ACS vintages <strong>2020&ndash;present</strong> use <strong>2020 TIGER/Line boundaries</strong></li>
   </ul>
-  <p style="margin:0 0 10px;line-height:1.6;">If you compare a year on 2010 boundaries to a year on 2020 boundaries, many GEOIDs will not match &mdash; some block groups were split, merged, or renumbered. An <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">inner_join()</code> on GEOID silently drops these CBGs, creating a map full of holes (missing units) that look like missing data but are actually a methodological artifact.</p>
-  <p style="margin:0 0 14px;line-height:1.6;"><strong>The solution is simple: compare two years that share the same boundary vintage.</strong> Using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">year = 2013</code> and <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">year = 2019</code> gives you 2006&ndash;2010 and 2015&ndash;2019 ACS data, both on 2010 TIGER boundaries. Every GEOID in the 2010 file exists in the 2019 file &mdash; the inner join works cleanly and the map is complete.</p>
+  <p style="margin:0 0 10px;line-height:1.6;">If you pull <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">year = 2013</code> and <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">year = 2023</code> and join them on GEOID, a large fraction of tracts won&rsquo;t match &mdash; some were split, merged, or renumbered between decennial censuses. The <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">inner_join(by = "GEOID")</code> silently drops every unmatched tract, producing a map full of white gaps that look like missing data but are a methodological artifact. In Maricopa County, this can silently remove 15&ndash;25% of all tracts.</p>
+  <p style="margin:0 0 14px;line-height:1.6;"><strong>The fix: compare two years that share the same boundary vintage.</strong> Using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">year = 2013</code> and <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">year = 2019</code> gives you 2009&ndash;2013 and 2015&ndash;2019 ACS data, both on 2010 TIGER boundaries. Every GEOID in the 2013 file exists in the 2019 file &mdash; the join is clean and the map is complete.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Why Tracts, Not Block Groups</h4>
+  <p style="margin:0 0 14px;line-height:1.6;">Census tracts (population ~2,500&ndash;8,000) have larger denominators than block groups (~600&ndash;3,000) and consequently much smaller margins of error. For change analysis, block groups have an additional problem: denominators for rate variables can be zero in small-population areas, producing NA rates that silently drop units. Census tracts carry roughly ~1&ndash;2% NA rate for a 3-variable index. The significance maps in Lab 5 would be dominated by noise at the block group level; at the tract level, they are interpretable.</p>
   <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Variable Consistency Across Vintages</h4>
-  <p style="margin:0;line-height:1.6;">A second constraint is that census table structures change across years. Lab 5 uses a <strong>4-variable index</strong> &mdash; poverty rate, unemployment rate, share without a high school diploma, and median household income &mdash; all drawn from tables that have been consistently available across ACS vintages. The health insurance variable used in Labs 1&ndash;4 (<code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">B27010_017</code>) did not exist in the 2010 ACS, so it is dropped here. This is itself a lesson: real analysts routinely adjust their indicator sets when building cross-time comparisons.</p>
+  <p style="margin:0;line-height:1.6;">Lab 5 uses a <strong>3-variable economic hardship index</strong> selected for consistent availability and near-complete coverage across both 2013 and 2019: poverty rate (C17002), unemployment rate (B23025), and median household income (B19013, reversed). All three have been available in every ACS vintage since 2009. Education variables (B15003) are excluded &mdash; <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">B15003_002</code> captures only &ldquo;no schooling completed,&rdquo; a single narrow cell that produces unstable tract-level estimates. Documenting what you dropped and why is part of the analysis.</p>
 </div>
 
 <!-- ── Section 2 ─────────────────────────────────────────────── -->
 <div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
   <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 2: Pooled Standardization</h3>
-  <p style="margin:0 0 10px;line-height:1.6;">When comparing z-score-based indices across time, you must decide: do you standardize each year&rsquo;s data using <em>that year&rsquo;s</em> mean and standard deviation, or using a <em>pooled</em> mean and standard deviation across both years combined?</p>
-  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Why Year-Specific Standardization Fails for Change Analysis</h4>
-  <p style="margin:0 0 14px;line-height:1.6;">If you standardize each year separately, a z-score of 1.0 in 2010 and a z-score of 1.0 in 2019 both mean &ldquo;one standard deviation above that year&rsquo;s mean&rdquo; &mdash; but the absolute level of hardship could be very different. Phoenix in 2010 was at the trough of the worst housing crisis in modern history. Poverty rates, unemployment rates, and uninsured rates were all elevated. If you standardize 2010 data to mean 0, you are hiding the fact that 2010 was a genuinely worse year on average. Subtracting the two standardized indices would then tell you that most neighborhoods &ldquo;had no change&rdquo; &mdash; because you&rsquo;ve already removed the year-level mean difference.</p>
+  <p style="margin:0 0 10px;line-height:1.6;">This is the most common methodological mistake in temporal hardship analysis. It is worth understanding precisely, because getting it wrong means your change scores are measuring something other than what you think.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Why Year-Specific Standardization Fails</h4>
+  <p style="margin:0 0 14px;line-height:1.6;">If you standardize each year separately, a z-score of 1.0 in 2013 and a z-score of 1.0 in 2019 both mean &ldquo;one standard deviation above that year&rsquo;s mean&rdquo; &mdash; but the absolute level of hardship could be very different. Year-specific standardization removes the mean difference, effectively reporting how each tract ranks <em>within its own year</em> rather than measuring change on a common scale. A tract with a poverty rate of 10% in both years would show apparent &ldquo;improvement&rdquo; if the 2013 county mean was 12.3% and the 2019 mean was 6.8%. The poverty rate didn&rsquo;t change; only the average around it did.</p>
   <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">The Pooled Approach</h4>
-  <p style="margin:0 0 14px;line-height:1.6;"><strong>Pooled standardization</strong> computes a single mean and standard deviation from the combined 2010 and 2019 observations together, then applies that common scale to both years. Now a z-score of 1.0 in 2010 and a z-score of 1.0 in 2019 mean the same thing: &ldquo;one standard deviation above the combined average.&rdquo; Change scores computed from pooled z-scores are directly interpretable as movements on a common scale.</p>
+  <p style="margin:0 0 14px;line-height:1.6;"><strong>Pooled standardization</strong> computes a single mean and SD from observations across <em>both</em> years combined, then applies that common scale to each period. Now z = 1.0 in 2013 and z = 1.0 in 2019 both mean &ldquo;one standard deviation above the combined 2013+2019 average.&rdquo; A change score of &Delta; = &minus;0.5 means the tract moved half a pooled standard deviation toward less hardship &mdash; a substantively interpretable quantity that captures real movement, not just relative standing.</p>
   <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
-    <p style="margin:0;line-height:1.6;"><strong>Key insight:</strong> Pooled standardization preserves real year-level shifts in the data. If 2010 truly had higher poverty than 2019 on average, the pooled z-scores will reflect that &mdash; and the change scores will capture genuine improvement.</p>
+    <p style="margin:0;line-height:1.6;"><strong>Key insight:</strong> Pooled standardization preserves real year-level shifts in the data. If 2013 truly had higher poverty than 2019 on average, the pooled z-scores will reflect that &mdash; and the change scores will capture genuine improvement.</p>
   </div>
 </div>
 
 <!-- ── Section 3 ─────────────────────────────────────────────── -->
 <div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
-  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 3: Computing Change Scores and Testing Significance</h3>
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 3: Change Scores and Significance Testing</h3>
   <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">The Change Score</h4>
-  <p style="margin:0 0 10px;line-height:1.6;">The change score is simply the difference between the period 2 and period 1 hardship indices:</p>
+  <p style="margin:0 0 10px;line-height:1.6;">The change score is the difference between the period 2 and period 1 hardship indices: &Delta;<sub>i</sub> = h<sub>i,2019</sub> &minus; h<sub>i,2013</sub>.</p>
   <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
-    <li><strong>Positive change</strong>: Hardship increased (neighborhood deteriorated over the decade)</li>
-    <li><strong>Negative change</strong>: Hardship decreased (neighborhood improved over the decade)</li>
+    <li><strong>Positive change</strong>: Hardship increased (neighborhood worsened)</li>
+    <li><strong>Negative change</strong>: Hardship decreased (neighborhood improved)</li>
     <li><strong>Near zero</strong>: Neighborhood was stable</li>
   </ul>
-  <p style="margin:0 0 14px;line-height:1.6;">Because we are using pooled z-scores, a change score of +0.5 means &ldquo;moved half a pooled standard deviation toward greater hardship&rdquo; &mdash; a substantively interpretable magnitude.</p>
-  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Testing Significance with Margins of Error</h4>
-  <p style="margin:0 0 10px;line-height:1.6;">ACS estimates come with <strong>margins of error (MOE)</strong>, and these margins can be substantial for small geographies like block groups. A change from 15% to 18% poverty may look meaningful on a map, but if both estimates have MOEs of &plusmn;5 percentage points, the &ldquo;change&rdquo; is well within sampling noise.</p>
-  <p style="margin:0 0 14px;line-height:1.6;">The Census Bureau provides guidance for computing a z-test for the difference between two ACS estimates: z = (estimate&#8322; &minus; estimate&#8321;) / &radic;(SE&#8321;&sup2; + SE&#8322;&sup2;), where SE = MOE / 1.645 (for 90% confidence intervals). If |z| &gt; 1.645, the change is statistically significant at the 90% level.</p>
+  <p style="margin:0 0 14px;line-height:1.6;">Because we are using pooled z-scores, magnitude is interpretable across tracts and time. A change of &minus;1.0 is a large improvement &mdash; a full pooled standard deviation toward less hardship.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Significance Testing with ACS Margins of Error</h4>
+  <p style="margin:0 0 10px;line-height:1.6;">Every ACS estimate comes with a <strong>margin of error (MOE)</strong> &mdash; the half-width of a 90% confidence interval. A change from 15% to 18% poverty looks like a 3-point increase. But if both estimates carry MOEs of &plusmn;5 percentage points, the observed change is entirely within sampling uncertainty.</p>
+  <p style="margin:0 0 14px;line-height:1.6;">The Census Bureau provides a standard z-test: z = (est<sub>2019</sub> &minus; est<sub>2013</sub>) / &radic;(SE<sub>2013</sub>&sup2; + SE<sub>2019</sub>&sup2;), where SE = MOE / 1.645. If |z| &gt; 1.645, the change is statistically significant at the 90% level. For a rate like the poverty rate, the MOE must first be propagated through the ratio formula.</p>
   <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
-    <p style="margin:0;line-height:1.6;"><strong>Why it matters:</strong> In Lab 5, you will compute this test for the poverty rate (the most interpretable individual variable) and use it to distinguish <strong>statistically significant change</strong> from noise. Block groups where change is significant will be highlighted on the map.</p>
+    <p style="margin:0;line-height:1.6;"><strong>Why it matters:</strong> In Lab 5, you will compute this test for the poverty rate and use it to distinguish <strong>statistically significant change</strong> from noise. Tracts where change is not significant are grayed out on the significance overlay map. At the census tract level with a strong countywide trend, expect roughly 40&ndash;60% of tracts to show statistically significant poverty rate change.</p>
   </div>
 </div>
 
@@ -87,13 +95,89 @@
   <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 4: Diverging Color Scales for Change Maps</h3>
   <p style="margin:0 0 10px;line-height:1.6;">Change data has a meaningful midpoint (zero = no change), which calls for a <strong>diverging color palette</strong> rather than the sequential viridis palette used in previous labs. Diverging palettes use two distinct hues radiating from a neutral center:</p>
   <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
-    <li><strong>Blue &rarr; White &rarr; Red</strong>: Common convention where red signals alarm (increasing hardship) and blue signals improvement. This is the convention used in Lab 5 &mdash; consistent with the traffic-light metaphor most audiences already know.</li>
+    <li><strong>Blue &rarr; White &rarr; Red</strong>: Blue signals improvement (decreasing hardship), red signals alarm (increasing hardship). This is the convention used in Lab 5.</li>
     <li><strong>Purple &rarr; White &rarr; Orange</strong>: A colorblind-friendly alternative with similar visual logic.</li>
   </ul>
   <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Critical Design Decisions</h4>
-  <p style="margin:0 0 10px;line-height:1.6;"><strong>Center the midpoint on zero.</strong> The neutral color must correspond to &ldquo;no change,&rdquo; not the median of your data. In ggplot2, use <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">scale_fill_gradient2(midpoint = 0)</code> &mdash; not the default which centers on the data mean.</p>
-  <p style="margin:0 0 10px;line-height:1.6;"><strong>Use symmetric limits.</strong> Set <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">limits = c(-max_abs, max_abs)</code> where <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">max_abs = max(abs(change_df$hardship_change))</code>. This ensures the visual weight of positive and negative change is balanced &mdash; a map that goes from -0.5 to +2.0 will visually exaggerate worsening even if most change is small.</p>
-  <p style="margin:0;line-height:1.6;"><strong>Handle outliers with winsorizing.</strong> Extreme values compress the rest of the scale. Cap values at the 2nd and 98th percentiles before mapping so that a few outlier block groups don&rsquo;t wash out the signal for everyone else.</p>
+  <p style="margin:0 0 10px;line-height:1.6;"><strong>Center the midpoint on zero.</strong> In ggplot2, use <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">scale_fill_gradient2(midpoint = 0)</code> &mdash; not the default which centers on the data mean.</p>
+  <p style="margin:0 0 10px;line-height:1.6;"><strong>Use symmetric limits.</strong> Set <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">limits = c(-max_abs, max_abs)</code> so that the visual weight of positive and negative change is balanced.</p>
+  <p style="margin:0;line-height:1.6;"><strong>Handle outliers with winsorizing.</strong> Cap values at the 2nd and 98th percentiles before mapping so that a few outlier tracts don&rsquo;t wash out the signal for everyone else.</p>
+</div>
+
+<!-- ── Section 5 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 5: The LISA Overlay &mdash; Reading Two Measurements at Once</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">The overlay map in Lab 5 combines two distinct measurements that students often conflate. Reading it correctly is essential for policy interpretation.</p>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
+    <li><strong>Fill color</strong> = change in economic hardship index from <strong>2013 to 2019</strong> (blue = improved, red = worsened)</li>
+    <li><strong>Black outline</strong> = LISA HH hot spot classification based on the <strong>2019 level</strong> of hardship</li>
+  </ul>
+  <p style="margin:0 0 10px;line-height:1.6;">A tract that is <strong>outlined in black AND filled light blue</strong> was a spatial hot spot in 2019 but improved compared to its own 2013 position. These neighborhoods were at their worst in 2013 &mdash; ground zero of the foreclosure crisis &mdash; and they did recover during the decade. But they haven&rsquo;t recovered enough to escape the spatial cluster of concentrated disadvantage surrounding them.</p>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Pattern</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">What it means</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Policy implication</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Outlined + blue fill</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Hot spot in 2019, but improved 2013&rarr;2019</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Recovery is reaching these areas but hasn&rsquo;t broken the cluster &mdash; watch for displacement</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Outlined + near-white fill</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Hot spot in both periods, little change</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Recovery bypassed these tracts &mdash; persistent structural hardship</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;font-weight:600;">Outlined + red fill</td>
+        <td style="padding:8px 12px;">Hot spot in 2019 and worsened 2013&rarr;2019</td>
+        <td style="padding:8px 12px;">Hardship deepening spatially &mdash; urgent attention</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── Section 6 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 6: What Change Maps Cannot Tell You</h3>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">The Displacement Paradox</h4>
+  <p style="margin:0 0 10px;line-height:1.6;">Consider a census tract in Phoenix where the poverty rate fell from 32% to 14% between 2013 and 2019. On your change map, this appears deep blue &mdash; a large improvement. Two completely different processes could produce this:</p>
+  <p style="margin:0 0 10px;line-height:1.6;"><strong>Genuine recovery:</strong> Long-time residents found employment, incomes rose, families stabilized. The community is better off.</p>
+  <p style="margin:0 0 10px;line-height:1.6;"><strong>Displacement:</strong> The original low-income residents were priced out by rising rents. Wealthier newcomers moved in. The poverty rate fell because the poor people <em>left</em>, not because their circumstances improved.</p>
+  <p style="margin:0 0 10px;line-height:1.6;"><strong>The census change score cannot distinguish these two processes.</strong> Freeman (2005) found that displacement rates in gentrifying neighborhoods were not dramatically higher than elsewhere. But Ding, Hwang, and Divringi (2016) found that when vulnerable residents <em>do</em> move from gentrifying areas, they tend to relocate to lower-income neighborhoods &mdash; a welfare loss that aggregate census statistics are completely blind to.</p>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">What census change scores CAN tell you</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">What they CANNOT tell you</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Average hardship of whoever lives there in 2019</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Whether original 2013 residents improved or left</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Whether the spatial pattern of hardship shifted</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Where displaced residents relocated</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Whether changes exceed sampling noise</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Whether change benefited existing residents or newcomers</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;">How this tract moved relative to its 2013 position</td>
+        <td style="padding:8px 12px;">Who moved in vs. who stayed</td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
+    <p style="margin:0;line-height:1.6;"><strong>The practical implication:</strong> Your change map is a hypothesis-generating tool, not causal evidence. A blue tract is a signal to ask harder questions &mdash; not a finding that recovery reached existing residents.</p>
+  </div>
 </div>
 
 <!-- ── Readings ─────────────────────────────────────────────── -->
@@ -101,19 +185,19 @@
   <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Readings</h3>
   <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Foundational Works</h4>
   <ul style="margin:0 0 14px;padding-left:20px;line-height:1.9;">
-    <li>Temkin, K., &amp; Rohe, W. (1996). Neighborhood change and urban policy. <em>Journal of Planning Education and Research</em>, 15(3), 159&ndash;170. <a href="https://journals.sagepub.com/doi/10.1177/0739456X9601500301" style="color:#8C1D40;">Link</a> &mdash; A foundational framework for understanding neighborhood change processes, integrating institutional actors, social fabric, and metropolitan-level forces.</li>
-    <li>Freeman, L. (2005). Displacement or succession? Residential mobility in gentrifying neighborhoods. <em>Urban Affairs Review</em>, 40(4), 463&ndash;491. <a href="https://journals.sagepub.com/doi/10.1177/1078087404273341" style="color:#8C1D40;">Link</a> &mdash; Seminal study examining whether gentrification causes displacement; finding that demographic change is driven more by the relative affluence of in-movers than by displacement of existing residents.</li>
+    <li>Temkin, K., &amp; Rohe, W. (1996). Neighborhood change and urban policy. <em>Journal of Planning Education and Research</em>, 15(3), 159&ndash;170. <a href="https://journals.sagepub.com/doi/10.1177/0739456X9601500301" style="color:#8C1D40;">Link</a> &mdash; The multi-factor model: change is driven by institutional actors, social fabric, and metropolitan forces.</li>
+    <li>Freeman, L. (2005). Displacement or succession? Residential mobility in gentrifying neighborhoods. <em>Urban Affairs Review</em>, 40(4), 463&ndash;491. <a href="https://journals.sagepub.com/doi/10.1177/1078087404273341" style="color:#8C1D40;">Link</a> &mdash; Displacement rates in gentrifying neighborhoods are not dramatically higher than elsewhere. Most demographic change is driven by the relative affluence of in-movers.</li>
   </ul>
   <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Recent Applications</h4>
   <ul style="margin:0 0 14px;padding-left:20px;line-height:1.9;">
-    <li>Landis, J. D. (2016). Tracking and explaining neighborhood socioeconomic change in U.S. metropolitan areas between 1990 and 2010. <em>Housing Policy Debate</em>, 26(1), 2&ndash;52. <a href="https://www.tandfonline.com/doi/full/10.1080/10511482.2014.993677" style="color:#8C1D40;">Link</a> &mdash; Large-scale empirical study measuring gentrification and socioeconomic neighborhood change across U.S. metros using census tract data over two decades.</li>
-    <li>Ding, L., Hwang, J., &amp; Divringi, E. (2016). Gentrification and residential mobility in Philadelphia. <em>Regional Science and Urban Economics</em>, 61, 38&ndash;51. <a href="https://www.sciencedirect.com/science/article/abs/pii/S0166046216301223" style="color:#8C1D40;">Link</a> &mdash; Shows that when vulnerable residents move from gentrifying areas, they tend to relocate to lower-income neighborhoods &mdash; a finding invisible in aggregate census statistics.</li>
+    <li>Landis, J. D. (2016). Tracking and explaining neighborhood socioeconomic change in U.S. metropolitan areas between 1990 and 2010. <em>Housing Policy Debate</em>, 26(1), 2&ndash;52. <a href="https://www.tandfonline.com/doi/full/10.1080/10511482.2014.993677" style="color:#8C1D40;">Link</a> &mdash; The most comprehensive empirical study of neighborhood change in modern U.S. cities.</li>
+    <li>Ding, L., Hwang, J., &amp; Divringi, E. (2016). Gentrification and residential mobility in Philadelphia. <em>Regional Science and Urban Economics</em>, 61, 38&ndash;51. <a href="https://www.sciencedirect.com/science/article/abs/pii/S0166046216301223" style="color:#8C1D40;">Link</a> &mdash; When vulnerable residents leave gentrifying areas, they tend to move to <em>worse</em> neighborhoods.</li>
   </ul>
   <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Census Data and Methods</h4>
   <ul style="margin:0;padding-left:20px;line-height:1.9;">
-    <li>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. <a href="https://walker-data.com/census-r/" style="color:#8C1D40;">free online</a> &mdash; Chapters 2&ndash;4 cover pulling multi-year ACS data, wrangling time series, and visualizing temporal change.</li>
-    <li>U.S. Census Bureau. <a href="https://www.census.gov/programs-surveys/acs/guidance/comparing-acs-data.html" style="color:#8C1D40;">Comparing ACS Data</a> &mdash; Official guidance on making valid comparisons across ACS vintages, including boundary changes and margins of error.</li>
-    <li>Spielman, S. E., Folch, D. C., &amp; Nagle, N. N. (2014). Patterns and causes of uncertainty in the American Community Survey. <em>Applied Geography</em>, 46, 147&ndash;157. <a href="https://doi.org/10.1016/j.apgeog.2013.11.002" style="color:#8C1D40;">DOI</a> &mdash; Systematic analysis of where and why MOEs are largest in small-geography ACS data. Essential reading for understanding when change scores are reliable.</li>
+    <li>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. <a href="https://walker-data.com/census-r/" style="color:#8C1D40;">free online</a> &mdash; Chapters 2&ndash;4 cover pulling multi-year ACS data. Chapter 8 covers margins of error and significance testing.</li>
+    <li>U.S. Census Bureau. <a href="https://www.census.gov/programs-surveys/acs/guidance/comparing-acs-data.html" style="color:#8C1D40;">Comparing ACS Data</a> &mdash; Official guidance on valid comparisons across vintages, including the boundary problem and MOE significance testing.</li>
+    <li>Spielman, S. E., Folch, D. C., &amp; Nagle, N. N. (2014). Patterns and causes of uncertainty in the American Community Survey. <em>Applied Geography</em>, 46, 147&ndash;157. <a href="https://doi.org/10.1016/j.apgeog.2013.11.002" style="color:#8C1D40;">DOI</a> &mdash; Roughly 30% of block group estimates have MOE larger than the estimate itself. Census tracts perform substantially better.</li>
   </ul>
 </div>
 
@@ -130,43 +214,47 @@
     <tbody>
       <tr style="background:#ffffff;">
         <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">ACS Vintage</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A specific 5-year period of American Community Survey data (e.g., 2015&ndash;2019, labeled <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">year = 2019</code> in tidycensus)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A specific 5-year ACS period (e.g., 2015&ndash;2019, accessed with <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">year = 2019</code> in tidycensus)</td>
       </tr>
       <tr style="background:#fffdf0;">
         <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Boundary Vintage</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The decennial census year whose TIGER/Line boundaries underlie a given ACS vintage (2010 or 2020)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The decennial census year whose TIGER/Line geometries underlie a given ACS vintage (2010 or 2020)</td>
       </tr>
       <tr style="background:#ffffff;">
         <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Pooled Standardization</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Standardizing two years of data against a single combined mean and SD, so z-scores are directly comparable across time</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Standardizing data from two years against a single combined mean and SD, so z-scores are directly comparable across time</td>
       </tr>
       <tr style="background:#fffdf0;">
-        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Change Score</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The difference between a variable&rsquo;s value at two time points (period 2 minus period 1)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Change Score (&Delta;)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Economic hardship index at period 2 minus period 1; positive = worsened, negative = improved</td>
       </tr>
       <tr style="background:#ffffff;">
         <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Margin of Error (MOE)</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The range around an ACS estimate within which the true value likely falls at 90% confidence</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Half-width of the 90% confidence interval around an ACS estimate</td>
       </tr>
       <tr style="background:#fffdf0;">
-        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Significance Test for Change</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">z = (est&#8322; &minus; est&#8321;) / &radic;(SE&#8321;&sup2; + SE&#8322;&sup2;); if |z| &gt; 1.645, the change is significant at 90%</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">MOE Significance Test</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">z = (est&#8322; &minus; est&#8321;) / &radic;(SE&#8321;&sup2; + SE&#8322;&sup2;); |z| &gt; 1.645 indicates significant change at 90% confidence</td>
       </tr>
       <tr style="background:#ffffff;">
         <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Diverging Color Scale</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A color palette with two hues radiating from a neutral midpoint; appropriate when data has a meaningful center (zero change)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A palette with two hues radiating from a neutral center; required for change data where zero is meaningful</td>
       </tr>
       <tr style="background:#fffdf0;">
         <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Winsorizing</td>
         <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Capping extreme values at a specified percentile to prevent outliers from compressing the color scale</td>
       </tr>
       <tr style="background:#ffffff;">
-        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Temporal Stability</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The degree to which spatial patterns (e.g., LISA hot spots) persist across time periods</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Displacement Paradox</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The impossibility of distinguishing genuine resident improvement from demographic displacement using aggregate census change scores alone</td>
       </tr>
       <tr style="background:#fffdf0;">
-        <td style="padding:8px 12px;font-weight:600;color:#8C1D40;">Gentrification</td>
-        <td style="padding:8px 12px;">Neighborhood change characterized by rising incomes, property values, and demographic shifts &mdash; often at the expense of existing lower-income residents</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">LISA Overlay</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Placing LISA hot spot outlines on a change map to simultaneously show spatial clustering (2019 level) and change direction (2013&rarr;2019)</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;font-weight:600;color:#8C1D40;">Temporal Stability</td>
+        <td style="padding:8px 12px;">Whether spatial patterns (e.g., LISA hot spots) persist, dissolve, or intensify across time periods</td>
       </tr>
     </tbody>
   </table>

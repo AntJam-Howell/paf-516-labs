@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Module 6 — Spatio-Temporal Analysis</title>
+<title>Module 6 — Spatio-Temporal Change (Part 2)</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -3263,7 +3263,7 @@ width: 98%;
   <li><a href="#the-test" id="toc-the-test" class="nav-link" data-scroll-target="#the-test">The Test</a></li>
   <li><a href="#interpreting-the-result" id="toc-interpreting-the-result" class="nav-link" data-scroll-target="#interpreting-the-result">Interpreting the Result</a></li>
   </ul></li>
-  <li><a href="#section-3-three-point-trend-analysis" id="toc-section-3-three-point-trend-analysis" class="nav-link" data-scroll-target="#section-3-three-point-trend-analysis">Section 3: Three-Point Trend Analysis</a>
+  <li><a href="#section-3-multi-point-trend-analysis" id="toc-section-3-multi-point-trend-analysis" class="nav-link" data-scroll-target="#section-3-multi-point-trend-analysis">Section 3: Multi-Point Trend Analysis</a>
   <ul class="collapse">
   <li><a href="#classifying-trends" id="toc-classifying-trends" class="nav-link" data-scroll-target="#classifying-trends">Classifying Trends</a></li>
   <li><a href="#the-trend-slope" id="toc-the-trend-slope" class="nav-link" data-scroll-target="#the-trend-slope">The Trend Slope</a></li>
@@ -3291,7 +3291,7 @@ width: 98%;
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Module 6 — Spatio-Temporal Analysis</h1>
+<h1 class="title">Module 6 — Spatio-Temporal Change (Part 2)</h1>
 <p class="subtitle lead">PAF 516 | Community Analytics</p>
 </div>
 
@@ -3312,7 +3312,7 @@ width: 98%;
 <section id="m6-overview-learning-materials" class="level2 module-header">
 <h2 class="anchored" data-anchor-id="m6-overview-learning-materials"><strong>M6 Overview &amp; Learning Materials</strong></h2>
 <div class="module-subtitle">
-<p><strong>Spatio-Temporal Analysis &amp; Neighborhood Trajectories</strong></p>
+<p><strong>Spatio-Temporal Change (Part 2) — Neighborhood Trajectories</strong></p>
 </div>
 </section>
 <section id="module-overview-and-objectives" class="level2 section-box">
@@ -3326,14 +3326,14 @@ width: 98%;
 <li>Interpret the policy implications of <strong>persistent hot spots</strong>, <strong>emerging hot spots</strong>, <strong>dissolving hot spots</strong>, and <strong>spatial outliers</strong> across time</li>
 <li>Test whether change scores are <strong>spatially autocorrelated</strong> using space-time Moran’s I</li>
 <li>Interpret a significant space-time Moran’s I as evidence of <strong>spatial diffusion of decline or recovery</strong></li>
-<li>Construct a <strong>three-point hardship trend</strong> and classify block groups as consistently improving, consistently worsening, or non-monotone</li>
+<li>Construct a <strong>multi-point hardship trend</strong> and classify block groups as consistently improving, consistently worsening, or non-monotone</li>
 <li>Build a <strong>trajectory map</strong> communicating neighborhood change pathways for policy audiences</li>
 </ul>
 </section>
 <section id="lecture" class="level2">
 <h2 class="anchored" data-anchor-id="lecture">Lecture</h2>
 <div class="section-box">
-<p>The lecture notes cover LISA trajectory analysis, transition matrices, space-time Moran’s I, three-point trend classification, and policy design for different neighborhood trajectory types.</p>
+<p>The lecture notes cover LISA trajectory analysis, transition matrices, space-time Moran’s I, multi-point trend classification, and policy design for different neighborhood trajectory types.</p>
 <p>Download the lecture notes: <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module6/Lecture/Module6_Lecture_Slides.pdf">Spatio-Temporal Analysis — Lecture Notes (PDF)</a></p>
 </div>
 </section>
@@ -3423,8 +3423,8 @@ width: 98%;
 <p>A significant space-time Moran’s I has direct policy implications: if decline is spreading spatially, intervening at the boundary of the expanding hot spot (before it fully consolidates) is more cost-effective than intervening only at the core.</p>
 </section>
 </section>
-<section id="section-3-three-point-trend-analysis" class="level2 section-box">
-<h2 class="anchored" data-anchor-id="section-3-three-point-trend-analysis">Section 3: Three-Point Trend Analysis</h2>
+<section id="section-3-multi-point-trend-analysis" class="level2 section-box">
+<h2 class="anchored" data-anchor-id="section-3-multi-point-trend-analysis">Section 3: Multi-Point Trend Analysis</h2>
 <p>Two time points give us a change score but not a trend. A neighborhood could show apparent improvement from 2010 to 2019 because of a one-time shock in 2010 (a factory closure, a flood) rather than sustained structural change. Adding a <strong>middle time point</strong> — the 2012–2016 ACS 5-year estimate (<code>year = 2016</code>) — lets us distinguish genuine sustained improvement from noise.</p>
 <section id="classifying-trends" class="level3">
 <h3 class="anchored" data-anchor-id="classifying-trends">Classifying Trends</h3>
@@ -3470,7 +3470,7 @@ width: 98%;
 </tr>
 </tbody>
 </table>
-<p>The three-point trend is more robust than a two-point change score because a single outlier year has less leverage. Block groups classified as “consistently improving” represent genuine multi-year recovery trajectories, not just a one-year blip.</p>
+<p>The multi-point trend is more robust than a two-point change score because a single outlier year has less leverage. Block groups classified as “consistently improving” represent genuine multi-year recovery trajectories, not just a one-year blip.</p>
 </section>
 <section id="the-trend-slope" class="level3">
 <h3 class="anchored" data-anchor-id="the-trend-slope">The Trend Slope</h3>
@@ -3591,7 +3591,7 @@ width: 98%;
 <td>The process by which neighborhood decline or recovery spreads to adjacent areas</td>
 </tr>
 <tr class="even">
-<td><strong>Three-Point Trend</strong></td>
+<td><strong>Multi-Point Trend</strong></td>
 <td>Using three time observations to classify trajectory as monotone (consistent) or non-monotone</td>
 </tr>
 <tr class="odd">

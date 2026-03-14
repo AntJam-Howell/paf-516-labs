@@ -1,6 +1,6 @@
 ---
 title: "Lab 6 Assignment | PAF 516"
-subtitle: "Spatio-Temporal Analysis — LISA Trajectories & Space-Time Moran's I"
+subtitle: "Spatio-Temporal Change (Part 2) — LISA Trajectories & Space-Time Moran's I"
 format:
   html:
     theme: readable
@@ -268,7 +268,7 @@ ggplot(tibble(z = z_chg, wz = wz_chg), aes(x = z, y = wz)) +
 ```
 
 
-# Step 7: Three-Point Trend
+# Step 7: Multi-Point Trend
 
 ```{r}
 #| label: step.07-pull-2016
@@ -301,7 +301,7 @@ trend_df <- change_df %>%
     )
   )
 
-cat("── Three-point trend distribution (2013 | 2016 | 2019) ──\n")
+cat("── Multi-point trend distribution (2013 | 2016 | 2019) ──\n")
 trend_df %>% count(trend_type, sort = TRUE) %>%
   mutate(pct = round(100 * n / sum(n), 1)) %>% print()
 
@@ -325,7 +325,7 @@ ggplot(change_df) +
   scale_fill_manual(values = trend_colors, na.value = "#EEEEEE",
                     name = "Trend (2013|2016|2019)") +
   theme_void() +
-  labs(title    = "Three-Point Hardship Trend (2013 | 2016 | 2019)",
+  labs(title    = "Multi-Point Hardship Trend (2013 | 2016 | 2019)",
        subtitle = "Maricopa County Census Tracts")
 ```
 
@@ -342,7 +342,7 @@ ggplot(change_df) +
 - How many 2013 hot spots **dissolved** by 2019? What might explain their recovery?
 - Are there **emerging hot spots** — tracts that became HH between 2013 and 2019? Where do they appear spatially?
 - What does the **space-time Moran's I result** (Step 6) tell you about whether change is a spatially spreading process?
-- Does the **three-point trend** (Step 7) give more or less confidence in the two-point change scores? What share of "improving" tracts show consistent improvement vs. non-monotone patterns?
+- Does the **multi-point trend** (Step 7) give more or less confidence in the two-point change scores? What share of "improving" tracts show consistent improvement vs. non-monotone patterns?
 
 *Minimum 200 words. Reference specific numbers from the outputs above.*
 
@@ -376,7 +376,7 @@ ggplot(change_df) +
 
 ## Q3 — Policy Brief
 
-**You are advising the Maricopa County Office of Community Development. They have a fixed budget and can prioritize only two of the four trajectory types below. Using your trajectory map, space-time Moran's I result, and three-point trend as evidence, write a policy brief paragraph recommending which two to prioritize and why.**
+**You are advising the Maricopa County Office of Community Development. They have a fixed budget and can prioritize only two of the four trajectory types below. Using your trajectory map, space-time Moran's I result, and multi-point trend as evidence, write a policy brief paragraph recommending which two to prioritize and why.**
 
 Trajectory types to consider:
 

@@ -6,7 +6,7 @@
 <!-- ── Module Header ─────────────────────────────────────────── -->
 <div style="background:#8C1D40;border-radius:6px;padding:20px 24px 16px;margin-bottom:24px;">
   <h2 style="color:#FFC627;font-size:22px;font-weight:700;margin:0 0 4px;">M6 Overview &amp; Learning Materials</h2>
-  <p style="color:#ffffff;font-size:15px;margin:0;font-weight:600;">Spatio-Temporal Analysis &amp; Neighborhood Trajectories</p>
+  <p style="color:#ffffff;font-size:15px;margin:0;font-weight:600;">Spatio-Temporal Change (Part 2) &mdash; Neighborhood Trajectories</p>
 </div>
 
 <!-- ── Module Overview ───────────────────────────────────────── -->
@@ -21,7 +21,7 @@
     <li>Interpret the policy implications of <strong>persistent hot spots</strong>, <strong>emerging hot spots</strong>, <strong>dissolving hot spots</strong>, and <strong>spatial outliers</strong> across time</li>
     <li>Test whether change scores are <strong>spatially autocorrelated</strong> using space-time Moran&rsquo;s I</li>
     <li>Interpret a significant space-time Moran&rsquo;s I as evidence of <strong>spatial diffusion of decline or recovery</strong></li>
-    <li>Construct a <strong>three-point hardship trend</strong> and classify block groups as consistently improving, consistently worsening, or non-monotone</li>
+    <li>Construct a <strong>multi-point hardship trend</strong> and classify block groups as consistently improving, consistently worsening, or non-monotone</li>
     <li>Build a <strong>trajectory map</strong> communicating neighborhood change pathways for policy audiences</li>
   </ul>
 </div>
@@ -29,7 +29,7 @@
 <!-- ── Lecture ───────────────────────────────────────────────── -->
 <div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
   <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Lecture</h3>
-  <p style="margin:0 0 8px;line-height:1.6;">The lecture notes cover LISA trajectory analysis, transition matrices, space-time Moran&rsquo;s I, three-point trend classification, and policy design for different neighborhood trajectory types.</p>
+  <p style="margin:0 0 8px;line-height:1.6;">The lecture notes cover LISA trajectory analysis, transition matrices, space-time Moran&rsquo;s I, multi-point trend classification, and policy design for different neighborhood trajectory types.</p>
   <p style="margin:0;">&#x1F4C4; <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module6/Lecture/Module6_Lecture_Slides.pdf" style="color:#8C1D40;font-weight:600;">Spatio-Temporal Analysis &mdash; Lecture Notes (PDF)</a></p>
 </div>
 
@@ -114,7 +114,7 @@
 
 <!-- ── Section 3 ─────────────────────────────────────────────── -->
 <div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
-  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 3: Three-Point Trend Analysis</h3>
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 3: Multi-Point Trend Analysis</h3>
   <p style="margin:0 0 10px;line-height:1.6;">Two time points give us a change score but not a trend. A neighborhood could show apparent improvement from 2010 to 2019 because of a one-time shock in 2010 (a factory closure, a flood) rather than sustained structural change. Adding a <strong>middle time point</strong> &mdash; the 2012&ndash;2016 ACS 5-year estimate (<code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">year = 2016</code>) &mdash; lets us distinguish genuine sustained improvement from noise.</p>
   <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Classifying Trends</h4>
   <p style="margin:0 0 10px;line-height:1.6;">With three observations (h<sub>2010</sub>, h<sub>2016</sub>, h<sub>2019</sub>), we can classify each block group by the monotonicity of its trajectory:</p>
@@ -154,7 +154,7 @@
       </tr>
     </tbody>
   </table>
-  <p style="margin:0 0 14px;line-height:1.6;">The three-point trend is more robust than a two-point change score because a single outlier year has less leverage. Block groups classified as &ldquo;consistently improving&rdquo; represent genuine multi-year recovery trajectories, not just a one-year blip.</p>
+  <p style="margin:0 0 14px;line-height:1.6;">The multi-point trend is more robust than a two-point change score because a single outlier year has less leverage. Block groups classified as &ldquo;consistently improving&rdquo; represent genuine multi-year recovery trajectories, not just a one-year blip.</p>
   <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">The Trend Slope</h4>
   <p style="margin:0;line-height:1.6;">For a continuous measure of trajectory, you can fit a simple regression for each block group. A positive slope means hardship increased on average across the decade; a negative slope means it decreased. The slope is measured in pooled z-score units per year &mdash; a slope of +0.05 means hardship increased by 0.05 standard deviations per year on average.</p>
 </div>
@@ -234,7 +234,7 @@
         <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The process by which neighborhood decline or recovery spreads to adjacent areas</td>
       </tr>
       <tr style="background:#fffdf0;">
-        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Three-Point Trend</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Multi-Point Trend</td>
         <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Using three time observations to classify trajectory as monotone (consistent) or non-monotone</td>
       </tr>
       <tr style="background:#ffffff;">

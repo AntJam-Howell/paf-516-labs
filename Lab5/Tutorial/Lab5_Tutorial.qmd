@@ -1,6 +1,6 @@
 ---
 title: "Lab 5 Tutorial | PAF 516"
-subtitle: "Temporal Change Analysis — 2013 → 2019"
+subtitle: "Spatio-Temporal Change (Part 1) — 2013 → 2019"
 format:
   html:
     theme: readable
