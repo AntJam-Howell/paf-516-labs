@@ -221,7 +221,6 @@ Students are encouraged to engage the material daily rather than in occasional l
 ## Communications & Instructor Feedback
 
 - Post technical and coding questions to the course discussion board
-- Use the Calendly link in Canvas to schedule individual office hours (Zoom)
 - Email the instructor directly for private matters — allow 24–48 hours for replies
 - Graded feedback is returned within 5–10 business days
 
@@ -289,10 +288,6 @@ Students seeking academic accommodations must contact the ASU Disability Resourc
 ## Religious & Military Accommodations
 
 Students will not be penalized for absences due to religious observance or military activation. Notify the instructor as far in advance as possible to arrange alternatives. See ASU policy USI 201-18 for military-related withdrawals and incompletes.
-
-## Workload Expectations
-
-Per Arizona Board of Regents policy, a 3-credit course requires approximately **135 hours** of total student effort — roughly 9 hours per week for a 15-week semester, or 18 hours per week for a 7.5-week accelerated session. Plan accordingly when registering for multiple courses.
 
 \newpage
 
