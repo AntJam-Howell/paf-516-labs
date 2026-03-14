@@ -53,8 +53,6 @@ The lecture notes provide detailed slide-by-slide annotations, with the main poi
 
 Download the lecture notes: [Measurement Theory --- Lecture Notes (PDF)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module1/Lecture/Module1_Lecture_Slides.pdf)
 
-[Video Lecture: Measurement Theory](https://www.youtube.com/watch?v=ra5rMqr00Ew)
-
 :::
 
 ## Section 1: What Is Measurement?
