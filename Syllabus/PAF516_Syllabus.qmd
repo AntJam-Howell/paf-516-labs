@@ -203,7 +203,7 @@ Students will replicate and extend results from lectures using Census data from 
 Upon successful completion of this course, students will be able to:
 
 - Construct reliable composite indices from census data using measurement theory principles (Cronbach's alpha, z-score standardization)
-- Apply cartographic design principles to create professional, audience-appropriate choropleth maps
+- Apply variable classification and spatial scale principles to create professional, audience-appropriate choropleth maps
 - Integrate tabular and spatial datasets using joins, buffers, and proximity operations in R
 - Detect and interpret spatial autocorrelation using Moran's I and LISA statistics
 - Analyze demographic and economic neighborhood change across multiple ACS survey years
@@ -330,7 +330,7 @@ The course runs for seven modules. Each module includes lecture content, a weekl
   {Measurement, Indexing \& Multi-Scale Mapping}
   {Census Data · Reliability · Composite Indices}
   {%
-    \begin{itemize}[nosep, leftmargin=1.2em]
+    \begin{itemize}[nosep, leftmargin=0em]
       \item Latent constructs and composite index building
       \item Z-score standardization and Cronbach's alpha
       \item \texttt{tidycensus} data retrieval and \texttt{corrplot} visualization
@@ -342,7 +342,7 @@ The course runs for seven modules. Each module includes lecture content, a weekl
   {Variable Classification \& Spatial Scale}
   {Classification Schemes · Visual Communication}
   {%
-    \begin{itemize}[nosep, leftmargin=1.2em]
+    \begin{itemize}[nosep, leftmargin=0em]
       \item Data classification: equal interval, quantile, Jenks, standard deviation
       \item Color theory and ColorBrewer palettes
       \item Diverging vs.\ sequential vs.\ qualitative schemes
@@ -354,7 +354,7 @@ The course runs for seven modules. Each module includes lecture content, a weekl
   {Spatial Data Integration}
   {Spatial Joins · Point Data · Environmental Context}
   {%
-    \begin{itemize}[nosep, leftmargin=1.2em]
+    \begin{itemize}[nosep, leftmargin=0em]
       \item Joining tabular census data with external point datasets
       \item Spatial operations: buffers, proximity, containment
       \item Incorporating environmental hazards and community amenities
@@ -366,7 +366,7 @@ The course runs for seven modules. Each module includes lecture content, a weekl
   {Spatial Autocorrelation}
   {Cluster Detection · Moran's I · LISA}
   {%
-    \begin{itemize}[nosep, leftmargin=1.2em]
+    \begin{itemize}[nosep, leftmargin=0em]
       \item Global vs.\ local spatial autocorrelation
       \item Moran's I statistic and interpretation
       \item LISA: Local Indicators of Spatial Association
@@ -378,7 +378,7 @@ The course runs for seven modules. Each module includes lecture content, a weekl
   {Temporal Change Analysis}
   {ACS Vintages · Neighborhood Trajectories}
   {%
-    \begin{itemize}[nosep, leftmargin=1.2em]
+    \begin{itemize}[nosep, leftmargin=0em]
       \item Comparing American Community Survey data across two time periods
       \item Constructing change scores and difference maps
       \item Classifying neighborhoods: improving, deteriorating, or stable
@@ -390,7 +390,7 @@ The course runs for seven modules. Each module includes lecture content, a weekl
   {Policy Brief \& Multi-Scale Synthesis}
   {Applied Communication · Stakeholder-Facing Outputs}
   {%
-    \begin{itemize}[nosep, leftmargin=1.2em]
+    \begin{itemize}[nosep, leftmargin=0em]
       \item Translating spatial analysis for non-technical audiences
       \item Structuring evidence-based policy recommendations
       \item Multi-scale synthesis across geographic units
@@ -402,7 +402,7 @@ The course runs for seven modules. Each module includes lecture content, a weekl
   {Final Project Dashboard}
   {Quarto Dashboard · Integration · Deployment}
   {%
-    \begin{itemize}[nosep, leftmargin=1.2em]
+    \begin{itemize}[nosep, leftmargin=0em]
       \item Assembling all prior analyses into an interactive Quarto dashboard
       \item Layout, widgets, and interactivity design
       \item Deploying to GitHub Pages for public access
