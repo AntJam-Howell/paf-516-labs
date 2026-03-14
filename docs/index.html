@@ -63,6 +63,31 @@
   }
   .syllabus-btn:hover { opacity: 0.85; }
 
+  /* ── Learning arc ─────────────────────────────────── */
+  .learning-arc {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 30px; margin-bottom: 52px;
+    border-top: 3px solid var(--gold);
+  }
+  .learning-arc p { font-size: 0.92rem; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+  .learning-arc table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    font-size: 0.85rem;
+  }
+  .learning-arc th {
+    text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border);
+    color: var(--text); font-weight: 700;
+  }
+  .learning-arc td {
+    padding: 8px 12px; border-bottom: 1px solid var(--border);
+    color: var(--muted); line-height: 1.5;
+  }
+  .learning-arc tr:last-child td { border-bottom: none; }
+  .learning-arc .arc-note {
+    font-size: 0.88rem; color: var(--text); font-weight: 600;
+    margin-top: 8px; margin-bottom: 0;
+  }
+
   /* ── Module grid ─────────────────────────────────── */
   .modules-grid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 52px;
@@ -174,6 +199,32 @@
     </ul>
 
     <a class="syllabus-btn" href="PAF516_Syllabus.pdf" target="_blank">View Full Syllabus (PDF)</a>
+  </div>
+
+  <!-- ── COURSE LEARNING ARC ────────────────────────── -->
+  <div class="section-header">
+    <h2>Course Learning Arc</h2>
+    <span class="section-tag">Cumulative project thread</span>
+  </div>
+  <p class="section-sub">The Economic Hardship Index you build in Lab 1 is the foundation for every subsequent module.</p>
+
+  <div class="learning-arc">
+    <p>Each lab takes the same index and asks a progressively more sophisticated analytical question:</p>
+    <table>
+      <thead>
+        <tr><th>Module</th><th>Lab</th><th>Core Question</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Module 1</strong></td><td>Lab 1</td><td><em>Is the index reliable?</em> Build the index, assess Cronbach&rsquo;s alpha, map at three scales</td></tr>
+        <tr><td><strong>Module 2</strong></td><td>Lab 2</td><td><em>How do we communicate it?</em> Classification schemes, bivariate mapping, interactive GPU maps</td></tr>
+        <tr><td><strong>Module 3</strong></td><td>Lab 3</td><td><em>What else is layered on top?</em> Spatial joins, buffer analysis, external data integration</td></tr>
+        <tr><td><strong>Module 4</strong></td><td>Lab 4</td><td><em>Does hardship cluster spatially?</em> Moran&rsquo;s I, LISA hot spot maps, spatial autocorrelation</td></tr>
+        <tr><td><strong>Module 5</strong></td><td>Lab 5</td><td><em>Is hardship getting better or worse?</em> 2015 vs 2023 ACS temporal change analysis</td></tr>
+        <tr><td><strong>Module 6</strong></td><td>Lab 6</td><td><em>How do we communicate findings?</em> Professional Quarto policy brief</td></tr>
+        <tr><td><strong>Module 7</strong></td><td>Final Project</td><td><em>Can we build a dashboard?</em> Quarto Dashboard with dark theme, interactive maps, LISA</td></tr>
+      </tbody>
+    </table>
+    <p class="arc-note">Build the index right in Lab 1. A poorly constructed index produces misleading maps in Lab 2, flawed spatial statistics in Lab 4, and uninformative policy recommendations in Lab 6.</p>
   </div>
 
   <!-- ── MODULE GUIDES ─────────────────────────────── -->

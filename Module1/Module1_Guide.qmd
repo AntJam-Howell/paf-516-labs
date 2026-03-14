@@ -196,30 +196,6 @@ The Lab 1 materials are on the course lab site. Visit the links below to access 
 
 :::
 
-## Course Learning Arc
-
-::: {.section-box}
-
-The Economic Hardship Index you build in Lab 1 is the **foundation for
-every subsequent module**. Each lab takes the same index and asks a
-progressively more sophisticated analytical question:
-
-| Module | Lab | Core Question |
-|--------|-----|---------------|
-| **Module 1** | Lab 1 | *Is the index reliable?* Build the index, assess Cronbach's alpha, map at three scales |
-| **Module 2** | Lab 2 | *How do we communicate it?* Classification schemes, bivariate mapping, interactive GPU maps |
-| **Module 3** | Lab 3 | *What else is layered on top?* Spatial joins, buffer analysis, external data integration |
-| **Module 4** | Lab 4 | *Does hardship cluster spatially?* Moran's I, LISA hot spot maps, spatial autocorrelation |
-| **Module 5** | Lab 5 | *Is hardship getting better or worse?* 2015 vs 2023 ACS temporal change analysis |
-| **Module 6** | Lab 6 | *How do we communicate findings?* Professional Quarto policy brief |
-| **Module 7** | Final Project | *Can we build a dashboard?* Quarto Dashboard with dark theme, interactive maps, LISA |
-
-**Build the index right in Lab 1.** A poorly constructed index produces
-misleading maps in Lab 2, flawed spatial statistics in Lab 4, and
-uninformative policy recommendations in Lab 6.
-
-:::
-
 ## Yellowdig Discussion
 
 ::: {.section-box}
