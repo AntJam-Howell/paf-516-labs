@@ -101,6 +101,16 @@ tract_2013_raw <- load_or_pull(
 ```
 
 ```{r}
+#| label: step.02-pull-2013-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# tract_2013_raw <- readRDS("../data/maricopa_tracts_2013.rds")
+```
+
+```{r}
 #| label: step.02-pull-2019
 #| results: hide
 # 2015–2019 ACS | year = 2019 | also 2010 TIGER/Line tract boundaries
@@ -112,6 +122,16 @@ tract_2019_raw <- load_or_pull(
     survey = "acs5", geometry = TRUE, progress_bar = FALSE
   )
 )
+```
+
+```{r}
+#| label: step.02-pull-2019-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# tract_2019_raw <- readRDS("../data/maricopa_tracts_2019.rds")
 ```
 
 

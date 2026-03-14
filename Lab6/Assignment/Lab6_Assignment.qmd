@@ -119,6 +119,17 @@ tract_2019_raw <- load_or_pull(
 ```
 
 ```{r}
+#| label: step.01-pull-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# tract_2013_raw <- readRDS("../data/maricopa_tracts_2013.rds")
+# tract_2019_raw <- readRDS("../data/maricopa_tracts_2019.rds")
+```
+
+```{r}
 #| label: step.01-wrangle
 widen_and_rate <- function(df) {
   df %>%
@@ -304,6 +315,16 @@ tract_2016_raw <- load_or_pull(
     year = 2016, survey = "acs5", geometry = FALSE, progress_bar = FALSE
   )
 )
+```
+
+```{r}
+#| label: step.07-pull-2016-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# tract_2016_raw <- readRDS("../data/maricopa_tracts_2016.rds")
 ```
 
 ```{r}

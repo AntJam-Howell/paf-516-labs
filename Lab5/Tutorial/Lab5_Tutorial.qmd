@@ -136,6 +136,16 @@ cat("2013 rows:", nrow(tract_2013_raw), "\n")
 ```
 
 ```{r}
+#| label: step.01-pull-2013-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# tract_2013_raw <- readRDS("../data/maricopa_tracts_2013.rds")
+```
+
+```{r}
 #| label: step.01-pull-2019
 #| results: hide
 
@@ -149,6 +159,16 @@ tract_2019_raw <- load_or_pull(
   )
 )
 cat("2019 rows:", nrow(tract_2019_raw), "\n")
+```
+
+```{r}
+#| label: step.01-pull-2019-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# tract_2019_raw <- readRDS("../data/maricopa_tracts_2019.rds")
 ```
 
 

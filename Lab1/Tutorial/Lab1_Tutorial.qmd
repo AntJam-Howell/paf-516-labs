@@ -120,6 +120,17 @@ CenDF <- get_acs(
 )
 ```
 
+```{r}
+#| label: step.01-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# CenDF_complete <- readRDS("../data/hardship_tracts_az.rds")
+# CenDF_complete <- readRDS("../data/CenDF_complete_5var.rds")
+```
+
 **Variable justification:**
 
 | Variable | Census Code | Why Included |
@@ -249,6 +260,17 @@ county_df <- get_acs(
 ```
 
 ```{r}
+#| label: step.05-pull-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# county_complete <- readRDS("../data/hardship_counties_us.rds")
+# county_complete <- readRDS("../data/county_complete.rds")
+```
+
+```{r}
 #| label: step.05-index
 
 county_wide <- county_df %>%
@@ -327,6 +349,17 @@ cbg_df <- get_acs(
   geometry     = TRUE,
   progress_bar = FALSE
 )
+```
+
+```{r}
+#| label: step.07-pull-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# cbg_complete <- readRDS("../data/hardship_cbg_maricopa.rds")
+# cbg_complete <- readRDS("../data/cbg_complete.rds")
 ```
 
 ```{r}
@@ -413,6 +446,16 @@ CenDF_10 <- get_acs(
   geometry     = TRUE,
   progress_bar = FALSE
 )
+```
+
+```{r}
+#| label: step.08-pull-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# CenDF_complete_10 <- readRDS("../data/CenDF_complete_10var.rds")
 ```
 
 ```{r}

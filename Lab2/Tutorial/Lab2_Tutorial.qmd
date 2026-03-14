@@ -168,6 +168,16 @@ cbg_raw <- get_acs(
 #     total_tenure = "tenure_total", renter_occ = "tenure_rent"))
 ```
 
+```{r}
+#| label: step.01b-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# cbg <- readRDS("../data/cbg.rds")
+```
+
 ## 1c. Reshape and compute rates
 
 ```{r}
@@ -531,6 +541,17 @@ county_raw <- get_acs(
 #     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
 #     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
 #     median_income = "med_income"))
+```
+
+```{r}
+#| label: step.06a-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# county_df <- readRDS("../data/county_df.rds")
+# county_map <- readRDS("../data/county_map.rds")
 ```
 
 ## 6b. Build the economic hardship index at the county level

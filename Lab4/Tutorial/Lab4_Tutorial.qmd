@@ -99,6 +99,16 @@ cbg_raw <- get_acs(
 )
 ```
 
+```{r}
+#| label: step.01-pull-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# cbg_raw <- readRDS("../data/cbg_index_lab4_complete.rds")
+```
+
 
 # Step 2: Build the 5-Variable Economic Hardship Index
 
