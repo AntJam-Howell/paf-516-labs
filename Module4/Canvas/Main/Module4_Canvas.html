@@ -1,0 +1,228 @@
+<!-- ============================================================
+     PAF 516 — Module 4 Guide
+     Canvas-compatible HTML: all styles inline, no external deps
+     ============================================================ -->
+
+<!-- ── Module Header ─────────────────────────────────────────── -->
+<div style="background:#8C1D40;border-radius:6px;padding:20px 24px 16px;margin-bottom:24px;">
+  <h2 style="color:#FFC627;font-size:22px;font-weight:700;margin:0 0 4px;">M4 Overview &amp; Learning Materials</h2>
+  <p style="color:#ffffff;font-size:15px;margin:0;font-weight:600;">Spatial Autocorrelation &amp; Hot Spot Analysis</p>
+</div>
+
+<!-- ── Module Overview ───────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Module Overview and Objectives</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">In Modules 1&ndash;3, you built and mapped an economic hardship index. You probably noticed clusters &mdash; groups of nearby block groups with similarly high or low values. But are those clusters <strong>statistically significant</strong>, or could they have occurred by chance? This module gives you the tools to answer that question.</p>
+  <p style="margin:0 0 12px;line-height:1.6;"><strong>Spatial autocorrelation</strong> is the tendency for nearby locations to have similar values &mdash; a formalization of <strong>Tobler&rsquo;s First Law of Geography</strong>: &ldquo;Everything is related to everything else, but near things are more related than distant things.&rdquo; This module teaches you to measure spatial autocorrelation globally (across the entire study area) and locally (at each individual location), enabling you to identify statistically significant <strong>hot spots</strong>, <strong>cold spots</strong>, and <strong>spatial outliers</strong>.</p>
+  <hr style="border:none;border-top:1px solid #d9c8cd;margin:12px 0;">
+  <p style="margin:0 0 8px;font-weight:700;color:#8C1D40;">After completing this module, you will be able to:</p>
+  <ul style="margin:0;padding-left:20px;line-height:1.8;">
+    <li>Explain <strong>Tobler&rsquo;s First Law of Geography</strong> and its relationship to spatial autocorrelation</li>
+    <li>Construct <strong>spatial weights matrices</strong> using queen contiguity, rook contiguity, and distance-based approaches</li>
+    <li>Calculate and interpret <strong>Global Moran&rsquo;s I</strong> as a measure of overall spatial clustering</li>
+    <li>Calculate and interpret <strong>Local Moran&rsquo;s I (LISA)</strong> to identify local clusters and outliers</li>
+    <li>Classify locations as <strong>hot spots (HH)</strong>, <strong>cold spots (LL)</strong>, or <strong>spatial outliers (HL, LH)</strong></li>
+    <li>Create LISA cluster maps with appropriate symbology</li>
+    <li>Evaluate statistical significance using permutation-based pseudo p-values</li>
+  </ul>
+</div>
+
+<!-- ── Lecture ───────────────────────────────────────────────── -->
+<div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Lecture</h3>
+  <p style="margin:0 0 8px;line-height:1.6;">The lecture notes cover Tobler&rsquo;s First Law, spatial weights matrices, Global Moran&rsquo;s I, Local Moran&rsquo;s I (LISA), and cluster map interpretation.</p>
+  <p style="margin:0;">&#x1F4C4; <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module4/Lecture/Module4_Lecture_Slides.pdf" style="color:#8C1D40;font-weight:600;">Spatial Autocorrelation &mdash; Lecture Notes (PDF)</a></p>
+</div>
+
+<!-- ── Section 1 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 1: Tobler&rsquo;s First Law and Spatial Autocorrelation</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">Most standard statistical methods assume that observations are <strong>independent</strong>. But spatial data almost always violates this assumption &mdash; poverty in one census tract is correlated with poverty in neighboring tracts. This is not a nuisance to be corrected; it is a <strong>substantive phenomenon</strong> that reveals how social and economic processes operate across space.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Three Types of Spatial Patterns</h4>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
+    <li><strong>Positive spatial autocorrelation (clustered)</strong>: Similar values tend to be near each other. High-poverty tracts cluster together; affluent tracts cluster together. This is the most common pattern in social data.</li>
+    <li><strong>Negative spatial autocorrelation (dispersed)</strong>: Dissimilar values tend to be near each other (a checkerboard pattern). Rare in practice for social variables.</li>
+    <li><strong>Spatial randomness</strong>: No relationship between location and value. The null hypothesis against which we test.</li>
+  </ul>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
+    <p style="margin:0;line-height:1.6;"><strong>Why it matters for policy:</strong> If hardship is spatially clustered, then place-based interventions (targeting specific neighborhoods) make sense. If hardship is spatially random, then people-based interventions (targeting individuals regardless of location) may be more efficient.</p>
+  </div>
+</div>
+
+<!-- ── Section 2 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 2: Spatial Weights Matrices</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">To measure spatial autocorrelation, we first need to define <strong>&ldquo;neighbor&rdquo;</strong> &mdash; which locations are considered near each other? This definition is encoded in a <strong>spatial weights matrix (W)</strong>, where each cell w<sub>ij</sub> represents the spatial relationship between locations i and j.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Common Neighbor Definitions</h4>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Type</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Definition</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">R Function</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Queen contiguity</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Polygons that share any boundary point (edge or vertex)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;"><code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">poly2nb(sf_obj, queen = TRUE)</code></td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Rook contiguity</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Polygons that share an edge (not just a point)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;"><code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">poly2nb(sf_obj, queen = FALSE)</code></td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Distance-based</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">All locations within a specified distance</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;"><code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">dnearneigh(coords, d1, d2)</code></td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;font-weight:600;">K-nearest neighbors</td>
+        <td style="padding:8px 12px;">The k closest locations are neighbors</td>
+        <td style="padding:8px 12px;"><code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">knearneigh(coords, k)</code></td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin:0 0 14px;line-height:1.6;">After defining neighbors, you convert to a weights list object using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">nb2listw()</code>. The <strong>row-standardized</strong> version (style = &ldquo;W&rdquo;) is most common &mdash; each neighbor&rsquo;s weight sums to 1, so the spatial lag of a variable is the mean of its neighbors&rsquo; values.</p>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
+    <p style="margin:0;line-height:1.6;"><strong>Choice matters:</strong> The neighbor definition affects your results. Queen contiguity is the standard default for polygon data, but always check that every observation has at least one neighbor (island polygons cause errors).</p>
+  </div>
+</div>
+
+<!-- ── Section 3 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 3: Global Moran&rsquo;s I</h3>
+  <p style="margin:0 0 10px;line-height:1.6;"><strong>Global Moran&rsquo;s I</strong> is a single summary statistic that measures the degree of spatial autocorrelation across the entire study area. It answers: &ldquo;Is there a statistically significant spatial pattern overall?&rdquo;</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Interpretation</h4>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
+    <li><strong>I &gt; 0</strong>: Positive spatial autocorrelation &mdash; similar values cluster together</li>
+    <li><strong>I &asymp; 0</strong>: Spatial randomness (expected value under null is -1/(n-1), close to 0 for large n)</li>
+    <li><strong>I &lt; 0</strong>: Negative spatial autocorrelation &mdash; dissimilar values are adjacent</li>
+  </ul>
+  <p style="margin:0 0 14px;line-height:1.6;">In R, the <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">spdep</code> package computes Global Moran&rsquo;s I with <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">moran.test()</code>. The function returns the I statistic, expected value, variance, and a p-value.</p>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
+    <p style="margin:0;line-height:1.6;"><strong>Limitation:</strong> Global Moran&rsquo;s I tells you that clustering exists, but not <em>where</em>. A study area could have both hot spots and cold spots that produce the same global statistic. This is why we need local indicators.</p>
+  </div>
+</div>
+
+<!-- ── Section 4 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 4: Local Moran&rsquo;s I (LISA) and Cluster Maps</h3>
+  <p style="margin:0 0 10px;line-height:1.6;"><strong>Local Indicators of Spatial Association (LISA)</strong> decompose the global statistic into a contribution from each individual location. Each location receives its own Local Moran&rsquo;s I value and significance level, which classifies it into one of four categories:</p>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Category</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Interpretation</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Map Color</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">High-High (HH)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">A high-value location surrounded by high-value neighbors &mdash; a <strong>hot spot</strong></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Red</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Low-Low (LL)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">A low-value location surrounded by low-value neighbors &mdash; a <strong>cold spot</strong></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Blue</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">High-Low (HL)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">A high-value location surrounded by low-value neighbors &mdash; a <strong>spatial outlier</strong></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Light red / pink</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Low-High (LH)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">A low-value location surrounded by high-value neighbors &mdash; a <strong>spatial outlier</strong></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Light blue</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;font-weight:600;">Not significant</td>
+        <td style="padding:8px 12px;">No statistically significant local spatial pattern</td>
+        <td style="padding:8px 12px;">Gray</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin:0 0 14px;line-height:1.6;">In R, use <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">localmoran()</code> from the <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">spdep</code> package. The output includes the local I value, expected value, variance, z-score, and p-value for each observation.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">The Moran Scatterplot</h4>
+  <p style="margin:0 0 14px;line-height:1.6;">A Moran scatterplot places the standardized variable on the x-axis and its spatial lag (average of neighbors) on the y-axis. The four quadrants correspond directly to the HH, LL, HL, and LH categories. The slope of the best-fit line through the scatterplot equals Global Moran&rsquo;s I.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Multiple Testing Caution</h4>
+  <p style="margin:0;line-height:1.6;">When testing hundreds of locations simultaneously, some will appear significant by chance alone. Consider applying a <strong>Bonferroni correction</strong> or using a stricter significance threshold (e.g., p &lt; 0.01 instead of p &lt; 0.05) to reduce false positives.</p>
+</div>
+
+<!-- ── Readings ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Readings</h3>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.9;">
+    <li>Tobler, W. R. (1970). A computer movie simulating urban growth in the Detroit region. <em>Economic Geography</em>, 46(sup1), 234&ndash;240. &mdash; The origin of the &ldquo;First Law of Geography.&rdquo;</li>
+    <li>Anselin, L. (1995). Local indicators of spatial association &mdash; LISA. <em>Geographical Analysis</em>, 27(2), 93&ndash;115. &mdash; The seminal paper introducing LISA statistics.</li>
+    <li>Bivand, R. S., &amp; Wong, D. W. S. (2018). Comparing implementations of global and local indicators of spatial association. <em>TEST</em>, 27(3), 716&ndash;748. <a href="https://doi.org/10.1007/s11749-018-0599-x" style="color:#8C1D40;">doi:10.1007/s11749-018-0599-x</a> &mdash; Comparison of Moran&rsquo;s I implementations across software platforms.</li>
+    <li>Anselin, L. (2020). <a href="https://geodacenter.github.io/workbook/5a_global_auto/lab5a.html" style="color:#8C1D40;">Global spatial autocorrelation</a> and <a href="https://geodacenter.github.io/workbook/6a_local_auto/lab6a.html" style="color:#8C1D40;">Local spatial autocorrelation</a>. <em>GeoDa Workbook</em>. &mdash; Interactive tutorials covering Global Moran&rsquo;s I and LISA.</li>
+    <li>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. <a href="https://walker-data.com/census-r/" style="color:#8C1D40;">https://walker-data.com/census-r/</a></li>
+  </ul>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">R Package Documentation</h4>
+  <ul style="margin:0;padding-left:20px;line-height:1.9;">
+    <li><a href="https://r-spatial.github.io/spdep/" style="color:#8C1D40;">spdep package documentation</a> &mdash; spatial dependence: weights, statistics, and models</li>
+    <li><a href="https://r-spatial.github.io/spdep/articles/nb.html" style="color:#8C1D40;">spdep: Creating Neighbours (vignette)</a> &mdash; neighbor definitions guide</li>
+    <li><a href="https://walker-data.com/tidycensus/" style="color:#8C1D40;">tidycensus package</a> &mdash; Census data with geometry</li>
+  </ul>
+</div>
+
+<!-- ── Key Terms ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:8px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Key Terms</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;width:30%;">Term</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Definition</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Spatial Autocorrelation</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The correlation of a variable with itself through space &mdash; nearby locations tend to have similar values</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Tobler&rsquo;s First Law</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">&ldquo;Everything is related to everything else, but near things are more related than distant things&rdquo;</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Spatial Weights Matrix (W)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A matrix encoding the neighbor relationships between all spatial observations</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Queen Contiguity</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Two polygons are neighbors if they share any boundary point (edge or corner)</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Global Moran&rsquo;s I</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A single statistic measuring overall spatial autocorrelation across the study area</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Local Moran&rsquo;s I (LISA)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A statistic computed for each location measuring its contribution to the global spatial pattern</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Hot Spot (HH)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A high-value location surrounded by high-value neighbors &mdash; a cluster of high values</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Cold Spot (LL)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A low-value location surrounded by low-value neighbors &mdash; a cluster of low values</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Spatial Outlier (HL/LH)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A location whose value differs markedly from its neighbors</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;font-weight:600;color:#8C1D40;">Moran Scatterplot</td>
+        <td style="padding:8px 12px;">A plot of standardized values vs. their spatial lag; quadrants correspond to HH, LL, HL, LH</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

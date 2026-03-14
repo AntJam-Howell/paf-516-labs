@@ -1,12 +1,12 @@
 ---
-title: "Lab 4 Assignment | PAF 516"
+title: "Lab 4 Tutorial | PAF 516"
 subtitle: "Spatial Autocorrelation & Hot Spot Analysis"
 format:
   html:
     theme: readable
     highlight-style: tango
     toc: true
-    toc-title: "Steps & Questions"
+    toc-title: "Steps"
     self-contained: true
     number-sections: false
 execute:
@@ -16,63 +16,20 @@ execute:
   fig-width: 10
 ---
 
-::: {.callout-important}
-## Before you begin
-1. **This file contains the same pre-filled code as the tutorial.** Steps 1–7 below produce the same output you saw in the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately (Cmd+Shift+K / Ctrl+Shift+K) and see the same results. If you placed it in a different location, run the `packages` chunk first (Cmd+Return / Ctrl+Enter), then knit.
-3. **The assignment questions are at the top of this document.** Here is the workflow:
-   - **Q1** asks you to interpret the Global Moran's I result and identify hot spot areas from the LISA map. Knit first, then review Step 4 (Moran's I output) and Step 7 (LISA cluster map), then write your answers.
-   - **Q2** asks you to re-run the full LISA analysis on **poverty rate alone** instead of the composite index. Fill in the scaffold chunks labeled `q2-...` at the end of this document, then re-knit.
-   - **Q3** asks you to compare the poverty-rate hot spots to the composite index hot spots and discuss what this tells you about measurement.
-4. Submit both `Lab4_Assignment_YourLastName.qmd` and `Lab4_Assignment_YourLastName.html` to Canvas.
-:::
-
-# Assignment Questions
-
-## Q1 — Interpret the Global Moran's I and LISA Results {.question}
-
-> **Text answer — no code required.** Knit the file first, then review the Step 4 output and Step 7 maps before writing your answers.
-
-- **Global Moran's I:** What is the Moran's I value and is it statistically significant? What does this tell you about the spatial distribution of economic hardship in Maricopa County?
-
-[YOUR ANSWER HERE]
-
-- **Hot spot identification:** From the LISA cluster map, identify 2--3 specific hot spot (HH) areas. Where in the county are they concentrated? Do they correspond to areas you would expect based on your knowledge of the Phoenix metro area?
-
-[YOUR ANSWER HERE]
-
-- **Cold spots and outliers:** Where are the cold spots (LL)? Are there any spatial outliers (HL or LH), and what might explain them?
-
-[YOUR ANSWER HERE]
-
-
-## Q2 — LISA Analysis on Poverty Rate Alone {.question}
-
-> **Code + output required.** Rerun the entire LISA analysis on a **single component variable** --- poverty rate alone --- instead of the composite economic hardship index. Fill in the scaffold chunks at the end of this document to produce: (1) Global Moran's I for poverty rate, (2) LISA classification, (3) a LISA cluster map, and (4) a side-by-side comparison of poverty vs. composite hot spots.
-
 ::: {.callout-tip}
-**Hint:** The spatial weights (`lw`) are already built in Step 3. You only need to rerun `moran.test()`, `localmoran()`, and the classification/mapping code — substituting `poverty_rate` for `hardship_index`.
+## How to use this file
+**First time:** Click **Render** (Cmd+Shift+K / Ctrl+Shift+K) to see all results. Then run chunk by chunk to understand each step.
+
+This file is for learning — do not edit it. When ready for the assignment, go to:
+[https://antjam-howell.github.io/paf-516-labs/lab4-assignment.html](https://antjam-howell.github.io/paf-516-labs/lab4-assignment.html)
 :::
 
-
-## Q3 — Compare Poverty Hot Spots vs. Composite Index Hot Spots {.question}
-
-> **Text answer — no code required.**
-
-- **Pattern comparison:** Do the hot spots shift when you use poverty rate alone vs. the 5-variable composite index? Are some areas identified as hot spots by one measure but not the other?
-
-[YOUR ANSWER HERE]
-
-- **Measurement implications:** What does this comparison tell you about using a single variable vs. a composite index for spatial analysis? Refer back to the Module 1 discussion of constructs vs. indicators.
-
-[YOUR ANSWER HERE]
-
-- **Policy relevance:** If you were advising a city agency on where to target neighborhood investment, would you use the poverty-rate hot spots or the composite-index hot spots? Why?
-
-[YOUR ANSWER HERE]
-
-
----
-
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10)
+options(tigris_use_cache = TRUE, tigris_progress_bar = FALSE)
+```
 
 ```{r}
 #| label: packages
@@ -89,7 +46,7 @@ if (!file.exists(".renv_done")) {
 library(tidyverse)
 library(tidycensus)
 library(sf)
-library(spdep)
+library(spdep)        # Spatial dependence: weights, Moran's I, LISA
 library(viridis)
 library(patchwork)
 ```
@@ -101,8 +58,21 @@ library(patchwork)
 # Then restart R.
 ```
 
+```{r}
+#| label: fallback-data
+# Option A (local): cbg_raw <- readRDS("../data/cbg_hardship_maricopa_2023.rds")
+# Option B (GitHub):
+# cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/data/cbg_hardship_maricopa_2023.rds"))
+# If using fallback, skip to Step 2.
+```
+
 
 # Step 1: Pull Maricopa County Block Group Data
+
+By now you have done this four times. We pull the same five ACS hardship
+variables used in Lab 1, but this time at the **Census Block Group (CBG)**
+level for Maricopa County. CBGs are smaller than tracts (roughly 600--3,000
+people), giving us finer spatial resolution to detect local clustering.
 
 ```{r}
 #| label: step.01-vars
@@ -178,14 +148,30 @@ ggplot(cbg_index) +
   theme_void()
 ```
 
+The map shows a clear visual pattern: high-hardship CBGs appear to cluster
+together in certain parts of the county, particularly in south Phoenix and
+parts of the west valley. But is this clustering statistically significant,
+or could it be random? That is the question spatial autocorrelation answers.
+
 
 # Step 3: Build Spatial Weights
+
+Before we can test for spatial clustering, we need to define what "neighbor"
+means. We use **queen contiguity**: two CBGs are neighbors if they share any
+boundary point (including corners), similar to how a queen moves in chess.
 
 ```{r}
 #| label: step.03-weights
 
+# Fix any geometry errors before building neighbor lists
 cbg_index <- st_make_valid(cbg_index)
+
+# poly2nb(): identify which CBGs share a boundary
 nb <- poly2nb(cbg_index, queen = TRUE)
+
+# nb2listw(): convert to row-standardized spatial weights
+# style="W" means each neighbor gets weight 1/n (n = number of neighbors)
+# zero.policy=TRUE handles any island CBGs with no neighbors
 lw <- nb2listw(nb, style = "W", zero.policy = TRUE)
 ```
 
@@ -198,6 +184,14 @@ neighbors) is a true average regardless of how many neighbors a polygon has.
 
 
 # Step 4: Global Moran's I
+
+Global Moran's I is a single summary statistic for the **entire study area**.
+It answers: "Overall, is the economic hardship index spatially clustered,
+randomly distributed, or dispersed?"
+
+- **I near +1** = strong positive spatial autocorrelation (clustering)
+- **I near 0** = spatial randomness
+- **I near -1** = spatial dispersion (checkerboard)
 
 ```{r}
 #| label: step.04-morans
@@ -219,8 +213,25 @@ cat("Expected I under randomness:", round(moran_global$estimate["Expectation"], 
 cat("p-value:", format.pval(moran_global$p.value, digits = 3), "\n")
 ```
 
+**Interpretation:** The Global Moran's I is positive and the p-value is
+extremely small (well below 0.05), meaning we reject the null hypothesis of
+spatial randomness. Hardship values are **significantly clustered** in
+Maricopa County --- CBGs with high hardship tend to be surrounded by other
+high-hardship CBGs, and vice versa.
+
 
 # Step 5: Moran Scatter Plot
+
+The Moran scatter plot visualizes the relationship between each CBG's
+hardship value (x-axis) and the average hardship of its neighbors --- the
+**spatial lag** (y-axis). The slope of the fitted line equals Global Moran's I.
+
+The four quadrants define the type of spatial association:
+
+- **HH (upper-right):** High value surrounded by high neighbors (hot spot)
+- **LL (lower-left):** Low value surrounded by low neighbors (cold spot)
+- **HL (lower-right):** High value surrounded by low neighbors (spatial outlier)
+- **LH (upper-left):** Low value surrounded by high neighbors (spatial outlier)
 
 ```{r}
 #| label: step.05-scatter
@@ -238,8 +249,19 @@ moran.plot(
 )
 ```
 
+Most points fall in the HH and LL quadrants, confirming positive spatial
+autocorrelation. The relatively few points in the HL and LH quadrants are
+spatial outliers --- CBGs that differ markedly from their neighbors.
+
 
 # Step 6: Local Moran's I (LISA)
+
+Global Moran's I tells us clustering exists *overall*, but not *where*.
+**Local Indicators of Spatial Association (LISA)** decompose the global
+statistic into a value for **each CBG**, telling us:
+
+1. Whether that specific CBG is part of a significant cluster
+2. What *type* of cluster it belongs to (HH, LL, HL, or LH)
 
 ```{r}
 #| label: step.06-lisa
@@ -250,9 +272,12 @@ lisa <- localmoran(
   zero.policy = TRUE
 )
 
+# Attach LISA results to the spatial data frame
 cbg_index$lisa_i     <- lisa[, "Ii"]
 cbg_index$lisa_z     <- lisa[, "Z.Ii"]
 cbg_index$lisa_p     <- lisa[, "Pr(z != E(Ii))"]
+
+# Compute the spatial lag for quadrant classification
 cbg_index$lag_hardship <- lag.listw(lw, cbg_index$hardship_index, zero.policy = TRUE)
 ```
 
@@ -280,6 +305,14 @@ table(cbg_index$lisa_cluster)
 
 
 # Step 7: LISA Cluster Map
+
+This is the payoff map. Each CBG is colored by its LISA classification:
+
+- **Red (HH):** Hot spots --- high-hardship CBGs surrounded by high-hardship neighbors
+- **Blue (LL):** Cold spots --- low-hardship CBGs surrounded by low-hardship neighbors
+- **Light coral (HL):** High-hardship outliers in low-hardship areas
+- **Light blue (LH):** Low-hardship outliers in high-hardship areas
+- **Grey (NS):** Not statistically significant at p <= 0.05
 
 ```{r}
 #| label: step.07-lisa-map
@@ -337,42 +370,15 @@ p2 <- ggplot(cbg_index) +
 p1 + p2
 ```
 
+The side-by-side comparison shows the power of LISA analysis: the left map
+shows the raw pattern (which we could see visually), while the right map
+tells us which parts of that pattern are **statistically significant**. Many
+areas that *look* like they might be clusters turn out to be not significant
+at the 0.05 level.
 
 ---
 
-# Scaffold Chunks
-
-```{r}
-#| label: q2-poverty-morans
-
-# YOUR CODE HERE
-# Hint: use moran.test() with cbg_index$poverty_rate
-# and the same lw weights object from Step 3
-```
-
-```{r}
-#| label: q2-poverty-lisa
-
-# YOUR CODE HERE
-# Hint: use localmoran() with cbg_index$poverty_rate,
-# then classify into HH/LL/HL/LH/NS using the same
-# centering + quadrant logic from Step 6
-```
-
-```{r}
-#| label: q2-poverty-lisa-map
-#| fig-height: 9
-
-# YOUR CODE HERE
-# Hint: create a LISA cluster map for poverty_rate
-# using the same color scheme as Step 7
-```
-
-```{r}
-#| label: q2-comparison
-#| fig-height: 8
-
-# YOUR CODE HERE
-# Hint: put the composite LISA map and poverty LISA map
-# side by side using patchwork (p1 + p2)
-```
+::: {.callout-note}
+## Ready for the assignment?
+Head to the [Lab 4 Assignment page](https://antjam-howell.github.io/paf-516-labs/lab4-assignment.html) to download `Lab4_Assignment.qmd`. The assignment asks you to run LISA on a single component variable (poverty rate) and compare the hot spot pattern to the composite index.
+:::

@@ -3063,6 +3063,7 @@ padding: 5px;
 border: 1px solid #d3d3d3;
 padding: 10px;
 margin-top: 10px;
+margin-bottom: 30px;
 width: 98%;
 }
 </style>
@@ -3078,6 +3079,7 @@ width: 98%;
   <ul>
   <li><a href="#m4-overview-learning-materials" id="toc-m4-overview-learning-materials" class="nav-link active" data-scroll-target="#m4-overview-learning-materials"><strong>M4 Overview &amp; Learning Materials</strong></a></li>
   <li><a href="#module-overview-and-objectives" id="toc-module-overview-and-objectives" class="nav-link" data-scroll-target="#module-overview-and-objectives">Module Overview and Objectives</a></li>
+  <li><a href="#lecture" id="toc-lecture" class="nav-link" data-scroll-target="#lecture">Lecture</a></li>
   <li><a href="#section-1-toblers-first-law-and-spatial-autocorrelation" id="toc-section-1-toblers-first-law-and-spatial-autocorrelation" class="nav-link" data-scroll-target="#section-1-toblers-first-law-and-spatial-autocorrelation">Section 1: Tobler’s First Law and Spatial Autocorrelation</a>
   <ul class="collapse">
   <li><a href="#three-types-of-spatial-patterns" id="toc-three-types-of-spatial-patterns" class="nav-link" data-scroll-target="#three-types-of-spatial-patterns">Three Types of Spatial Patterns</a></li>
@@ -3095,14 +3097,11 @@ width: 98%;
   <li><a href="#the-moran-scatterplot" id="toc-the-moran-scatterplot" class="nav-link" data-scroll-target="#the-moran-scatterplot">The Moran Scatterplot</a></li>
   <li><a href="#multiple-testing-caution" id="toc-multiple-testing-caution" class="nav-link" data-scroll-target="#multiple-testing-caution">Multiple Testing Caution</a></li>
   </ul></li>
-  <li><a href="#lecture" id="toc-lecture" class="nav-link" data-scroll-target="#lecture">Lecture</a></li>
   <li><a href="#readings" id="toc-readings" class="nav-link" data-scroll-target="#readings">Readings</a>
   <ul class="collapse">
-  <li><a href="#foundational-works" id="toc-foundational-works" class="nav-link" data-scroll-target="#foundational-works">Foundational Works</a></li>
-  <li><a href="#recent-applications" id="toc-recent-applications" class="nav-link" data-scroll-target="#recent-applications">Recent Applications</a></li>
   <li><a href="#r-package-documentation" id="toc-r-package-documentation" class="nav-link" data-scroll-target="#r-package-documentation">R Package Documentation</a></li>
   </ul></li>
-  <li><a href="#lab-assignment" id="toc-lab-assignment" class="nav-link" data-scroll-target="#lab-assignment">Lab Assignment</a></li>
+  <li><a href="#lab-4" id="toc-lab-4" class="nav-link" data-scroll-target="#lab-4">Lab 4</a></li>
   <li><a href="#yellowdig-discussion" id="toc-yellowdig-discussion" class="nav-link" data-scroll-target="#yellowdig-discussion">Yellowdig Discussion</a></li>
   <li><a href="#key-terms" id="toc-key-terms" class="nav-link" data-scroll-target="#key-terms">Key Terms</a></li>
   </ul>
@@ -3136,9 +3135,9 @@ width: 98%;
 <p><strong>Spatial Autocorrelation &amp; Hot Spot Analysis</strong></p>
 </div>
 </section>
-<section id="module-overview-and-objectives" class="level2">
+<section id="module-overview-and-objectives" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="module-overview-and-objectives">Module Overview and Objectives</h2>
-<p>In Modules 1–3, you built and mapped a hardship index. You probably noticed clusters — groups of nearby block groups with similarly high or low values. But are those clusters <strong>statistically significant</strong>, or could they have occurred by chance? This module gives you the tools to answer that question.</p>
+<p>In Modules 1–3, you built and mapped an economic hardship index. You probably noticed clusters — groups of nearby block groups with similarly high or low values. But are those clusters <strong>statistically significant</strong>, or could they have occurred by chance? This module gives you the tools to answer that question.</p>
 <p><strong>Spatial autocorrelation</strong> is the tendency for nearby locations to have similar values — a formalization of <strong>Tobler’s First Law of Geography</strong>: “Everything is related to everything else, but near things are more related than distant things.” This module teaches you to measure spatial autocorrelation globally (across the entire study area) and locally (at each individual location), enabling you to identify statistically significant <strong>hot spots</strong>, <strong>cold spots</strong>, and <strong>spatial outliers</strong>.</p>
 <hr>
 <p>After completing this module, you will be able to:</p>
@@ -3152,7 +3151,14 @@ width: 98%;
 <li>Evaluate statistical significance using permutation-based pseudo p-values</li>
 </ul>
 </section>
-<section id="section-1-toblers-first-law-and-spatial-autocorrelation" class="level2">
+<section id="lecture" class="level2">
+<h2 class="anchored" data-anchor-id="lecture">Lecture</h2>
+<div class="section-box">
+<p>The lecture notes cover Tobler’s First Law, spatial weights matrices, Global Moran’s I, Local Moran’s I (LISA), and cluster map interpretation.</p>
+<p>Download the lecture notes: <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module4/Lecture/Module4_Lecture_Slides.pdf">Spatial Autocorrelation — Lecture Notes (PDF)</a></p>
+</div>
+</section>
+<section id="section-1-toblers-first-law-and-spatial-autocorrelation" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="section-1-toblers-first-law-and-spatial-autocorrelation">Section 1: Tobler’s First Law and Spatial Autocorrelation</h2>
 <p>Most standard statistical methods assume that observations are <strong>independent</strong>. But spatial data almost always violates this assumption — poverty in one census tract is correlated with poverty in neighboring tracts. This is not a nuisance to be corrected; it is a <strong>substantive phenomenon</strong> that reveals how social and economic processes operate across space.</p>
 <section id="three-types-of-spatial-patterns" class="level3">
@@ -3165,7 +3171,7 @@ width: 98%;
 <p><strong>Why it matters for policy:</strong> If hardship is spatially clustered, then place-based interventions (targeting specific neighborhoods) make sense. If hardship is spatially random, then people-based interventions (targeting individuals regardless of location) may be more efficient.</p>
 </section>
 </section>
-<section id="section-2-spatial-weights-matrices" class="level2">
+<section id="section-2-spatial-weights-matrices" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="section-2-spatial-weights-matrices">Section 2: Spatial Weights Matrices</h2>
 <p>To measure spatial autocorrelation, we first need to define <strong>“neighbor”</strong> — which locations are considered near each other? This definition is encoded in a <strong>spatial weights matrix (W)</strong>, where each cell w<sub>ij</sub> represents the spatial relationship between locations i and j.</p>
 <section id="common-neighbor-definitions" class="level3">
@@ -3210,7 +3216,7 @@ width: 98%;
 <p><strong>Choice matters:</strong> The neighbor definition affects your results. Queen contiguity is the standard default for polygon data, but always check that every observation has at least one neighbor (island polygons cause errors).</p>
 </section>
 </section>
-<section id="section-3-global-morans-i" class="level2">
+<section id="section-3-global-morans-i" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="section-3-global-morans-i">Section 3: Global Moran’s I</h2>
 <p><strong>Global Moran’s I</strong> is a single summary statistic that measures the degree of spatial autocorrelation across the entire study area. It answers: “Is there a statistically significant spatial pattern overall?”</p>
 <section id="interpretation" class="level3">
@@ -3224,7 +3230,7 @@ width: 98%;
 <p><strong>Limitation:</strong> Global Moran’s I tells you that clustering exists, but not <em>where</em>. A study area could have both hot spots and cold spots that produce the same global statistic. This is why we need local indicators.</p>
 </section>
 </section>
-<section id="section-4-local-morans-i-lisa-and-cluster-maps" class="level2">
+<section id="section-4-local-morans-i-lisa-and-cluster-maps" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="section-4-local-morans-i-lisa-and-cluster-maps">Section 4: Local Moran’s I (LISA) and Cluster Maps</h2>
 <p><strong>Local Indicators of Spatial Association (LISA)</strong> decompose the global statistic into a contribution from each individual location. Each location receives its own Local Moran’s I value and significance level, which classifies it into one of four categories:</p>
 <table class="caption-top table">
@@ -3278,58 +3284,43 @@ width: 98%;
 <p>When testing hundreds of locations simultaneously, some will appear significant by chance alone. Consider applying a <strong>Bonferroni correction</strong> or using a stricter significance threshold (e.g., p &lt; 0.01 instead of p &lt; 0.05) to reduce false positives.</p>
 </section>
 </section>
-<section id="lecture" class="level2">
-<h2 class="anchored" data-anchor-id="lecture">Lecture</h2>
-<!-- PLACEHOLDER: Record lecture on spatial autocorrelation, Moran's I, and LISA cluster interpretation -->
-<iframe role="img" src width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture">
-</iframe>
-</section>
-<section id="readings" class="level2">
+<section id="readings" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="readings">Readings</h2>
-<section id="foundational-works" class="level3">
-<h3 class="anchored" data-anchor-id="foundational-works">Foundational Works</h3>
 <ul>
 <li><p>Tobler, W. R. (1970). A computer movie simulating urban growth in the Detroit region. <em>Economic Geography</em>, 46(sup1), 234–240. — The origin of the “First Law of Geography”: everything is related to everything else, but near things are more related than distant things. The conceptual foundation for all spatial autocorrelation analysis.</p></li>
 <li><p>Anselin, L. (1995). Local indicators of spatial association — LISA. <em>Geographical Analysis</em>, 27(2), 93–115. — The seminal paper introducing LISA statistics, which decompose global spatial autocorrelation into location-specific contributions. The theoretical basis for hot spot / cold spot classification used in Lab 4.</p></li>
-</ul>
-</section>
-<section id="recent-applications" class="level3">
-<h3 class="anchored" data-anchor-id="recent-applications">Recent Applications</h3>
-<ul>
-<li><p>Bivand, R. S., &amp; Wong, D. W. S. (2018). Comparing implementations of global and local indicators of spatial association. <em>TEST</em>, 27(3), 716–748. <a href="https://doi.org/10.1007/s11749-018-0599-x">DOI: 10.1007/s11749-018-0599-x</a> — A rigorous comparison of Moran’s I and LISA implementations across software platforms including R’s <code>spdep</code>, GeoDa, and ArcGIS. Essential reference for understanding the computational details behind the functions used in Lab 4.</p></li>
-<li><p>Anselin, L. (2020). <a href="https://geodacenter.github.io/workbook/5a_global_auto/lab5a.html">Global spatial autocorrelation</a> and <a href="https://geodacenter.github.io/workbook/6a_local_auto/lab6a.html">Local spatial autocorrelation</a>. <em>GeoDa Workbook</em>. — Interactive tutorials covering Global Moran’s I and LISA with worked examples. Excellent companion to the lecture for building conceptual intuition before working in R.</p></li>
+<li><p>Bivand, R. S., &amp; Wong, D. W. S. (2018). Comparing implementations of global and local indicators of spatial association. <em>TEST</em>, 27(3), 716–748. <a href="https://doi.org/10.1007/s11749-018-0599-x">doi:10.1007/s11749-018-0599-x</a> — A rigorous comparison of Moran’s I and LISA implementations across software platforms including R’s <code>spdep</code>, GeoDa, and ArcGIS.</p></li>
+<li><p>Anselin, L. (2020). <a href="https://geodacenter.github.io/workbook/5a_global_auto/lab5a.html">Global spatial autocorrelation</a> and <a href="https://geodacenter.github.io/workbook/6a_local_auto/lab6a.html">Local spatial autocorrelation</a>. <em>GeoDa Workbook</em>. — Interactive tutorials covering Global Moran’s I and LISA with worked examples. Excellent companion to the lecture.</p></li>
 <li><p>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. Available online: <a href="https://walker-data.com/census-r/">https://walker-data.com/census-r/</a> — Comprehensive guide to working with Census data in R using <code>tidycensus</code>. Covers spatial analysis workflows directly relevant to the data pipelines used throughout this course.</p></li>
 </ul>
-</section>
 <section id="r-package-documentation" class="level3">
 <h3 class="anchored" data-anchor-id="r-package-documentation">R Package Documentation</h3>
 <ul>
-<li><p><a href="https://r-spatial.github.io/spdep/">spdep package documentation</a> — Spatial dependence: weighting schemes, statistics, and models. Reference for <code>poly2nb()</code>, <code>nb2listw()</code>, <code>moran.test()</code>, <code>localmoran()</code>, and all other spatial statistics functions used in this module.</p></li>
-<li><p><a href="https://r-spatial.github.io/spdep/articles/nb.html">spdep: Creating Neighbours (vignette)</a> — Detailed guide to neighbor definitions including queen/rook contiguity, distance-based, and k-nearest approaches.</p></li>
+<li><a href="https://r-spatial.github.io/spdep/">spdep package documentation</a> — Spatial dependence: weighting schemes, statistics, and models. Reference for <code>poly2nb()</code>, <code>nb2listw()</code>, <code>moran.test()</code>, <code>localmoran()</code>, and all other spatial statistics functions used in this module.</li>
+<li><a href="https://r-spatial.github.io/spdep/articles/nb.html">spdep: Creating Neighbours (vignette)</a> — Detailed guide to neighbor definitions including queen/rook contiguity, distance-based, and k-nearest approaches.</li>
+<li><a href="https://walker-data.com/tidycensus/">tidycensus package</a> — Census data with geometry</li>
 </ul>
 </section>
 </section>
-<section id="lab-assignment" class="level2">
-<h2 class="anchored" data-anchor-id="lab-assignment">Lab Assignment</h2>
-<p>In Lab 04, you will apply spatial statistics to your hardship index to identify where high- and low-hardship neighborhoods cluster. Specifically, you will:</p>
-<ol type="1">
-<li><strong>Build a spatial weights matrix</strong>: Construct queen contiguity neighbors from your CBG boundaries and convert to a row-standardized weights list</li>
-<li><strong>Test Global Moran’s I</strong>: Compute the global statistic and interpret whether your hardship index is significantly spatially clustered</li>
-<li><strong>Compute Local Moran’s I (LISA)</strong>: Calculate local statistics for each block group and classify them into HH, LL, HL, LH, or not significant</li>
-<li><strong>Create a LISA cluster map</strong>: Map the four cluster types using the conventional color scheme (red = HH hot spots, blue = LL cold spots, pink = HL outliers, light blue = LH outliers, gray = not significant)</li>
-<li><strong>Interpret the results</strong>: Write a brief analysis identifying where hot spots and cold spots occur and what demographic or geographic factors might explain them</li>
-</ol>
-<p><strong>Connection to previous labs:</strong> This module statistically validates the spatial patterns you observed visually in Labs 1–3. The hot spots you identify here will be tested for temporal stability in Lab 05.</p>
-<p>Download the <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/Assignment/Lab4_Assignment.qmd">Lab 04 Quarto template (.qmd)</a>, complete the exercises, and submit both the .qmd and rendered .html to Canvas.</p>
-<p><strong>Download:</strong> <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/Assignment/Lab4_Assignment.qmd">Lab4_Assignment.qmd</a></p>
+<section id="lab-4" class="level2 section-box">
+<h2 class="anchored" data-anchor-id="lab-4">Lab 4</h2>
+<p>The Lab 4 materials are on the course lab site.</p>
+<ul>
+<li><strong><a href="https://antjam-howell.github.io/paf-516-labs/lab4-tutorial.html">Lab 4 Tutorial</a></strong> — Download the tutorial file, knit it to see the complete analysis, then run chunk by chunk to understand each step.</li>
+<li><strong><a href="https://antjam-howell.github.io/paf-516-labs/lab4-assignment.html">Lab 4 Assignment</a></strong> — Download the assignment file, rename it with your last name, complete the three questions, and submit to Canvas.</li>
+</ul>
 </section>
-<section id="yellowdig-discussion" class="level2">
+<section id="yellowdig-discussion" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="yellowdig-discussion">Yellowdig Discussion</h2>
 <p>Spatial autocorrelation tells us <em>where</em> hardship clusters, but not <em>why</em>. The jump from statistical pattern to policy explanation requires careful reasoning about causal mechanisms, historical context, and structural forces.</p>
-<p>Consider the LISA cluster map you will produce in Lab 4, along with this module’s readings on spatial dependence and Tobler’s First Law. Then write a substantive post (minimum 150 words) that addresses the following:</p>
-<p><strong>Prompt:</strong> Hot spots (HH clusters) in your LISA map identify neighborhoods where high hardship is spatially concentrated — surrounded by other high-hardship areas. Cold spots (LL clusters) identify the opposite. But clustering is a <em>pattern</em>, not an <em>explanation</em>. Drawing on what you know about your study area (Maricopa County), the readings on spatial autocorrelation, and any relevant policy or historical knowledge, discuss: What structural, institutional, or historical processes might produce the spatial clustering of hardship you observe? How should the distinction between hot spots, cold spots, and spatial outliers inform the <em>design</em> of policy interventions — should resources be allocated differently to each type? Finally, reflect on what a spatial outlier (e.g., a high-hardship block group surrounded by low-hardship neighbors) might reveal about the limitations of place-based policy.</p>
+<p><strong>Discussion prompt:</strong> Consider the LISA cluster map you will produce in Lab 4, along with this module’s readings on spatial dependence and Tobler’s First Law.</p>
+<ul>
+<li>Hot spots (HH clusters) identify neighborhoods where high hardship is spatially concentrated — surrounded by other high-hardship areas. Cold spots (LL clusters) identify the opposite. What structural, institutional, or historical processes might produce the spatial clustering of hardship you observe?</li>
+<li>How should the distinction between hot spots, cold spots, and spatial outliers inform the <em>design</em> of policy interventions — should resources be allocated differently to each type?</li>
+<li>What might a spatial outlier (e.g., a high-hardship block group surrounded by low-hardship neighbors) reveal about the limitations of place-based policy?</li>
+</ul>
 </section>
-<section id="key-terms" class="level2">
+<section id="key-terms" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="key-terms">Key Terms</h2>
 <table class="caption-top table">
 <colgroup>
