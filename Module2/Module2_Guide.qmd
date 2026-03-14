@@ -1,5 +1,5 @@
 ---
-title: "Module 2 — Cartographic Design"
+title: "Module 2 — Variable Classification & Spatial Scale"
 subtitle: "PAF 516 | Community Analytics"
 format:
   html:
@@ -18,7 +18,7 @@ execute:
 ## **M2 Overview & Learning Materials**
 
 ::: {.module-subtitle}
-**Cartographic Design & Multi-Scale Visual Analytics**
+**Variable Classification, Cartographic Design & Spatial Scale**
 :::
 :::
 
@@ -26,9 +26,9 @@ execute:
 
 ## Module Overview and Objectives
 
-In Module 1, you built a composite hardship index and mapped it with a basic choropleth. This module asks a deceptively important question: **does the story your map tells change depending on how you classify the data?** The answer is yes --- and the differences can be dramatic. A map using equal intervals may hide inequality that a quantile map reveals. A Jenks natural breaks map emphasizes clusters that a standard deviation map smooths away.
+In Module 1, you built a composite hardship index and mapped it with a basic choropleth. This module asks two deceptively important questions: **does the story your map tells change depending on how you classify the data?** And **does it change depending on the geographic scale you use?** The answer to both is yes --- and the differences can be dramatic. A map using equal intervals may hide inequality that a quantile map reveals. A county-level map may mask the very neighborhood-level variation that matters most for targeted policy.
 
-Beyond classification, this module introduces **bivariate choropleth maps** that display two variables simultaneously, **interactive web maps** with `mapgl` that let users explore data on demand, and cartographic design principles that separate professional-quality maps from default output. You will move from "making a map" to *designing a visual argument*.
+Beyond classification and scale, this module introduces **bivariate choropleth maps** that display two variables simultaneously, **interactive web maps** with `mapgl` that let users explore data on demand, and cartographic design principles that separate professional-quality maps from default output. You will also confront the **Modifiable Areal Unit Problem (MAUP)** --- the fundamental challenge that spatial analysis results depend on the size and shape of the geographic units used. You will move from "making a map" to *designing a visual argument*.
 
 ---
 
@@ -40,7 +40,17 @@ After completing this module, you will be able to:
 - Build an **interactive mapgl map** with tooltips, hover effects, and GPU-rendered vector tiles
 - Apply cartographic design principles: visual hierarchy, figure-ground, appropriate color ramps
 - Use `ggspatial` to add scale bars, north arrows, and annotation to static maps
-- Construct **small multiple** map panels for side-by-side comparison
+- Recognize and account for the **Modifiable Areal Unit Problem (MAUP)** --- understand how geographic scale affects analytical conclusions and policy recommendations
+
+:::
+
+## Lecture
+
+::: {.section-box}
+
+The lecture notes provide detailed slide-by-slide annotations, with the main points expanded upon in the sections below.
+
+Download the lecture notes: [Variable Classification & Spatial Scale --- Lecture Notes (PDF)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module2/Lecture/Module2_Lecture_Slides.pdf)
 
 :::
 
@@ -145,19 +155,6 @@ This is the core danger of MAUP: **aggregation smooths away the very variation t
 
 ::: {.section-box}
 
-## Lecture
-
-<!-- PLACEHOLDER: Record lecture on classification methods and cartographic design principles -->
-<!-- Replace VIDEO_ID below with the actual YouTube video ID once recorded -->
-
-```{=html}
-<iframe src="" width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-```
-
-:::
-
-::: {.section-box}
-
 ## Readings
 
 ### Foundational Works
@@ -166,7 +163,15 @@ This is the core danger of MAUP: **aggregation smooths away the very variation t
 
 - Brewer, C. A. [ColorBrewer 2.0](https://colorbrewer2.org/). --- Interactive tool for choosing cartographically sound color schemes. Provides sequential, diverging, and qualitative palettes tested for colorblind safety, print friendliness, and screen legibility.
 
+- Openshaw, S. & Taylor, P.J. (1979). A million or so correlation coefficients: three experiments on the modifiable areal unit problem. *Statistical Applications in the Spatial Sciences*, pp. 127--144. --- The paper that coined the term "MAUP." Using Iowa county data, Openshaw and Taylor showed that aggregating 99 counties into different 6-zone configurations produced correlations ranging from --0.97 to +0.99 for the same underlying variables.
+
+- Openshaw, S. (1984). *The Modifiable Areal Unit Problem*. CATMOG No. 38. Geo Books. --- The most-cited treatment of MAUP (~5,200 citations). Distinguishes the **scale effect** (results change when units are aggregated to larger sizes) from the **zoning effect** (results change when units of the same size are reconfigured). Essential reading for anyone working with aggregated spatial data.
+
 ### Recent Applications
+
+- Fotheringham, A.S. & Wong, D.W.S. (1991). The modifiable areal unit problem in multivariate statistical analysis. *Environment and Planning A*, 23(7), 1025--1044. [doi:10.1068/a231025](https://doi.org/10.1068/a231025) --- Extended MAUP from bivariate correlations into multiple regression and logit models, showing that parameter estimates varied by a factor of up to nine across geographic units. Demonstrated that MAUP is not just a mapping problem but a fundamental analytical challenge.
+
+- Nelson, J.K. & Brewer, C.A. (2017). Evaluating data stability in aggregation structures across spatial scales. *Cartography and Geographic Information Science*, 44(1), 35--50. [doi:10.1080/15230406.2015.1093431](https://doi.org/10.1080/15230406.2015.1093431) --- The modern cartographic treatment of MAUP, showing that tract-level data preserves spatial relationships that county-level analysis destroys. Directly relevant to the multi-scale comparisons in Lab 2.
 
 - Stevens, J. (2015). [Bivariate Choropleth Maps: A How-to Guide](http://www.joshuastevens.net/cartography/make-a-bivariate-choropleth-map/). --- Practical introduction to bivariate choropleth design with emphasis on color selection and legend construction. The design principles in this guide directly inform the `biscale` package workflow used in Lab 2.
 

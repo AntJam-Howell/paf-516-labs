@@ -49,7 +49,9 @@ After completing this module, you will be able to:
 
 ::: {.section-box}
 
-Download the lecture notes: [Measurement Theory --- Lecture Notes (PDF)](https://canvas.asu.edu/courses/220070/files/105139000?wrap=1)
+The lecture notes provide detailed slide-by-slide annotations, with the main points expanded upon in the sections below.
+
+Download the lecture notes: [Measurement Theory --- Lecture Notes (PDF)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module1/Lecture/p-01-measurement.pdf)
 
 [Video Lecture: Measurement Theory](https://www.youtube.com/watch?v=ra5rMqr00Ew)
 

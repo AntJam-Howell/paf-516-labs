@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Module 2 — Cartographic Design</title>
+<title>Module 2 — Variable Classification &amp; Spatial Scale</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -3078,6 +3078,7 @@ width: 98%;
   <ul>
   <li><a href="#m2-overview-learning-materials" id="toc-m2-overview-learning-materials" class="nav-link active" data-scroll-target="#m2-overview-learning-materials"><strong>M2 Overview &amp; Learning Materials</strong></a></li>
   <li><a href="#module-overview-and-objectives" id="toc-module-overview-and-objectives" class="nav-link" data-scroll-target="#module-overview-and-objectives">Module Overview and Objectives</a></li>
+  <li><a href="#lecture" id="toc-lecture" class="nav-link" data-scroll-target="#lecture">Lecture</a></li>
   <li><a href="#section-1-classification-methods-and-why-they-matter" id="toc-section-1-classification-methods-and-why-they-matter" class="nav-link" data-scroll-target="#section-1-classification-methods-and-why-they-matter">Section 1: Classification Methods and Why They Matter</a>
   <ul class="collapse">
   <li><a href="#four-common-classification-methods" id="toc-four-common-classification-methods" class="nav-link" data-scroll-target="#four-common-classification-methods">Four Common Classification Methods</a></li>
@@ -3096,7 +3097,6 @@ width: 98%;
   <li><a href="#why-maup-matters-for-policy" id="toc-why-maup-matters-for-policy" class="nav-link" data-scroll-target="#why-maup-matters-for-policy">Why MAUP Matters for Policy</a></li>
   <li><a href="#implications-for-practice" id="toc-implications-for-practice" class="nav-link" data-scroll-target="#implications-for-practice">Implications for Practice</a></li>
   </ul></li>
-  <li><a href="#lecture" id="toc-lecture" class="nav-link" data-scroll-target="#lecture">Lecture</a></li>
   <li><a href="#readings" id="toc-readings" class="nav-link" data-scroll-target="#readings">Readings</a>
   <ul class="collapse">
   <li><a href="#foundational-works" id="toc-foundational-works" class="nav-link" data-scroll-target="#foundational-works">Foundational Works</a></li>
@@ -3113,7 +3113,7 @@ width: 98%;
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Module 2 — Cartographic Design</h1>
+<h1 class="title">Module 2 — Variable Classification &amp; Spatial Scale</h1>
 <p class="subtitle lead">PAF 516 | Community Analytics</p>
 </div>
 
@@ -3134,13 +3134,13 @@ width: 98%;
 <section id="m2-overview-learning-materials" class="level2 module-header">
 <h2 class="anchored" data-anchor-id="m2-overview-learning-materials"><strong>M2 Overview &amp; Learning Materials</strong></h2>
 <div class="module-subtitle">
-<p><strong>Cartographic Design &amp; Multi-Scale Visual Analytics</strong></p>
+<p><strong>Variable Classification, Cartographic Design &amp; Spatial Scale</strong></p>
 </div>
 </section>
 <section id="module-overview-and-objectives" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="module-overview-and-objectives">Module Overview and Objectives</h2>
-<p>In Module 1, you built a composite hardship index and mapped it with a basic choropleth. This module asks a deceptively important question: <strong>does the story your map tells change depending on how you classify the data?</strong> The answer is yes — and the differences can be dramatic. A map using equal intervals may hide inequality that a quantile map reveals. A Jenks natural breaks map emphasizes clusters that a standard deviation map smooths away.</p>
-<p>Beyond classification, this module introduces <strong>bivariate choropleth maps</strong> that display two variables simultaneously, <strong>interactive web maps</strong> with <code>mapgl</code> that let users explore data on demand, and cartographic design principles that separate professional-quality maps from default output. You will move from “making a map” to <em>designing a visual argument</em>.</p>
+<p>In Module 1, you built a composite hardship index and mapped it with a basic choropleth. This module asks two deceptively important questions: <strong>does the story your map tells change depending on how you classify the data?</strong> And <strong>does it change depending on the geographic scale you use?</strong> The answer to both is yes — and the differences can be dramatic. A map using equal intervals may hide inequality that a quantile map reveals. A county-level map may mask the very neighborhood-level variation that matters most for targeted policy.</p>
+<p>Beyond classification and scale, this module introduces <strong>bivariate choropleth maps</strong> that display two variables simultaneously, <strong>interactive web maps</strong> with <code>mapgl</code> that let users explore data on demand, and cartographic design principles that separate professional-quality maps from default output. You will also confront the <strong>Modifiable Areal Unit Problem (MAUP)</strong> — the fundamental challenge that spatial analysis results depend on the size and shape of the geographic units used. You will move from “making a map” to <em>designing a visual argument</em>.</p>
 <hr>
 <p>After completing this module, you will be able to:</p>
 <ul>
@@ -3150,8 +3150,15 @@ width: 98%;
 <li>Build an <strong>interactive mapgl map</strong> with tooltips, hover effects, and GPU-rendered vector tiles</li>
 <li>Apply cartographic design principles: visual hierarchy, figure-ground, appropriate color ramps</li>
 <li>Use <code>ggspatial</code> to add scale bars, north arrows, and annotation to static maps</li>
-<li>Construct <strong>small multiple</strong> map panels for side-by-side comparison</li>
+<li>Recognize and account for the <strong>Modifiable Areal Unit Problem (MAUP)</strong> — understand how geographic scale affects analytical conclusions and policy recommendations</li>
 </ul>
+</section>
+<section id="lecture" class="level2">
+<h2 class="anchored" data-anchor-id="lecture">Lecture</h2>
+<div class="section-box">
+<p>The lecture notes provide detailed slide-by-slide annotations, with the main points expanded upon in the sections below.</p>
+<p>Download the lecture notes: <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module2/Lecture/Module2_Lecture_Slides.pdf">Variable Classification &amp; Spatial Scale — Lecture Notes (PDF)</a></p>
+</div>
 </section>
 <section id="section-1-classification-methods-and-why-they-matter" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="section-1-classification-methods-and-why-they-matter">Section 1: Classification Methods and Why They Matter</h2>
@@ -3265,12 +3272,6 @@ width: 98%;
 </ul>
 </section>
 </section>
-<section id="lecture" class="level2 section-box">
-<h2 class="anchored" data-anchor-id="lecture">Lecture</h2>
-<!-- PLACEHOLDER: Record lecture on classification methods and cartographic design principles -->
-<!-- Replace VIDEO_ID below with the actual YouTube video ID once recorded -->
-<iframe role="img" src width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-</section>
 <section id="readings" class="level2 section-box">
 <h2 class="anchored" data-anchor-id="readings">Readings</h2>
 <section id="foundational-works" class="level3">
@@ -3278,11 +3279,15 @@ width: 98%;
 <ul>
 <li><p>Brewer, C. A., &amp; Pickle, L. (2002). Evaluation of methods for classifying epidemiological data on choropleth maps in series. <em>Annals of the Association of American Geographers</em>, 92(4), 662–681. — The definitive empirical comparison of classification methods for choropleth maps. Demonstrates that quantile and natural breaks methods outperform equal interval for map-reading accuracy.</p></li>
 <li><p>Brewer, C. A. <a href="https://colorbrewer2.org/">ColorBrewer 2.0</a>. — Interactive tool for choosing cartographically sound color schemes. Provides sequential, diverging, and qualitative palettes tested for colorblind safety, print friendliness, and screen legibility.</p></li>
+<li><p>Openshaw, S. &amp; Taylor, P.J. (1979). A million or so correlation coefficients: three experiments on the modifiable areal unit problem. <em>Statistical Applications in the Spatial Sciences</em>, pp. 127–144. — The paper that coined the term “MAUP.” Using Iowa county data, Openshaw and Taylor showed that aggregating 99 counties into different 6-zone configurations produced correlations ranging from –0.97 to +0.99 for the same underlying variables.</p></li>
+<li><p>Openshaw, S. (1984). <em>The Modifiable Areal Unit Problem</em>. CATMOG No. 38. Geo Books. — The most-cited treatment of MAUP (~5,200 citations). Distinguishes the <strong>scale effect</strong> (results change when units are aggregated to larger sizes) from the <strong>zoning effect</strong> (results change when units of the same size are reconfigured). Essential reading for anyone working with aggregated spatial data.</p></li>
 </ul>
 </section>
 <section id="recent-applications" class="level3">
 <h3 class="anchored" data-anchor-id="recent-applications">Recent Applications</h3>
 <ul>
+<li><p>Fotheringham, A.S. &amp; Wong, D.W.S. (1991). The modifiable areal unit problem in multivariate statistical analysis. <em>Environment and Planning A</em>, 23(7), 1025–1044. <a href="https://doi.org/10.1068/a231025">doi:10.1068/a231025</a> — Extended MAUP from bivariate correlations into multiple regression and logit models, showing that parameter estimates varied by a factor of up to nine across geographic units. Demonstrated that MAUP is not just a mapping problem but a fundamental analytical challenge.</p></li>
+<li><p>Nelson, J.K. &amp; Brewer, C.A. (2017). Evaluating data stability in aggregation structures across spatial scales. <em>Cartography and Geographic Information Science</em>, 44(1), 35–50. <a href="https://doi.org/10.1080/15230406.2015.1093431">doi:10.1080/15230406.2015.1093431</a> — The modern cartographic treatment of MAUP, showing that tract-level data preserves spatial relationships that county-level analysis destroys. Directly relevant to the multi-scale comparisons in Lab 2.</p></li>
 <li><p>Stevens, J. (2015). <a href="http://www.joshuastevens.net/cartography/make-a-bivariate-choropleth-map/">Bivariate Choropleth Maps: A How-to Guide</a>. — Practical introduction to bivariate choropleth design with emphasis on color selection and legend construction. The design principles in this guide directly inform the <code>biscale</code> package workflow used in Lab 2.</p></li>
 <li><p>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. <a href="https://walker-data.com/census-r/mapping-census-data-with-r.html">Chapter 6: Mapping Census Data with R</a>. — Covers choropleth mapping with R including classification methods, color palettes, and interactive mapping. Directly relevant to the tidycensus + ggplot2 workflow used throughout this course.</p></li>
 <li><p>Axis Maps. <a href="https://www.axismaps.com/guide">Cartography Guide</a>. — Concise, practical reference covering color theory, classification, labeling, and layout for thematic maps. Excellent quick reference for cartographic design decisions.</p></li>
