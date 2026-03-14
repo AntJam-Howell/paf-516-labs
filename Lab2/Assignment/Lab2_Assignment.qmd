@@ -83,17 +83,16 @@ options(tigris_progress_bar = FALSE)
 
 ```{r}
 #| label: packages
-# ── Package Setup (runs automatically on first knit) ─────────────────
-# Downloads the exact package versions used to build this lab.
-# The if-guard ensures this only runs once — no need to comment out.
-if (!file.exists(".renv_done")) {
+# ── One-time course environment setup ─────────────────────────────────────
+if (!file.exists("~/.paf516_ready")) {
   if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+  tmp <- tempfile(fileext = ".lock")
   download.file(
-    url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/renv.lock",
-    destfile = "renv.lock", mode = "wb"
+    url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/renv.lock",
+    destfile = tmp, mode = "wb"
   )
-  renv::restore(lockfile = "renv.lock", prompt = FALSE)
-  file.create(".renv_done")
+  renv::restore(lockfile = tmp, prompt = FALSE)
+  file.create("~/.paf516_ready")
 }
 
 # Core data & spatial
