@@ -53,7 +53,7 @@ format:
               \hspace{4pt}%
               \textcolor{white}{\small\textbf{PAF 516 — Community Analytics}}%
               \hfill%
-              \textcolor{white}{\small Arizona State University}%
+              \textcolor{white}{\small ASU}%
               \hspace{4pt}%
               \vspace{3pt}%
             }%
@@ -269,22 +269,6 @@ Discussion Topics & 10\% &
 ```
 
 \vspace{6pt}
-
-### YellowDig Point Allocation
-
-```{=latex}
-\begin{tabular}{>{\bfseries\color{asugold}}p{0.6in} l}
-\rowcolor{asumaroon}
-\textcolor{white}{\textbf{Points}} & \textcolor{white}{\textbf{Activity}} \\
-5 pts  & New post with at least 50 words \\
-\rowcolor{asulightgray}
-2 pts  & Comment on another student's post \\
-2 pts  & Receive a comment on your own post \\
-\rowcolor{asulightgray}
-1 pt   & Like another student's post \\
-5 pts  & Earn an instructor badge for an especially informative post \\
-\end{tabular}
-```
 
 # V. Course Policies
 

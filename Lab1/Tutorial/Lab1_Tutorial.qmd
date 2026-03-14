@@ -91,7 +91,7 @@ library(patchwork)
 
 # Step 1: Retrieve Census Variables
 
-We build an **Economic Hardship Index** from 5 census variables at the Arizona tract level. Each captures a different dimension of economic disadvantage.
+We build an **Economic Hardship Index** from 5 computed rates at the Arizona tract level. Each rate requires a numerator/denominator pair from the ACS, so the variable list contains 10 census codes — but they collapse into 5 measures: poverty rate, unemployment rate, no high school diploma rate, no health insurance rate, and median income.
 
 ```{r}
 #| label: step.01
@@ -372,41 +372,157 @@ ggplot(cbg_complete) +
 ```
 
 
-# Step 8: Three-Scale Comparison
+# Step 8: Enriched Index — Does Measurement Choice Change the Map?
 
-Using `patchwork` to compare all three geographic scales side by side. This illustrates the **Modifiable Areal Unit Problem (MAUP)** — the same phenomenon looks different depending on the unit of analysis.
+The 5-variable baseline captures five well-established dimensions of economic hardship. But hardship is multi-dimensional. A broader index might also reflect:
+
+| New Variable | Dimension | Census Code |
+|---|---|---|
+| Renter-occupied rate | Housing instability / wealth exclusion | B25003_003 / B25003_001 |
+| No vehicle access | Transportation barrier | B08201_002 / B08201_001 |
+| Single-parent household rate | Family structure stress | B11012_010 / B11001_001 |
+| Public assistance income rate | Direct economic need | B19057_002 / B19057_001 |
+| No internet access rate | Digital divide / economic barrier | B28002_013 / B28002_001 |
+
+Adding these five produces a **10-variable enriched index**. The key question: does this broader measurement change which communities we identify as hardship hotspots — and how much?
 
 ```{r}
-#| label: step.08-patchwork
+#| label: step.08-pull
+#| results: hide
+
+hardship_vars_10 <- c(
+  # ── Original 5 variable pairs ──────────────────────────────────────
+  pov_below50    = "C17002_002",   pov_50to99     = "C17002_003",
+  pov_den        = "C17002_001",   median_income  = "B19013_001",
+  pct_unemp_num  = "B23025_005",   pct_unemp_den  = "B23025_002",
+  pct_no_hs_num  = "B15003_002",   pct_no_hs_den  = "B15003_001",
+  pct_no_ins_num = "B27010_017",   pct_no_ins_den = "B27010_001",
+  # ── 5 new dimensions ───────────────────────────────────────────────
+  renter_num     = "B25003_003",   renter_den     = "B25003_001",
+  noveh_num      = "B08201_002",   noveh_den      = "B08201_001",
+  sinpar_num     = "B11012_010",   sinpar_den     = "B11001_001",
+  pubast_num     = "B19057_002",   pubast_den     = "B19057_001",
+  noinet_num     = "B28002_013",   noinet_den     = "B28002_001"
+)
+
+CenDF_10 <- get_acs(
+  geography    = "tract",
+  variables    = hardship_vars_10,
+  state        = "AZ",
+  year         = 2023,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
+)
+```
+
+```{r}
+#| label: step.08-build10
+
+CenDF_wide_10 <- CenDF_10 %>%
+  select(-moe) %>%
+  pivot_wider(names_from = variable, values_from = estimate) %>%
+  mutate(
+    # Original 5
+    poverty_rate = (pov_below50 + pov_50to99) / pov_den,
+    unemp_rate   = pct_unemp_num  / pct_unemp_den,
+    no_hs_rate   = pct_no_hs_num  / pct_no_hs_den,
+    no_ins_rate  = pct_no_ins_num / pct_no_ins_den,
+    # New 5
+    renter_rate  = renter_num / renter_den,
+    noveh_rate   = noveh_num  / noveh_den,
+    sinpar_rate  = sinpar_num / sinpar_den,
+    pubast_rate  = pubast_num / pubast_den,
+    noinet_rate  = noinet_num / noinet_den
+  )
+
+CenDF_complete_10 <- CenDF_wide_10 %>%
+  drop_na(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate,
+          median_income, renter_rate, noveh_rate,
+          sinpar_rate, pubast_rate, noinet_rate)
+
+index_z_10 <- CenDF_complete_10 %>%
+  st_drop_geometry() %>%
+  select(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate,
+         median_income, renter_rate, noveh_rate,
+         sinpar_rate, pubast_rate, noinet_rate) %>%
+  mutate(across(everything(), ~ as.numeric(scale(.)))) %>%
+  mutate(median_income = -1 * median_income)   # reverse-code
+
+# Compare alpha: 5-variable vs 10-variable
+alpha_5  <- psych::alpha(index_z  |> select(-hardship_index))
+alpha_10 <- psych::alpha(index_z_10)
+
+cat("5-variable alpha: ", round(alpha_5$total$raw_alpha,  3), "\n")
+cat("10-variable alpha:", round(alpha_10$total$raw_alpha, 3), "\n")
+cat("Change:           ", round(alpha_10$total$raw_alpha - alpha_5$total$raw_alpha, 3), "\n")
+
+# Build enriched index
+index_z_10$hardship_index_10 <- rowMeans(index_z_10, na.rm = TRUE)
+CenDF_complete_10$hardship_index_10 <- index_z_10$hardship_index_10
+```
+
+```{r}
+#| label: step.08-compare-maps
 #| fig-width: 16
 #| fig-height: 6
 
-p_county <- ggplot(county_shifted) +
-  geom_sf(aes(fill = hardship_index), color = NA, linewidth = 0) +
-  scale_fill_viridis_c(option = "inferno", name = "Index", na.value = "grey80") +
-  theme_void() + labs(title = "County (US)")
-
-p_tract <- ggplot(CenDF_complete) +
+p_5var <- ggplot(CenDF_complete) +
   geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis(option = "inferno", direction = -1, name = "Index") +
-  theme_void() + labs(title = "Tract (Arizona)")
+  scale_fill_viridis_c(option = "inferno", name = "Hardship",
+                       na.value = "grey80") +
+  theme_void() +
+  labs(title = "5-Variable Index",
+       subtitle = "Poverty · Unemployment · Education\nInsurance · Income")
 
-p_cbg <- ggplot(cbg_complete) +
-  geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis(option = "inferno", direction = -1, name = "Index") +
-  theme_void() + labs(title = "Block Group (Maricopa)")
+p_10var <- ggplot(CenDF_complete_10) +
+  geom_sf(aes(fill = hardship_index_10), color = NA) +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship",
+                       na.value = "grey80") +
+  theme_void() +
+  labs(title = "10-Variable Enriched Index",
+       subtitle = "Adds renter · no vehicle · single-parent\npublic assistance · no internet")
 
-p_county + p_tract + p_cbg +
+p_5var + p_10var +
   plot_annotation(
-    title   = "Economic Hardship Across Three Geographic Scales",
-    caption = "ACS 5-Year (2023) | Higher values = greater hardship"
+    title    = "Original vs. Enriched Hardship Index",
+    subtitle = "Does expanding measurement change the spatial story?",
+    caption  = "ACS 5-Year (2023) | Arizona Census Tracts"
   )
 ```
 
+```{r}
+#| label: step.08-difference
+#| fig-width: 9
+#| fig-height: 6
+
+compare_df <- CenDF_complete_10 %>%
+  select(GEOID, geometry, hardship_index_10) %>%
+  left_join(
+    CenDF_complete %>% st_drop_geometry() %>% select(GEOID, hardship_index),
+    by = "GEOID"
+  ) %>%
+  mutate(diff_10_minus_5 = hardship_index_10 - hardship_index)
+
+ggplot(compare_df) +
+  geom_sf(aes(fill = diff_10_minus_5), color = NA) +
+  scale_fill_gradient2(
+    low = "#4575b4", mid = "#f7f7f7", high = "#d73027",
+    midpoint = 0, name = "10-var\nminus\n5-var"
+  ) +
+  theme_void() +
+  labs(
+    title    = "Where Does Measurement Choice Matter Most?",
+    subtitle = "Red = tracts scoring higher with enriched index\nBlue = tracts scoring lower",
+    caption  = "ACS 5-Year (2023) | Difference = 10-variable minus 5-variable index"
+  )
+```
+
+**Interpreting the difference map:** Red tracts are communities where the enriched index reveals *more hardship* than the baseline captured — likely places with high renter rates, low vehicle access, or many single-parent households that census income and poverty measures undercount. Blue tracts are places where those new dimensions don't add to the hardship signal — often wealthier suburbs where some of those variables don't apply.
 
 ---
 
 ::: {.callout-note}
 ## Ready for the assignment?
-Head to the [Lab 1 Assignment page](https://antjam-howell.github.io/paf-516-labs/lab1-assignment.html) to download `Lab1_Assignment.qmd`. You will add a 6th variable to the index and evaluate whether it improves reliability.
+Head to the [Lab 1 Assignment page](https://antjam-howell.github.io/paf-516-labs/lab1-assignment.html) to download `Lab1_Assignment.qmd`. The assignment asks you to add **SNAP receipt** as an 11th variable and show whether one more dimension still meaningfully shifts the difference map.
 :::

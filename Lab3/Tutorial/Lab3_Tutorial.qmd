@@ -18,28 +18,21 @@ execute:
 
 ::: {.callout-tip}
 ## How to use this file
-**First time:** Click **Render** (Cmd+Shift+K Mac / Ctrl+Shift+K PC) to produce a complete HTML with all results. Then come back and run chunk by chunk to understand each step.
-
-**Chunk by chunk:** Place cursor inside any chunk → Cmd+Return (Mac) / Ctrl+Enter (PC).
+**First time:** Click **Render** (Cmd+Shift+K / Ctrl+Shift+K) to see all results. Then run chunk by chunk to understand each step.
 
 This file is for learning — do not edit it. When ready for the assignment, go to:
 [https://antjam-howell.github.io/paf-516-labs/lab3-assignment.html](https://antjam-howell.github.io/paf-516-labs/lab3-assignment.html)
 :::
 
-
 ```{r}
 #| label: setup
 #| include: false
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10)
-options(tigris_use_cache = TRUE)
-options(tigris_progress_bar = FALSE)
+options(tigris_use_cache = TRUE, tigris_progress_bar = FALSE)
 ```
 
 ```{r}
 #| label: packages
-# ── Package Setup (runs automatically on first knit) ─────────────────
-# Downloads the exact package versions used to build this lab.
-# The if-guard ensures this only runs once — no need to comment out.
 if (!file.exists(".renv_done")) {
   if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
   download.file(
@@ -57,50 +50,35 @@ library(tigris)
 library(psych)
 library(patchwork)
 library(viridis)
-library(lme4)         # for ICC estimation
-library(performance)  # for icc() function
 ```
 
 ```{r}
 #| label: api-key
 # Get a free Census API key at: https://api.census.gov/data/key_signup.html
-# After receiving your key by email, run ONCE in the RStudio console:
-#   census_api_key("YOUR_KEY_HERE", install = TRUE)
-# Then restart R: Session -> Restart R
-# You only need to do this once — the key is saved to your .Renviron file.
+# Run ONCE in RStudio console: census_api_key("YOUR_KEY_HERE", install = TRUE)
+# Then restart R.
 ```
 
 ```{r}
 #| label: fallback-data
-# ── FALLBACK: Uncomment if Census API is unavailable ──────────────────
-# Option A (local — save .rds to PAF516/Lab3/data/ first):
-# cbg_raw <- readRDS("../data/cbg_hardship_maricopa.rds")
-#
+# Option A (local): cbg_raw <- readRDS("../data/cbg_hardship_maricopa.rds")
 # Option B (GitHub):
 # cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab3/data/cbg_hardship_maricopa.rds"))
-#
 # If using fallback, skip to Step 2.
 ```
 
 
 # Step 1: Pull Maricopa County Block Group Data
 
-We build on the same 5-variable hardship indicator set from Labs 1 and 2, but now pull only **Maricopa County block groups** — the finest ACS geography and the foundation for neighborhood-level spatial analysis.
-
 ```{r}
 #| label: step.01-vars
 
 hardship_vars <- c(
-  pov_below50    = "C17002_002",
-  pov_50to99     = "C17002_003",
-  pov_den        = "C17002_001",
-  median_income  = "B19013_001",
-  pct_unemp_num  = "B23025_005",
-  pct_unemp_den  = "B23025_002",
-  pct_no_hs_num  = "B15003_002",
-  pct_no_hs_den  = "B15003_001",
-  pct_no_ins_num = "B27010_017",
-  pct_no_ins_den = "B27010_001"
+  pov_below50    = "C17002_002",  pov_50to99  = "C17002_003",
+  pov_den        = "C17002_001",  median_income = "B19013_001",
+  pct_unemp_num  = "B23025_005",  pct_unemp_den = "B23025_002",
+  pct_no_hs_num  = "B15003_002",  pct_no_hs_den = "B15003_001",
+  pct_no_ins_num = "B27010_017",  pct_no_ins_den= "B27010_001"
 )
 ```
 
@@ -109,21 +87,14 @@ hardship_vars <- c(
 #| results: hide
 
 cbg_raw <- get_acs(
-  geography    = "block group",
-  variables    = hardship_vars,
-  state        = "AZ",
-  county       = "Maricopa",
-  year         = 2023,
-  survey       = "acs5",
-  geometry     = TRUE,
-  progress_bar = FALSE
+  geography = "block group", variables = hardship_vars,
+  state = "AZ", county = "Maricopa",
+  year = 2023, survey = "acs5", geometry = TRUE, progress_bar = FALSE
 )
 ```
 
 
 # Step 2: Build the 5-Variable Hardship Index
-
-Mirrors Lab 1: pivot to wide, compute rates, standardize to z-scores, reverse-code income, average into composite index.
 
 ```{r}
 #| label: step.02-wrangle
@@ -149,377 +120,358 @@ index_z <- index_vars %>%
   mutate(across(everything(), ~ as.numeric(scale(.)))) %>%
   mutate(median_income = -1 * median_income)
 
-alpha_original <- psych::alpha(index_z)
-cat("Original 5-variable alpha:", round(alpha_original$total$raw_alpha, 3), "\n")
-```
-
-```{r}
-#| label: step.02-index
-
 index_z$hardship_index <- rowMeans(index_z[, 1:5], na.rm = TRUE)
 cbg_complete$hardship_index <- index_z$hardship_index
+
 cat("CBGs with valid index:", nrow(cbg_complete), "\n")
-summary(cbg_complete$hardship_index)
 ```
 
 
-# Step 3: Aggregation Sensitivity — Does Scale Matter? (ICC)
+# Step 3: Aggregation Sensitivity — ICC Test
 
-Before doing spatial joins at the block group level, we should ask: **does using block groups vs. tracts meaningfully change our conclusions?** The Intraclass Correlation Coefficient (ICC) answers this by measuring what fraction of total variance is *between* tracts vs. *within* them.
-
-If the ICC is high, block groups within the same tract are similar — aggregating to tracts loses little. If the ICC is low, there is substantial within-tract variation that tract-level analysis would miss.
-
-```{r}
-#| label: step.03-tract-id
-
-# Extract the tract GEOID from the block group GEOID
-# Block group GEOID (15 chars): state(2) + county(3) + tract(6) + bg(1)
-# First 11 characters = tract GEOID
-cbg_complete <- cbg_complete |>
-  mutate(tract_id = str_sub(GEOID, 1, 11))
-
-cat("Unique tracts containing these block groups:", n_distinct(cbg_complete$tract_id), "\n")
-cat("Average block groups per tract:",
-    round(nrow(cbg_complete) / n_distinct(cbg_complete$tract_id), 1), "\n")
-```
+Does geography choice matter? The ICC measures how much within-tract variation we would lose by aggregating block groups to tracts.
 
 ```{r}
 #| label: step.03-icc
 
-# Compute ICC using a one-way random effects model
-# hardship_index ~ 1 + (1 | tract_id) models tracts as random grouping units
-model_icc <- lmer(hardship_index ~ 1 + (1 | tract_id),
-                  data = cbg_complete,
-                  REML = TRUE)
+cbg_complete <- cbg_complete |>
+  mutate(
+    tract_id = str_sub(GEOID, 1, 11),
+    area     = st_area(geometry) |> as.numeric()
+  )
 
-icc_result <- performance::icc(model_icc)
-icc_val <- round(icc_result$ICC_adjusted, 3)
+# ICC via one-way ANOVA — no heavy packages required
+# Formula: (MS_between - MS_within) / (MS_between + (n0 - 1) * MS_within)
+# where n0 is the effective average group size (adjusted for unequal groups)
+aov_icc  <- aov(hardship_index ~ factor(tract_id), data = cbg_complete)
+ms       <- summary(aov_icc)[[1]][, "Mean Sq"]
+ms_b     <- ms[1]   # mean square between tracts
+ms_w     <- ms[2]   # mean square within tracts (residual)
 
-cat("=== Intraclass Correlation Coefficient ===\n")
+# Effective group size (Shrout & Fleiss, 1979) — accounts for unequal CBG counts per tract
+k        <- length(unique(cbg_complete$tract_id))
+n_total  <- nrow(cbg_complete)
+n0       <- (n_total - sum(table(cbg_complete$tract_id)^2) / n_total) / (k - 1)
+
+icc_val  <- round((ms_b - ms_w) / (ms_b + (n0 - 1) * ms_w), 3)
 cat("ICC:", icc_val, "\n")
-cat("\nInterpretation:\n")
-if (icc_val > 0.75) {
-  cat("HIGH ICC: Block groups within each tract are very similar.\n")
-  cat("Aggregating to tract level is acceptable for most purposes.\n")
-} else if (icc_val > 0.40) {
-  cat("MODERATE ICC: Meaningful within-tract variation exists.\n")
-  cat("Tract-level analysis is usable but suppresses some neighborhood variation.\n")
-} else {
-  cat("LOW ICC: Substantial within-tract variation detected.\n")
-  cat("Block group geography is strongly preferred. Aggregating to tracts loses\n")
-  cat("important neighborhood-level information.\n")
-}
+cat("(Between-tract MS:", round(ms_b, 3), "| Within-tract MS:", round(ms_w, 3), "| Avg group size:", round(n0, 1), ")\n")
 ```
 
 ```{r}
-#| label: step.03-aggregate-map
+#| label: step.03-maps
 #| fig-width: 14
 #| fig-height: 6
 
-# Aggregate block group hardship to tract level (area-weighted mean)
-cbg_complete <- cbg_complete |>
-  mutate(area = st_area(geometry) |> as.numeric())
-
-tract_aggregated <- cbg_complete |>
+tract_agg <- cbg_complete |>
   st_drop_geometry() |>
   group_by(tract_id) |>
-  summarise(
-    hardship_tract = weighted.mean(hardship_index, w = area, na.rm = TRUE),
-    n_cbg = n(),
-    .groups = "drop"
-  )
+  summarise(hardship_tract = weighted.mean(hardship_index, w = area, na.rm = TRUE),
+            .groups = "drop")
 
-# Pull tract geometries to map the aggregated index
 tract_geo <- get_acs(
-  geography    = "tract",
-  variables    = "B01001_001",
-  state        = "AZ",
-  county       = "Maricopa",
-  year         = 2023,
-  geometry     = TRUE,
-  progress_bar = FALSE
+  geography = "tract", variables = "B01001_001",
+  state = "AZ", county = "Maricopa", year = 2023,
+  geometry = TRUE, progress_bar = FALSE
 ) |>
   select(GEOID, geometry) |>
-  left_join(tract_aggregated, by = c("GEOID" = "tract_id"))
+  left_join(tract_agg, by = c("GEOID" = "tract_id"))
 
-# Side-by-side: block group vs. tract
-p_cbg <- ggplot(cbg_complete) +
+p_cbg   <- ggplot(cbg_complete) +
   geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis_c(option = "inferno", name = "Hardship\n(Block Group)",
-                       na.value = "grey80") +
-  theme_void() +
-  labs(title = "Block Group Level",
-       subtitle = paste0("n = ", nrow(cbg_complete), " block groups"))
+  scale_fill_viridis_c(option = "inferno", name = "Hardship\n(BG)") +
+  theme_void() + labs(title = "Block Group Level")
 
 p_tract <- ggplot(tract_geo) +
   geom_sf(aes(fill = hardship_tract), color = NA) +
-  scale_fill_viridis_c(option = "inferno", name = "Hardship\n(Tract Agg.)",
-                       na.value = "grey80") +
-  theme_void() +
-  labs(title = "Census Tract Level (Aggregated)",
-       subtitle = paste0("n = ", n_distinct(tract_geo$GEOID), " tracts"))
+  scale_fill_viridis_c(option = "inferno", name = "Hardship\n(Tract)") +
+  theme_void() + labs(title = "Tract Level (Aggregated)")
 
 p_cbg + p_tract +
-  plot_annotation(
-    title   = paste0("Scale Sensitivity: Block Group vs. Tract  |  ICC = ", icc_val),
-    caption = "ACS 5-Year (2023) | Tract values = area-weighted mean of block group hardship index"
-  )
+  plot_annotation(title = paste0("Scale Sensitivity  |  ICC = ", icc_val))
 ```
 
 ::: {.callout-note}
-## Extension for Lab 4
-Once you have covered Moran's I in Module 4, a natural follow-up is to run **Moran's I on the aggregation residuals** (block group hardship − tract mean). If the residuals are spatially clustered, MAUP is introducing *systematic spatial bias* — not just random noise. This connects Fotheringham & Wong's (1991) theoretical warning to your specific dataset.
+## What the ICC tells us — and why it matters
+The ICC is the fraction of **total hardship variance** that falls *between* tracts (as opposed to *within* them). It answers: "how much does it matter which tract a block group is in?"
+
+- **ICC > 0.75**: tracts are very homogeneous — aggregating to tract loses little
+- **ICC 0.40–0.75**: moderate within-tract variation — tract analysis is usable but imprecise  
+- **ICC < 0.40**: most variation is within tracts — block group geography is strongly preferred
+
+An ICC around 0.5 means roughly half the variance in block group hardship is *between* tracts and half is *within* them — a direct empirical demonstration of the MAUP concern from Module 2. Aggregating to tracts would suppress meaningful neighborhood-level variation.
+
+**Extension for Lab 4:** Once you cover Moran's I, run it on the within-tract residuals (block group hardship minus tract mean) to test whether the within-tract variation is spatially structured. If the residuals cluster, MAUP is introducing systematic spatial bias — not just random noise.
 :::
 
 
 # Step 4: Load External Point Data (Environmental Facilities)
 
-We now bring in a non-Census dataset: EPA-regulated environmental facilities in Maricopa County. These are point locations that we will spatially join to block group polygons.
-
 ```{r}
 #| label: step.04-facilities
 
-# Known EPA-regulated and Superfund facilities in Maricopa County
-# Sources: EPA TRI Explorer, EPA Superfund site listings
 facilities <- tibble(
-  name     = c(
-    "APS Ocotillo Power Plant",
-    "Intel Chandler Fab 32",
-    "Honeywell Aerospace",
-    "Univar Solutions (chemical dist.)",
-    "Goodyear Airport Industrial Park",
-    "Former Motorola 52nd Street Site",
-    "19th Avenue Landfill",
-    "Arizona Plating Works",
-    "Phoenix Sky Harbor Area (TRI cluster)",
-    "Mesa NW Industrial (TRI cluster)"
-  ),
-  type     = c(
-    "Power Generation","Semiconductor Mfg","Aerospace Mfg",
-    "Chemical Distribution","Industrial/Airport","Superfund",
-    "Superfund/Landfill","Superfund","TRI Cluster","TRI Cluster"
-  ),
-  lat      = c(33.3919, 33.2974, 33.4352, 33.4423, 33.4350,
-               33.4162, 33.5070, 33.4445, 33.4372, 33.4512),
-  lon      = c(-111.8828, -111.8156, -112.0694, -111.9738, -112.3797,
-               -111.9763, -112.1171, -112.0738, -112.0167, -111.8935)
+  name = c("APS Ocotillo Power Plant","Intel Chandler Fab 32",
+            "Honeywell Aerospace","Univar Solutions",
+            "Goodyear Airport Industrial Park","Former Motorola 52nd Street Site",
+            "19th Avenue Landfill","Arizona Plating Works",
+            "Phoenix Sky Harbor Area (TRI cluster)","Mesa NW Industrial (TRI cluster)"),
+  type = c("Power Generation","Semiconductor Mfg","Aerospace Mfg",
+            "Chemical Distribution","Industrial/Airport","Superfund",
+            "Superfund/Landfill","Superfund","TRI Cluster","TRI Cluster"),
+  lat  = c(33.3919,33.2974,33.4352,33.4423,33.4350,
+            33.4162,33.5070,33.4445,33.4372,33.4512),
+  lon  = c(-111.8828,-111.8156,-112.0694,-111.9738,-112.3797,
+            -111.9763,-112.1171,-112.0738,-112.0167,-111.8935)
 )
+cat("Facilities:", nrow(facilities), "\n")
+```
 
-cat("Facilities loaded:", nrow(facilities), "\n")
-print(facilities |> select(name, type))
+::: {.callout-warning}
+## Note on facility data
+This is a **representative sample** of 10 major EPA-regulated and Superfund sites in Maricopa County — not a comprehensive listing. The full EPA TRI database contains hundreds of facilities. Using only 10 sites produces sparse inner buffers (roughly 14 block groups within 0.5 miles, ~59 within 1 mile), so treat the distance-decay pattern as illustrative of the method rather than a definitive EJ finding. For a real analysis, download the full TRI dataset from `https://www.epa.gov/toxics-release-inventory-tri-program`.
+:::
+
+```{r}
+#| label: step.04-note
+#| include: false
+# Placeholder — note displayed above
 ```
 
 
 # Step 5: Convert to sf and Align CRS
 
-Before any spatial operation, both layers must share the same CRS. We project to **EPSG:2868** (Arizona Central, US survey feet) — appropriate for accurate distance calculations in Maricopa County.
-
 ```{r}
 #| label: step.05-crs
 
-# Convert facility tibble to sf point layer (WGS84 lat/lon)
-facilities_sf <- st_as_sf(facilities, coords = c("lon", "lat"), crs = 4326)
-
-# Project both layers to EPSG:2868 — Arizona Central (US survey feet)
-# This CRS gives accurate distances for buffer analysis in Maricopa County
+facilities_sf   <- st_as_sf(facilities, coords = c("lon", "lat"), crs = 4326)
 facilities_proj <- st_transform(facilities_sf, crs = 2868)
-cbg_proj        <- st_transform(cbg_complete,  crs = 2868)
-
-# Validate geometries
-cbg_proj <- st_make_valid(cbg_proj)
-
-cat("CRS check:\n")
-cat("  Facilities:", st_crs(facilities_proj)$epsg, "\n")
-cat("  Block groups:", st_crs(cbg_proj)$epsg, "\n")
-cat("  Units:", st_crs(facilities_proj)$units, "\n")
+cbg_proj        <- st_transform(cbg_complete, crs = 2868) |> st_make_valid()
+cat("Both layers in EPSG:2868 (Arizona Central, US survey feet)\n")
 ```
 
 
-# Step 6: Point-in-Polygon Spatial Join
+# Step 6: Compute Distance to Nearest Facility
 
-Count how many EPA facilities fall within each block group — producing a `facility_count` variable we can add to the hardship index.
+Rather than just asking "is this block group inside a buffer?" we compute the **exact distance from each block group's centroid to the nearest EPA facility**. This gives a continuous proximity measure and enables the distance-decay analysis in Step 7.
 
 ```{r}
-#| label: step.06-spatial-join
+#| label: step.06-distance
 
-# Spatial join: attach facility info to CBGs that contain them
-cbg_with_facilities <- st_join(cbg_proj, facilities_proj, join = st_intersects)
+# Compute centroids of each block group
+cbg_centroids <- st_centroid(cbg_proj)
 
-# Count facilities per CBG
-facility_counts <- cbg_with_facilities |>
+# Distance matrix: every CBG centroid to every facility (feet)
+dist_matrix <- st_distance(cbg_centroids, facilities_proj)
+
+# Keep only the distance to the NEAREST facility
+cbg_proj$dist_nearest_ft <- apply(dist_matrix, 1, min) |> as.numeric()
+cbg_proj$dist_nearest_mi <- cbg_proj$dist_nearest_ft / 5280
+
+cat("Median distance to nearest facility:", round(median(cbg_proj$dist_nearest_mi), 2), "miles\n")
+cat("% of CBGs within 1 mile:", round(100 * mean(cbg_proj$dist_nearest_mi < 1), 1), "%\n")
+cat("% of CBGs within 0.5 miles:", round(100 * mean(cbg_proj$dist_nearest_mi < 0.5), 1), "%\n")
+```
+
+
+# Step 7: Facility Density Map + Hardship Overlay
+
+The compelling EJ visual: where are facilities located, and does hardship follow the same pattern?
+
+```{r}
+#| label: step.07-map
+#| fig-width: 14
+#| fig-height: 6
+
+cbg_wgs84 <- st_transform(cbg_proj, 4326)
+fac_wgs84 <- st_transform(facilities_proj, 4326)
+
+# Hardship choropleth with facility locations overlaid
+p_hardship_fac <- ggplot() +
+  geom_sf(data = cbg_wgs84, aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship\nIndex",
+                       na.value = "grey80") +
+  geom_sf(data = fac_wgs84, color = "white", fill = "#ffc627",
+          shape = 21, size = 3.5, stroke = 1.2) +
+  theme_void() +
+  labs(
+    title    = "Economic Hardship & EPA Facility Locations",
+    subtitle = "Maricopa County Block Groups — Gold dots = EPA-regulated / Superfund facilities",
+    caption  = "ACS 5-Year (2023) + EPA TRI / Superfund data"
+  )
+
+# Distance to nearest facility choropleth
+p_distance <- ggplot(cbg_wgs84) +
+  geom_sf(aes(fill = dist_nearest_mi), color = NA) +
+  scale_fill_viridis_c(option = "plasma", direction = -1,
+                       name = "Miles to\nNearest\nFacility",
+                       na.value = "grey80") +
+  geom_sf(data = fac_wgs84, color = "white", fill = "black",
+          shape = 21, size = 3, stroke = 1) +
+  theme_void() +
+  labs(
+    title    = "Distance to Nearest EPA Facility",
+    subtitle = "Darker = closer to facility",
+    caption  = "CRS: EPSG:2868 → displayed in WGS84"
+  )
+
+p_hardship_fac + p_distance +
+  plot_annotation(
+    title = "Do High-Hardship Block Groups Cluster Near EPA Facilities?"
+  )
+```
+
+
+# Step 8: Distance-Decay Analysis — The EJ Finding
+
+**The core environmental justice question:** Does hardship *decrease* as you move farther from EPA facilities? If yes, proximity to environmental burden compounds socioeconomic disadvantage — exactly what EJ research predicts.
+
+```{r}
+#| label: step.08-decay
+
+# Create distance bands (the exposure zones you are comparing)
+cbg_decay <- cbg_proj |>
   st_drop_geometry() |>
-  group_by(GEOID) |>
+  mutate(
+    dist_band = cut(
+      dist_nearest_mi,
+      breaks = c(0, 0.5, 1.0, 2.0, 5.0, Inf),
+      labels = c("< 0.5 mi", "0.5–1 mi", "1–2 mi", "2–5 mi", "> 5 mi"),
+      right  = TRUE, include.lowest = TRUE
+    )
+  )
+
+# Compute mean hardship and poverty rate within each distance band
+decay_summary <- cbg_decay |>
+  group_by(dist_band) |>
   summarise(
-    facility_count = sum(!is.na(name)),
+    n_cbg           = n(),
+    mean_hardship   = round(mean(hardship_index,   na.rm = TRUE), 3),
+    mean_poverty    = round(mean(poverty_rate * 100, na.rm = TRUE), 1),
+    mean_unemp      = round(mean(unemp_rate * 100,   na.rm = TRUE), 1),
     .groups = "drop"
   )
 
-# Merge counts back to the projected CBG layer
-cbg_proj <- cbg_proj |>
-  left_join(facility_counts, by = "GEOID") |>
-  mutate(facility_count = replace_na(facility_count, 0))
-
-cat("Block groups with at least one facility:", sum(cbg_proj$facility_count > 0), "\n")
-cat("Max facilities in one block group:", max(cbg_proj$facility_count), "\n")
-```
-
-
-# Step 7: Buffer Analysis (1-Mile Proximity Zone)
-
-Create 1-mile buffer zones around each facility. Block groups that intersect a buffer are considered to be in a "proximity exposure zone" — regardless of whether a facility falls directly within their boundary.
-
-```{r}
-#| label: step.07-buffer
-
-# 1 mile = 5280 feet (EPSG:2868 units are US survey feet)
-buffer_dist_ft <- 5280
-
-# Create 1-mile buffers around each facility
-facility_buffers <- st_buffer(facilities_proj, dist = buffer_dist_ft)
-
-# Dissolve overlapping buffers into a single combined zone
-buffer_union <- st_union(facility_buffers)
-
-# Identify CBGs that intersect the buffer zone (binary: in/out)
-cbg_proj$near_facility <- as.integer(
-  lengths(st_intersects(cbg_proj, buffer_union)) > 0
-)
-
-cat("Block groups within 1 mile of any facility:",
-    sum(cbg_proj$near_facility), "\n")
-cat("Percent of all Maricopa CBGs:",
-    round(100 * mean(cbg_proj$near_facility), 1), "%\n")
+print(decay_summary)
 ```
 
 ```{r}
-#| label: step.07-buffer-map
+#| label: step.08-decay-plot
+#| fig-width: 12
+#| fig-height: 5
 
-cbg_wgs84   <- st_transform(cbg_proj, 4326)
-buf_wgs84   <- st_transform(buffer_union, 4326)
-fac_wgs84   <- st_transform(facilities_proj, 4326)
-
-ggplot() +
-  geom_sf(data = cbg_wgs84,
-          aes(fill = factor(near_facility)), color = NA, alpha = 0.6) +
-  scale_fill_manual(values = c("0" = "#cccccc", "1" = "#e53935"),
-                    labels = c("Outside buffer", "Within 1-mile buffer"),
-                    name = "Proximity") +
-  geom_sf(data = buf_wgs84, fill = NA, color = "#e53935",
-          linewidth = 0.8, linetype = "dashed") +
-  geom_sf(data = fac_wgs84, color = "#1a1a1a", size = 3, shape = 16) +
-  theme_void() +
-  labs(title = "1-Mile Buffer Zones Around EPA Facilities",
-       subtitle = "Maricopa County Block Groups | Red = within 1-mile exposure zone",
-       caption = "Buffer distance: 1 mile (5,280 ft) | CRS: EPSG:2868 → displayed in WGS84")
-```
-
-
-# Step 8: Enriched Hardship Index
-
-Add the two new spatial variables — `facility_count` and `near_facility` — to the hardship index as additional indicators of neighborhood disadvantage. Re-run Cronbach's alpha to assess whether environmental burden hangs together with census-based hardship.
-
-```{r}
-#| label: step.08-enriched
-
-# Build the enriched index: standardize new spatial variables
-spatial_vars <- cbg_proj |>
-  st_drop_geometry() |>
-  select(GEOID, facility_count, near_facility)
-
-# Merge spatial variables back to the index data
-cbg_enriched_data <- cbg_proj |>
-  st_drop_geometry() |>
-  select(GEOID) |>
-  bind_cols(index_z |> select(-hardship_index)) |>
-  left_join(spatial_vars, by = "GEOID") |>
-  mutate(
-    facility_z   = as.numeric(scale(facility_count)),
-    near_fac_z   = as.numeric(scale(near_facility))
-  )
-
-# 7-variable enriched index (5 census + 2 spatial)
-enriched_vars <- cbg_enriched_data |>
-  select(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate,
-         median_income, facility_z, near_fac_z)
-
-alpha_enriched <- psych::alpha(enriched_vars, check.keys = TRUE)
-alpha_val_enrich <- round(alpha_enriched$total$raw_alpha, 3)
-
-cat("Original 5-variable alpha:", round(alpha_original$total$raw_alpha, 3), "\n")
-cat("Enriched 7-variable alpha:", alpha_val_enrich, "\n")
-cat("Change:", round(alpha_val_enrich - alpha_original$total$raw_alpha, 3), "\n")
-```
-
-```{r}
-#| label: step.08-index
-
-cbg_proj$hardship_enriched <- rowMeans(enriched_vars, na.rm = TRUE)
-```
-
-
-# Step 9: Comparative Maps
-
-Map the original 5-variable and enriched 7-variable indices side by side. The difference map highlights where spatial integration changes the picture.
-
-```{r}
-#| label: step.09-maps
-#| fig-width: 16
-#| fig-height: 6
-
-cbg_map <- st_transform(cbg_proj, 4326)
-
-p_orig <- ggplot(cbg_map) +
-  geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis_c(option = "inferno", name = "Hardship\n(Original)",
-                       na.value = "grey80") +
-  theme_void() +
-  labs(title = "Original 5-Variable Index",
-       subtitle = "Census variables only")
-
-p_enrich <- ggplot(cbg_map) +
-  geom_sf(aes(fill = hardship_enriched), color = NA) +
-  scale_fill_viridis_c(option = "inferno", name = "Hardship\n(Enriched)",
-                       na.value = "grey80") +
-  theme_void() +
-  labs(title = "Enriched 7-Variable Index",
-       subtitle = "Census + EPA facility proximity")
-
-p_orig + p_enrich +
-  plot_annotation(
-    title   = "Does Spatial Integration Change the Picture?",
-    caption = "ACS 5-Year (2023) + EPA TRI facility data | Maricopa County Block Groups"
-  )
-```
-
-```{r}
-#| label: step.09-difference
-#| fig-width: 8
-#| fig-height: 6
-
-cbg_map <- cbg_map |>
-  mutate(index_diff = hardship_enriched - hardship_index)
-
-ggplot(cbg_map) +
-  geom_sf(aes(fill = index_diff), color = NA) +
-  scale_fill_gradient2(
-    low      = "#4575b4",
-    mid      = "#f7f7f7",
-    high     = "#d73027",
-    midpoint = 0,
-    name     = "Enriched\nminus\nOriginal"
-  ) +
-  theme_void() +
+# Hardship distance-decay bar chart
+p_decay_hardship <- ggplot(decay_summary, aes(x = dist_band, y = mean_hardship)) +
+  geom_col(aes(fill = mean_hardship), color = "white") +
+  scale_fill_viridis_c(option = "inferno", direction = 1, guide = "none") +
+  geom_text(aes(label = round(mean_hardship, 2)),
+            vjust = -0.4, fontface = "bold", size = 3.5) +
+  theme_minimal(base_size = 12) +
   labs(
-    title    = "Difference: Enriched − Original Index",
-    subtitle = "Red = worse when spatial burden included | Blue = better",
-    caption  = "ACS 5-Year (2023) + EPA TRI data"
+    title    = "Economic Hardship Decreases with Distance from EPA Facilities",
+    subtitle = "Mean hardship index by distance band | Maricopa County Block Groups",
+    x        = "Distance to Nearest EPA Facility",
+    y        = "Mean Hardship Index",
+    caption  = "Distance-decay pattern: UGCoP predicts this relationship changes with buffer threshold choice"
+  )
+
+# Poverty rate distance-decay
+p_decay_poverty <- ggplot(decay_summary, aes(x = dist_band, y = mean_poverty)) +
+  geom_col(aes(fill = mean_poverty), color = "white") +
+  scale_fill_viridis_c(option = "rocket", direction = 1, guide = "none") +
+  geom_text(aes(label = paste0(round(mean_poverty, 1), "%")),
+            vjust = -0.4, fontface = "bold", size = 3.5) +
+  theme_minimal(base_size = 12) +
+  labs(
+    title    = "Poverty Rate by Distance from EPA Facilities",
+    subtitle = "Higher poverty near facilities — lower near clean suburbs",
+    x        = "Distance to Nearest EPA Facility",
+    y        = "Mean Poverty Rate (%)"
+  )
+
+p_decay_hardship + p_decay_poverty +
+  plot_annotation(
+    caption = "ACS 5-Year (2023) + EPA TRI data | Maricopa County Block Groups"
   )
 ```
 
+**Reading the chart:** If hardship and poverty are highest in the "< 0.5 mi" bar and decrease across the distance bands, the data support the EJ hypothesis: **poorer, more disadvantaged communities are disproportionately located near EPA-regulated facilities**. Wealthier neighborhoods are farther away.
+
+
+# Step 9: Multi-Buffer UGCoP Comparison
+
+**The UGCoP question:** How sensitive is this finding to the buffer threshold? We run the analysis at three distances — 0.5, 1.0, and 2.0 miles — and compare results.
+
+```{r}
+#| label: step.09-ugcop
+
+# Compute mean hardship for CBGs inside vs. outside each buffer distance
+buffer_comparison <- tibble(
+  buffer_mi = c(0.5, 1.0, 2.0)
+) |>
+  rowwise() |>
+  mutate(
+    inside  = mean(cbg_proj$hardship_index[cbg_proj$dist_nearest_mi <= buffer_mi], na.rm = TRUE),
+    outside = mean(cbg_proj$hardship_index[cbg_proj$dist_nearest_mi >  buffer_mi], na.rm = TRUE),
+    n_inside  = sum(cbg_proj$dist_nearest_mi <= buffer_mi, na.rm = TRUE),
+    n_outside = sum(cbg_proj$dist_nearest_mi >  buffer_mi, na.rm = TRUE),
+    difference = inside - outside
+  ) |>
+  ungroup() |>
+  mutate(across(c(inside, outside, difference), ~ round(., 3)))
+
+cat("=== UGCoP: How buffer distance changes the EJ finding ===\n\n")
+print(buffer_comparison |>
+        select(buffer_mi, n_inside, inside, outside, difference) |>
+        rename(`Buffer (mi)` = buffer_mi,
+               `N inside`   = n_inside,
+               `Mean hardship inside` = inside,
+               `Mean hardship outside`= outside,
+               `Difference (in - out)` = difference))
+```
+
+```{r}
+#| label: step.09-ugcop-plot
+#| fig-width: 11
+#| fig-height: 5
+
+# Reshape for grouped bar chart
+buf_long <- buffer_comparison |>
+  select(buffer_mi, inside, outside) |>
+  pivot_longer(cols = c(inside, outside),
+               names_to  = "group",
+               values_to = "mean_hardship") |>
+  mutate(
+    group = factor(group, levels = c("inside","outside"),
+                   labels = c("Inside buffer","Outside buffer"))
+  )
+
+ggplot(buf_long,
+       aes(x = factor(buffer_mi), y = mean_hardship, fill = group)) +
+  geom_col(position = "dodge", color = "white", width = 0.65) +
+  geom_text(aes(label = round(mean_hardship, 2)),
+            position = position_dodge(width = 0.65),
+            vjust = -0.4, size = 3.5, fontface = "bold") +
+  scale_fill_manual(
+    values = c("Inside buffer" = "#d73027", "Outside buffer" = "#4575b4"),
+    name   = NULL
+  ) +
+  scale_x_discrete(labels = paste0(c(0.5, 1.0, 2.0), "-mile buffer")) +
+  theme_minimal(base_size = 12) +
+  labs(
+    title    = "UGCoP: Mean Hardship Inside vs. Outside Buffer — Three Distances",
+    subtitle = "Does the 'proximity penalty' shrink or grow as the buffer expands?",
+    x        = "Buffer Distance",
+    y        = "Mean Hardship Index",
+    caption  = "Red = inside buffer | Blue = outside | ACS 2023 + EPA TRI data"
+  )
+```
+
+**Reading the chart:** If the gap between inside and outside is consistent across all three buffer distances, the finding is **robust** — it doesn't depend on where you draw the line. If the gap disappears or reverses at one distance, the finding is **threshold-sensitive** and the UGCoP is producing a misleading result at that threshold. This is exactly what Kwan (2012) warned about.
 
 ---
 
 ::: {.callout-note}
 ## Ready for the assignment?
-Head to the [Lab 3 Assignment page](https://antjam-howell.github.io/paf-516-labs/lab3-assignment.html) to download `Lab3_Assignment.qmd`. You will modify the buffer distance, interpret the ICC result, and evaluate whether spatial integration improves the hardship index.
+Head to the [Lab 3 Assignment page](https://antjam-howell.github.io/paf-516-labs/lab3-assignment.html) to download `Lab3_Assignment.qmd`. The assignment asks you to test a different distance threshold and interpret what the distance-decay pattern tells you about the UGCoP.
 :::

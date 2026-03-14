@@ -18,56 +18,61 @@ execute:
 
 ::: {.callout-important}
 ## Before you begin
-
 1. **Rename this file** to `Lab1_Assignment_YourLastName.qmd` before editing.
-2. **This file contains the same pre-filled code as the tutorial.** Steps 1--8 below produce the same output you saw in the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately (Cmd+Shift+K / Ctrl+Shift+K) and see the same results. If you placed it in a different location, run the `packages` chunk first (Cmd+Return / Ctrl+Enter), then knit.
-3. **The assignment questions are below.** Here is the workflow:
-   - **Q1** asks you to interpret results from the pre-filled steps. Knit first, review the Cronbach's alpha output and maps in Steps 3--8, then write your answers.
-   - **Q2** asks you to add a 6th variable (SNAP benefits) to the hardship index by adapting the existing code. Fill in the scaffold chunks labeled `q2-...` at the end of this document, then re-knit.
-   - **Q3** asks you to evaluate whether the 6th variable improved the index by comparing the original and modified results.
+2. **This file contains the same pre-filled code as the tutorial.** Steps 1–8 below produce the same output you saw in the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately (Cmd+Shift+K / Ctrl+Shift+K) and see the same results. If you placed it in a different location, run the `packages` chunk first (Cmd+Return / Ctrl+Enter), then knit.
+3. **The assignment questions are at the top of this document.** Here is the workflow:
+   - **Q1** asks you to interpret results from the pre-filled steps. Knit first, then review the Cronbach's alpha output and maps in Steps 3–8, then write your answers.
+   - **Q2** asks you to extend the enriched index by adding SNAP benefits as an 11th variable by adapting the existing code. Fill in the scaffold chunks labeled `q2-...` at the end of this document, then re-knit.
+   - **Q3** asks you to evaluate diminishing returns — does adding one more variable still shift the map meaningfully? Compare the 5→10 and 10→11 changes.
 4. Submit both `Lab1_Assignment_YourLastName.qmd` and `Lab1_Assignment_YourLastName.html` to Canvas.
 :::
 
-
 # Assignment Questions
 
-## Q1 --- Interpret the Baseline Results {.question}
+## Q1 — Interpret the Baseline and Enriched Results {.question}
 
-> **Text answer --- no code required.** Answer in your own words below.
+> **Text answer — no code required.** Knit the file first, then review the outputs from Steps 3–8 and answer below.
 
-- **Cronbach's alpha:** What is the value? Is it acceptable (> 0.7)? What does it tell you about the 5-variable index?
-
-[YOUR ANSWER HERE]
-
-- **National patterns:** Where is economic hardship most concentrated in the US county map?
+- **Cronbach's alpha:** What is the 5-variable alpha? What is the 10-variable alpha? Did expanding the index improve internal consistency? What does this tell you about whether the new dimensions belong in the hardship construct?
 
 [YOUR ANSWER HERE]
 
-- **Scale comparison:** How does the spatial pattern change as you zoom from counties to tracts to block groups? What does this illustrate about the MAUP?
+- **Map comparison (Step 8):** Looking at the 5-variable vs. 10-variable maps, where do they disagree most? Identify a specific area of Arizona where expanding measurement changes the apparent level of hardship.
+
+[YOUR ANSWER HERE]
+
+- **Difference map:** What does the red/blue pattern reveal? What types of communities — urban core, suburbs, rural, tribal areas — tend to score *higher* in the enriched index relative to the baseline? Why might that be?
 
 [YOUR ANSWER HERE]
 
 
-## Q2 --- Add a 6th Variable {.question}
+## Q2 — Add SNAP as an 11th Variable {.question}
 
-> **Code + output required.** Add **percent of households receiving SNAP benefits** as a 6th indicator. Census codes: numerator `B19058_002`, denominator `B19058_001`.
+> **Code + output required.**
 >
-> Fill in the three scaffold chunks labeled `q2-pull`, `q2-index`, and `q2-map` at the **end of this document** (after Step 8), then re-knit to see your results.
+> The 10-variable enriched index does not yet include SNAP (food assistance) receipt. Add **percent of households receiving SNAP benefits** as an 11th variable:
+> - Numerator: `B19058_002` (households receiving SNAP)
+> - Denominator: `B19058_001` (total households)
+>
+> Fill in the three scaffold chunks at the end of this document to:
+> 1. Re-pull tract data with SNAP added
+> 2. Recompute Cronbach's alpha with 11 variables and build the new index
+> 3. Produce a side-by-side map (10-var vs. 11-var) **and** a difference map (11-var minus 10-var)
 
 
-## Q3 --- Evaluate the Addition {.question}
+## Q3 — Evaluate Diminishing Returns {.question}
 
-> **Text answer --- no code required.**
+> **Text answer — no code required.**
 
-- **Alpha comparison:** Did adding SNAP improve or weaken Cronbach's alpha? By how much?
+- **Marginal alpha change:** How much did alpha change going from 5→10 variables? How much from 10→11 (adding SNAP)? Is there a pattern of diminishing returns?
 
 [YOUR ANSWER HERE]
 
-- **Map comparison:** Visually compare the 5-variable and 6-variable tract maps. Do the patterns differ meaningfully?
+- **Marginal map change:** Compare the 5→10 difference map (Step 8) to your 10→11 difference map (Q2). Did adding SNAP produce as dramatic a spatial shift as expanding from 5 to 10 variables? Where, if anywhere, did adding SNAP still matter?
 
 [YOUR ANSWER HERE]
 
-- **Recommendation:** Based on alpha and the maps, should you keep the 6th variable in the index? Why or why not?
+- **Recommendation:** At what point should you stop adding variables to a composite index? Using evidence from your alpha comparisons and difference maps, make a recommendation for how many variables this hardship index should include — and justify it.
 
 [YOUR ANSWER HERE]
 
@@ -75,19 +80,9 @@ execute:
 ---
 
 
-```{r}
-#| label: setup
-#| include: false
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10)
-options(tigris_use_cache = TRUE)
-options(tigris_progress_bar = FALSE)
-```
 
 ```{r}
 #| label: packages
-# ── Package Setup (runs automatically on first knit) ─────────────────
-# Downloads the exact package versions used to build this lab.
-# The if-guard ensures this only runs once — no need to comment out.
 if (!file.exists(".renv_done")) {
   if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
   download.file(
@@ -115,42 +110,28 @@ library(patchwork)
 # After receiving your key by email, run this line ONCE in the RStudio console:
 # census_api_key("YOUR_KEY_HERE", install = TRUE)
 # Then restart R: Session → Restart R
-# You only need to do this once — the key is saved to your .Renviron file.
-```
-
-```{r}
-#| label: fallback-data
-# ── FALLBACK: Uncomment if Census API is unavailable ──────────────────
-# Option A (local — save .rds files to PAF516/Lab1/data/ first):
-# county_complete <- readRDS("../data/hardship_counties_us.rds")
-# CenDF_complete  <- readRDS("../data/hardship_tracts_az.rds")
-# cbg_complete    <- readRDS("../data/hardship_cbg_maricopa.rds")
-#
-# Option B (GitHub):
-# county_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_counties_us.rds"))
-# CenDF_complete  <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_tracts_az.rds"))
-# cbg_complete    <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_cbg_maricopa.rds"))
-# If using fallback, skip to Step 5.
 ```
 
 
 # Step 1: Retrieve Census Variables
+
+We build an **Economic Hardship Index** from 5 computed rates at the Arizona tract level. Each rate requires a numerator/denominator pair from the ACS, so the variable list contains 10 census codes — but they collapse into 5 measures: poverty rate, unemployment rate, no high school diploma rate, no health insurance rate, and median income.
 
 ```{r}
 #| label: step.01
 #| results: hide
 
 hardship_vars <- c(
-  pov_below50    = "C17002_002",
-  pov_50to99     = "C17002_003",
-  pov_den        = "C17002_001",
-  median_income  = "B19013_001",
-  pct_unemp_num  = "B23025_005",
-  pct_unemp_den  = "B23025_002",
-  pct_no_hs_num  = "B15003_002",
-  pct_no_hs_den  = "B15003_001",
-  pct_no_ins_num = "B27010_017",
-  pct_no_ins_den = "B27010_001"
+  pov_below50    = "C17002_002",   # Income-to-poverty ratio under .50
+  pov_50to99     = "C17002_003",   # Income-to-poverty ratio .50 to .99
+  pov_den        = "C17002_001",   # Total population (poverty universe)
+  median_income  = "B19013_001",   # Median household income
+  pct_unemp_num  = "B23025_005",   # Unemployed population
+  pct_unemp_den  = "B23025_002",   # In labor force
+  pct_no_hs_num  = "B15003_002",   # Population with less than high school
+  pct_no_hs_den  = "B15003_001",   # Total population 25+
+  pct_no_ins_num = "B27010_017",   # Without health insurance (18–34)
+  pct_no_ins_den = "B27010_001"    # Total population (insurance universe)
 )
 
 CenDF <- get_acs(
@@ -164,14 +145,29 @@ CenDF <- get_acs(
 )
 ```
 
+**Variable justification:**
+
+| Variable | Census Code | Why Included |
+|----------|------------|--------------|
+| Poverty rate | C17002_002 + _003 / _001 | Direct measure of economic deprivation |
+| Unemployment rate | B23025_005 / B23025_002 | Labor market hardship |
+| No high school diploma | B15003_002 / B15003_001 | Education predicts economic outcomes |
+| No health insurance | B27010_017 / B27010_001 | Reflects economic vulnerability |
+| Median household income | B19013_001 | Core income measure (reverse coded) |
+
+
 # Step 2: Compute Rates and Standardize
+
+Reshape from long to wide, compute percentage variables, and standardize to z-scores.
 
 ```{r}
 #| label: step.02
 
 CenDF_wide <- CenDF %>%
   select(-moe) %>%
-  pivot_wider(names_from = variable, values_from = estimate) %>%
+  pivot_wider(names_from = variable, values_from = estimate)
+
+CenDF_wide <- CenDF_wide %>%
   mutate(
     poverty_rate = (pov_below50 + pov_50to99) / pov_den,
     unemp_rate   = pct_unemp_num / pct_unemp_den,
@@ -179,6 +175,7 @@ CenDF_wide <- CenDF %>%
     no_ins_rate  = pct_no_ins_num / pct_no_ins_den
   )
 
+# Select indicator variables and standardize
 index_vars <- CenDF_wide %>%
   st_drop_geometry() %>%
   select(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income) %>%
@@ -186,31 +183,47 @@ index_vars <- CenDF_wide %>%
 
 index_z <- index_vars %>%
   mutate(across(everything(), ~ as.numeric(scale(.)))) %>%
-  mutate(median_income = -1 * median_income)
+  mutate(median_income = -1 * median_income)  # reverse-code: high income = low hardship
 ```
 
+
 # Step 3: Cronbach's Alpha
+
+Assess whether the 5 items reliably measure the same underlying construct.
 
 ```{r}
 #| label: step.03
 
 alpha_result <- psych::alpha(index_z)
 print(alpha_result)
-alpha_value  <- alpha_result$total$raw_alpha
+```
+
+```{r}
+#| label: alpha-summary
+
+alpha_value <- alpha_result$total$raw_alpha
 cat("Cronbach's alpha:", round(alpha_value, 3), "\n")
 ```
 
-# Step 4: Build Index and Visualize
+**Interpreting the output:** The `raw_alpha` is our Cronbach's alpha. The "Reliability if an item is dropped" section shows what alpha would be without each variable — if dropping an item increases alpha, it may not fit the construct well.
+
+
+# Step 4: Build the Index and Visualize
 
 ```{r}
 #| label: step.04a
 
+cor_matrix <- cor(index_z, use = "complete.obs")
+
 corrplot(
-  cor(index_z, use = "complete.obs"),
-  method = "color", type = "upper", addCoef.col = "black",
-  tl.col = "black", tl.srt = 45,
-  title = "Inter-Item Correlation Matrix: Economic Hardship Index",
-  mar = c(0, 0, 2, 0)
+  cor_matrix,
+  method      = "color",
+  type        = "upper",
+  addCoef.col = "black",
+  tl.col      = "black",
+  tl.srt      = 45,
+  title       = "Inter-Item Correlation Matrix: Economic Hardship Index",
+  mar         = c(0, 0, 2, 0)
 )
 ```
 
@@ -224,9 +237,13 @@ ggplot(index_z, aes(x = hardship_index)) +
   geom_vline(xintercept = mean(index_z$hardship_index, na.rm = TRUE),
              linetype = "dashed", color = "#ffc627", linewidth = 1) +
   theme_minimal() +
-  labs(title = "Distribution of Economic Hardship Index",
-       subtitle = "Arizona Census Tracts (ACS 2023)",
-       x = "Hardship Index (z-score scale)", y = "Number of Tracts")
+  labs(
+    title    = "Distribution of Economic Hardship Index",
+    subtitle = "Arizona Census Tracts (ACS 2023)",
+    x        = "Hardship Index (z-score scale)",
+    y        = "Number of Tracts",
+    caption  = "Dashed line = mean"
+  )
 ```
 
 ```{r}
@@ -237,15 +254,22 @@ CenDF_complete <- CenDF_wide %>%
 CenDF_complete$hardship_index <- index_z$hardship_index
 ```
 
+
 # Step 5: National County-Level Map
+
+Pull the same 5 variables at the **county level** for the entire US and map national hardship patterns.
 
 ```{r}
 #| label: step.05-pull
 #| results: hide
 
 county_df <- get_acs(
-  geography = "county", variables = hardship_vars,
-  year = 2023, survey = "acs5", geometry = TRUE, progress_bar = FALSE
+  geography    = "county",
+  variables    = hardship_vars,
+  year         = 2023,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
 )
 ```
 
@@ -270,6 +294,7 @@ county_index <- county_wide %>%
   mutate(median_income = -1 * median_income)
 
 county_index$hardship_index <- rowMeans(county_index, na.rm = TRUE)
+
 county_complete <- county_wide %>%
   drop_na(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income)
 county_complete$hardship_index <- county_index$hardship_index
@@ -284,10 +309,13 @@ ggplot(county_shifted) +
   geom_sf(aes(fill = hardship_index), color = NA, linewidth = 0) +
   scale_fill_viridis_c(option = "inferno", name = "Hardship\nIndex", na.value = "grey80") +
   theme_void() +
-  labs(title = "Economic Hardship Across U.S. Counties",
-       subtitle = "ACS 5-Year (2023) | Higher values = greater hardship",
-       caption = "Alaska and Hawaii shown as insets")
+  labs(
+    title    = "Economic Hardship Across U.S. Counties",
+    subtitle = "ACS 5-Year (2023) | Higher values = greater hardship",
+    caption  = "Alaska and Hawaii shown as insets"
+  )
 ```
+
 
 # Step 6: Arizona Census Tract Map
 
@@ -298,20 +326,31 @@ ggplot(CenDF_complete) +
   geom_sf(aes(fill = hardship_index), color = NA) +
   scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship\nIndex") +
   theme_void() +
-  labs(title = "Economic Hardship Index by Census Tract",
-       subtitle = "Arizona — ACS 5-Year (2023)")
+  labs(
+    title    = "Economic Hardship Index by Census Tract",
+    subtitle = "Arizona — ACS 5-Year (2023)",
+    caption  = "Higher values = greater economic hardship"
+  )
 ```
 
+
 # Step 7: Maricopa County Block Group Map
+
+Block groups are the smallest ACS geography, revealing fine-grained variation within tracts.
 
 ```{r}
 #| label: step.07-pull
 #| results: hide
 
 cbg_df <- get_acs(
-  geography = "block group", variables = hardship_vars,
-  state = "AZ", county = "Maricopa",
-  year = 2023, survey = "acs5", geometry = TRUE, progress_bar = FALSE
+  geography    = "block group",
+  variables    = hardship_vars,
+  state        = "AZ",
+  county       = "Maricopa",
+  year         = 2023,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
 )
 ```
 
@@ -336,6 +375,7 @@ cbg_index <- cbg_wide %>%
   mutate(median_income = -1 * median_income)
 
 cbg_index$hardship_index <- rowMeans(cbg_index, na.rm = TRUE)
+
 cbg_complete <- cbg_wide %>%
   drop_na(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate, median_income)
 cbg_complete$hardship_index <- cbg_index$hardship_index
@@ -348,70 +388,198 @@ ggplot(cbg_complete) +
   geom_sf(aes(fill = hardship_index), color = NA) +
   scale_fill_viridis(option = "inferno", direction = -1, name = "Hardship\nIndex") +
   theme_void() +
-  labs(title = "Economic Hardship Index by Block Group",
-       subtitle = "Maricopa County, AZ — ACS 5-Year (2023)")
-```
-
-# Step 8: Three-Scale Comparison
-
-```{r}
-#| label: step.08-patchwork
-#| fig-width: 16
-#| fig-height: 6
-
-p_county <- ggplot(county_shifted) +
-  geom_sf(aes(fill = hardship_index), color = NA, linewidth = 0) +
-  scale_fill_viridis_c(option = "inferno", name = "Index", na.value = "grey80") +
-  theme_void() + labs(title = "County (US)")
-
-p_tract <- ggplot(CenDF_complete) +
-  geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis(option = "inferno", direction = -1, name = "Index") +
-  theme_void() + labs(title = "Tract (Arizona)")
-
-p_cbg <- ggplot(cbg_complete) +
-  geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis(option = "inferno", direction = -1, name = "Index") +
-  theme_void() + labs(title = "Block Group (Maricopa)")
-
-p_county + p_tract + p_cbg +
-  plot_annotation(
-    title   = "Economic Hardship Across Three Geographic Scales",
-    caption = "ACS 5-Year (2023) | Higher values = greater hardship"
+  labs(
+    title    = "Economic Hardship Index by Block Group",
+    subtitle = "Maricopa County, AZ — ACS 5-Year (2023)",
+    caption  = "Higher values = greater economic hardship"
   )
 ```
 
 
+# Step 8: Enriched Index — Does Measurement Choice Change the Map?
+
+The 5-variable baseline captures five well-established dimensions of economic hardship. But hardship is multi-dimensional. A broader index might also reflect:
+
+| New Variable | Dimension | Census Code |
+|---|---|---|
+| Renter-occupied rate | Housing instability / wealth exclusion | B25003_003 / B25003_001 |
+| No vehicle access | Transportation barrier | B08201_002 / B08201_001 |
+| Single-parent household rate | Family structure stress | B11012_010 / B11001_001 |
+| Public assistance income rate | Direct economic need | B19057_002 / B19057_001 |
+| No internet access rate | Digital divide / economic barrier | B28002_013 / B28002_001 |
+
+Adding these five produces a **10-variable enriched index**. The key question: does this broader measurement change which communities we identify as hardship hotspots — and how much?
+
+```{r}
+#| label: step.08-pull
+#| results: hide
+
+hardship_vars_10 <- c(
+  # ── Original 5 variable pairs ──────────────────────────────────────
+  pov_below50    = "C17002_002",   pov_50to99     = "C17002_003",
+  pov_den        = "C17002_001",   median_income  = "B19013_001",
+  pct_unemp_num  = "B23025_005",   pct_unemp_den  = "B23025_002",
+  pct_no_hs_num  = "B15003_002",   pct_no_hs_den  = "B15003_001",
+  pct_no_ins_num = "B27010_017",   pct_no_ins_den = "B27010_001",
+  # ── 5 new dimensions ───────────────────────────────────────────────
+  renter_num     = "B25003_003",   renter_den     = "B25003_001",
+  noveh_num      = "B08201_002",   noveh_den      = "B08201_001",
+  sinpar_num     = "B11012_010",   sinpar_den     = "B11001_001",
+  pubast_num     = "B19057_002",   pubast_den     = "B19057_001",
+  noinet_num     = "B28002_013",   noinet_den     = "B28002_001"
+)
+
+CenDF_10 <- get_acs(
+  geography    = "tract",
+  variables    = hardship_vars_10,
+  state        = "AZ",
+  year         = 2023,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
+)
+```
+
+```{r}
+#| label: step.08-build10
+
+CenDF_wide_10 <- CenDF_10 %>%
+  select(-moe) %>%
+  pivot_wider(names_from = variable, values_from = estimate) %>%
+  mutate(
+    # Original 5
+    poverty_rate = (pov_below50 + pov_50to99) / pov_den,
+    unemp_rate   = pct_unemp_num  / pct_unemp_den,
+    no_hs_rate   = pct_no_hs_num  / pct_no_hs_den,
+    no_ins_rate  = pct_no_ins_num / pct_no_ins_den,
+    # New 5
+    renter_rate  = renter_num / renter_den,
+    noveh_rate   = noveh_num  / noveh_den,
+    sinpar_rate  = sinpar_num / sinpar_den,
+    pubast_rate  = pubast_num / pubast_den,
+    noinet_rate  = noinet_num / noinet_den
+  )
+
+CenDF_complete_10 <- CenDF_wide_10 %>%
+  drop_na(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate,
+          median_income, renter_rate, noveh_rate,
+          sinpar_rate, pubast_rate, noinet_rate)
+
+index_z_10 <- CenDF_complete_10 %>%
+  st_drop_geometry() %>%
+  select(poverty_rate, unemp_rate, no_hs_rate, no_ins_rate,
+         median_income, renter_rate, noveh_rate,
+         sinpar_rate, pubast_rate, noinet_rate) %>%
+  mutate(across(everything(), ~ as.numeric(scale(.)))) %>%
+  mutate(median_income = -1 * median_income)   # reverse-code
+
+# Compare alpha: 5-variable vs 10-variable
+alpha_5  <- psych::alpha(index_z  |> select(-hardship_index))
+alpha_10 <- psych::alpha(index_z_10)
+
+cat("5-variable alpha: ", round(alpha_5$total$raw_alpha,  3), "\n")
+cat("10-variable alpha:", round(alpha_10$total$raw_alpha, 3), "\n")
+cat("Change:           ", round(alpha_10$total$raw_alpha - alpha_5$total$raw_alpha, 3), "\n")
+
+# Build enriched index
+index_z_10$hardship_index_10 <- rowMeans(index_z_10, na.rm = TRUE)
+CenDF_complete_10$hardship_index_10 <- index_z_10$hardship_index_10
+```
+
+```{r}
+#| label: step.08-compare-maps
+#| fig-width: 16
+#| fig-height: 6
+
+p_5var <- ggplot(CenDF_complete) +
+  geom_sf(aes(fill = hardship_index), color = NA) +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship",
+                       na.value = "grey80") +
+  theme_void() +
+  labs(title = "5-Variable Index",
+       subtitle = "Poverty · Unemployment · Education\nInsurance · Income")
+
+p_10var <- ggplot(CenDF_complete_10) +
+  geom_sf(aes(fill = hardship_index_10), color = NA) +
+  scale_fill_viridis_c(option = "inferno", name = "Hardship",
+                       na.value = "grey80") +
+  theme_void() +
+  labs(title = "10-Variable Enriched Index",
+       subtitle = "Adds renter · no vehicle · single-parent\npublic assistance · no internet")
+
+p_5var + p_10var +
+  plot_annotation(
+    title    = "Original vs. Enriched Hardship Index",
+    subtitle = "Does expanding measurement change the spatial story?",
+    caption  = "ACS 5-Year (2023) | Arizona Census Tracts"
+  )
+```
+
+```{r}
+#| label: step.08-difference
+#| fig-width: 9
+#| fig-height: 6
+
+compare_df <- CenDF_complete_10 %>%
+  select(GEOID, geometry, hardship_index_10) %>%
+  left_join(
+    CenDF_complete %>% st_drop_geometry() %>% select(GEOID, hardship_index),
+    by = "GEOID"
+  ) %>%
+  mutate(diff_10_minus_5 = hardship_index_10 - hardship_index)
+
+ggplot(compare_df) +
+  geom_sf(aes(fill = diff_10_minus_5), color = NA) +
+  scale_fill_gradient2(
+    low = "#4575b4", mid = "#f7f7f7", high = "#d73027",
+    midpoint = 0, name = "10-var\nminus\n5-var"
+  ) +
+  theme_void() +
+  labs(
+    title    = "Where Does Measurement Choice Matter Most?",
+    subtitle = "Red = tracts scoring higher with enriched index\nBlue = tracts scoring lower",
+    caption  = "ACS 5-Year (2023) | Difference = 10-variable minus 5-variable index"
+  )
+```
+
+**Interpreting the difference map:** Red tracts are communities where the enriched index reveals *more hardship* than the baseline captured — likely places with high renter rates, low vehicle access, or many single-parent households that census income and poverty measures undercount. Blue tracts are places where those new dimensions don't add to the hardship signal — often wealthier suburbs where some of those variables don't apply.
+
 ---
 
-# Q2 --- Your Code
-
-> Fill in the three chunks below, then re-knit to see your results. Add **percent of households receiving SNAP benefits** (`B19058_002` / `B19058_001`) as a 6th indicator to the hardship index.
+# Scaffold Chunks
 
 ```{r}
 #| label: q2-pull
 #| results: hide
 
 # YOUR CODE HERE
-# Hint: add snap_num = "B19058_002" and snap_den = "B19058_001"
-# to hardship_vars, then re-run get_acs() for AZ tracts
+# Hint: start from hardship_vars_10 and add:
+#   snap_num = "B19058_002"   (households receiving SNAP)
+#   snap_den = "B19058_001"   (total households)
+# Then re-run get_acs() for AZ tracts
 ```
 
 ```{r}
-#| label: q2-index
+#| label: q2-build11
 
 # YOUR CODE HERE
-# Hint: compute snap_rate = snap_num / snap_den
-# Add snap_rate to the index_vars select() call
-# Standardize to z-scores (no reverse coding needed for SNAP)
-# Run psych::alpha() on the 6-variable index_z
-# Build hardship_index_6 as rowMeans of the 6 z-scores
+# Compute snap_rate = snap_num / snap_den
+# Add to index variables, z-score, rowMeans -> hardship_index_11
+# Run psych::alpha() and print the 10-var vs 11-var comparison
 ```
 
 ```{r}
-#| label: q2-map
+#| label: q2-maps
+#| fig-width: 16
+#| fig-height: 6
 
-# YOUR CODE HERE
-# Map the 6-variable hardship index at the Arizona tract level
-# Use the same ggplot / viridis style as Step 6
+# YOUR CODE HERE — side-by-side: 10-variable vs 11-variable
+```
+
+```{r}
+#| label: q2-difference
+#| fig-width: 9
+#| fig-height: 6
+
+# YOUR CODE HERE — difference map: 11-var minus 10-var
 ```
