@@ -1,0 +1,250 @@
+<!-- ============================================================
+     PAF 516 — Module 6 Guide
+     Canvas-compatible HTML: all styles inline, no external deps
+     ============================================================ -->
+
+<!-- ── Module Header ─────────────────────────────────────────── -->
+<div style="background:#8C1D40;border-radius:6px;padding:20px 24px 16px;margin-bottom:24px;">
+  <h2 style="color:#FFC627;font-size:22px;font-weight:700;margin:0 0 4px;">M6 Overview &amp; Learning Materials</h2>
+  <p style="color:#ffffff;font-size:15px;margin:0;font-weight:600;">Spatio-Temporal Analysis &amp; Neighborhood Trajectories</p>
+</div>
+
+<!-- ── Module Overview ───────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Module Overview and Objectives</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">Module 5 answered the question: <em>what changed?</em> This module asks the deeper question: <em>how does spatial structure shape change?</em> Two neighborhoods can both show improving hardship scores, but if one is a persistent hot spot surrounded by other high-hardship areas while the other is a spatial outlier that has successfully transitioned, they are on fundamentally different trajectories and call for fundamentally different interventions.</p>
+  <p style="margin:0 0 12px;line-height:1.6;">This module introduces <strong>spatio-temporal analysis</strong> &mdash; methods that treat space and time jointly rather than separately. You will classify block groups by their <strong>LISA trajectory</strong> (how their cluster membership changes between 2010 and 2019), test whether change itself is <strong>spatially autocorrelated</strong> (does decline spread from neighborhood to neighborhood?), and build a <strong>multi-point trend</strong> using three time observations to distinguish sustained improvement from noise. The result is a policy-ready map that answers not just <em>where hardship is</em> but <em>where it is heading</em> and <em>whether that trajectory is spreading to neighboring areas</em>.</p>
+  <hr style="border:none;border-top:1px solid #d9c8cd;margin:12px 0;">
+  <p style="margin:0 0 8px;font-weight:700;color:#8C1D40;">After completing this module, you will be able to:</p>
+  <ul style="margin:0;padding-left:20px;line-height:1.8;">
+    <li>Classify block groups into <strong>LISA trajectory categories</strong> by cross-tabulating cluster membership across two time periods</li>
+    <li>Interpret the policy implications of <strong>persistent hot spots</strong>, <strong>emerging hot spots</strong>, <strong>dissolving hot spots</strong>, and <strong>spatial outliers</strong> across time</li>
+    <li>Test whether change scores are <strong>spatially autocorrelated</strong> using space-time Moran&rsquo;s I</li>
+    <li>Interpret a significant space-time Moran&rsquo;s I as evidence of <strong>spatial diffusion of decline or recovery</strong></li>
+    <li>Construct a <strong>three-point hardship trend</strong> and classify block groups as consistently improving, consistently worsening, or non-monotone</li>
+    <li>Build a <strong>trajectory map</strong> communicating neighborhood change pathways for policy audiences</li>
+  </ul>
+</div>
+
+<!-- ── Lecture ───────────────────────────────────────────────── -->
+<div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Lecture</h3>
+  <p style="margin:0 0 8px;line-height:1.6;">The lecture notes cover LISA trajectory analysis, transition matrices, space-time Moran&rsquo;s I, three-point trend classification, and policy design for different neighborhood trajectory types.</p>
+  <p style="margin:0;">&#x1F4C4; <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module6/Lecture/Module6_Lecture_Slides.pdf" style="color:#8C1D40;font-weight:600;">Spatio-Temporal Analysis &mdash; Lecture Notes (PDF)</a></p>
+</div>
+
+<!-- ── Section 1 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 1: LISA Trajectory Analysis</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">Module 4 classified each block group by its LISA cluster membership at a single point in time: HH (hot spot), LL (cold spot), HL (spatial outlier), LH (spatial outlier), or NS (not significant). Running LISA separately at two time points generates a <strong>transition matrix</strong> &mdash; a cross-tabulation of where each block group started and where it ended up.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">The Transition Matrix</h4>
+  <p style="margin:0 0 10px;line-height:1.6;">If we run LISA on the 2010 hardship index and again on the 2019 hardship index, each block group belongs to one of 5 &times; 5 = 25 possible transition cells. Most cells will be empty or near-empty. The policy-relevant categories are:</p>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Trajectory</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">2013 &rarr; 2019</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Policy Meaning</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Persistent HH</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">HH &rarr; HH</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Deep structural hardship; spatial clustering persists. Needs sustained, place-based investment.</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Emerging HH</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">NS/LL &rarr; HH</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Deteriorating neighborhood; cluster is forming. Early intervention window is open.</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Dissolving HH</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">HH &rarr; NS</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Recovery underway; cluster has broken up. Study these: what worked?</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Persistent LL</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">LL &rarr; LL</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Stably low hardship; little policy urgency from an equity standpoint.</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Emerging LL</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">HH/NS &rarr; LL</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Rapid improvement; risk of gentrification-driven displacement.</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Persistent NS</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">NS &rarr; NS</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">No significant spatial clustering in either period.</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;font-weight:600;">HL Outlier</td>
+        <td style="padding:8px 12px;">HL in either period</td>
+        <td style="padding:8px 12px;">Pocket of high hardship within a low-hardship area. Isolation compounds vulnerability.</td>
+      </tr>
+    </tbody>
+  </table>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Why Trajectories Matter More Than Snapshots</h4>
+  <p style="margin:0 0 10px;line-height:1.6;">A LISA map at a single point in time cannot distinguish a neighborhood that has always been a hot spot from one that just became a hot spot last year. The trajectory map makes this distinction explicit. Policy implications differ dramatically:</p>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
+    <li>A <strong>persistent hot spot</strong> likely reflects deep structural conditions &mdash; historical disinvestment, infrastructure gaps, school district boundaries &mdash; that require multi-year, multi-sector intervention.</li>
+    <li>An <strong>emerging hot spot</strong> is a neighborhood in transition. The cluster has not yet consolidated; targeted early investment may reverse the trajectory at lower cost.</li>
+    <li>A <strong>dissolving hot spot</strong> is the most important category for learning: <em>what happened here that broke up the cluster?</em> These neighborhoods are natural experiments.</li>
+  </ul>
+</div>
+
+<!-- ── Section 2 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 2: Space-Time Moran&rsquo;s I</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">Module 4 tested whether hardship values were spatially autocorrelated at a single time point. A natural extension is to ask: <strong>are the change scores themselves spatially autocorrelated?</strong> If block groups that worsened tend to be located next to other block groups that also worsened, that is evidence of <strong>spatial diffusion</strong> &mdash; decline spreading across the urban landscape like a contagion. If change is spatially random, that suggests neighborhood-specific idiosyncratic factors rather than spreading processes.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">The Test</h4>
+  <p style="margin:0 0 10px;line-height:1.6;">Space-time Moran&rsquo;s I applies the same <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">moran.mc()</code> function from Module 4, but with the <strong>change score</strong> (not the level) as the input variable:</p>
+  <pre style="background:#f0e8eb;border-radius:4px;padding:10px 14px;font-size:13px;overflow-x:auto;margin:0 0 14px;"><code>moran.mc(change_df$hardship_change, w, nsim = 999)</code></pre>
+  <p style="margin:0 0 10px;line-height:1.6;">The same weights matrix <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">w</code> from Lab 4 (queen contiguity, row-standardized) is used.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Interpreting the Result</h4>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.8;">
+    <li><strong>Significant positive I</strong>: Change is spatially clustered. Neighborhoods that improved tend to be near other improving neighborhoods; neighborhoods that worsened tend to cluster. This suggests <strong>spatial diffusion</strong> &mdash; economic recovery or decline propagates spatially, likely through housing markets, business investment, or demographic flows.</li>
+    <li><strong>Non-significant I</strong>: Change appears spatially random, driven by neighborhood-specific factors (a new employer, a school closure, a redevelopment project) rather than spatial spread.</li>
+  </ul>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
+    <p style="margin:0;line-height:1.6;"><strong>Policy implication:</strong> A significant space-time Moran&rsquo;s I has direct policy implications: if decline is spreading spatially, intervening at the boundary of the expanding hot spot (before it fully consolidates) is more cost-effective than intervening only at the core.</p>
+  </div>
+</div>
+
+<!-- ── Section 3 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 3: Three-Point Trend Analysis</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">Two time points give us a change score but not a trend. A neighborhood could show apparent improvement from 2010 to 2019 because of a one-time shock in 2010 (a factory closure, a flood) rather than sustained structural change. Adding a <strong>middle time point</strong> &mdash; the 2012&ndash;2016 ACS 5-year estimate (<code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">year = 2016</code>) &mdash; lets us distinguish genuine sustained improvement from noise.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Classifying Trends</h4>
+  <p style="margin:0 0 10px;line-height:1.6;">With three observations (h<sub>2010</sub>, h<sub>2016</sub>, h<sub>2019</sub>), we can classify each block group by the monotonicity of its trajectory:</p>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Classification</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Condition</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Interpretation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Consistently improving</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">h<sub>2010</sub> &gt; h<sub>2016</sub> &gt; h<sub>2019</sub></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Sustained decline in hardship across the decade</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Consistently worsening</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">h<sub>2010</sub> &lt; h<sub>2016</sub> &lt; h<sub>2019</sub></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Sustained increase in hardship across the decade</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">V-shaped (recovery)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">h<sub>2010</sub> &gt; h<sub>2016</sub>, then h<sub>2016</sub> &lt; h<sub>2019</sub></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Worsened mid-decade, recovered by 2019</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Inverted V (spike)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">h<sub>2010</sub> &lt; h<sub>2016</sub>, then h<sub>2016</sub> &gt; h<sub>2019</sub></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Peaked mid-decade, improved by 2019</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;font-weight:600;">Non-monotone / flat</td>
+        <td style="padding:8px 12px;">Neither of the above</td>
+        <td style="padding:8px 12px;">No clear trend; within sampling noise</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin:0 0 14px;line-height:1.6;">The three-point trend is more robust than a two-point change score because a single outlier year has less leverage. Block groups classified as &ldquo;consistently improving&rdquo; represent genuine multi-year recovery trajectories, not just a one-year blip.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">The Trend Slope</h4>
+  <p style="margin:0;line-height:1.6;">For a continuous measure of trajectory, you can fit a simple regression for each block group. A positive slope means hardship increased on average across the decade; a negative slope means it decreased. The slope is measured in pooled z-score units per year &mdash; a slope of +0.05 means hardship increased by 0.05 standard deviations per year on average.</p>
+</div>
+
+<!-- ── Section 4 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 4: From Trajectories to Policy Design</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">The trajectory map is not an end in itself &mdash; it is a decision support tool. Different trajectory types call for different policy responses:</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Persistent Hot Spots</h4>
+  <p style="margin:0 0 14px;line-height:1.6;">These neighborhoods have been spatially clustered in high hardship for at least a decade. The depth and persistence of clustering suggests structural causes &mdash; historical disinvestment, school quality gaps, environmental burden, lack of transit access. Single-program interventions are unlikely to be sufficient. Evidence-based approaches include comprehensive community development (housing + economic development + schools + health simultaneously), place-based funding like Promise Zones or Opportunity Zones, and long-term community wealth-building strategies.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Emerging Hot Spots</h4>
+  <p style="margin:0 0 14px;line-height:1.6;">These neighborhoods are deteriorating and their spatial clustering is intensifying. The early-intervention window is open. Research on neighborhood tipping points (Schelling, 1969; Galster, 2012) suggests that once a neighborhood crosses certain thresholds of disinvestment, self-reinforcing feedback loops make recovery much costlier. Prevention is cheaper than remediation. Targeted interventions include code enforcement, small business lending, anchor institution engagement, and proactive tenant protection before displacement accelerates.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Dissolving Hot Spots</h4>
+  <p style="margin:0 0 14px;line-height:1.6;">The cluster has broken up. Hardship is declining and the spatial concentration is dissipating. This does not mean the neighborhood&rsquo;s work is done &mdash; it may be in the early stages of displacement-driven gentrification. Policy priorities shift from stimulating investment to protecting existing residents: anti-displacement measures, community land trusts, affordable housing preservation.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Spatial Outliers (HL across time)</h4>
+  <p style="margin:0;line-height:1.6;">High-hardship islands within low-hardship areas. These communities are spatially isolated from the diffusion of nearby recovery. They may face additional barriers not captured in the hardship index: concentrated public housing, language isolation, lack of transportation connectivity to jobs. They are often systematically undercounted and underserved by place-based programs that target larger contiguous areas.</p>
+</div>
+
+<!-- ── Readings ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Readings</h3>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Spatio-Temporal Methods</h4>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.9;">
+    <li>Rey, S. J., &amp; Ye, X. (2010). Comparative spatial dynamics of regional systems. In A. P&aacute;ez et al. (Eds.), <em>Spatial Statistics: Methodological Aspects and Applications</em> (pp. 441&ndash;463). Springer. &mdash; Introduces the LISA transition matrix framework and its application to regional convergence analysis.</li>
+    <li>Anselin, L., Syabri, I., &amp; Smirnov, O. (2002). Visualizing multivariate spatial correlation with dynamically linked windows. In W. Getis et al. (Eds.), <em>Spatial Econometrics and Spatial Statistics</em>. Palgrave Macmillan. &mdash; Formal treatment of space-time LISA and the interpretation of spatial clustering dynamics.</li>
+    <li>Bivand, R. S., &amp; Wong, D. W. S. (2018). Comparing implementations of global and local indicators of spatial association. <em>TEST</em>, 27(3), 716&ndash;748. <a href="https://doi.org/10.1007/s11749-018-0599-x" style="color:#8C1D40;">doi:10.1007/s11749-018-0599-x</a> &mdash; Already assigned in Module 4; the LISA implementation details are directly relevant to the two-period analysis in Lab 6.</li>
+  </ul>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Neighborhood Change Theory</h4>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.9;">
+    <li>Galster, G. (2012). The mechanism(s) of neighbourhood effects: Theory, evidence, and policy implications. In M. van Ham et al. (Eds.), <em>Neighbourhood Effects Research: New Perspectives</em> (pp. 23&ndash;56). Springer. &mdash; Systematic review of how neighborhood conditions affect resident outcomes.</li>
+    <li>Sampson, R. J. (2012). <em>Great American City: Chicago and the Enduring Neighborhood Effect</em>. University of Chicago Press. Chapter 3 (&ldquo;The Durable Effects of Concentrated Poverty&rdquo;) &mdash; The definitive account of why persistent hot spots causally amplify poverty.</li>
+    <li>Ellen, I. G., &amp; Turner, M. A. (1997). Does neighborhood matter? Assessing recent evidence. <em>Housing Policy Debate</em>, 8(4), 833&ndash;866. &mdash; Classic review establishing that neighborhood context matters for outcomes independently of individual characteristics.</li>
+  </ul>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Policy Applications</h4>
+  <ul style="margin:0;padding-left:20px;line-height:1.9;">
+    <li>Galster, G., &amp; Tatian, P. (2009). Modeling housing appreciation dynamics in disadvantaged neighborhoods. <em>Journal of Planning Education and Research</em>, 29(1), 7&ndash;22. &mdash; Demonstrates that housing value trajectories in declining neighborhoods exhibit spatial autocorrelation.</li>
+  </ul>
+</div>
+
+<!-- ── Key Terms ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:8px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Key Terms</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;width:30%;">Term</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Definition</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">LISA Trajectory</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A block group&rsquo;s LISA cluster membership at two time points (e.g., HH&rarr;HH = persistent hot spot)</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Transition Matrix</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A cross-tabulation of LISA cluster membership at period 1 vs. period 2</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Persistent Hot Spot</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A block group classified HH in both periods &mdash; deep structural clustering</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Emerging Hot Spot</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A block group that becomes HH between periods &mdash; a deteriorating neighborhood</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Dissolving Hot Spot</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A block group that was HH in period 1 but not in period 2 &mdash; recovery underway</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Space-Time Moran&rsquo;s I</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Moran&rsquo;s I computed on change scores rather than levels; tests whether change is spatially clustered</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Spatial Diffusion</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The process by which neighborhood decline or recovery spreads to adjacent areas</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Three-Point Trend</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Using three time observations to classify trajectory as monotone (consistent) or non-monotone</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Trend Slope</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The regression coefficient of hardship on year across three time points; sign indicates improving (&minus;) or worsening (+)</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;font-weight:600;color:#8C1D40;">Tipping Point</td>
+        <td style="padding:8px 12px;">A threshold level of neighborhood disinvestment beyond which self-reinforcing decline becomes difficult to reverse</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

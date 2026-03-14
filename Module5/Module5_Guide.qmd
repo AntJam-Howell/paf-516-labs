@@ -44,6 +44,15 @@ After completing this module, you will be able to:
 
 :::
 
+## Lecture
+
+::: {.section-box}
+
+The lecture notes cover choosing ACS time periods, the boundary vintage problem, pooled standardization, significance testing with margins of error, and diverging color scales for change maps.
+
+Download the lecture notes: [Temporal Change Analysis — Lecture Notes (PDF)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module5/Lecture/Module5_Lecture_Slides.pdf)
+
+:::
 
 ::: {.section-box}
 
@@ -155,17 +164,6 @@ Change data has a meaningful midpoint (zero = no change), which calls for a **di
 
 ::: {.section-box}
 
-## Lecture
-
-<!-- PLACEHOLDER: Record lecture on temporal change analysis, boundary changes, pooled standardization, and diverging palettes -->
-
-<iframe src="" width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-
-:::
-
-
-::: {.section-box}
-
 ## Readings
 
 ### Foundational Works
@@ -195,18 +193,10 @@ Change data has a meaningful midpoint (zero = no change), which calls for a **di
 
 ## Lab 5
 
-In Lab 5 you will add a temporal dimension to your hardship analysis using the 2006–2010 and 2015–2019 ACS 5-year estimates — both on 2010 TIGER/Line boundaries, so every block group matches cleanly. Specifically you will:
+The Lab 5 materials are on the course lab site.
 
-1. **Pull multi-year data**: Retrieve the 4-variable hardship index variables for 2010 and 2019
-2. **Apply pooled standardization**: Standardize both years against a single combined distribution so z-scores are directly comparable across time
-3. **Compute change scores**: Calculate the change in economic hardship index between the two periods
-4. **Test statistical significance**: Use margins of error to identify which block groups experienced change that exceeds sampling noise
-5. **Map change with diverging palettes**: Create a change map centered on zero with symmetric limits
-6. **Compare to Lab 4 hot spots**: Overlay your LISA clusters with your change map — are hot spots stable, growing, or shrinking?
-
-**Connection to Module 4:** This lab statistically validates whether the spatial clusters you identified in Lab 4 are persistent features of the urban landscape or have shifted over the post-recession decade.
-
-**Download:** [Lab5_Assignment.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab5/Assignment/Lab5_Assignment.qmd)
+- **[Lab 5 Tutorial](https://antjam-howell.github.io/paf-516-labs/lab5-tutorial.html)** — Download the tutorial file, knit it to see the complete analysis, then run chunk by chunk to understand each step.
+- **[Lab 5 Assignment](https://antjam-howell.github.io/paf-516-labs/lab5-assignment.html)** — Download the assignment file, rename it with your last name, complete the three questions, and submit to Canvas.
 
 :::
 

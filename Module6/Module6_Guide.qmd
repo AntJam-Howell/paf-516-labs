@@ -43,6 +43,15 @@ After completing this module, you will be able to:
 
 :::
 
+## Lecture
+
+::: {.section-box}
+
+The lecture notes cover LISA trajectory analysis, transition matrices, space-time Moran's I, three-point trend classification, and policy design for different neighborhood trajectory types.
+
+Download the lecture notes: [Spatio-Temporal Analysis — Lecture Notes (PDF)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module6/Lecture/Module6_Lecture_Slides.pdf)
+
+:::
 
 ::: {.section-box}
 
@@ -168,17 +177,6 @@ High-hardship islands within low-hardship areas. These communities are spatially
 
 ::: {.section-box}
 
-## Lecture
-
-<!-- PLACEHOLDER: Record lecture on LISA trajectories, space-time Moran's I, trend analysis, and policy design -->
-
-<iframe src="" width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
-
-:::
-
-
-::: {.section-box}
-
 ## Readings
 
 ### Spatio-Temporal Methods
@@ -208,18 +206,10 @@ High-hardship islands within low-hardship areas. These communities are spatially
 
 ## Lab 6
 
-In Lab 6 you will extend the temporal analysis from Lab 5 into a full spatio-temporal analysis. Using the same 2010 and 2019 datasets (same boundaries, same pooled standardization), you will:
+The Lab 6 materials are on the course lab site.
 
-1. **Run LISA on both periods**: Classify each CBG into HH/LL/HL/LH/NS for both 2010 and 2019
-2. **Build the transition matrix**: Cross-tabulate cluster membership to identify trajectories
-3. **Map trajectories**: Produce a 6-category trajectory map with policy-interpretable colors
-4. **Space-time Moran's I**: Test whether change scores are spatially autocorrelated; interpret the result for spatial diffusion
-5. **Three-point trend**: Pull the 2016 ACS (`year = 2016`, also on 2010 boundaries) and classify each CBG as consistently improving, worsening, or non-monotone
-6. **Policy brief**: Write a structured paragraph recommending how to allocate a hypothetical intervention budget given the trajectory map
-
-**Connection to Module 5:** Lab 5 showed *where* hardship changed. Lab 6 shows whether change is *spatially structured* — whether decline and recovery are spreading processes or idiosyncratic neighborhood events.
-
-**Download:** [Lab6_Assignment.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab6/Assignment/Lab6_Assignment.qmd)
+- **[Lab 6 Tutorial](https://antjam-howell.github.io/paf-516-labs/lab6-tutorial.html)** — Download the tutorial file, knit it to see the complete analysis, then run chunk by chunk to understand each step.
+- **[Lab 6 Assignment](https://antjam-howell.github.io/paf-516-labs/lab6-assignment.html)** — Download the assignment file, rename it with your last name, complete the three questions, and submit to Canvas.
 
 :::
 
