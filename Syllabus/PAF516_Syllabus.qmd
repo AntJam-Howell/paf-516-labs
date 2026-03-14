@@ -367,26 +367,26 @@ The course runs for seven modules. Each module includes lecture content, a weekl
   }
 
 \modulecard{5}{asumaroon}
-  {Temporal Change Analysis}
-  {ACS Vintages · Neighborhood Trajectories}
+  {Spatio-Temporal Change (Part 1)}
+  {Temporal Dynamics · Spatial Unit Matching · Change Scores}
   {%
     \begin{itemize}[nosep, leftmargin=0em]
-      \item Comparing American Community Survey data across two time periods
-      \item Constructing change scores and difference maps
-      \item Classifying neighborhoods: improving, deteriorating, or stable
-      \item Visualizing demographic and economic trajectories
+      \item Choosing the right ACS time periods and matching spatial units
+      \item Pooled z-score standardization across survey vintages
+      \item Change scores, significance testing, and diverging color scales
+      \item LISA overlay: reading two measurements (level and change) at once
     \end{itemize}
   }
 
 \modulecard{6}{asugold}
-  {Policy Brief \& Multi-Scale Synthesis}
-  {Applied Communication · Stakeholder-Facing Outputs}
+  {Spatio-Temporal Change (Part 2)}
+  {LISA Trajectories · Space-Time Moran's I · Multi-Point Analysis}
   {%
     \begin{itemize}[nosep, leftmargin=0em]
-      \item Translating spatial analysis for non-technical audiences
-      \item Structuring evidence-based policy recommendations
-      \item Multi-scale synthesis across geographic units
-      \item Professional report and brief design with Quarto
+      \item LISA trajectory analysis: classifying neighborhood change paths
+      \item Space-Time Moran's I and emerging vs.\ persistent clusters
+      \item Multi-point trend analysis across three or more ACS vintages
+      \item From trajectories to policy design: targeting interventions
     \end{itemize}
   }
 
