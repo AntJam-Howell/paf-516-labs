@@ -48,13 +48,11 @@ format:
         % Header bar
         \fancyhead[L]{%
           \colorbox{asumaroon}{%
-            \parbox{\dimexpr\textwidth+1.2in\relax}{%
+            \parbox{\dimexpr\textwidth+0in\relax}{%
               \vspace{3pt}%
               \hspace{4pt}%
               \textcolor{white}{\small\textbf{PAF 516 — Community Analytics}}%
               \hfill%
-              \textcolor{white}{\small ASU}%
-              \hspace{4pt}%
               \vspace{3pt}%
             }%
           }%
@@ -341,7 +339,7 @@ The course runs for seven modules. Each module includes lecture content, a weekl
   }
 
 \modulecard{2}{asugold}
-  {Cartographic Design}
+  {Variable Classification \& Spatial Scale}
   {Classification Schemes · Visual Communication}
   {%
     \begin{itemize}[nosep, leftmargin=1.2em]
