@@ -1,5 +1,5 @@
 ---
-title: "Module 6 — Policy Brief & Multi-Scale Synthesis"
+title: "Final Project — Policy Brief & Dashboard"
 subtitle: "PAF 516 | Community Analytics"
 format:
   html:
@@ -15,19 +15,24 @@ execute:
 ---
 
 ::: {.module-header}
-## **M6 Overview & Learning Materials**
+## **Final Project Overview & Learning Materials**
 
 ::: {.module-subtitle}
-**Integration & Policy Brief**
+**Policy Brief & Interactive Dashboard**
 :::
 :::
 
 ::: {.section-box}
-## Module Overview and Objectives
+## Final Project Overview and Objectives
 
-You have spent five modules building a progressively richer analysis: measuring neighborhood hardship (Lab 1), visualizing it with professional cartography (Lab 2), enriching it with spatial data (Lab 3), testing for statistically significant clusters (Lab 4), and tracking change over time (Lab 5). Now you must do the hardest part: **translate all of that analysis into a document that a non-technical decision-maker can understand and act on**.
+You have spent five modules building a progressively richer analysis: measuring neighborhood hardship (Lab 1), visualizing it with professional cartography (Lab 2), enriching it with spatial data (Lab 3), testing for statistically significant clusters (Lab 4), and tracking change over time (Lab 5). Now you must do the hardest part: **translate all of that analysis into deliverables that a non-technical decision-maker can understand and act on**.
 
-This capstone module focuses on **policy communication**. You will produce a professional policy brief using Quarto that synthesizes your findings into a coherent narrative with an executive summary, multi-scale maps, data-driven recommendations, and polished formatting. The audience is a city council member, county manager, or community development director --- someone who needs to understand what your analysis means, not how you coded it.
+The final project has **two deliverables**:
+
+1. **Policy Brief** --- A professional written report with an executive summary, key findings (including static figures from your analysis), evidence-based recommendations, and a limitations discussion. This is the document a decision-maker reads.
+2. **Interactive Dashboard** --- A Quarto Dashboard with multi-scale maps, temporal change analysis, LISA hot spot detection, and interactive tables. This is the tool a decision-maker explores.
+
+Both deliverables use the **same custom economic hardship index** that you design. The study guide below covers the policy communication skills needed for the policy brief; the dashboard example and template provide the technical framework for the interactive component.
 
 ---
 
@@ -35,10 +40,10 @@ After completing this module, you will be able to:
 
 - Structure a **policy brief** with executive summary, background, findings, and recommendations
 - Write for a **non-technical audience** --- translating statistical findings into actionable insights
-- Use Quarto document features: **callout blocks**, **tabsets**, **cross-references**, and **figure captions**
+- Use Quarto document features: **callout blocks**, **cross-references**, and **figure captions**
 - Create **multi-scale visualizations** that provide both overview and detail
 - Formulate **evidence-based policy recommendations** grounded in your spatial analysis
-- Produce a publication-ready HTML document with professional formatting
+- Build an **interactive Quarto Dashboard** with dark theme, mapgl maps, and data tables
 - Critically evaluate the **limitations** of your analysis and communicate uncertainty honestly
 :::
 
@@ -225,30 +230,39 @@ Acknowledging limitations builds credibility. Ignoring them undermines it.
 :::
 
 ::: {.section-box}
-## Lab 06: Policy Brief
+## Final Project Deliverables
 
-In Lab 06, you will synthesize all previous analyses into a professional policy brief. Your deliverable is a single Quarto document that includes:
+The final project has two deliverables that work together. Both use the **same custom economic hardship index** --- you choose your own ACS variables, study area, and policy focus.
 
-1. **Executive Summary** (1 paragraph): The most important finding and primary recommendation --- written so a busy reader can get the message in 30 seconds
-2. **Background**: Brief context on your study area and why neighborhood hardship matters for policy
-3. **Findings**: Multi-scale maps and analysis drawn from Labs 1--5, organized as a narrative (not a chronological lab report). Use **tabsets** for comparative views and **callout blocks** for key findings
-4. **Recommendations** (3--5 specific items): Each recommendation must be tied to a specific finding from your analysis, name a responsible entity, and identify a target geography
+### Deliverable 1: Policy Brief
+
+A professional written report synthesizing your spatial analysis into a document for a non-technical audience. The policy brief includes:
+
+1. **Executive Summary** (1 paragraph): The most important finding and primary recommendation
+2. **Background**: Context on your study area and why neighborhood hardship matters
+3. **Key Findings**: Two static figures (LISA cluster map and top-10 hardship bar chart) with written interpretation
+4. **Recommendations** (3 items): Each tied to a specific finding, naming a responsible entity and target geography
 5. **Limitations**: Honest assessment of what the analysis can and cannot tell us
 
-### Formatting Requirements
+The policy brief uses `code-fold: true` so the document reads like a professional report. The two figures are static versions of content that also appears in your dashboard.
 
-- Use `code-fold: true` to hide code by default
-- Include at least one **callout block** highlighting a key finding
-- Include at least one **tabset** comparing maps (e.g., 2015 vs. 2023, or original vs. enriched index)
-- Use **cross-references** for at least two figures
-- Include an **interactive mapgl map** so readers can explore neighborhoods
-- Use `embed-resources: true` so the HTML file is self-contained
+- [Policy Brief Assignment](https://antjam-howell.github.io/paf-516-labs/Policy_Brief_Assignment.html)
 
-**Connection to all previous labs:** This is the capstone. You are assembling the measurement (Lab 1), cartography (Lab 2), spatial integration (Lab 3), hot spot analysis (Lab 4), and temporal analysis (Lab 5) into a single coherent document. The quality of your brief depends on the quality of all prior work.
+### Deliverable 2: Interactive Dashboard
 
-Download the [Lab 06 Quarto template (.qmd)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab6/Assignment/Lab6_Assignment.qmd) and submit both the .qmd source file and the rendered .html to Canvas.
+A Quarto Dashboard with dark theme, interactive mapgl maps, LISA hot spot detection, temporal change analysis, and data tables. The dashboard lets stakeholders explore your analysis interactively.
 
-**Download:** [Lab6_Assignment.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab6/Assignment/Lab6_Assignment.qmd)
+- [View Example Dashboard](https://antjam-howell.github.io/paf-516-labs/Final_Project_Example.html) --- A completed dashboard showing the full analysis
+- [Download Dashboard Template](https://antjam-howell.github.io/paf-516-labs/Final_Project_Template.html) --- Your starting point; replace the `define-vars` chunk with your own variables
+
+### What to Submit
+
+Submit **four files** to Canvas:
+
+1. `Policy_Brief_YourLastName.qmd`
+2. `Policy_Brief_YourLastName.html`
+3. `Dashboard_YourLastName.qmd`
+4. `Dashboard_YourLastName.html`
 :::
 
 ::: {.section-box}
@@ -261,9 +275,7 @@ Find a real policy brief, data-driven report, or spatial equity analysis publish
 - **Audience and format**: Who is the intended reader, and how does the document's structure, language, and visual design signal that audience? Consider whether the document follows the inverted pyramid structure discussed in this module.
 - **Evidence-to-action translation**: Select one specific recommendation from the document and evaluate it using the finding-implication-action framework. Does the recommendation name a specific geography, a responsible entity, and a concrete action? How could it be strengthened?
 - **Spatial analysis and equity**: Does the document use maps or spatial data to identify where interventions should be targeted? If so, how effectively does it connect spatial patterns to policy responses? If not, how would adding a spatial dimension improve the argument?
-- **Connection to your own work**: Reflect on one lesson from this document that you will apply to your own policy brief in Lab 6. What will you do differently in your brief as a result of reading this example?
-
-Engage with at least one classmate's post by comparing the document they reviewed with yours. What common strengths or weaknesses do you see across policy communication in practice?
+- **Connection to your own work**: Reflect on one lesson from this document that you will apply to your own policy brief and dashboard. What will you do differently as a result of reading this example?
 :::
 
 ::: {.section-box}
