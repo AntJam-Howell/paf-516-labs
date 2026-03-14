@@ -516,13 +516,6 @@ ggplot(cbg_map) +
   )
 ```
 
-```{r}
-#| label: save-datasets
-
-saveRDS(cbg_proj, "cbg_lab3_complete.rds")
-cat("Saved: cbg_lab3_complete.rds\n")
-cat("Contains: hardship_index, hardship_enriched, facility_count, near_facility, tract_id\n")
-```
 
 ---
 

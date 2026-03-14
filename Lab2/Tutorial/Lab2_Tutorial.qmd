@@ -622,20 +622,6 @@ the most distressed in the state and others among the least. This is the
 Modifiable Areal Unit Problem: **the unit of analysis determines the story.**
 
 
-# Save Datasets for Offline Use
-
-```{r}
-#| label: save-datasets
-
-dir.create("../data", showWarnings = FALSE)
-saveRDS(cbg_raw,     "../data/cbg_extended_2023.rds")
-saveRDS(county_raw,  "../data/county_hardship_2023.rds")
-
-cat("Saved 2 datasets to Lab2/data/:\n")
-cat("  cbg_extended_2023.rds       — Maricopa CBG data (long format)\n")
-cat("  county_hardship_2023.rds    — US county data (long format)\n")
-```
-
 ---
 
 ::: {.callout-note}

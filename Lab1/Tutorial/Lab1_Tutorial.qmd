@@ -404,21 +404,6 @@ p_county + p_tract + p_cbg +
 ```
 
 
-# Save Datasets for Offline Use
-
-```{r}
-#| label: save-datasets
-
-saveRDS(county_complete, "hardship_counties_us.rds")
-saveRDS(CenDF_complete,  "hardship_tracts_az.rds")
-saveRDS(cbg_complete,    "hardship_cbg_maricopa.rds")
-
-cat("Saved 3 datasets:\n")
-cat("  hardship_counties_us.rds  —", nrow(county_complete), "counties\n")
-cat("  hardship_tracts_az.rds    —", nrow(CenDF_complete), "tracts\n")
-cat("  hardship_cbg_maricopa.rds —", nrow(cbg_complete), "block groups\n")
-```
-
 ---
 
 ::: {.callout-note}
