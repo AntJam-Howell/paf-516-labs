@@ -260,7 +260,7 @@ Final Dashboard & 30\% &
   Integrate course skills into an interactive Quarto dashboard analyzing neighborhood change in a major metro area of your choosing (other than Phoenix). A detailed rubric will be distributed with the assignment. \\
 \rowcolor{asulightgray}
 Discussion Topics & 20\% &
-  YellowDig board participation. Earn at least 100 points through posts, comments, reactions, and instructor badges. Maximum 20 points per week. \\
+  YellowDig board participation. Earn at least 100 points through posts, comments, reactions, and instructor badges. \\
 \end{tabularx}
 ```
 
