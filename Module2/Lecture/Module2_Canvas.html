@@ -1,0 +1,246 @@
+<!-- ============================================================
+     PAF 516 — Module 2 Canvas Guide
+     Canvas-compatible HTML: all styles inline, no external deps
+     ============================================================ -->
+
+<!-- ── Module Header ─────────────────────────────────────────── -->
+<div style="background:#8C1D40;border-radius:6px;padding:20px 24px 16px;margin-bottom:24px;">
+  <h2 style="color:#FFC627;font-size:22px;font-weight:700;margin:0 0 4px;">M2 Overview &amp; Learning Materials</h2>
+  <p style="color:#ffffff;font-size:15px;margin:0;font-weight:600;">Variable Classification, Cartographic Design &amp; Spatial Scale</p>
+</div>
+
+<!-- ── Module Overview ───────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Module Overview and Objectives</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">In Module 1, you built a composite hardship index and mapped it with a basic choropleth. This module asks two deceptively important questions: <strong>does the story your map tells change depending on how you classify the data?</strong> And <strong>does it change depending on the geographic scale you use?</strong> The answer to both is yes — and the differences can be dramatic. A map using equal intervals may hide inequality that a quantile map reveals. A county-level map may mask the very neighborhood-level variation that matters most for targeted policy.</p>
+  <p style="margin:0 0 12px;line-height:1.6;">Beyond classification and scale, this module introduces <strong>bivariate choropleth maps</strong> that display two variables simultaneously, <strong>interactive web maps</strong> with <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">mapgl</code> that let users explore data on demand, and cartographic design principles that separate professional-quality maps from default output. You will also confront the <strong>Modifiable Areal Unit Problem (MAUP)</strong> — the fundamental challenge that spatial analysis results depend on the size and shape of the geographic units used. You will move from "making a map" to <em>designing a visual argument</em>.</p>
+  <hr style="border:none;border-top:1px solid #d9c8cd;margin:12px 0;">
+  <p style="margin:0 0 8px;font-weight:700;color:#8C1D40;">After completing this module, you will be able to:</p>
+  <ul style="margin:0;padding-left:20px;line-height:1.8;">
+    <li>Apply and compare four classification methods: <strong>quantile, Jenks natural breaks, equal interval,</strong> and <strong>standard deviation</strong></li>
+    <li>Explain how classification method choice affects map interpretation and policy conclusions</li>
+    <li>Create a <strong>bivariate choropleth map</strong> using the <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">biscale</code> package to visualize two variables simultaneously</li>
+    <li>Build an <strong>interactive mapgl map</strong> with tooltips, hover effects, and GPU-rendered vector tiles</li>
+    <li>Apply cartographic design principles: visual hierarchy, figure-ground, appropriate color ramps</li>
+    <li>Use <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">ggspatial</code> to add scale bars, north arrows, and annotation to static maps</li>
+    <li>Recognize and account for the <strong>Modifiable Areal Unit Problem (MAUP)</strong> — understand how geographic scale affects analytical conclusions and policy recommendations</li>
+  </ul>
+</div>
+
+<!-- ── Lecture ───────────────────────────────────────────────── -->
+<div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 10px;">Lecture</h3>
+  <p style="margin:0 0 8px;line-height:1.6;">The lecture notes provide detailed slide-by-slide annotations, with the main points expanded upon in the sections below.</p>
+  <p style="margin:0;">📄 <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module2/Lecture/Module2_Lecture_Slides.pdf" style="color:#8C1D40;font-weight:600;">Variable Classification &amp; Spatial Scale — Lecture Notes (PDF)</a></p>
+</div>
+
+<!-- ── Section 1 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 1: Classification Methods and Why They Matter</h3>
+  <p style="margin:0 0 12px;line-height:1.6;">Every choropleth map requires a decision: how do we divide a continuous variable into discrete color bins? This is not a neutral technical choice — it is an <strong>editorial decision</strong> that shapes what patterns viewers perceive.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 10px;">Four Common Classification Methods</h4>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;width:18%;">Method</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;width:27%;">How It Works</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;width:27%;">Best For</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Watch Out For</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Equal Interval</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Divides the data range into bins of equal width</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Data with uniform distributions</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Skewed data concentrates most observations in one or two bins</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Quantile</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Places an equal number of observations in each bin</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Ensuring visual variation across the map</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Can place very different values in the same bin; may exaggerate small differences</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;font-weight:600;">Jenks Natural Breaks</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Minimizes within-class variance and maximizes between-class variance</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Data with natural clusters or gaps</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e0d0d4;">Breaks are data-specific — not comparable across maps with different data</td>
+      </tr>
+      <tr style="background:#f9f5f6;">
+        <td style="padding:8px 12px;font-weight:600;">Standard Deviation</td>
+        <td style="padding:8px 12px;">Bins centered on the mean, each one standard deviation wide</td>
+        <td style="padding:8px 12px;">Showing how far observations deviate from the average</td>
+        <td style="padding:8px 12px;">Assumes roughly normal distribution; outliers dominate the visual</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin:0 0 8px;line-height:1.6;">The <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">classInt</code> package in R provides functions for all four methods. The key function is <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">classIntervals()</code>, which accepts a <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">style</code> argument: <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">"equal"</code>, <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">"quantile"</code>, <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">"jenks"</code>, or <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">"sd"</code>.</p>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
+    <p style="margin:0;line-height:1.6;"><strong>Critical insight:</strong> When you present a choropleth map in a policy setting, you should be able to justify your classification choice. "I used the default" is not a justification.</p>
+  </div>
+</div>
+
+<!-- ── Section 2 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 2: Bivariate Choropleth Mapping</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">A standard choropleth shows one variable. But policy questions often involve relationships between two variables: Is poverty concentrated where educational attainment is low? Do areas with high hardship also have high unemployment?</p>
+  <p style="margin:0 0 12px;line-height:1.6;">A <strong>bivariate choropleth</strong> maps two variables simultaneously using a two-dimensional color legend. Each variable is classified into categories (typically 3×3), and the combinations produce a grid of 9 colors. For example, one axis might represent hardship index values and the other might represent the percentage of residents without a high school diploma.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">The biscale Package</h4>
+  <p style="margin:0 0 8px;line-height:1.6;">The <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">biscale</code> package streamlines bivariate mapping in R:</p>
+  <ol style="margin:0 0 12px;padding-left:20px;line-height:1.9;">
+    <li><code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">bi_class()</code> — classifies two variables into a combined bivariate class</li>
+    <li><code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">bi_scale_fill()</code> — applies the appropriate 2D color palette to ggplot</li>
+    <li><code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">bi_legend()</code> — generates the 3×3 legend</li>
+  </ol>
+  <p style="margin:0 0 10px;line-height:1.6;">The legend is created separately and composed with the map using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">cowplot</code> or <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">patchwork</code>.</p>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
+    <p style="margin:0;line-height:1.6;"><strong>Design consideration:</strong> Bivariate choropleths are powerful but cognitively demanding. Always include a clear legend and limit the classification to 3×3 (not 4×4 or 5×5) to keep the map interpretable.</p>
+  </div>
+</div>
+
+<!-- ── Section 3 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 3: Interactive Maps with mapgl</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">Static maps are essential for reports and publications, but <strong>interactive maps</strong> let users explore data at their own pace — zooming in on neighborhoods, hovering over polygons for details, and experiencing smooth GPU-rendered performance.</p>
+  <p style="margin:0 0 10px;line-height:1.6;">The <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">mapgl</code> package renders interactive maps via MapLibre GL JS. Spatial data is passed directly as GeoJSON — no external tile server required. Key features include:</p>
+  <ul style="margin:0 0 12px;padding-left:20px;line-height:1.9;">
+    <li><strong>Basemap styles</strong>: Choose from OpenFreeMap styles (positron, bright, dark) via <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">openfreemap_style()</code></li>
+    <li><strong>GeoJSON source</strong>: Pass sf objects directly with <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">add_source(type = "geojson", data = sf_object)</code></li>
+    <li><strong>Fill layers</strong>: Color polygons by variable values using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">add_fill_layer()</code> with <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">interpolate()</code></li>
+    <li><strong>Tooltips and hover</strong>: Display data values on hover using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">tooltip</code> and <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">hover_options</code></li>
+    <li><strong>GPU acceleration</strong>: Handles block-group-level data (thousands of polygons) smoothly</li>
+  </ul>
+  <p style="margin:0;line-height:1.6;">Interactive maps produced by <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">mapgl</code> are HTML widgets — they can be embedded directly in Quarto documents and dashboards, making them ideal for the policy briefs and final project you will produce later in the course.</p>
+</div>
+
+<!-- ── Section 4 ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 4: Cartographic Design Principles</h3>
+  <p style="margin:0 0 12px;line-height:1.6;">Good cartography is not decoration — it is <strong>communication</strong>. A well-designed map directs attention to the data story; a poorly designed map obscures it.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Core Principles</h4>
+  <ul style="margin:0 0 14px;padding-left:20px;line-height:1.9;">
+    <li><strong>Visual hierarchy</strong>: The most important information (the thematic data) should be the most visually prominent. Basemap labels and borders should recede</li>
+    <li><strong>Figure-ground</strong>: The study area should stand out from the surrounding context. Use a subtle background or outline to frame the area of interest</li>
+    <li><strong>Color choice</strong>: Use sequential palettes for ordinal data, diverging palettes for data with a meaningful midpoint, and qualitative palettes for categorical data. Colorblind-safe palettes (e.g., viridis) are essential for accessibility</li>
+    <li><strong>Map elements</strong>: Every thematic map should include a title, legend, scale bar, north arrow, and data source citation</li>
+  </ul>
+  <p style="margin:0;line-height:1.6;">The <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">ggspatial</code> package adds professional cartographic elements to ggplot maps: <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">annotation_scale()</code> for scale bars and <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">annotation_north_arrow()</code> for orientation.</p>
+</div>
+
+<!-- ── Section 5: MAUP ───────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Section 5: The Modifiable Areal Unit Problem (MAUP)</h3>
+  <p style="margin:0 0 10px;line-height:1.6;">The <strong>Modifiable Areal Unit Problem (MAUP)</strong> is one of the most fundamental challenges in spatial analysis. It refers to the fact that the results of any analysis using aggregated spatial data depend on how the boundaries of those spatial units are drawn. The same underlying phenomenon can look dramatically different depending on whether you map it at the county, tract, or block group level.</p>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Why MAUP Matters for Policy</h4>
+  <p style="margin:0 0 10px;line-height:1.6;">Consider a county-level map of economic hardship across the United States. A county like Maricopa County, Arizona — home to Phoenix and over 4 million people — receives a single hardship score. But that single score masks enormous internal variation. Some block groups within Maricopa have hardship index values well above the national average, while others rank among the lowest in the state. A state official relying solely on the county map would see Maricopa as a moderate-hardship county and might conclude that it does not need targeted intervention — missing the neighborhoods within the county where hardship is severe.</p>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;margin-bottom:14px;">
+    <p style="margin:0;line-height:1.6;">This is the core danger of MAUP: <strong>aggregation smooths away the very variation that matters most for targeted policy.</strong> A county that appears "average" may contain both affluent suburbs and deeply distressed neighborhoods. The larger the unit of analysis, the more heterogeneity gets hidden.</p>
+  </div>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">Implications for Practice</h4>
+  <ul style="margin:0;padding-left:20px;line-height:1.9;">
+    <li><strong>Use the most granular geography available</strong> when you expect important within-unit variation. Census tracts and block groups reveal neighborhood-level patterns that county-level data cannot</li>
+    <li><strong>Compare across scales</strong> to understand what aggregation hides. If the pattern changes substantially when you move from counties to tracts to block groups, MAUP is at work</li>
+    <li><strong>Be explicit about scale choices</strong> in reports and policy briefs. Always state the geographic unit of analysis and acknowledge what within-unit variation it may conceal</li>
+    <li><strong>Interactive maps help</strong> because users can zoom from broad regional patterns down to neighborhood detail, seeing MAUP in action rather than being locked into a single scale</li>
+  </ul>
+</div>
+
+<!-- ── Readings ───────────────────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Readings</h3>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 10px;">Foundational Works</h4>
+  <ul style="margin:0 0 16px;padding-left:20px;line-height:1.9;">
+    <li>Brewer, C. A., &amp; Pickle, L. (2002). Evaluation of methods for classifying epidemiological data on choropleth maps in series. <em>Annals of the Association of American Geographers</em>, 92(4), 662–681. — The definitive empirical comparison of classification methods for choropleth maps.</li>
+    <li>Brewer, C. A. <a href="https://colorbrewer2.org/" style="color:#8C1D40;">ColorBrewer 2.0</a>. — Interactive tool for choosing cartographically sound color schemes. Provides sequential, diverging, and qualitative palettes tested for colorblind safety, print friendliness, and screen legibility.</li>
+    <li>Openshaw, S. &amp; Taylor, P.J. (1979). A million or so correlation coefficients: three experiments on the modifiable areal unit problem. <em>Statistical Applications in the Spatial Sciences</em>, pp. 127–144. — The paper that coined the term "MAUP." Showed that aggregating 99 counties into different 6-zone configurations produced correlations ranging from −0.97 to +0.99 for the same underlying variables.</li>
+    <li>Openshaw, S. (1984). <em>The Modifiable Areal Unit Problem</em>. CATMOG No. 38. Geo Books. — The most-cited treatment of MAUP (~5,200 citations). Distinguishes the <strong>scale effect</strong> from the <strong>zoning effect</strong>.</li>
+  </ul>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 10px;">Recent Applications</h4>
+  <ul style="margin:0 0 16px;padding-left:20px;line-height:1.9;">
+    <li>Fotheringham, A.S. &amp; Wong, D.W.S. (1991). The modifiable areal unit problem in multivariate statistical analysis. <em>Environment and Planning A</em>, 23(7), 1025–1044. <a href="https://doi.org/10.1068/a231025" style="color:#8C1D40;">doi:10.1068/a231025</a> — Extended MAUP into multiple regression and logit models; showed parameter estimates varied by a factor of up to nine across geographic units.</li>
+    <li>Nelson, J.K. &amp; Brewer, C.A. (2017). Evaluating data stability in aggregation structures across spatial scales. <em>Cartography and Geographic Information Science</em>, 44(1), 35–50. <a href="https://doi.org/10.1080/15230406.2015.1093431" style="color:#8C1D40;">doi:10.1080/15230406.2015.1093431</a> — Shows that tract-level data preserves spatial relationships that county-level analysis destroys. Directly relevant to the multi-scale comparisons in Lab 2.</li>
+    <li>Stevens, J. (2015). <a href="http://www.joshuastevens.net/cartography/make-a-bivariate-choropleth-map/" style="color:#8C1D40;">Bivariate Choropleth Maps: A How-to Guide</a>. — Practical introduction to bivariate choropleth design with emphasis on color selection and legend construction.</li>
+    <li>Walker, K. (2023). <em>Analyzing US Census Data: Methods, Maps, and Models in R</em>. CRC Press. <a href="https://walker-data.com/census-r/mapping-census-data-with-r.html" style="color:#8C1D40;">Chapter 6: Mapping Census Data with R</a>. — Covers classification methods, color palettes, and interactive mapping.</li>
+    <li>Axis Maps. <a href="https://www.axismaps.com/guide" style="color:#8C1D40;">Cartography Guide</a>. — Concise, practical reference covering color theory, classification, labeling, and layout. Excellent quick reference for cartographic design decisions.</li>
+  </ul>
+  <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 10px;">R Package Documentation</h4>
+  <ul style="margin:0;padding-left:20px;line-height:1.9;">
+    <li><a href="https://r-spatial.github.io/classInt/" style="color:#8C1D40;">classInt package documentation</a> — Classification interval algorithms</li>
+    <li><a href="https://chris-prener.github.io/biscale/" style="color:#8C1D40;">biscale package documentation</a> — Bivariate choropleth tools</li>
+    <li><a href="https://walker-data.com/mapgl/" style="color:#8C1D40;">mapgl package documentation</a> — Interactive GPU-rendered maps</li>
+    <li><a href="https://paleolimbot.github.io/ggspatial/" style="color:#8C1D40;">ggspatial package documentation</a> — Scale bars, north arrows, and cartographic annotation</li>
+  </ul>
+</div>
+
+<!-- ── Lab 2 ──────────────────────────────────────────────────── -->
+<div style="background:#8C1D40;border-radius:6px;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#FFC627;font-size:16px;font-weight:700;margin:0 0 12px;">Lab 2</h3>
+  <p style="color:#ffffff;margin:0 0 10px;line-height:1.6;">The Lab 2 materials are on the course lab site. Visit the links below to access the tutorial and assignment.</p>
+  <p style="margin:0 0 8px;">📘 <a href="https://antjam-howell.github.io/paf-516-labs/lab2-tutorial.html" style="color:#FFC627;font-weight:600;">Lab 2 Tutorial</a> <span style="color:#ffffff;font-size:13px;">— Download the tutorial file, knit it to see the complete analysis, then run chunk by chunk to understand each step.</span></p>
+  <p style="margin:0;">📝 <a href="https://antjam-howell.github.io/paf-516-labs/lab2-assignment.html" style="color:#FFC627;font-weight:600;">Lab 2 Assignment</a> <span style="color:#ffffff;font-size:13px;">— Download the assignment file, rename it with your last name, complete the three questions, and submit to Canvas.</span></p>
+</div>
+
+<!-- ── Yellowdig Discussion ──────────────────────────────────── -->
+<div style="border-left:4px solid #8C1D40;background:#f9f5f6;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:20px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Yellowdig Discussion</h3>
+  <div style="background:#fff8e6;border:1px solid #FFC627;border-radius:4px;padding:12px 16px;">
+    <p style="margin:0 0 6px;font-weight:700;color:#8C1D40;">💬 Discussion Prompt</p>
+    <p style="margin:0;line-height:1.6;">Find a published choropleth map from a news article, government report, nonprofit dashboard, or academic paper. Share the map (or a link to it) in your post, then write a critical cartographic review. Your review should address how the mapmaker's design choices — classification method, color scheme, scale, and layout — shape the story the map tells, and whether different choices would lead to different policy interpretations. Connect your analysis to at least one concept from this module's readings (e.g., Brewer &amp; Pickle's findings on classification accuracy, Stevens' bivariate design principles, or the Axis Maps guidance on visual hierarchy). Consider: if this map were presented to a city council or included in a federal grant application, would its design strengthen or undermine the argument?</p>
+  </div>
+</div>
+
+<!-- ── Key Terms ─────────────────────────────────────────────── -->
+<div style="border-left:4px solid #FFC627;background:#fffdf0;border-radius:0 6px 6px 0;padding:16px 20px;margin-bottom:8px;">
+  <h3 style="color:#8C1D40;font-size:16px;font-weight:700;margin:0 0 12px;">Key Terms</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    <thead>
+      <tr style="background:#8C1D40;color:#ffffff;">
+        <th style="padding:8px 12px;text-align:left;font-weight:600;width:32%;">Term</th>
+        <th style="padding:8px 12px;text-align:left;font-weight:600;">Definition</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Classification Method</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">An algorithm for dividing continuous data into discrete bins for choropleth mapping</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Quantile Classification</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Places an equal number of observations in each class; maximizes visual variation</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Jenks Natural Breaks</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Optimizes class boundaries to minimize within-class variance (Goodness of Variance Fit)</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Equal Interval</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Divides the data range into classes of equal width</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Standard Deviation</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">Centers bins on the mean; each bin spans one standard deviation</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Bivariate Choropleth</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A map that encodes two variables simultaneously using a two-dimensional color grid</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Visual Hierarchy</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">The arrangement of map elements so the most important data draws the most attention</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Sequential Palette</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A color ramp from light to dark representing low-to-high values</td>
+      </tr>
+      <tr style="background:#ffffff;">
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;font-weight:600;color:#8C1D40;">Diverging Palette</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e8e0c8;">A color ramp with two hues diverging from a neutral midpoint (e.g., blue–white–red)</td>
+      </tr>
+      <tr style="background:#fffdf0;">
+        <td style="padding:8px 12px;font-weight:600;color:#8C1D40;">Modifiable Areal Unit Problem (MAUP)</td>
+        <td style="padding:8px 12px;">The sensitivity of spatial analysis results to the size and shape of the geographic units used; aggregation to larger units can mask important within-unit variation</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
