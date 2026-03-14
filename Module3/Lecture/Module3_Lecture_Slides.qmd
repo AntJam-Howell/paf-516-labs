@@ -20,6 +20,7 @@ format:
         \setbeamercolor{alerted text}{fg=asuMaroon}
         \setbeamertemplate{footline}[frame number]
         \setbeamerfont{frametitle}{size=\large,series=\bfseries}
+        \usepackage{booktabs}
 execute:
   echo: false
   warning: false
@@ -32,7 +33,7 @@ execute:
 
 > "Your economic hardship index measures *who lives* in a place. This module adds *what is near* a place."
 
-In Labs 1–2 you built the index entirely from census variables. This module teaches you to enrich it with **external point data** — EPA facilities, grocery stores, transit stops — using spatial operations.
+In Labs 1–2 you built the index entirely from census variables. This module teaches you to combine census data with **external point data** — EPA facilities, grocery stores, transit stops — using spatial operations to test environmental justice hypotheses.
 
 **What you will learn:**
 
@@ -140,7 +141,7 @@ cbg_proj$near_facility <- as.integer(
 
 ---
 
-# Part 2: The Uncertain Geographic Context Problem
+# Part 2: The UGCoP
 
 ## What Is UGCoP?
 
@@ -176,17 +177,24 @@ Both MAUP and UGCoP share one insight: **geographic context is a methodological 
 
 ## Buffer Sensitivity in Practice
 
-Consider three block groups near an EPA facility:
+Three block groups at different distances from an EPA facility:
 
-| Buffer Distance | CBG A (0.3 mi) | CBG B (0.7 mi) | CBG C (1.1 mi) |
-|-----------------|----------------|----------------|----------------|
-| 0.5 mile | ✓ Exposed | Not exposed | Not exposed |
-| 1.0 mile | ✓ Exposed | ✓ Exposed | Not exposed |
-| 2.0 mile | ✓ Exposed | ✓ Exposed | ✓ Exposed |
+\begin{center}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Buffer} & \textbf{A (0.3 mi)} & \textbf{B (0.7 mi)} & \textbf{C (1.1 mi)} \\
+\midrule
+0.5 mi & \textcolor{red}{Exposed} & --- & --- \\
+1.0 mi & \textcolor{red}{Exposed} & \textcolor{red}{Exposed} & --- \\
+2.0 mi & \textcolor{red}{Exposed} & \textcolor{red}{Exposed} & \textcolor{red}{Exposed} \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-The same three block groups produce **three different exposure classifications** depending on buffer distance. This is UGCoP in action.
+Same block groups, **three different classifications** — this is UGCoP.
 
-**Lab 3, Q2:** Change the buffer from 1 mile to 0.5 miles. Compare results. This tests whether your conclusions are threshold-sensitive.
+**Lab 3, Q2:** Change distance bands and compare. This tests whether conclusions are threshold-sensitive.
 
 ## Best Practices for Buffer Analysis
 
@@ -217,7 +225,7 @@ EJ research asks: are environmental burdens disproportionately concentrated in l
 | **Hazards** — what is near here | EPA TRI, Superfund listings | Point data |
 | **Spatial integration** — do they overlap? | Combined layers | `st_join()`, `st_buffer()` |
 
-The **enriched economic hardship index** you build in Lab 3 operationalizes this: 5 census variables measuring socioeconomic hardship + 2 spatial variables measuring environmental burden proximity.
+Lab 3 operationalizes this by combining 5 census variables measuring socioeconomic hardship with spatial proximity measures to environmental burden locations.
 
 ## Pastor, Sadd & Hipp (2001)
 
@@ -249,20 +257,6 @@ Maantay (2002) and Mohai & Saha (2015) both document how distance threshold choi
 **Lab 3, Q3** asks you to connect buffer sensitivity to UGCoP and cite Maantay (2002) and Mohai & Saha (2015). This is the theoretical payoff of Q2's empirical test.
 :::
 
-## The Enriched Economic Hardship Index
-
-Lab 3 adds two spatial variables to the 5-variable census index:
-
-**5-Variable Census Index (Labs 1–2):**
-Poverty rate, unemployment rate, no HS diploma, no health insurance, median income (reverse-coded)
-
-**+ 2 Spatial Variables (Lab 3):**
-
-- `facility_count` — number of EPA facilities in the block group
-- `near_facility` — binary: within 1-mile buffer zone (0/1)
-
-Both are z-score standardized before inclusion. **Cronbach's alpha** tests whether the spatial variables hang together with census hardship — if alpha improves, environmental burden is measuring the same underlying construct as socioeconomic disadvantage.
-
 ## Module 3 Summary
 
 **Key takeaways:**
@@ -272,6 +266,5 @@ Both are z-score standardized before inclusion. **Cronbach's alpha** tests wheth
 - **Buffers define exposure.** `st_buffer()` creates proximity zones. The distance threshold is consequential.
 - **UGCoP: buffers have a problem too.** Kwan (2012): different distances produce different classifications. Test multiple distances and report sensitivity.
 - **EJ connects burden to hardship.** Spatial integration reveals whether environmental hazards compound census-measured disadvantage in the same communities.
-- **Enriched index, honest alpha.** Adding spatial variables should improve Cronbach's alpha if they reflect the same underlying construct.
 
 **Coming up in Module 4:** Spatial Autocorrelation — Moran's I, LISA hot spots, and whether hardship clusters spatially across Maricopa County.
