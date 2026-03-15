@@ -135,18 +135,18 @@ cbg_raw <- get_acs(
 #| eval: false
 #| include: false
 # ── Offline fallback — use this chunk instead if the Census API is down ───
-# cbg_raw: Maricopa County block group ACS data (10 hardship variables, long format)
+# cbg_raw: Maricopa County block group ACS data, raw get_acs() output (long format)
 #   - Geography:  block group
 #   - Coverage:   Maricopa County AZ
 #   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~2658 rows × 18 cols (wide format with rates and hardship index)
+#   - Shape:      ~28,060 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
 #   - Used in:    Step 2 (pivot, compute rates, build hardship index → cbg_complete), Steps 3–8
 #
 # Local:
-# cbg_raw <- readRDS("data/cbg_complete.rds")
+# cbg_raw <- readRDS("data/cbg_raw_RAW.rds")
 #
 # GitHub (if data/ folder not available):
-# cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab3/data/cbg_complete.rds"))
+# cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab3/data/cbg_raw_RAW.rds"))
 ```
 
 

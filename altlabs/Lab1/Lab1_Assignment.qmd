@@ -151,18 +151,18 @@ CenDF <- get_acs(
 #| eval: false
 #| include: false
 # ── Offline fallback — use this chunk instead if the Census API is down ───
-# CenDF: Arizona census tracts, 2019–2023 ACS 5-year estimates
+# CenDF: Arizona census tracts, raw get_acs() output (long format)
 #   - Geography:  tract
 #   - Coverage:   Arizona statewide
 #   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~4,580 rows × 8 cols (916 tracts × 5 variables, long format)
+#   - Shape:      ~17,650 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
 #   - Used in:    step.02 (pivot_wider), step.03 (alpha), step.04 (index build)
 #
 # Local:
-# CenDF <- readRDS("data/CenDF_complete_5var.rds")
+# CenDF <- readRDS("data/CenDF_5var_RAW.rds")
 #
 # GitHub (if data/ folder not available):
-# CenDF <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/CenDF_complete_5var.rds"))
+# CenDF <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/CenDF_5var_RAW.rds"))
 ```
 
 **Variable justification:**
@@ -298,18 +298,18 @@ county_df <- get_acs(
 #| eval: false
 #| include: false
 # ── Offline fallback — use this chunk instead if the Census API is down ───
-# county_df: US counties, 2019–2023 ACS 5-year estimates
+# county_df: US counties, raw get_acs() output (long format)
 #   - Geography:  county
 #   - Coverage:   National (all US counties)
 #   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~31,430 rows × 8 cols (3,143 counties × 10 variables, long format)
+#   - Shape:      ~32,220 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
 #   - Used in:    step.05-index (pivot_wider, index build), step.05-map (national map)
 #
 # Local:
-# county_df <- readRDS("data/county_complete.rds")
+# county_df <- readRDS("data/county_df_RAW.rds")
 #
 # GitHub (if data/ folder not available):
-# county_df <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/county_complete.rds"))
+# county_df <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/county_df_RAW.rds"))
 ```
 
 ```{r}
@@ -398,18 +398,18 @@ cbg_df <- get_acs(
 #| eval: false
 #| include: false
 # ── Offline fallback — use this chunk instead if the Census API is down ───
-# cbg_df: Maricopa County block groups, 2019–2023 ACS 5-year estimates
+# cbg_df: Maricopa County block groups, raw get_acs() output (long format)
 #   - Geography:  block group
 #   - Coverage:   Maricopa County, AZ
 #   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~12,870 rows × 8 cols (1,287 block groups × 10 variables, long format)
+#   - Shape:      ~28,060 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
 #   - Used in:    step.07-index (pivot_wider, index build), step.07-map (CBG map), step.08-combine (patchwork)
 #
 # Local:
-# cbg_df <- readRDS("data/cbg_complete.rds")
+# cbg_df <- readRDS("data/cbg_df_RAW.rds")
 #
 # GitHub (if data/ folder not available):
-# cbg_df <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/cbg_complete.rds"))
+# cbg_df <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/cbg_df_RAW.rds"))
 ```
 
 ```{r}
@@ -503,18 +503,18 @@ CenDF_10 <- get_acs(
 #| eval: false
 #| include: false
 # ── Offline fallback — use this chunk instead if the Census API is down ───
-# CenDF_10: Arizona census tracts, 2019–2023 ACS 5-year, 10-variable enriched index
+# CenDF_10: Arizona census tracts, raw get_acs() output, 10-variable enriched index (long format)
 #   - Geography:  tract
 #   - Coverage:   Arizona statewide
 #   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~18,320 rows × 8 cols (916 tracts × 20 variables, long format)
+#   - Shape:      ~35,300 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
 #   - Used in:    step.08-build10 (pivot_wider, enriched index build), step.08-compare (side-by-side map)
 #
 # Local:
-# CenDF_10 <- readRDS("data/CenDF_complete_10var.rds")
+# CenDF_10 <- readRDS("data/CenDF_10var_RAW.rds")
 #
 # GitHub (if data/ folder not available):
-# CenDF_10 <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/CenDF_complete_10var.rds"))
+# CenDF_10 <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/CenDF_10var_RAW.rds"))
 ```
 
 ```{r}

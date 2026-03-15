@@ -123,27 +123,27 @@ tract_2019_raw <- load_or_pull(
 #| eval: false
 #| include: false
 # ── Offline fallback — use this chunk instead if the Census API is down ───
-# tract_2013_raw: Maricopa County tract-level ACS data for 3-variable hardship index (2013)
+# tract_2013_raw: Maricopa County tract-level ACS data, raw get_acs() output (long format)
 #   - Geography:  tract
 #   - Coverage:   Maricopa County AZ
 #   - Vintage:    2009–2013 ACS 5-year (year = 2013)
-#   - Shape:      ~5,496 rows × 6 cols (916 tracts × 6 variables, long format)
+#   - Shape:      ~5,496 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
 #   - Used in:    Step 1 wrangle (widen_and_rate, pooled z-scores, change_df)
 #
-# tract_2019_raw: Maricopa County tract-level ACS data for 3-variable hardship index (2019)
+# tract_2019_raw: Maricopa County tract-level ACS data, raw get_acs() output (long format)
 #   - Geography:  tract
 #   - Coverage:   Maricopa County AZ
 #   - Vintage:    2015–2019 ACS 5-year (year = 2019)
-#   - Shape:      ~5,496 rows × 6 cols (916 tracts × 6 variables, long format)
+#   - Shape:      ~5,496 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
 #   - Used in:    Step 1 wrangle (widen_and_rate, pooled z-scores, change_df)
 #
 # Local:
-# tract_2013_raw <- readRDS("data/maricopa_tracts_2013.rds")
-# tract_2019_raw <- readRDS("data/maricopa_tracts_2019.rds")
+# tract_2013_raw <- readRDS("data/tract_2013_raw_RAW.rds")
+# tract_2019_raw <- readRDS("data/tract_2019_raw_RAW.rds")
 #
 # GitHub (if data/ folder not available):
-# tract_2013_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab6/data/maricopa_tracts_2013.rds"))
-# tract_2019_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab6/data/maricopa_tracts_2019.rds"))
+# tract_2013_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab6/data/tract_2013_raw_RAW.rds"))
+# tract_2019_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab6/data/tract_2019_raw_RAW.rds"))
 ```
 
 ```{r}
@@ -339,18 +339,18 @@ tract_2016_raw <- load_or_pull(
 #| eval: false
 #| include: false
 # ── Offline fallback — use this chunk instead if the Census API is down ───
-# tract_2016_raw: Maricopa County tract-level ACS data for 3-variable hardship index (2016)
+# tract_2016_raw: Maricopa County tract-level ACS data, raw get_acs() output (long format, no geometry)
 #   - Geography:  tract
 #   - Coverage:   Maricopa County AZ
 #   - Vintage:    2012–2016 ACS 5-year (year = 2016)
-#   - Shape:      ~5,496 rows × 5 cols (916 tracts × 6 variables, long format, no geometry)
+#   - Shape:      ~5,496 rows × 5 cols (GEOID, NAME, variable, estimate, moe)
 #   - Used in:    Step 7 (widen_and_rate → pooled z-scores → three-point trend classification)
 #
 # Local:
-# tract_2016_raw <- readRDS("data/maricopa_tracts_2016.rds")
+# tract_2016_raw <- readRDS("data/tract_2016_raw_RAW.rds")
 #
 # GitHub (if data/ folder not available):
-# tract_2016_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab6/data/maricopa_tracts_2016.rds"))
+# tract_2016_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab6/data/tract_2016_raw_RAW.rds"))
 ```
 
 ```{r}

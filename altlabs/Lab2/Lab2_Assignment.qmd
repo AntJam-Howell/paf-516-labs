@@ -197,18 +197,18 @@ cbg_raw <- get_acs(
 #| eval: false
 #| include: false
 # ── Offline fallback — use this chunk instead if the Census API is down ───
-# cbg_raw: Maricopa County block group ACS data (14 hardship + demographic variables, long format)
+# cbg_raw: Maricopa County block group ACS data, raw get_acs() output (long format)
 #   - Geography:  block group
 #   - Coverage:   Maricopa County AZ
 #   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~2806 rows × 29 cols (wide format with rates, z-scores, and hardship index)
+#   - Shape:      ~39,284 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
 #   - Used in:    Step 1c (pivot, compute rates, build hardship index → cbg), Steps 2–5, Step 7
 #
 # Local:
-# cbg_raw <- readRDS("data/cbg.rds")
+# cbg_raw <- readRDS("data/cbg_raw_RAW.rds")
 #
 # GitHub (if data/ folder not available):
-# cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab2/data/cbg.rds"))
+# cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab2/data/cbg_raw_RAW.rds"))
 ```
 
 ## 1c. Reshape and compute rates
@@ -581,18 +581,18 @@ county_raw <- get_acs(
 #| eval: false
 #| include: false
 # ── Offline fallback — use this chunk instead if the Census API is down ───
-# county_raw: US county-level ACS data (10 hardship variables, long format)
+# county_raw: US county-level ACS data, raw get_acs() output (long format)
 #   - Geography:  county
 #   - Coverage:   National
 #   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~3222 rows × 23 cols (wide format with rates, z-scores, and hardship index)
+#   - Shape:      ~32,220 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
 #   - Used in:    Step 6b (build_index → county_df), Steps 6c–6d (interactive county map)
 #
 # Local:
-# county_raw <- readRDS("data/county_df.rds")
+# county_raw <- readRDS("data/county_raw_RAW.rds")
 #
 # GitHub (if data/ folder not available):
-# county_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab2/data/county_df.rds"))
+# county_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab2/data/county_raw_RAW.rds"))
 ```
 
 ## 6b. Build the economic hardship index at the county level
@@ -763,18 +763,18 @@ p_cbg + p_tract +
 #| eval: false
 #| include: false
 # ── Offline fallback — use this chunk instead if the Census API is down ───
-# tract_geo: Maricopa County tract boundaries (geometry only, no hardship variables)
+# tract_geo: Maricopa County tract boundaries (GEOID + geometry only)
 #   - Geography:  tract
 #   - Coverage:   Maricopa County AZ
 #   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~1009 rows × 2 cols (GEOID + geometry)
+#   - Shape:      ~1,009 rows × 2 cols (GEOID, geometry)
 #   - Used in:    Step 7 ICC aggregation visualization (BG vs tract side-by-side map)
 #
 # Local:
-# tract_geo <- readRDS("data/tract_maricopa_2023_geometry.rds")
+# tract_geo <- readRDS("data/tract_geo_RAW.rds")
 #
 # GitHub (if data/ folder not available):
-# tract_geo <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab2/data/tract_maricopa_2023_geometry.rds"))
+# tract_geo <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab2/data/tract_geo_RAW.rds"))
 ```
 
 ::: {.callout-note}
