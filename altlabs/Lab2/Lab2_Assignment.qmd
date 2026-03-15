@@ -112,11 +112,8 @@ library(viridis)     # Perceptually uniform color scales
 
 ```{r}
 #| label: api-key
-# Get a free Census API key at: https://api.census.gov/data/key_signup.html
-# After receiving your key by email, run this line ONCE in the RStudio console:
-# census_api_key("YOUR_KEY_HERE", install = TRUE)
-# Then restart R: Session → Restart R
-# You only need to do this once — the key is saved to your .Renviron file.
+#| include: false
+# No Census API key required — data loads directly from GitHub.
 ```
 
 
@@ -164,51 +161,8 @@ all_vars <- c(hardship_vars, demo_vars)
 ```{r}
 #| label: step.01b
 #| results: hide
-
-# Pull ACS 5-year estimates at the block group level for Maricopa County.
-# geometry = TRUE attaches spatial boundaries for mapping.
-cbg_raw <- get_acs(
-  geography = "block group",
-  variables = all_vars,
-  state     = "AZ",
-  county    = "Maricopa",
-  year      = 2023,
-  survey    = "acs5",
-  geometry  = TRUE,
-  progress_bar = FALSE
-)
-
-# Fallback — uncomment if API unavailable:
-# cbg_raw <- readRDS("data/cbg_extended_2023.rds")
-# OR via URL:
-# cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/cbg_extended_2023.rds"))
-# cbg_raw <- cbg_raw %>%
-#   mutate(variable = recode(variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
-#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
-#     median_income = "med_income",
-#     total_pop = "race_total", white_nh = "race_wnh",
-#     total_tenure = "tenure_total", renter_occ = "tenure_rent"))
-```
-
-```{r}
-#| label: step.01b-offline
-#| eval: false
-#| include: false
-# ── Offline fallback — use this chunk instead if the Census API is down ───
-# cbg_raw: Maricopa County block group ACS data, raw get_acs() output (long format)
-#   - Geography:  block group
-#   - Coverage:   Maricopa County AZ
-#   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~39,284 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
-#   - Used in:    Step 1c (pivot, compute rates, build hardship index → cbg), Steps 2–5, Step 7
-#
-# Local:
-# cbg_raw <- readRDS("data/cbg_raw_RAW.rds")
-#
-# GitHub (if data/ folder not available):
-# cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab2/data/cbg_raw_RAW.rds"))
+# ── Data: Maricopa County block groups, hardship + demographic vars (2023 ACS) ───
+cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/altlabs/Lab2/data/cbg_raw_RAW.rds"))
 ```
 
 ## 1c. Reshape and compute rates
@@ -552,47 +506,8 @@ you already explored in Step 4 --- that contrast is MAUP in action.
 ```{r}
 #| label: step.06a
 #| results: hide
-
-# ── Pull US county-level data ─────────────────────────────────
-# This gives us ~3,200 counties across the entire US.
-county_raw <- get_acs(
-  geography = "county",
-  variables = hardship_vars,
-  year      = 2023,
-  survey    = "acs5",
-  geometry  = TRUE,
-  progress_bar = FALSE
-)
-
-# Fallback — uncomment if API unavailable:
-# county_raw <- readRDS("data/county_hardship_2023.rds")
-# OR via URL:
-# county_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/county_hardship_2023.rds"))
-# county_raw <- county_raw %>%
-#   mutate(variable = recode(variable,
-#     pct_unemp_num = "unemp_num", pct_unemp_den = "unemp_den",
-#     pct_no_hs_num = "nohs_num", pct_no_hs_den = "nohs_den",
-#     pct_no_ins_num = "noins_num", pct_no_ins_den = "noins_den",
-#     median_income = "med_income"))
-```
-
-```{r}
-#| label: step.06a-offline
-#| eval: false
-#| include: false
-# ── Offline fallback — use this chunk instead if the Census API is down ───
-# county_raw: US county-level ACS data, raw get_acs() output (long format)
-#   - Geography:  county
-#   - Coverage:   National
-#   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~32,220 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
-#   - Used in:    Step 6b (build_index → county_df), Steps 6c–6d (interactive county map)
-#
-# Local:
-# county_raw <- readRDS("data/county_raw_RAW.rds")
-#
-# GitHub (if data/ folder not available):
-# county_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab2/data/county_raw_RAW.rds"))
+# ── Data: US counties, 5-variable hardship (2023 ACS) ───
+county_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/altlabs/Lab2/data/county_raw_RAW.rds"))
 ```
 
 ## 6b. Build the economic hardship index at the county level
@@ -735,13 +650,8 @@ tract_agg <- cbg_valid |>
   summarise(hardship_tract = weighted.mean(hardship_index, w = area, na.rm = TRUE),
             .groups = "drop")
 
-# Pull tract geometry and join aggregated values
-tract_geo <- get_acs(
-  geography = "tract", variables = "B01001_001",
-  state = "AZ", county = "Maricopa", year = 2023,
-  geometry = TRUE, progress_bar = FALSE
-) |>
-  select(GEOID, geometry) |>
+# ── Data: Maricopa County tract boundaries (GEOID + geometry) ───
+tract_geo <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/altlabs/Lab2/data/tract_geo_RAW.rds")) |>
   left_join(tract_agg, by = c("GEOID" = "tract_id"))
 
 p_cbg   <- ggplot(cbg_valid) +
@@ -756,25 +666,6 @@ p_tract <- ggplot(tract_geo) +
 
 p_cbg + p_tract +
   plot_annotation(title = paste0("Scale Sensitivity  |  ICC = ", icc_val))
-```
-
-```{r}
-#| label: step.07-maps-offline
-#| eval: false
-#| include: false
-# ── Offline fallback — use this chunk instead if the Census API is down ───
-# tract_geo: Maricopa County tract boundaries (GEOID + geometry only)
-#   - Geography:  tract
-#   - Coverage:   Maricopa County AZ
-#   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~1,009 rows × 2 cols (GEOID, geometry)
-#   - Used in:    Step 7 ICC aggregation visualization (BG vs tract side-by-side map)
-#
-# Local:
-# tract_geo <- readRDS("data/tract_geo_RAW.rds")
-#
-# GitHub (if data/ folder not available):
-# tract_geo <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab2/data/tract_geo_RAW.rds"))
 ```
 
 ::: {.callout-note}

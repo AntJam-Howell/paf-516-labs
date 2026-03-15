@@ -107,10 +107,8 @@ library(patchwork)
 
 ```{r}
 #| label: api-key
-# Get a free Census API key at: https://api.census.gov/data/key_signup.html
-# After receiving your key by email, run this line ONCE in the RStudio console:
-# census_api_key("YOUR_KEY_HERE", install = TRUE)
-# Then restart R: Session → Restart R
+#| include: false
+# No Census API key required — data loads directly from GitHub.
 ```
 
 
@@ -121,7 +119,7 @@ We build an **Economic Hardship Index** from 5 computed rates at the Arizona tra
 ```{r}
 #| label: step.01
 #| results: hide
-
+# ── Data: AZ tracts, 5-variable hardship (2023 ACS) ───
 hardship_vars <- c(
   pov_below50    = "C17002_002",   # Income-to-poverty ratio under .50
   pov_50to99     = "C17002_003",   # Income-to-poverty ratio .50 to .99
@@ -135,34 +133,7 @@ hardship_vars <- c(
   pct_no_ins_den = "B27010_001"    # Total population (insurance universe)
 )
 
-#CenDF <- get_acs(
-#  geography    = "tract",
-#  variables    = hardship_vars,
-#  state        = "AZ",
-#  year         = 2023,
-#  survey       = "acs5",
-#  geometry     = TRUE,
-#  progress_bar = FALSE
-#)
-```
-
-```{r}
-| label: step.01-offline
-| eval: TRUE
-| include: TRUE
-# ── Offline fallback — use this chunk instead if the Census API is down ───
-# CenDF: Arizona census tracts, raw get_acs() output (long format)
-#   - Geography:  tract
-#   - Coverage:   Arizona statewide
-#   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~17,650 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
-#   - Used in:    step.02 (pivot_wider), step.03 (alpha), step.04 (index build)
-#
-# Local:
-# CenDF <- readRDS("data/CenDF_5var_RAW.rds")
-#
-# GitHub (if data/ folder not available):
-CenDF <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/CenDF_5var_RAW.rds"))
+CenDF <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/altlabs/Lab1/data/CenDF_5var_RAW.rds"))
 ```
 
 **Variable justification:**
@@ -282,34 +253,8 @@ Pull the same 5 variables at the **county level** for the entire US and map nati
 ```{r}
 #| label: step.05-pull
 #| results: hide
-
-#county_df <- get_acs(
-#  geography    = "county",
-#  variables    = hardship_vars,
-#  year         = 2023,
-#  survey       = "acs5",
-#  geometry     = TRUE,
-#  progress_bar = FALSE
-#)
-```
-
-```{r}
-#| label: step.05-pull-offline
-#| eval: true
-#| include: true
-# ── Offline fallback — use this chunk instead if the Census API is down ───
-# county_df: US counties, raw get_acs() output (long format)
-#   - Geography:  county
-#   - Coverage:   National (all US counties)
-#   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~32,220 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
-#   - Used in:    step.05-index (pivot_wider, index build), step.05-map (national map)
-#
-# Local:
-# county_df <- readRDS("data/county_df_RAW.rds")
-#
-# GitHub (if data/ folder not available):
-county_df <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/county_df_RAW.rds"))
+# ── Data: US counties, 5-variable hardship (2023 ACS) ───
+county_df <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/altlabs/Lab1/data/county_df_RAW.rds"))
 ```
 
 ```{r}
@@ -380,36 +325,8 @@ Block groups are the smallest ACS geography, revealing fine-grained variation wi
 ```{r}
 #| label: step.07-pull
 #| results: hide
-
-#cbg_df <- get_acs(
-#  geography    = "block group",
-#  variables    = hardship_vars,
-#  state        = "AZ",
-#  county       = "Maricopa",
-#  year         = 2023,
-#  survey       = "acs5",
-#  geometry     = TRUE,
-#  progress_bar = FALSE
-#)
-```
-
-```{r}
-#| label: step.07-pull-offline
-#| eval: true
-#| include: true
-# ── Offline fallback — use this chunk instead if the Census API is down ───
-# cbg_df: Maricopa County block groups, raw get_acs() output (long format)
-#   - Geography:  block group
-#   - Coverage:   Maricopa County, AZ
-#   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~28,060 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
-#   - Used in:    step.07-index (pivot_wider, index build), step.07-map (CBG map), step.08-combine (patchwork)
-#
-# Local:
-# cbg_df <- readRDS("data/cbg_df_RAW.rds")
-#
-# GitHub (if data/ folder not available):
- cbg_df <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/cbg_df_RAW.rds"))
+# ── Data: Maricopa County block groups, 5-variable hardship (2023 ACS) ───
+cbg_df <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/altlabs/Lab1/data/cbg_df_RAW.rds"))
 ```
 
 ```{r}
@@ -471,7 +388,7 @@ Adding these five produces a **10-variable enriched index**. The key question: d
 ```{r}
 #| label: step.08-pull
 #| results: hide
-
+# ── Data: AZ tracts, 10-variable enriched hardship (2023 ACS) ───
 hardship_vars_10 <- c(
   # ── Original 5 variable pairs ──────────────────────────────────────
   pov_below50    = "C17002_002",   pov_50to99     = "C17002_003",
@@ -487,34 +404,7 @@ hardship_vars_10 <- c(
   noinet_num     = "B28002_013",   noinet_den     = "B28002_001"
 )
 
-#CenDF_10 <- get_acs(
-#  geography    = "tract",
-#  variables    = hardship_vars_10,
-#  state        = "AZ",
-#  year         = 2023,
-#  survey       = "acs5",
-#  geometry     = TRUE,
-#  progress_bar = FALSE
-#)
-```
-
-```{r}
-#| label: step.08-pull-offline
-#| eval: true
-#| include: true
-# ── Offline fallback — use this chunk instead if the Census API is down ───
-# CenDF_10: Arizona census tracts, raw get_acs() output, 10-variable enriched index (long format)
-#   - Geography:  tract
-#   - Coverage:   Arizona statewide
-#   - Vintage:    2019–2023 ACS 5-year (year = 2023)
-#   - Shape:      ~35,300 rows × 6 cols (GEOID, NAME, variable, estimate, moe, geometry)
-#   - Used in:    step.08-build10 (pivot_wider, enriched index build), step.08-compare (side-by-side map)
-#
-# Local:
-# CenDF_10 <- readRDS("data/CenDF_10var_RAW.rds")
-#
-# GitHub (if data/ folder not available):
- CenDF_10 <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/CenDF_10var_RAW.rds"))
+CenDF_10 <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/altlabs/Lab1/data/CenDF_10var_RAW.rds"))
 ```
 
 ```{r}
