@@ -3209,48 +3209,56 @@ vertical-align: -.125em;
 <span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>widen_and_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(df) {</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  df <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span>moe) <span class="sc">%&gt;%</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> variable, <span class="at">values_from =</span> estimate) <span class="sc">%&gt;%</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">poverty_rate =</span> (pov_below50 <span class="sc">+</span> pov_50to99) <span class="sc">/</span> pov_den,</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>           <span class="at">unemp_rate   =</span> unemp_num <span class="sc">/</span> unemp_den) <span class="sc">%&gt;%</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(poverty_rate), <span class="sc">!</span><span class="fu">is.na</span>(unemp_rate), <span class="sc">!</span><span class="fu">is.na</span>(median_income))</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>tract_2013_wide <span class="ot">&lt;-</span> <span class="fu">widen_and_rate</span>(tract_2013_raw)</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>tract_2019_wide <span class="ot">&lt;-</span> <span class="fu">widen_and_rate</span>(tract_2019_raw)</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>vars_to_pool <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;poverty_rate&quot;</span>, <span class="st">&quot;unemp_rate&quot;</span>, <span class="st">&quot;median_income&quot;</span>)</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>r2013 <span class="ot">&lt;-</span> tract_2013_wide <span class="sc">%&gt;%</span> <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, <span class="fu">all_of</span>(vars_to_pool))</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>r2019 <span class="ot">&lt;-</span> tract_2019_wide <span class="sc">%&gt;%</span> <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, <span class="fu">all_of</span>(vars_to_pool))</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>pooled_stats <span class="ot">&lt;-</span> <span class="fu">map_dfr</span>(vars_to_pool, <span class="cf">function</span>(v) {</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  vals <span class="ot">&lt;-</span> <span class="fu">c</span>(r2013[[v]], r2019[[v]])</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">variable =</span> v, <span class="at">mean =</span> <span class="fu">mean</span>(vals, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">sd =</span> <span class="fu">sd</span>(vals, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>apply_pooled_z <span class="ot">&lt;-</span> <span class="cf">function</span>(df, stats) {</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (v <span class="cf">in</span> stats<span class="sc">$</span>variable) {</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    pm <span class="ot">&lt;-</span> stats<span class="sc">$</span>mean[stats<span class="sc">$</span>variable <span class="sc">==</span> v]; ps <span class="ot">&lt;-</span> stats<span class="sc">$</span>sd[stats<span class="sc">$</span>variable <span class="sc">==</span> v]</span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    df[[<span class="fu">paste0</span>(<span class="st">&quot;z_&quot;</span>, v)]] <span class="ot">&lt;-</span> (df[[v]] <span class="sc">-</span> pm) <span class="sc">/</span> ps</span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>  df<span class="sc">$</span>z_median_income <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">*</span> df<span class="sc">$</span>z_median_income</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>  df<span class="sc">$</span>hardship_index <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    df[, <span class="fu">c</span>(<span class="st">&quot;z_poverty_rate&quot;</span>, <span class="st">&quot;z_unemp_rate&quot;</span>, <span class="st">&quot;z_median_income&quot;</span>)], <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(df)</span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>r2013_z <span class="ot">&lt;-</span> <span class="fu">apply_pooled_z</span>(r2013, pooled_stats)</span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>r2019_z <span class="ot">&lt;-</span> <span class="fu">apply_pooled_z</span>(r2019, pooled_stats)</span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>change_df <span class="ot">&lt;-</span> tract_2019_wide <span class="sc">%&gt;%</span></span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(GEOID, NAME) <span class="sc">%&gt;%</span></span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(r2019_z <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, <span class="at">hardship_2019 =</span> hardship_index), <span class="at">by =</span> <span class="st">&quot;GEOID&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(r2013_z <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, <span class="at">hardship_2013 =</span> hardship_index), <span class="at">by =</span> <span class="st">&quot;GEOID&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">hardship_change =</span> hardship_2019 <span class="sc">-</span> hardship_2013)</span>
-<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Tracts:&quot;</span>, <span class="fu">nrow</span>(change_df), <span class="st">&quot;| Mean change:&quot;</span>, <span class="fu">round</span>(<span class="fu">mean</span>(change_df<span class="sc">$</span>hardship_change), <span class="dv">3</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Offline fallback — run this block instead if the Census API is down ──</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Replace the get_acs() chunk above with these readRDS() calls.</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># All datasets are pre-built and stored in data/ for offline use.</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># tract_2013_raw &lt;- readRDS(&quot;../data/maricopa_tracts_2013.rds&quot;)</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># tract_2019_raw &lt;- readRDS(&quot;../data/maricopa_tracts_2019.rds&quot;)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>widen_and_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(df) {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  df <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span>moe) <span class="sc">%&gt;%</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> variable, <span class="at">values_from =</span> estimate) <span class="sc">%&gt;%</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">poverty_rate =</span> (pov_below50 <span class="sc">+</span> pov_50to99) <span class="sc">/</span> pov_den,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>           <span class="at">unemp_rate   =</span> unemp_num <span class="sc">/</span> unemp_den) <span class="sc">%&gt;%</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(poverty_rate), <span class="sc">!</span><span class="fu">is.na</span>(unemp_rate), <span class="sc">!</span><span class="fu">is.na</span>(median_income))</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>tract_2013_wide <span class="ot">&lt;-</span> <span class="fu">widen_and_rate</span>(tract_2013_raw)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>tract_2019_wide <span class="ot">&lt;-</span> <span class="fu">widen_and_rate</span>(tract_2019_raw)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>vars_to_pool <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;poverty_rate&quot;</span>, <span class="st">&quot;unemp_rate&quot;</span>, <span class="st">&quot;median_income&quot;</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>r2013 <span class="ot">&lt;-</span> tract_2013_wide <span class="sc">%&gt;%</span> <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, <span class="fu">all_of</span>(vars_to_pool))</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>r2019 <span class="ot">&lt;-</span> tract_2019_wide <span class="sc">%&gt;%</span> <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, <span class="fu">all_of</span>(vars_to_pool))</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>pooled_stats <span class="ot">&lt;-</span> <span class="fu">map_dfr</span>(vars_to_pool, <span class="cf">function</span>(v) {</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  vals <span class="ot">&lt;-</span> <span class="fu">c</span>(r2013[[v]], r2019[[v]])</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">variable =</span> v, <span class="at">mean =</span> <span class="fu">mean</span>(vals, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">sd =</span> <span class="fu">sd</span>(vals, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>apply_pooled_z <span class="ot">&lt;-</span> <span class="cf">function</span>(df, stats) {</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (v <span class="cf">in</span> stats<span class="sc">$</span>variable) {</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    pm <span class="ot">&lt;-</span> stats<span class="sc">$</span>mean[stats<span class="sc">$</span>variable <span class="sc">==</span> v]; ps <span class="ot">&lt;-</span> stats<span class="sc">$</span>sd[stats<span class="sc">$</span>variable <span class="sc">==</span> v]</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    df[[<span class="fu">paste0</span>(<span class="st">&quot;z_&quot;</span>, v)]] <span class="ot">&lt;-</span> (df[[v]] <span class="sc">-</span> pm) <span class="sc">/</span> ps</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>  df<span class="sc">$</span>z_median_income <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">*</span> df<span class="sc">$</span>z_median_income</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>  df<span class="sc">$</span>hardship_index <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    df[, <span class="fu">c</span>(<span class="st">&quot;z_poverty_rate&quot;</span>, <span class="st">&quot;z_unemp_rate&quot;</span>, <span class="st">&quot;z_median_income&quot;</span>)], <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(df)</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>r2013_z <span class="ot">&lt;-</span> <span class="fu">apply_pooled_z</span>(r2013, pooled_stats)</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>r2019_z <span class="ot">&lt;-</span> <span class="fu">apply_pooled_z</span>(r2019, pooled_stats)</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>change_df <span class="ot">&lt;-</span> tract_2019_wide <span class="sc">%&gt;%</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(GEOID, NAME) <span class="sc">%&gt;%</span></span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(r2019_z <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, <span class="at">hardship_2019 =</span> hardship_index), <span class="at">by =</span> <span class="st">&quot;GEOID&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(r2013_z <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, <span class="at">hardship_2013 =</span> hardship_index), <span class="at">by =</span> <span class="st">&quot;GEOID&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">hardship_change =</span> hardship_2019 <span class="sc">-</span> hardship_2013)</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Tracts:&quot;</span>, <span class="fu">nrow</span>(change_df), <span class="st">&quot;| Mean change:&quot;</span>, <span class="fu">round</span>(<span class="fu">mean</span>(change_df<span class="sc">$</span>hardship_change), <span class="dv">3</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Tracts: 904 | Mean change: -0.483 </code></pre>
 </div>
@@ -3259,34 +3267,34 @@ vertical-align: -.125em;
 <section id="step-2-spatial-weights" class="level1">
 <h1>Step 2: Spatial Weights</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>nb <span class="ot">&lt;-</span> <span class="fu">poly2nb</span>(change_df, <span class="at">queen =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>w  <span class="ot">&lt;-</span> <span class="fu">nb2listw</span>(nb, <span class="at">style =</span> <span class="st">&quot;W&quot;</span>, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>nb <span class="ot">&lt;-</span> <span class="fu">poly2nb</span>(change_df, <span class="at">queen =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>w  <span class="ot">&lt;-</span> <span class="fu">nb2listw</span>(nb, <span class="at">style =</span> <span class="st">&quot;W&quot;</span>, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="step-3-lisa-2013-and-2019" class="level1">
 <h1>Step 3: LISA — 2013 and 2019</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>classify_lisa <span class="ot">&lt;-</span> <span class="cf">function</span>(x, w, <span class="at">p_thresh =</span> <span class="fl">0.05</span>) {</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  lisa <span class="ot">&lt;-</span> <span class="fu">localmoran</span>(x, w, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  z    <span class="ot">&lt;-</span> <span class="fu">scale</span>(x)[, <span class="dv">1</span>]</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  wz   <span class="ot">&lt;-</span> <span class="fu">lag.listw</span>(w, z, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  p    <span class="ot">&lt;-</span> lisa[, <span class="st">&quot;Pr(z != E(Ii))&quot;</span>]</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">case_when</span>(</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    z <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> wz <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> p <span class="sc">&lt;</span> p_thresh <span class="sc">~</span> <span class="st">&quot;HH&quot;</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    z <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> wz <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> p <span class="sc">&lt;</span> p_thresh <span class="sc">~</span> <span class="st">&quot;LL&quot;</span>,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    z <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> wz <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> p <span class="sc">&lt;</span> p_thresh <span class="sc">~</span> <span class="st">&quot;HL&quot;</span>,</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    z <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> wz <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> p <span class="sc">&lt;</span> p_thresh <span class="sc">~</span> <span class="st">&quot;LH&quot;</span>,</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">&quot;NS&quot;</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>change_df <span class="ot">&lt;-</span> change_df <span class="sc">%&gt;%</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">lisa_2013 =</span> <span class="fu">classify_lisa</span>(hardship_2013, w),</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">lisa_2019 =</span> <span class="fu">classify_lisa</span>(hardship_2019, w)</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;2013 LISA:</span><span class="sc">\n</span><span class="st">&quot;</span>); <span class="fu">print</span>(<span class="fu">table</span>(change_df<span class="sc">$</span>lisa_2013))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>classify_lisa <span class="ot">&lt;-</span> <span class="cf">function</span>(x, w, <span class="at">p_thresh =</span> <span class="fl">0.05</span>) {</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  lisa <span class="ot">&lt;-</span> <span class="fu">localmoran</span>(x, w, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  z    <span class="ot">&lt;-</span> <span class="fu">scale</span>(x)[, <span class="dv">1</span>]</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  wz   <span class="ot">&lt;-</span> <span class="fu">lag.listw</span>(w, z, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  p    <span class="ot">&lt;-</span> lisa[, <span class="st">&quot;Pr(z != E(Ii))&quot;</span>]</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">case_when</span>(</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    z <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> wz <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> p <span class="sc">&lt;</span> p_thresh <span class="sc">~</span> <span class="st">&quot;HH&quot;</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    z <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> wz <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> p <span class="sc">&lt;</span> p_thresh <span class="sc">~</span> <span class="st">&quot;LL&quot;</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    z <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> wz <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> p <span class="sc">&lt;</span> p_thresh <span class="sc">~</span> <span class="st">&quot;HL&quot;</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    z <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> wz <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> p <span class="sc">&lt;</span> p_thresh <span class="sc">~</span> <span class="st">&quot;LH&quot;</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">&quot;NS&quot;</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>change_df <span class="ot">&lt;-</span> change_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">lisa_2013 =</span> <span class="fu">classify_lisa</span>(hardship_2013, w),</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">lisa_2019 =</span> <span class="fu">classify_lisa</span>(hardship_2019, w)</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;2013 LISA:</span><span class="sc">\n</span><span class="st">&quot;</span>); <span class="fu">print</span>(<span class="fu">table</span>(change_df<span class="sc">$</span>lisa_2013))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>2013 LISA:</code></pre>
 </div>
@@ -3295,7 +3303,7 @@ vertical-align: -.125em;
  HH  HL  LH  LL  NS 
 162   5   5 146 586 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;2019 LISA:</span><span class="sc">\n</span><span class="st">&quot;</span>); <span class="fu">print</span>(<span class="fu">table</span>(change_df<span class="sc">$</span>lisa_2019))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;2019 LISA:</span><span class="sc">\n</span><span class="st">&quot;</span>); <span class="fu">print</span>(<span class="fu">table</span>(change_df<span class="sc">$</span>lisa_2019))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>2019 LISA:</code></pre>
 </div>
@@ -3309,11 +3317,11 @@ vertical-align: -.125em;
 <section id="step-4-transition-matrix" class="level1">
 <h1>Step 4: Transition Matrix</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;── Transition matrix (rows = 2013, columns = 2019) ──</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;── Transition matrix (rows = 2013, columns = 2019) ──</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>── Transition matrix (rows = 2013, columns = 2019) ──</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">table</span>(<span class="st">`</span><span class="at">2013</span><span class="st">`</span> <span class="ot">=</span> change_df<span class="sc">$</span>lisa_2013, <span class="st">`</span><span class="at">2019</span><span class="st">`</span> <span class="ot">=</span> change_df<span class="sc">$</span>lisa_2019))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">table</span>(<span class="st">`</span><span class="at">2013</span><span class="st">`</span> <span class="ot">=</span> change_df<span class="sc">$</span>lisa_2013, <span class="st">`</span><span class="at">2019</span><span class="st">`</span> <span class="ot">=</span> change_df<span class="sc">$</span>lisa_2019))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>    2019
 2013  HH  HL  LH  LL  NS
@@ -3323,14 +3331,14 @@ vertical-align: -.125em;
   LL   0   1   0 120  25
   NS  23   1   1  26 535</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">── Row proportions ──</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">── Row proportions ──</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ── Row proportions ──</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">round</span>(<span class="fu">prop.table</span>(</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">table</span>(<span class="st">`</span><span class="at">2013</span><span class="st">`</span> <span class="ot">=</span> change_df<span class="sc">$</span>lisa_2013, <span class="st">`</span><span class="at">2019</span><span class="st">`</span> <span class="ot">=</span> change_df<span class="sc">$</span>lisa_2019),</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">margin =</span> <span class="dv">1</span>) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">round</span>(<span class="fu">prop.table</span>(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">table</span>(<span class="st">`</span><span class="at">2013</span><span class="st">`</span> <span class="ot">=</span> change_df<span class="sc">$</span>lisa_2013, <span class="st">`</span><span class="at">2019</span><span class="st">`</span> <span class="ot">=</span> change_df<span class="sc">$</span>lisa_2019),</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">margin =</span> <span class="dv">1</span>) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>    2019
 2013   HH   HL   LH   LL   NS
@@ -3345,24 +3353,24 @@ vertical-align: -.125em;
 <section id="step-5-trajectory-classification-and-map" class="level1">
 <h1>Step 5: Trajectory Classification and Map</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>change_df <span class="ot">&lt;-</span> change_df <span class="sc">%&gt;%</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">trajectory =</span> <span class="fu">case_when</span>(</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    lisa_2013 <span class="sc">==</span> <span class="st">&quot;HH&quot;</span> <span class="sc">&amp;</span> lisa_2019 <span class="sc">==</span> <span class="st">&quot;HH&quot;</span> <span class="sc">~</span> <span class="st">&quot;Persistent HH&quot;</span>,</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    lisa_2013 <span class="sc">!=</span> <span class="st">&quot;HH&quot;</span> <span class="sc">&amp;</span> lisa_2019 <span class="sc">==</span> <span class="st">&quot;HH&quot;</span> <span class="sc">~</span> <span class="st">&quot;Emerging HH&quot;</span>,</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    lisa_2013 <span class="sc">==</span> <span class="st">&quot;HH&quot;</span> <span class="sc">&amp;</span> lisa_2019 <span class="sc">!=</span> <span class="st">&quot;HH&quot;</span> <span class="sc">~</span> <span class="st">&quot;Dissolving HH&quot;</span>,</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    lisa_2013 <span class="sc">==</span> <span class="st">&quot;LL&quot;</span> <span class="sc">&amp;</span> lisa_2019 <span class="sc">==</span> <span class="st">&quot;LL&quot;</span> <span class="sc">~</span> <span class="st">&quot;Persistent LL&quot;</span>,</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    lisa_2013 <span class="sc">!=</span> <span class="st">&quot;LL&quot;</span> <span class="sc">&amp;</span> lisa_2019 <span class="sc">==</span> <span class="st">&quot;LL&quot;</span> <span class="sc">~</span> <span class="st">&quot;Emerging LL&quot;</span>,</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    lisa_2013 <span class="sc">==</span> <span class="st">&quot;HL&quot;</span> <span class="sc">|</span> lisa_2019 <span class="sc">==</span> <span class="st">&quot;HL&quot;</span> <span class="sc">~</span> <span class="st">&quot;HL Outlier&quot;</span>,</span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">&quot;Stable NS&quot;</span></span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  ))</span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;── Trajectory distribution ──</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>change_df <span class="ot">&lt;-</span> change_df <span class="sc">%&gt;%</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">trajectory =</span> <span class="fu">case_when</span>(</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    lisa_2013 <span class="sc">==</span> <span class="st">&quot;HH&quot;</span> <span class="sc">&amp;</span> lisa_2019 <span class="sc">==</span> <span class="st">&quot;HH&quot;</span> <span class="sc">~</span> <span class="st">&quot;Persistent HH&quot;</span>,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    lisa_2013 <span class="sc">!=</span> <span class="st">&quot;HH&quot;</span> <span class="sc">&amp;</span> lisa_2019 <span class="sc">==</span> <span class="st">&quot;HH&quot;</span> <span class="sc">~</span> <span class="st">&quot;Emerging HH&quot;</span>,</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    lisa_2013 <span class="sc">==</span> <span class="st">&quot;HH&quot;</span> <span class="sc">&amp;</span> lisa_2019 <span class="sc">!=</span> <span class="st">&quot;HH&quot;</span> <span class="sc">~</span> <span class="st">&quot;Dissolving HH&quot;</span>,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    lisa_2013 <span class="sc">==</span> <span class="st">&quot;LL&quot;</span> <span class="sc">&amp;</span> lisa_2019 <span class="sc">==</span> <span class="st">&quot;LL&quot;</span> <span class="sc">~</span> <span class="st">&quot;Persistent LL&quot;</span>,</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    lisa_2013 <span class="sc">!=</span> <span class="st">&quot;LL&quot;</span> <span class="sc">&amp;</span> lisa_2019 <span class="sc">==</span> <span class="st">&quot;LL&quot;</span> <span class="sc">~</span> <span class="st">&quot;Emerging LL&quot;</span>,</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    lisa_2013 <span class="sc">==</span> <span class="st">&quot;HL&quot;</span> <span class="sc">|</span> lisa_2019 <span class="sc">==</span> <span class="st">&quot;HL&quot;</span> <span class="sc">~</span> <span class="st">&quot;HL Outlier&quot;</span>,</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">&quot;Stable NS&quot;</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;── Trajectory distribution ──</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>── Trajectory distribution ──</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>change_df <span class="sc">%&gt;%</span> <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(trajectory, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pct =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> n <span class="sc">/</span> <span class="fu">sum</span>(n), <span class="dv">1</span>)) <span class="sc">%&gt;%</span> <span class="fu">print</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>change_df <span class="sc">%&gt;%</span> <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(trajectory, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pct =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> n <span class="sc">/</span> <span class="fu">sum</span>(n), <span class="dv">1</span>)) <span class="sc">%&gt;%</span> <span class="fu">print</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 7 × 3
   trajectory        n   pct
@@ -3377,21 +3385,21 @@ vertical-align: -.125em;
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>traj_colors <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Persistent HH&quot;</span> <span class="ot">=</span> <span class="st">&quot;#D7191C&quot;</span>, <span class="st">&quot;Emerging HH&quot;</span>   <span class="ot">=</span> <span class="st">&quot;#FDAE61&quot;</span>,</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Dissolving HH&quot;</span> <span class="ot">=</span> <span class="st">&quot;#FEE08B&quot;</span>, <span class="st">&quot;Persistent LL&quot;</span>  <span class="ot">=</span> <span class="st">&quot;#2C7BB6&quot;</span>,</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Emerging LL&quot;</span>   <span class="ot">=</span> <span class="st">&quot;#ABD9E9&quot;</span>, <span class="st">&quot;HL Outlier&quot;</span>     <span class="ot">=</span> <span class="st">&quot;#9E5BB4&quot;</span>,</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Stable NS&quot;</span>     <span class="ot">=</span> <span class="st">&quot;#CCCCCC&quot;</span></span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(change_df) <span class="sc">+</span></span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> trajectory), <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> traj_colors,</span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>                    <span class="at">name =</span> <span class="st">&quot;Trajectory</span><span class="sc">\n</span><span class="st">(2013 → 2019)&quot;</span>) <span class="sc">+</span></span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">&quot;Neighborhood Hardship Trajectories, 2013–2019&quot;</span>,</span>
-<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">&quot;Maricopa County Census Tracts&quot;</span>,</span>
-<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption  =</span> <span class="st">&quot;LISA run on 2013 and 2019 pooled-standardized economic hardship index (queen contiguity, p &lt; 0.05)&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>traj_colors <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Persistent HH&quot;</span> <span class="ot">=</span> <span class="st">&quot;#D7191C&quot;</span>, <span class="st">&quot;Emerging HH&quot;</span>   <span class="ot">=</span> <span class="st">&quot;#FDAE61&quot;</span>,</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Dissolving HH&quot;</span> <span class="ot">=</span> <span class="st">&quot;#FEE08B&quot;</span>, <span class="st">&quot;Persistent LL&quot;</span>  <span class="ot">=</span> <span class="st">&quot;#2C7BB6&quot;</span>,</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Emerging LL&quot;</span>   <span class="ot">=</span> <span class="st">&quot;#ABD9E9&quot;</span>, <span class="st">&quot;HL Outlier&quot;</span>     <span class="ot">=</span> <span class="st">&quot;#9E5BB4&quot;</span>,</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Stable NS&quot;</span>     <span class="ot">=</span> <span class="st">&quot;#CCCCCC&quot;</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(change_df) <span class="sc">+</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> trajectory), <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> traj_colors,</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>                    <span class="at">name =</span> <span class="st">&quot;Trajectory</span><span class="sc">\n</span><span class="st">(2013 → 2019)&quot;</span>) <span class="sc">+</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">&quot;Neighborhood Hardship Trajectories, 2013–2019&quot;</span>,</span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">&quot;Maricopa County Census Tracts&quot;</span>,</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption  =</span> <span class="st">&quot;LISA run on 2013 and 2019 pooled-standardized economic hardship index (queen contiguity, p &lt; 0.05)&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3404,36 +3412,36 @@ vertical-align: -.125em;
 <section id="step-6-space-time-morans-i" class="level1">
 <h1>Step 6: Space-Time Moran’s I</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>moran_chg <span class="ot">&lt;-</span> <span class="fu">moran.mc</span>(change_df<span class="sc">$</span>hardship_change, w, <span class="at">nsim =</span> <span class="dv">999</span>, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Space-Time Moran&#39;s I (on 2013→2019 change score):</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>moran_chg <span class="ot">&lt;-</span> <span class="fu">moran.mc</span>(change_df<span class="sc">$</span>hardship_change, w, <span class="at">nsim =</span> <span class="dv">999</span>, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Space-Time Moran&#39;s I (on 2013→2019 change score):</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Space-Time Moran&#39;s I (on 2013→2019 change score):</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;  I =&quot;</span>, <span class="fu">round</span>(moran_chg<span class="sc">$</span>statistic, <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;  I =&quot;</span>, <span class="fu">round</span>(moran_chg<span class="sc">$</span>statistic, <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  I = 0.1347 </code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;  p =&quot;</span>, <span class="fu">round</span>(moran_chg<span class="sc">$</span>p.value, <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;  p =&quot;</span>, <span class="fu">round</span>(moran_chg<span class="sc">$</span>p.value, <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  p = 0.001 </code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>z_chg  <span class="ot">&lt;-</span> <span class="fu">scale</span>(change_df<span class="sc">$</span>hardship_change)[, <span class="dv">1</span>]</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>wz_chg <span class="ot">&lt;-</span> <span class="fu">lag.listw</span>(w, z_chg, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">tibble</span>(<span class="at">z =</span> z_chg, <span class="at">wz =</span> wz_chg), <span class="fu">aes</span>(<span class="at">x =</span> z, <span class="at">y =</span> wz)) <span class="sc">+</span></span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">&quot;gray70&quot;</span>) <span class="sc">+</span></span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">&quot;gray70&quot;</span>) <span class="sc">+</span></span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.35</span>, <span class="at">size =</span> <span class="fl">1.2</span>, <span class="at">color =</span> <span class="st">&quot;#8C1D40&quot;</span>) <span class="sc">+</span></span>
-<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">&quot;#FFC627&quot;</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">&quot;Moran Scatterplot: Change Scores (2013 → 2019)&quot;</span>,</span>
-<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="fu">paste0</span>(<span class="st">&quot;I = &quot;</span>, <span class="fu">round</span>(moran_chg<span class="sc">$</span>statistic, <span class="dv">3</span>),</span>
-<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;  |  p = &quot;</span>, <span class="fu">round</span>(moran_chg<span class="sc">$</span>p.value, <span class="dv">3</span>)),</span>
-<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">&quot;Standardized Change&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Spatial Lag of Change&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>z_chg  <span class="ot">&lt;-</span> <span class="fu">scale</span>(change_df<span class="sc">$</span>hardship_change)[, <span class="dv">1</span>]</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>wz_chg <span class="ot">&lt;-</span> <span class="fu">lag.listw</span>(w, z_chg, <span class="at">zero.policy =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">tibble</span>(<span class="at">z =</span> z_chg, <span class="at">wz =</span> wz_chg), <span class="fu">aes</span>(<span class="at">x =</span> z, <span class="at">y =</span> wz)) <span class="sc">+</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">&quot;gray70&quot;</span>) <span class="sc">+</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">&quot;gray70&quot;</span>) <span class="sc">+</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.35</span>, <span class="at">size =</span> <span class="fl">1.2</span>, <span class="at">color =</span> <span class="st">&quot;#8C1D40&quot;</span>) <span class="sc">+</span></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">&quot;#FFC627&quot;</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">&quot;Moran Scatterplot: Change Scores (2013 → 2019)&quot;</span>,</span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="fu">paste0</span>(<span class="st">&quot;I = &quot;</span>, <span class="fu">round</span>(moran_chg<span class="sc">$</span>statistic, <span class="dv">3</span>),</span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;  |  p = &quot;</span>, <span class="fu">round</span>(moran_chg<span class="sc">$</span>p.value, <span class="dv">3</span>)),</span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">&quot;Standardized Change&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Spatial Lag of Change&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3446,41 +3454,48 @@ vertical-align: -.125em;
 <section id="step-7-three-point-trend" class="level1">
 <h1>Step 7: Three-Point Trend</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># year = 2016: 2012–2016 ACS | also uses 2010 TIGER/Line boundaries</span></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>tract_2016_raw <span class="ot">&lt;-</span> <span class="fu">load_or_pull</span>(</span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;../data/maricopa_tracts_2016.rds&quot;</span>,</span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>() <span class="fu">get_acs</span>(</span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">geography =</span> <span class="st">&quot;tract&quot;</span>, <span class="at">variables =</span> hardship_vars,</span>
-<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">state =</span> <span class="st">&quot;AZ&quot;</span>, <span class="at">county =</span> <span class="st">&quot;Maricopa&quot;</span>,</span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> <span class="dv">2016</span>, <span class="at">survey =</span> <span class="st">&quot;acs5&quot;</span>, <span class="at">geometry =</span> <span class="cn">FALSE</span>, <span class="at">progress_bar =</span> <span class="cn">FALSE</span></span>
-<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># year = 2016: 2012–2016 ACS | also uses 2010 TIGER/Line boundaries</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>tract_2016_raw <span class="ot">&lt;-</span> <span class="fu">load_or_pull</span>(</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;../data/maricopa_tracts_2016.rds&quot;</span>,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>() <span class="fu">get_acs</span>(</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">geography =</span> <span class="st">&quot;tract&quot;</span>, <span class="at">variables =</span> hardship_vars,</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">state =</span> <span class="st">&quot;AZ&quot;</span>, <span class="at">county =</span> <span class="st">&quot;Maricopa&quot;</span>,</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> <span class="dv">2016</span>, <span class="at">survey =</span> <span class="st">&quot;acs5&quot;</span>, <span class="at">geometry =</span> <span class="cn">FALSE</span>, <span class="at">progress_bar =</span> <span class="cn">FALSE</span></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>tract_2016_wide <span class="ot">&lt;-</span> <span class="fu">widen_and_rate</span>(tract_2016_raw <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">geometry =</span> <span class="cn">NULL</span>))</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>r2016 <span class="ot">&lt;-</span> tract_2016_wide <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, <span class="fu">all_of</span>(vars_to_pool))</span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>r2016_z <span class="ot">&lt;-</span> <span class="fu">apply_pooled_z</span>(r2016, pooled_stats)</span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>trend_df <span class="ot">&lt;-</span> change_df <span class="sc">%&gt;%</span></span>
-<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(GEOID, hardship_2013, hardship_2019) <span class="sc">%&gt;%</span></span>
-<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(r2016_z <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, <span class="at">hardship_2016 =</span> hardship_index), <span class="at">by =</span> <span class="st">&quot;GEOID&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">trend_type =</span> <span class="fu">case_when</span>(</span>
-<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>      hardship_2013 <span class="sc">&gt;</span> hardship_2016 <span class="sc">&amp;</span> hardship_2016 <span class="sc">&gt;</span> hardship_2019 <span class="sc">~</span> <span class="st">&quot;Consistently improving&quot;</span>,</span>
-<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>      hardship_2013 <span class="sc">&lt;</span> hardship_2016 <span class="sc">&amp;</span> hardship_2016 <span class="sc">&lt;</span> hardship_2019 <span class="sc">~</span> <span class="st">&quot;Consistently worsening&quot;</span>,</span>
-<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>      hardship_2013 <span class="sc">&gt;</span> hardship_2016 <span class="sc">&amp;</span> hardship_2016 <span class="sc">&lt;</span> hardship_2019 <span class="sc">~</span> <span class="st">&quot;V-shaped (improved mid)&quot;</span>,</span>
-<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>      hardship_2013 <span class="sc">&lt;</span> hardship_2016 <span class="sc">&amp;</span> hardship_2016 <span class="sc">&gt;</span> hardship_2019 <span class="sc">~</span> <span class="st">&quot;Inverted-V (worsened mid)&quot;</span>,</span>
-<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">&quot;Flat&quot;</span></span>
-<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;── Three-point trend distribution (2013 | 2016 | 2019) ──</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Offline fallback — run this block instead if the Census API is down ──</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Replace the get_acs() chunk above with these readRDS() calls.</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="co"># All datasets are pre-built and stored in data/ for offline use.</span></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="co"># tract_2016_raw &lt;- readRDS(&quot;../data/maricopa_tracts_2016.rds&quot;)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>tract_2016_wide <span class="ot">&lt;-</span> <span class="fu">widen_and_rate</span>(tract_2016_raw <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">geometry =</span> <span class="cn">NULL</span>))</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>r2016 <span class="ot">&lt;-</span> tract_2016_wide <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, <span class="fu">all_of</span>(vars_to_pool))</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>r2016_z <span class="ot">&lt;-</span> <span class="fu">apply_pooled_z</span>(r2016, pooled_stats)</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>trend_df <span class="ot">&lt;-</span> change_df <span class="sc">%&gt;%</span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(GEOID, hardship_2013, hardship_2019) <span class="sc">%&gt;%</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(r2016_z <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, <span class="at">hardship_2016 =</span> hardship_index), <span class="at">by =</span> <span class="st">&quot;GEOID&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">trend_type =</span> <span class="fu">case_when</span>(</span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>      hardship_2013 <span class="sc">&gt;</span> hardship_2016 <span class="sc">&amp;</span> hardship_2016 <span class="sc">&gt;</span> hardship_2019 <span class="sc">~</span> <span class="st">&quot;Consistently improving&quot;</span>,</span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>      hardship_2013 <span class="sc">&lt;</span> hardship_2016 <span class="sc">&amp;</span> hardship_2016 <span class="sc">&lt;</span> hardship_2019 <span class="sc">~</span> <span class="st">&quot;Consistently worsening&quot;</span>,</span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>      hardship_2013 <span class="sc">&gt;</span> hardship_2016 <span class="sc">&amp;</span> hardship_2016 <span class="sc">&lt;</span> hardship_2019 <span class="sc">~</span> <span class="st">&quot;V-shaped (improved mid)&quot;</span>,</span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>      hardship_2013 <span class="sc">&lt;</span> hardship_2016 <span class="sc">&amp;</span> hardship_2016 <span class="sc">&gt;</span> hardship_2019 <span class="sc">~</span> <span class="st">&quot;Inverted-V (worsened mid)&quot;</span>,</span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">&quot;Flat&quot;</span></span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;── Three-point trend distribution (2013 | 2016 | 2019) ──</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>── Three-point trend distribution (2013 | 2016 | 2019) ──</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>trend_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(trend_type, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pct =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> n <span class="sc">/</span> <span class="fu">sum</span>(n), <span class="dv">1</span>)) <span class="sc">%&gt;%</span> <span class="fu">print</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>trend_df <span class="sc">%&gt;%</span> <span class="fu">count</span>(trend_type, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pct =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> n <span class="sc">/</span> <span class="fu">sum</span>(n), <span class="dv">1</span>)) <span class="sc">%&gt;%</span> <span class="fu">print</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 4 × 3
   trend_type                    n   pct
@@ -3490,25 +3505,25 @@ vertical-align: -.125em;
 3 V-shaped (improved mid)     100  11.1
 4 Consistently worsening       31   3.4</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>change_df <span class="ot">&lt;-</span> change_df <span class="sc">%&gt;%</span></span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(trend_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, trend_type), <span class="at">by =</span> <span class="st">&quot;GEOID&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>change_df <span class="ot">&lt;-</span> change_df <span class="sc">%&gt;%</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(trend_df <span class="sc">%&gt;%</span> <span class="fu">select</span>(GEOID, trend_type), <span class="at">by =</span> <span class="st">&quot;GEOID&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>trend_colors <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Consistently improving&quot;</span> <span class="ot">=</span> <span class="st">&quot;#2166AC&quot;</span>,</span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Consistently worsening&quot;</span> <span class="ot">=</span> <span class="st">&quot;#D7191C&quot;</span>,</span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;V-shaped (improved mid)&quot;</span>               <span class="ot">=</span> <span class="st">&quot;#74ADD1&quot;</span>,</span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Inverted-V (worsened mid)&quot;</span>             <span class="ot">=</span> <span class="st">&quot;#F46D43&quot;</span>,</span>
-<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Flat&quot;</span>                   <span class="ot">=</span> <span class="st">&quot;#CCCCCC&quot;</span></span>
-<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(change_df) <span class="sc">+</span></span>
-<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> trend_type), <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
-<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> trend_colors, <span class="at">na.value =</span> <span class="st">&quot;#EEEEEE&quot;</span>,</span>
-<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>                    <span class="at">name =</span> <span class="st">&quot;Trend (2013|2016|2019)&quot;</span>) <span class="sc">+</span></span>
-<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
-<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">&quot;Three-Point Hardship Trend (2013 | 2016 | 2019)&quot;</span>,</span>
-<span id="cb40-15"><a href="#cb40-15" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">&quot;Maricopa County Census Tracts&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>trend_colors <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Consistently improving&quot;</span> <span class="ot">=</span> <span class="st">&quot;#2166AC&quot;</span>,</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Consistently worsening&quot;</span> <span class="ot">=</span> <span class="st">&quot;#D7191C&quot;</span>,</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;V-shaped (improved mid)&quot;</span>               <span class="ot">=</span> <span class="st">&quot;#74ADD1&quot;</span>,</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Inverted-V (worsened mid)&quot;</span>             <span class="ot">=</span> <span class="st">&quot;#F46D43&quot;</span>,</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Flat&quot;</span>                   <span class="ot">=</span> <span class="st">&quot;#CCCCCC&quot;</span></span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(change_df) <span class="sc">+</span></span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">fill =</span> trend_type), <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> trend_colors, <span class="at">na.value =</span> <span class="st">&quot;#EEEEEE&quot;</span>,</span>
+<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a>                    <span class="at">name =</span> <span class="st">&quot;Trend (2013|2016|2019)&quot;</span>) <span class="sc">+</span></span>
+<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">&quot;Three-Point Hardship Trend (2013 | 2016 | 2019)&quot;</span>,</span>
+<span id="cb42-15"><a href="#cb42-15" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">&quot;Maricopa County Census Tracts&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3538,13 +3553,13 @@ vertical-align: -.125em;
 <h2 class="anchored" data-anchor-id="q2-modify-stricter-significance-threshold-p-0.01">Q2 — Modify: Stricter Significance Threshold (p &lt; 0.01)</h2>
 <p><strong>Rerun the LISA classification using p &lt; 0.01 instead of p &lt; 0.05. The <code>classify_lisa()</code> function in Step 3 accepts a <code>p_thresh</code> argument — use it here. Reclassify trajectories, produce the trajectory map at p &lt; 0.01, and write a paragraph comparing it to the p &lt; 0.05 map.</strong></p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE — rerun classify_lisa() with p_thresh = 0.01</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE — rerun classify_lisa() with p_thresh = 0.01</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE — reclassify trajectories with strict LISA</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE — reclassify trajectories with strict LISA</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE — trajectory map at p &lt; 0.01</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># YOUR CODE HERE — trajectory map at p &lt; 0.01</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p><em>Comparison paragraph (min. 100 words): How does the p &lt; 0.01 trajectory map differ from the p &lt; 0.05 map? Which trajectory categories shrink the most? What does this tell you about multiple testing and the reliability of hot spot classifications?</em></p>
 <p><em>YOUR ANSWER HERE</em></p>
