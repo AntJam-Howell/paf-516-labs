@@ -82,37 +82,7 @@ library(spdep)
 
 **Rerun the temporal change analysis at the Arizona statewide tract level (`geography = "tract"`, `state = "AZ"`, no county filter) for both 2013 and 2019. Produce: (a) the pooled standardization, (b) the change scores, (c) the side-by-side three-panel map. Show complete code and output.**
 
-```{r}
-#| label: q2-pull-2013
-# YOUR CODE HERE
-```
-
-```{r}
-#| label: q2-pull-2019
-# YOUR CODE HERE
-```
-
-```{r}
-#| label: q2-widen
-# YOUR CODE HERE
-```
-
-```{r}
-#| label: q2-pooled
-# YOUR CODE HERE
-```
-
-```{r}
-#| label: q2-join
-# YOUR CODE HERE
-```
-
-```{r}
-#| label: q2-sidebyside
-#| fig-width: 16
-#| fig-height: 6
-# YOUR CODE HERE
-```
+Fill in the scaffold chunks labeled `q2-...` at the end of this document, then re-knit.
 
 
 ## Q3 — Interpret: Maricopa vs. Arizona Statewide {.question}
@@ -430,4 +400,42 @@ ggplot(change_df) +
   labs(title    = "Economic Hardship Change (2013 → 2019) with Hot Spots Outlined",
        subtitle = "Black outline = LISA HH hot spot (2019)",
        caption  = "Blue = improved | Red = worsened | Black = hot spot boundary")
+```
+
+
+---
+
+# Question 2: Student Modify Code
+
+
+```{r}
+#| label: q2-pull-2013
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-pull-2019
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-widen
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-pooled
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-join
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-sidebyside
+#| fig-width: 16
+#| fig-height: 6
+# YOUR CODE HERE
 ```

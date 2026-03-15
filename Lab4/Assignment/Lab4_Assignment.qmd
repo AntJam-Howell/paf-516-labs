@@ -352,7 +352,7 @@ p1 + p2
 
 ---
 
-# Scaffold Chunks
+# Question 2: Student Modify Code
 
 ```{r}
 #| label: q2-poverty-morans

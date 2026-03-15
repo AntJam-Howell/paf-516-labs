@@ -91,21 +91,7 @@ library(patchwork)
 
 **Rerun the LISA classification using p < 0.01 instead of p < 0.05. The `classify_lisa()` function in Step 3 accepts a `p_thresh` argument — use it here. Reclassify trajectories, produce the trajectory map at p < 0.01, and write a paragraph comparing it to the p < 0.05 map.**
 
-```{r}
-#| label: q2-lisa-strict
-# YOUR CODE HERE — rerun classify_lisa() with p_thresh = 0.01
-```
-
-```{r}
-#| label: q2-trajectory-strict
-# YOUR CODE HERE — reclassify trajectories with strict LISA
-```
-
-```{r}
-#| label: q2-map-strict
-#| fig-height: 9
-# YOUR CODE HERE — trajectory map at p < 0.01
-```
+Fill in the scaffold chunks labeled `q2-...` at the end of this document, then re-knit.
 
 *Comparison paragraph (min. 100 words): How does the p < 0.01 trajectory map differ from the p < 0.05 map? Which trajectory categories shrink the most? What does this tell you about multiple testing and the reliability of hot spot classifications?*
 
@@ -452,3 +438,24 @@ ggplot(change_df) +
        subtitle = "Maricopa County Census Tracts")
 ```
 
+
+---
+
+# Question 2: Student Modify Code
+
+
+```{r}
+#| label: q2-lisa-strict
+# YOUR CODE HERE — rerun classify_lisa() with p_thresh = 0.01
+```
+
+```{r}
+#| label: q2-trajectory-strict
+# YOUR CODE HERE — reclassify trajectories with strict LISA
+```
+
+```{r}
+#| label: q2-map-strict
+#| fig-height: 9
+# YOUR CODE HERE — trajectory map at p < 0.01
+```

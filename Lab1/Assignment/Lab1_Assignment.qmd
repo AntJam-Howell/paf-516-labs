@@ -590,7 +590,7 @@ ggplot(compare_df) +
 
 ---
 
-# Scaffold Chunks
+# Question 2: Student Modify Code
 
 ```{r}
 #| label: q2-pull

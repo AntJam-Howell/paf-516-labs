@@ -441,7 +441,7 @@ ggplot(buf_long,
 
 ---
 
-# Scaffold Chunks
+# Question 2: Student Modify Code
 
 ```{r}
 #| label: q2-fine-bands

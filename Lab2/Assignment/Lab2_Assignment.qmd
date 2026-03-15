@@ -775,9 +775,7 @@ An ICC around 0.5 means roughly half the variance in block group hardship is *be
 
 ---
 
-# Q2 --- Your Code
-
-> Fill in the two chunks below, then re-knit to see your bivariate map. Follow the same `biscale` pattern from Step 3, replacing `pct_minority` with `pct_renter`.
+# Question 2: Student Modify Code
 
 ```{r}
 #| label: q2.a
