@@ -122,6 +122,7 @@ hardship_vars <- c(
 ```{r}
 #| label: step.01-pull
 #| results: hide
+#| eval: false
 
 cbg_raw <- get_acs(
   geography = "block group", variables = hardship_vars,
@@ -132,8 +133,8 @@ cbg_raw <- get_acs(
 
 ```{r}
 #| label: step.01-pull-offline
-#| eval: false
-#| include: false
+#| eval: true
+#| include: true
 # ── Offline fallback — use this chunk instead if the Census API is down ───
 # cbg_raw: Maricopa County block group ACS data (10 hardship variables, long format)
 #   - Geography:  block group
@@ -143,7 +144,7 @@ cbg_raw <- get_acs(
 #   - Used in:    Step 2 (pivot, compute rates, build hardship index → cbg_complete), Steps 3–8
 #
 # Local:
-# cbg_raw <- readRDS("data/cbg_complete.rds")
+cbg_raw <- readRDS("data/cbg_complete.rds")
 #
 # GitHub (if data/ folder not available):
 # cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab3/data/cbg_complete.rds"))

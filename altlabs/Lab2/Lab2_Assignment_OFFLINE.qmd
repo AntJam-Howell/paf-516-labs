@@ -164,6 +164,7 @@ all_vars <- c(hardship_vars, demo_vars)
 ```{r}
 #| label: step.01b
 #| results: hide
+#| eval: false
 
 # Pull ACS 5-year estimates at the block group level for Maricopa County.
 # geometry = TRUE attaches spatial boundaries for mapping.
@@ -194,8 +195,8 @@ cbg_raw <- get_acs(
 
 ```{r}
 #| label: step.01b-offline
-#| eval: false
-#| include: false
+#| eval: true
+#| include: true
 # ── Offline fallback — use this chunk instead if the Census API is down ───
 # cbg_raw: Maricopa County block group ACS data (14 hardship + demographic variables, long format)
 #   - Geography:  block group
@@ -205,7 +206,7 @@ cbg_raw <- get_acs(
 #   - Used in:    Step 1c (pivot, compute rates, build hardship index → cbg), Steps 2–5, Step 7
 #
 # Local:
-# cbg_raw <- readRDS("data/cbg.rds")
+cbg_raw <- readRDS("data/cbg.rds")
 #
 # GitHub (if data/ folder not available):
 # cbg_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab2/data/cbg.rds"))
@@ -552,6 +553,7 @@ you already explored in Step 4 --- that contrast is MAUP in action.
 ```{r}
 #| label: step.06a
 #| results: hide
+#| eval: false
 
 # ── Pull US county-level data ─────────────────────────────────
 # This gives us ~3,200 counties across the entire US.
@@ -578,8 +580,8 @@ county_raw <- get_acs(
 
 ```{r}
 #| label: step.06a-offline
-#| eval: false
-#| include: false
+#| eval: true
+#| include: true
 # ── Offline fallback — use this chunk instead if the Census API is down ───
 # county_raw: US county-level ACS data (10 hardship variables, long format)
 #   - Geography:  county
@@ -589,7 +591,7 @@ county_raw <- get_acs(
 #   - Used in:    Step 6b (build_index → county_df), Steps 6c–6d (interactive county map)
 #
 # Local:
-# county_raw <- readRDS("data/county_df.rds")
+county_raw <- readRDS("data/county_df.rds")
 #
 # GitHub (if data/ folder not available):
 # county_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab2/data/county_df.rds"))
@@ -727,6 +729,7 @@ cat("(Between-tract MS:", round(ms_b, 3), "| Within-tract MS:", round(ms_w, 3), 
 #| label: step.07-maps
 #| fig-width: 14
 #| fig-height: 6
+#| eval: false
 
 # Aggregate block group hardship to tract level (area-weighted mean)
 tract_agg <- cbg_valid |>
@@ -760,8 +763,8 @@ p_cbg + p_tract +
 
 ```{r}
 #| label: step.07-maps-offline
-#| eval: false
-#| include: false
+#| eval: true
+#| include: true
 # ── Offline fallback — use this chunk instead if the Census API is down ───
 # tract_geo: Maricopa County tract boundaries (geometry only, no hardship variables)
 #   - Geography:  tract
@@ -771,7 +774,7 @@ p_cbg + p_tract +
 #   - Used in:    Step 7 ICC aggregation visualization (BG vs tract side-by-side map)
 #
 # Local:
-# tract_geo <- readRDS("data/tract_maricopa_2023_geometry.rds")
+tract_geo <- readRDS("data/tract_maricopa_2023_geometry.rds")
 #
 # GitHub (if data/ folder not available):
 # tract_geo <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab2/data/tract_maricopa_2023_geometry.rds"))

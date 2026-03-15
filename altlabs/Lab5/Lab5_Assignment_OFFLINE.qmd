@@ -85,6 +85,7 @@ hardship_vars <- c(
 ```{r}
 #| label: step.02-pull-2013
 #| results: hide
+#| eval: false
 # 2009–2013 ACS | year = 2013 | 2010 TIGER/Line tract boundaries
 load_or_pull <- function(rds_path, pull_fn) {
   if (file.exists(rds_path)) readRDS(rds_path)
@@ -102,8 +103,8 @@ tract_2013_raw <- load_or_pull(
 
 ```{r}
 #| label: step.02-pull-2013-offline
-#| eval: false
-#| include: false
+#| eval: true
+#| include: true
 # ── Offline fallback — use this chunk instead if the Census API is down ───
 # tract_2013_raw: Maricopa County tract-level ACS data for 3-variable hardship index (2013)
 #   - Geography:  tract
@@ -113,7 +114,7 @@ tract_2013_raw <- load_or_pull(
 #   - Used in:    Step 3 (widen_and_rate), Step 4 (pooled standardization), Step 6 (MOE test)
 #
 # Local:
-# tract_2013_raw <- readRDS("data/maricopa_tracts_2013.rds")
+tract_2013_raw <- readRDS("data/maricopa_tracts_2013.rds")
 #
 # GitHub (if data/ folder not available):
 # tract_2013_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab5/data/maricopa_tracts_2013.rds"))
@@ -122,6 +123,7 @@ tract_2013_raw <- load_or_pull(
 ```{r}
 #| label: step.02-pull-2019
 #| results: hide
+#| eval: false
 # 2015–2019 ACS | year = 2019 | also 2010 TIGER/Line tract boundaries
 tract_2019_raw <- load_or_pull(
   "data/maricopa_tracts_2019.rds",
@@ -135,8 +137,8 @@ tract_2019_raw <- load_or_pull(
 
 ```{r}
 #| label: step.02-pull-2019-offline
-#| eval: false
-#| include: false
+#| eval: true
+#| include: true
 # ── Offline fallback — use this chunk instead if the Census API is down ───
 # tract_2019_raw: Maricopa County tract-level ACS data for 3-variable hardship index (2019)
 #   - Geography:  tract
@@ -146,7 +148,7 @@ tract_2019_raw <- load_or_pull(
 #   - Used in:    Step 3 (widen_and_rate), Step 4 (pooled standardization), Step 5 (change scores), Step 6 (MOE test)
 #
 # Local:
-# tract_2019_raw <- readRDS("data/maricopa_tracts_2019.rds")
+tract_2019_raw <- readRDS("data/maricopa_tracts_2019.rds")
 #
 # GitHub (if data/ folder not available):
 # tract_2019_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab5/data/maricopa_tracts_2019.rds"))

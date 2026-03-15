@@ -121,6 +121,7 @@ We build an **Economic Hardship Index** from 5 computed rates at the Arizona tra
 ```{r}
 #| label: step.01
 #| results: hide
+#| eval: false
 
 hardship_vars <- c(
   pov_below50    = "C17002_002",   # Income-to-poverty ratio under .50
@@ -148,8 +149,8 @@ CenDF <- get_acs(
 
 ```{r}
 #| label: step.01-offline
-#| eval: false
-#| include: false
+#| eval: true
+#| include: true
 # ── Offline fallback — use this chunk instead if the Census API is down ───
 # CenDF: Arizona census tracts, 2019–2023 ACS 5-year estimates
 #   - Geography:  tract
@@ -159,7 +160,7 @@ CenDF <- get_acs(
 #   - Used in:    step.02 (pivot_wider), step.03 (alpha), step.04 (index build)
 #
 # Local:
-# CenDF <- readRDS("data/CenDF_complete_5var.rds")
+CenDF <- readRDS("data/CenDF_complete_5var.rds")
 #
 # GitHub (if data/ folder not available):
 # CenDF <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/CenDF_complete_5var.rds"))
@@ -282,6 +283,7 @@ Pull the same 5 variables at the **county level** for the entire US and map nati
 ```{r}
 #| label: step.05-pull
 #| results: hide
+#| eval: false
 
 county_df <- get_acs(
   geography    = "county",
@@ -295,8 +297,8 @@ county_df <- get_acs(
 
 ```{r}
 #| label: step.05-pull-offline
-#| eval: false
-#| include: false
+#| eval: true
+#| include: true
 # ── Offline fallback — use this chunk instead if the Census API is down ───
 # county_df: US counties, 2019–2023 ACS 5-year estimates
 #   - Geography:  county
@@ -306,7 +308,7 @@ county_df <- get_acs(
 #   - Used in:    step.05-index (pivot_wider, index build), step.05-map (national map)
 #
 # Local:
-# county_df <- readRDS("data/county_complete.rds")
+county_df <- readRDS("data/county_complete.rds")
 #
 # GitHub (if data/ folder not available):
 # county_df <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/county_complete.rds"))
@@ -380,6 +382,7 @@ Block groups are the smallest ACS geography, revealing fine-grained variation wi
 ```{r}
 #| label: step.07-pull
 #| results: hide
+#| eval: false
 
 cbg_df <- get_acs(
   geography    = "block group",
@@ -395,8 +398,8 @@ cbg_df <- get_acs(
 
 ```{r}
 #| label: step.07-pull-offline
-#| eval: false
-#| include: false
+#| eval: true
+#| include: true
 # ── Offline fallback — use this chunk instead if the Census API is down ───
 # cbg_df: Maricopa County block groups, 2019–2023 ACS 5-year estimates
 #   - Geography:  block group
@@ -406,7 +409,7 @@ cbg_df <- get_acs(
 #   - Used in:    step.07-index (pivot_wider, index build), step.07-map (CBG map), step.08-combine (patchwork)
 #
 # Local:
-# cbg_df <- readRDS("data/cbg_complete.rds")
+cbg_df <- readRDS("data/cbg_complete.rds")
 #
 # GitHub (if data/ folder not available):
 # cbg_df <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/cbg_complete.rds"))
@@ -471,6 +474,7 @@ Adding these five produces a **10-variable enriched index**. The key question: d
 ```{r}
 #| label: step.08-pull
 #| results: hide
+#| eval: false
 
 hardship_vars_10 <- c(
   # ── Original 5 variable pairs ──────────────────────────────────────
@@ -500,8 +504,8 @@ CenDF_10 <- get_acs(
 
 ```{r}
 #| label: step.08-pull-offline
-#| eval: false
-#| include: false
+#| eval: true
+#| include: true
 # ── Offline fallback — use this chunk instead if the Census API is down ───
 # CenDF_10: Arizona census tracts, 2019–2023 ACS 5-year, 10-variable enriched index
 #   - Geography:  tract
@@ -511,7 +515,7 @@ CenDF_10 <- get_acs(
 #   - Used in:    step.08-build10 (pivot_wider, enriched index build), step.08-compare (side-by-side map)
 #
 # Local:
-# CenDF_10 <- readRDS("data/CenDF_complete_10var.rds")
+CenDF_10 <- readRDS("data/CenDF_complete_10var.rds")
 #
 # GitHub (if data/ folder not available):
 # CenDF_10 <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/AltLabs/Lab1/data/CenDF_complete_10var.rds"))
@@ -628,6 +632,7 @@ ggplot(compare_df) +
 ```{r}
 #| label: q2-pull
 #| results: hide
+#| eval: false
 
 # YOUR CODE HERE
 # Hint: start from hardship_vars_10 and add:
