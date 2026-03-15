@@ -151,7 +151,7 @@
     <h2>Before You Begin</h2>
 
     <h3>1 &mdash; File and Folder Setup</h3>
-    <p>Create this folder structure <strong>before</strong> downloading anything. Move the downloaded <code>.qmd</code> into <code>PAF516/Lab4/</code> before opening it in RStudio &mdash; the fallback data paths only resolve correctly from inside that folder.</p>
+    <p>Create this folder structure <strong>before</strong> downloading anything. Move the downloaded <code>.qmd</code> into <code>PAF516/Lab4/</code> before opening it in RStudio.</p>
 <pre class="folder">PAF516/
   Lab1/  Lab2/  Lab3/
   Lab4/
@@ -159,7 +159,6 @@
     Lab4_Tutorial.html           &larr; auto-generated when you knit
     Lab4_Assignment_Howell.qmd   &larr; your renamed assignment copy
     Lab4_Assignment_Howell.html  &larr; submit this to Canvas
-    data/                        &larr; fallback .rds files if needed
   Lab5/  ...</pre>
 
     <h3>2 &mdash; Install Packages (Run Once)</h3>
@@ -186,10 +185,6 @@
       <li>In the RStudio console run: <code>census_api_key("YOUR_KEY_HERE", install = TRUE)</code></li>
       <li>Restart R: Session &rarr; Restart R</li>
     </ol></div>
-    <div class="callout tip">
-      <div class="callout-title">No API key? Use the fallback data.</div>
-      The <code>fallback-data</code> chunk at the top of the tutorial has a pre-built <code>.rds</code> file hosted on GitHub. Uncomment the Option B line and skip the <code>get_acs()</code> call in Step 1.
-    </div>
   </div>
 
   <!-- RUNNING THE LAB -->
@@ -236,10 +231,6 @@
         Download Lab4_Tutorial.qmd
       </a>
       <p class="note">Right-click &rarr; Save Link As. Save directly to your <code>PAF516/Lab4/</code> folder. Do not open in the browser.</p>
-      <p class="note" style="margin-top:14px;"><strong style="color:#e6edf3;">Fallback data file</strong> (if Census API is unavailable &mdash; save to <code>PAF516/Lab4/data/</code>):</p>
-      <ul>
-        <li><a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab4/data/cbg_hardship_maricopa_2023.rds">cbg_hardship_maricopa_2023.rds</a></li>
-      </ul>
     </div>
   </div>
 

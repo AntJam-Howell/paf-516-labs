@@ -152,7 +152,7 @@
     <h2>Before You Begin</h2>
 
     <h3>1 &mdash; File and Folder Setup</h3>
-    <p>Create this folder structure <strong>before</strong> downloading anything. Move the downloaded <code>.qmd</code> into <code>PAF516/Lab5/</code> before opening it in RStudio &mdash; the fallback data paths only resolve correctly from inside that folder.</p>
+    <p>Create this folder structure <strong>before</strong> downloading anything. Move the downloaded <code>.qmd</code> into <code>PAF516/Lab5/</code> before opening it in RStudio.</p>
 <pre class="folder">PAF516/
   Lab1/  Lab2/  Lab3/  Lab4/
   Lab5/
@@ -160,7 +160,6 @@
     Lab5_Tutorial.html           &larr; auto-generated when you knit
     Lab5_Assignment_Howell.qmd   &larr; your renamed assignment copy
     Lab5_Assignment_Howell.html  &larr; submit this to Canvas
-    data/                        &larr; fallback .rds files if needed
   Lab6/  ...</pre>
 
     <h3>2 &mdash; Install Packages (Run Once)</h3>
@@ -187,10 +186,6 @@
       <li>In the RStudio console run: <code>census_api_key("YOUR_KEY_HERE", install = TRUE)</code></li>
       <li>Restart R: Session &rarr; Restart R</li>
     </ol></div>
-    <div class="callout tip">
-      <div class="callout-title">No API key? Use the fallback data.</div>
-      Fallback <code>.rds</code> files are available from the download section below. Save them to <code>PAF516/Lab5/data/</code> and uncomment the fallback lines in the QMD.
-    </div>
   </div>
 
   <!-- RUNNING THE LAB -->

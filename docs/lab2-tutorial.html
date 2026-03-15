@@ -154,7 +154,7 @@
     <h2>Before You Begin</h2>
 
     <h3>1 &mdash; File and Folder Setup</h3>
-    <p>Create this folder structure <strong>before</strong> downloading anything. Move the downloaded <code>.qmd</code> into <code>PAF516/Lab2/</code> before opening it in RStudio &mdash; the fallback data paths only resolve correctly from inside that folder.</p>
+    <p>Create this folder structure <strong>before</strong> downloading anything. Move the downloaded <code>.qmd</code> into <code>PAF516/Lab2/</code> before opening it in RStudio.</p>
 <pre class="folder">PAF516/
   Lab1/  ...
   Lab2/
@@ -162,7 +162,6 @@
     Lab2_Tutorial.html           &larr; auto-generated when you knit
     Lab2_Assignment_Howell.qmd   &larr; your renamed assignment copy
     Lab2_Assignment_Howell.html  &larr; submit this to Canvas
-    data/                        &larr; fallback .rds files if needed
   Lab3/  Lab4/  ...</pre>
 
     <h3>2 &mdash; Install Packages (Run Once)</h3>
@@ -189,10 +188,6 @@
       <li>In the RStudio console run: <code>census_api_key("YOUR_KEY_HERE", install = TRUE)</code></li>
       <li>Restart R: Session &rarr; Restart R</li>
     </ol></div>
-    <div class="callout tip">
-      <div class="callout-title">No API key? Use the fallback data.</div>
-      The <code>fallback-data</code> chunk at the top of the tutorial has pre-built <code>.rds</code> files hosted on GitHub. Uncomment the Option B lines and skip the <code>get_acs()</code> calls in Steps 1b and 4a.
-    </div>
   </div>
 
   <!-- RUNNING THE LAB -->
@@ -238,12 +233,6 @@
         Download Lab2_Tutorial.qmd
       </a>
       <p class="note">Right-click &rarr; Save Link As. Save directly to your <code>PAF516/Lab2/</code> folder. Do not open in the browser.</p>
-      <p class="note" style="margin-top:14px;"><strong style="color:#e6edf3;">Fallback data files</strong> (if Census API is unavailable &mdash; save to <code>PAF516/Lab2/data/</code>):</p>
-      <ul>
-        <li><a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/cbg_extended_2023.rds">cbg_extended_2023.rds</a></li>
-        <li><a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/county_hardship_2023.rds">county_hardship_2023.rds</a></li>
-        <li><a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab2/data/az_tract_hardship_2023.rds">az_tract_hardship_2023.rds</a></li>
-      </ul>
     </div>
   </div>
 
