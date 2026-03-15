@@ -50,6 +50,82 @@ library(spdep)
 # census_api_key("YOUR KEY GOES HERE")
 ```
 
+::: {.callout-important}
+## Before you begin
+1. **This file contains the same pre-filled code as the tutorial.** Steps 1–9
+   below produce the same output you saw in the tutorial. Knit immediately
+   (Cmd+Shift+K / Ctrl+Shift+K) to see all results before answering.
+2. **The assignment questions are at the top of this document.** Workflow:
+   - **Q1** asks you to interpret the overall direction of hardship change.
+     Knit first, review Steps 1–9 output, then write your answer.
+   - **Q2** asks you to rerun the analysis at the Arizona statewide tract level.
+     Fill in the scaffold chunks labeled `q2-...` at the end of this document,
+     then re-knit.
+   - **Q3** asks you to compare the county and statewide maps and interpret
+     what scale comparison reveals.
+3. Submit both `Lab5_Assignment_YourLastName.qmd` and
+   `Lab5_Assignment_YourLastName.html` to Canvas.
+:::
+
+# Assignment Questions
+
+## Q1 — Interpret: Overall Direction of Change {.question}
+
+**What is the overall direction of hardship change across Maricopa County between 2013 and 2019? Did hardship generally improve or worsen over the post-recession recovery period? Are the 2019 hot spots from Step 9 largely worsening, improving, or stable compared to 2013? What does the significance map tell you about which changes are real vs. sampling noise?**
+
+*Minimum 150 words. Reference specific numbers from the step outputs above (mean change, % significant, % of hot spots that worsened/improved).*
+
+*YOUR ANSWER HERE*
+
+
+## Q2 — Modify: Repeat at Arizona Statewide Tract Level {.question}
+
+**Rerun the temporal change analysis at the Arizona statewide tract level (`geography = "tract"`, `state = "AZ"`, no county filter) for both 2013 and 2019. Produce: (a) the pooled standardization, (b) the change scores, (c) the side-by-side three-panel map. Show complete code and output.**
+
+```{r}
+#| label: q2-pull-2013
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-pull-2019
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-widen
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-pooled
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-join
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-sidebyside
+#| fig-width: 16
+#| fig-height: 6
+# YOUR CODE HERE
+```
+
+
+## Q3 — Interpret: Maricopa vs. Arizona Statewide {.question}
+
+**Compare the Maricopa County tract map (Step 8) to the statewide Arizona tract map (Q2). Does the statewide view reveal regional patterns of change that are hidden at the county level? Where is change most concentrated across Arizona? What does comparing the two scales reveal about the limits of a single-county analysis?**
+
+*Minimum 100 words.*
+
+*YOUR ANSWER HERE*
+
+
+---
+
 # Overview
 
 **Rename this file** `Lab5_Assignment_YourLastName.qmd` before editing.
@@ -355,61 +431,3 @@ ggplot(change_df) +
        subtitle = "Black outline = LISA HH hot spot (2019)",
        caption  = "Blue = improved | Red = worsened | Black = hot spot boundary")
 ```
-
----
-
-# Questions
-
-## Q1 — Interpret: Overall Direction of Change
-
-**What is the overall direction of hardship change across Maricopa County between 2013 and 2019? Did hardship generally improve or worsen over the post-recession recovery period? Are the 2019 hot spots from Step 9 largely worsening, improving, or stable compared to 2013? What does the significance map tell you about which changes are real vs. sampling noise?**
-
-*Minimum 150 words. Reference specific numbers from the step outputs above (mean change, % significant, % of hot spots that worsened/improved).*
-
-*YOUR ANSWER HERE*
-
-
-## Q2 — Modify: Repeat at Arizona Statewide Tract Level
-
-**Rerun the temporal change analysis at the Arizona statewide tract level (`geography = "tract"`, `state = "AZ"`, no county filter) for both 2013 and 2019. Produce: (a) the pooled standardization, (b) the change scores, (c) the side-by-side three-panel map. Show complete code and output.**
-
-```{r}
-#| label: q2-pull-2013
-# YOUR CODE HERE
-```
-
-```{r}
-#| label: q2-pull-2019
-# YOUR CODE HERE
-```
-
-```{r}
-#| label: q2-widen
-# YOUR CODE HERE
-```
-
-```{r}
-#| label: q2-pooled
-# YOUR CODE HERE
-```
-
-```{r}
-#| label: q2-join
-# YOUR CODE HERE
-```
-
-```{r}
-#| label: q2-sidebyside
-#| fig-width: 16
-#| fig-height: 6
-# YOUR CODE HERE
-```
-
-
-## Q3 — Interpret: Maricopa vs. Arizona Statewide
-
-**Compare the Maricopa County tract map (Step 8) to the statewide Arizona tract map (Q2). Does the statewide view reveal regional patterns of change that are hidden at the county level? Where is change most concentrated across Arizona? What does comparing the two scales reveal about the limits of a single-county analysis?**
-
-*Minimum 100 words.*
-
-*YOUR ANSWER HERE*
