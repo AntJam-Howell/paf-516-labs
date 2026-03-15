@@ -1,0 +1,415 @@
+---
+title: "Lab 5 Assignment | PAF 516"
+subtitle: "Temporal Change Analysis — 2013 → 2019"
+format:
+  html:
+    theme: readable
+    highlight-style: tango
+    toc: true
+    self-contained: true
+    number-sections: false
+execute:
+  echo: true
+  warning: false
+  message: false
+  fig-width: 10
+---
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10)
+options(tigris_use_cache = TRUE)
+options(tigris_progress_bar = FALSE)
+```
+
+```{r}
+#| label: packages
+# ── One-time course environment setup ─────────────────────────────────────
+if (!file.exists("~/.paf516_ready")) {
+  if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+  tmp <- tempfile(fileext = ".lock")
+  download.file(
+    url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/renv.lock",
+    destfile = tmp, mode = "wb"
+  )
+  renv::restore(lockfile = tmp, prompt = FALSE)
+  file.create("~/.paf516_ready")
+}
+
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(viridis)
+library(patchwork)
+library(spdep)
+```
+
+```{r}
+#| label: api-key
+# census_api_key("YOUR KEY GOES HERE")
+```
+
+# Overview
+
+**Rename this file** `Lab5_Assignment_YourLastName.qmd` before editing.
+Submit both the `.qmd` and rendered `.html` to Canvas.
+
+**Instructions:**
+
+1. Steps 1–9 (pre-filled) run automatically when you render — review all output before answering.
+2. Q1 requires written interpretation only.
+3. Q2 requires complete R code and output.
+4. Q3 requires written interpretation of your Q2 results.
+
+**Index: 3 variables** — poverty rate (C17002), unemployment rate (B23025), median household income (B19013, reversed). Both years use 2009–2013 and 2015–2019 ACS 5-year estimates, both on 2010 TIGER/Line tract boundaries.
+
+
+# Step 1: Variables
+
+```{r}
+#| label: step.01-vars
+hardship_vars <- c(
+  pov_below50   = "C17002_002",
+  pov_50to99    = "C17002_003",
+  pov_den       = "C17002_001",
+  unemp_num     = "B23025_005",
+  unemp_den     = "B23025_002",
+  median_income = "B19013_001"
+)
+```
+
+
+# Step 2: Pull Data (2013 and 2019)
+
+```{r}
+#| label: step.02-pull-2013
+#| results: hide
+# 2009–2013 ACS | year = 2013 | 2010 TIGER/Line tract boundaries
+load_or_pull <- function(rds_path, pull_fn) {
+  if (file.exists(rds_path)) readRDS(rds_path)
+  else { r <- pull_fn(); dir.create(dirname(rds_path), showWarnings=FALSE, recursive=TRUE); saveRDS(r, rds_path); r }
+}
+tract_2013_raw <- load_or_pull(
+  "data/maricopa_tracts_2013.rds",
+  function() get_acs(
+    geography = "tract", variables = hardship_vars,
+    state = "AZ", county = "Maricopa", year = 2013,
+    survey = "acs5", geometry = TRUE, progress_bar = FALSE
+  )
+)
+```
+
+```{r}
+#| label: step.02-pull-2013-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# tract_2013_raw <- readRDS("data/maricopa_tracts_2013.rds")
+```
+
+```{r}
+#| label: step.02-pull-2019
+#| results: hide
+# 2015–2019 ACS | year = 2019 | also 2010 TIGER/Line tract boundaries
+tract_2019_raw <- load_or_pull(
+  "data/maricopa_tracts_2019.rds",
+  function() get_acs(
+    geography = "tract", variables = hardship_vars,
+    state = "AZ", county = "Maricopa", year = 2019,
+    survey = "acs5", geometry = TRUE, progress_bar = FALSE
+  )
+)
+```
+
+```{r}
+#| label: step.02-pull-2019-offline
+#| eval: false
+# ── Offline fallback — run this block instead if the Census API is down ──
+# Replace the get_acs() chunk above with these readRDS() calls.
+# All datasets are pre-built and stored in data/ for offline use.
+#
+# tract_2019_raw <- readRDS("data/maricopa_tracts_2019.rds")
+```
+
+
+# Step 3: Reshape and Compute Rates
+
+```{r}
+#| label: step.03-widen
+widen_and_rate <- function(df) {
+  df %>%
+    select(-moe) %>%
+    pivot_wider(names_from = variable, values_from = estimate) %>%
+    mutate(
+      poverty_rate = (pov_below50 + pov_50to99) / pov_den,
+      unemp_rate   = unemp_num / unemp_den
+    ) %>%
+    filter(!is.na(poverty_rate), !is.na(unemp_rate), !is.na(median_income))
+}
+
+tract_2013_wide <- widen_and_rate(tract_2013_raw)
+tract_2019_wide <- widen_and_rate(tract_2019_raw)
+
+cat("2013 tracts:", nrow(tract_2013_wide), "| 2019 tracts:", nrow(tract_2019_wide), "\n")
+```
+
+
+# Step 4: Pooled Standardization
+
+```{r}
+#| label: step.04-pooled
+r2013 <- tract_2013_wide %>% st_drop_geometry() %>%
+  select(GEOID, poverty_rate, unemp_rate, median_income)
+r2019 <- tract_2019_wide %>% st_drop_geometry() %>%
+  select(GEOID, poverty_rate, unemp_rate, median_income)
+
+vars_to_pool <- c("poverty_rate", "unemp_rate", "median_income")
+
+# Pooled mean and SD across both years combined
+pooled_stats <- map_dfr(vars_to_pool, function(v) {
+  vals <- c(r2013[[v]], r2019[[v]])
+  tibble(variable = v, mean = mean(vals, na.rm = TRUE), sd = sd(vals, na.rm = TRUE))
+})
+
+apply_pooled_z <- function(df, stats) {
+  for (v in stats$variable) {
+    pm <- stats$mean[stats$variable == v]
+    ps <- stats$sd[stats$variable == v]
+    df[[paste0("z_", v)]] <- (df[[v]] - pm) / ps
+  }
+  df$z_median_income <- -1 * df$z_median_income
+  df$hardship_index <- rowMeans(
+    df[, c("z_poverty_rate", "z_unemp_rate", "z_median_income")],
+    na.rm = TRUE)
+  return(df)
+}
+
+r2013_z <- apply_pooled_z(r2013, pooled_stats)
+r2019_z <- apply_pooled_z(r2019, pooled_stats)
+
+cat("Mean economic hardship index 2013:", round(mean(r2013_z$hardship_index), 3),
+    "  Mean economic hardship index 2019:", round(mean(r2019_z$hardship_index), 3), "\n")
+```
+
+
+# Step 5: Join and Change Scores
+
+```{r}
+#| label: step.05-join
+p2019_sf <- tract_2019_wide %>%
+  select(GEOID, NAME) %>%
+  left_join(r2019_z %>% select(GEOID, hardship_2019 = hardship_index), by = "GEOID")
+
+p2013_tbl <- r2013_z %>%
+  select(GEOID, hardship_2013 = hardship_index)
+
+change_df <- inner_join(p2019_sf, p2013_tbl, by = "GEOID") %>%
+  mutate(hardship_change = hardship_2019 - hardship_2013)
+
+cat("Tracts matched:", nrow(change_df),
+    "| Mean change:", round(mean(change_df$hardship_change), 3), "\n")
+```
+
+
+# Step 6: MOE Significance Test
+
+```{r}
+#| label: step.06-moe
+# Extract poverty MOE from both raw pulls
+moe_2013 <- tract_2013_raw %>%
+  filter(variable %in% c("pov_below50", "pov_50to99", "pov_den")) %>%
+  st_drop_geometry() %>%
+  select(GEOID, variable, estimate, moe) %>%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe))
+
+moe_2019 <- tract_2019_raw %>%
+  filter(variable %in% c("pov_below50", "pov_50to99", "pov_den")) %>%
+  st_drop_geometry() %>%
+  select(GEOID, variable, estimate, moe) %>%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe))
+
+# Compute poverty rate and propagated SE for each year
+compute_pov_se <- function(df) {
+  df %>%
+    mutate(
+      pov_est = (estimate_pov_below50 + estimate_pov_50to99) / estimate_pov_den,
+      pov_moe = sqrt(moe_pov_below50^2 + moe_pov_50to99^2 +
+                     pov_est^2 * moe_pov_den^2) / estimate_pov_den,
+      pov_se  = pov_moe / 1.645
+    ) %>%
+    select(GEOID, pov_est, pov_se)
+}
+
+pov_2013 <- compute_pov_se(moe_2013)
+pov_2019 <- compute_pov_se(moe_2019)
+
+# Z-test: (est_2019 - est_2013) / sqrt(SE_2013^2 + SE_2019^2)
+pov_sig <- inner_join(pov_2013, pov_2019,
+                      by = "GEOID", suffix = c("_2013", "_2019")) %>%
+  mutate(
+    pov_change = pov_est_2019 - pov_est_2013,
+    pov_z      = pov_change / sqrt(pov_se_2013^2 + pov_se_2019^2),
+    sig_change = abs(pov_z) > 1.645
+  )
+
+change_df <- change_df %>%
+  left_join(pov_sig %>% select(GEOID, sig_change), by = "GEOID")
+
+cat("Significant poverty change:", sum(pov_sig$sig_change, na.rm = TRUE),
+    sprintf("(%.1f%%)\n", 100 * mean(pov_sig$sig_change, na.rm = TRUE)))
+```
+
+
+# Step 7: Change Map
+
+```{r}
+#| label: step.07-change-map
+#| fig-height: 8
+lo      <- quantile(change_df$hardship_change, 0.02, na.rm = TRUE)
+hi      <- quantile(change_df$hardship_change, 0.98, na.rm = TRUE)
+max_abs <- max(abs(lo), abs(hi))
+
+change_df <- change_df %>%
+  mutate(change_plot = pmax(pmin(hardship_change, max_abs), -max_abs))
+
+ggplot(change_df) +
+  geom_sf(aes(fill = change_plot), color = NA) +
+  scale_fill_gradient2(
+    low = "#2C7BB6", mid = "white", high = "#D7191C",
+    midpoint = 0, limits = c(-max_abs, max_abs), name = "Economic\nHardship\nChange"
+  ) +
+  theme_void() +
+  labs(title    = "Change in Economic Hardship Index (2013 → 2019)",
+       subtitle = "Maricopa County Census Tracts | Pooled z-score standardization",
+       caption  = "Blue = improved (2013→2019) | Red = worsened (2013→2019)")
+```
+
+
+# Step 8: Side-by-Side Map
+
+```{r}
+#| label: step.08-sidebyside
+#| fig-width: 16
+#| fig-height: 6
+p1 <- ggplot(change_df) +
+  geom_sf(aes(fill = hardship_2013), color = NA) +
+  scale_fill_viridis_c(option = "inferno", direction = -1, name = "Economic\nHardship\nIndex") +
+  theme_void() + labs(title = "Economic Hardship 2013", subtitle = "2009–2013 ACS")
+
+p2 <- ggplot(change_df) +
+  geom_sf(aes(fill = hardship_2019), color = NA) +
+  scale_fill_viridis_c(option = "inferno", direction = -1, name = "Economic\nHardship\nIndex") +
+  theme_void() + labs(title = "Economic Hardship 2019", subtitle = "2015–2019 ACS")
+
+p3 <- ggplot(change_df) +
+  geom_sf(aes(fill = change_plot), color = NA) +
+  scale_fill_gradient2(
+    low = "#2C7BB6", mid = "white", high = "#D7191C",
+    midpoint = 0, limits = c(-max_abs, max_abs), name = "Change"
+  ) +
+  theme_void() + labs(title = "Change (2019 − 2013)")
+
+p1 + p2 + p3 +
+  plot_annotation(title = "Economic Hardship: Post-Recession Decade (2013–2019)",
+                  subtitle = "Maricopa County Census Tracts | ACS 5-Year Estimates")
+```
+
+
+# Step 9: LISA Overlay
+
+```{r}
+#| label: step.09-lisa
+nb   <- poly2nb(change_df, queen = TRUE)
+w    <- nb2listw(nb, style = "W", zero.policy = TRUE)
+lisa <- localmoran(change_df$hardship_2019, w, zero.policy = TRUE)
+
+z_vals  <- scale(change_df$hardship_2019)[, 1]
+wz_vals <- lag.listw(w, z_vals, zero.policy = TRUE)
+p_vals  <- lisa[, "Pr(z != E(Ii))"]
+
+change_df <- change_df %>%
+  mutate(lisa_quad = case_when(
+    z_vals > 0 & wz_vals > 0 & p_vals < 0.05 ~ "HH",
+    z_vals < 0 & wz_vals < 0 & p_vals < 0.05 ~ "LL",
+    z_vals > 0 & wz_vals < 0 & p_vals < 0.05 ~ "HL",
+    z_vals < 0 & wz_vals > 0 & p_vals < 0.05 ~ "LH",
+    TRUE ~ "NS"))
+```
+
+```{r}
+#| label: step.09-overlay
+#| fig-height: 8
+ggplot(change_df) +
+  geom_sf(aes(fill = change_plot), color = NA) +
+  scale_fill_gradient2(
+    low = "#2C7BB6", mid = "white", high = "#D7191C",
+    midpoint = 0, limits = c(-max_abs, max_abs), name = "Economic\nHardship\nChange"
+  ) +
+  geom_sf(data = change_df %>% filter(lisa_quad == "HH"),
+          fill = NA, color = "black", linewidth = 0.5) +
+  theme_void() +
+  labs(title    = "Economic Hardship Change (2013 → 2019) with Hot Spots Outlined",
+       subtitle = "Black outline = LISA HH hot spot (2019)",
+       caption  = "Blue = improved | Red = worsened | Black = hot spot boundary")
+```
+
+---
+
+# Questions
+
+## Q1 — Interpret: Overall Direction of Change
+
+**What is the overall direction of hardship change across Maricopa County between 2013 and 2019? Did hardship generally improve or worsen over the post-recession recovery period? Are the 2019 hot spots from Step 9 largely worsening, improving, or stable compared to 2013? What does the significance map tell you about which changes are real vs. sampling noise?**
+
+*Minimum 150 words. Reference specific numbers from the step outputs above (mean change, % significant, % of hot spots that worsened/improved).*
+
+*YOUR ANSWER HERE*
+
+
+## Q2 — Modify: Repeat at Arizona Statewide Tract Level
+
+**Rerun the temporal change analysis at the Arizona statewide tract level (`geography = "tract"`, `state = "AZ"`, no county filter) for both 2013 and 2019. Produce: (a) the pooled standardization, (b) the change scores, (c) the side-by-side three-panel map. Show complete code and output.**
+
+```{r}
+#| label: q2-pull-2013
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-pull-2019
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-widen
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-pooled
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-join
+# YOUR CODE HERE
+```
+
+```{r}
+#| label: q2-sidebyside
+#| fig-width: 16
+#| fig-height: 6
+# YOUR CODE HERE
+```
+
+
+## Q3 — Interpret: Maricopa vs. Arizona Statewide
+
+**Compare the Maricopa County tract map (Step 8) to the statewide Arizona tract map (Q2). Does the statewide view reveal regional patterns of change that are hidden at the county level? Where is change most concentrated across Arizona? What does comparing the two scales reveal about the limits of a single-county analysis?**
+
+*Minimum 100 words.*
+
+*YOUR ANSWER HERE*
