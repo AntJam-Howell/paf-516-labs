@@ -338,10 +338,9 @@ az_counties <- county_2023 %>%
 
 ## Column {width=55%}
 
-### Row {height=55%}
-
 ```{r}
 #| label: map-national
+#| title: "Economic Hardship Across U.S. Counties"
 county_map <- county_2023 %>%
   filter(!is.na(hardship_index)) %>%
   st_simplify(preserveTopology = TRUE, dTolerance = 5000) %>%
@@ -380,15 +379,17 @@ maplibre(
   )
 ```
 
-### Row {height=45%}
+## Column {width=45%}
+
+### Row {height=50%}
 
 ```{r}
 #| label: table-az-counties
+#| title: "Arizona Counties — Economic Hardship Rankings"
 az_counties %>%
   DT::datatable(
     options = list(pageLength = 8, dom = "tp"),
-    rownames = FALSE,
-    caption = "Arizona Counties — Economic Hardship Rankings"
+    rownames = FALSE
   ) %>%
   DT::formatStyle(
     columns = "County",
@@ -397,54 +398,12 @@ az_counties %>%
   )
 ```
 
-## Column {width=45%}
-
-::: {.card}
-### Highest Economic Hardship: Arizona Counties
-
-```{r}
-#| label: card-az-top
-#| output: asis
-az_top <- az_counties %>% slice(1)
-cat(glue::glue(
-  '<p style="font-size:1.4rem;font-weight:900;color:#db2b27;margin:4px 0">
-  {az_top$County}</p>
-  <p style="font-size:0.88rem;color:#555;margin:2px 0">
-  Economic Hardship Index: <strong>{az_top$Hardship}</strong> &nbsp;|&nbsp;
-  US Rank: <strong>#{az_top$`US Rank`} of {n_counties}</strong></p>
-  <p style="font-size:0.82rem;color:#767676;margin-top:8px;font-style:italic">
-  [Your interpretation here — what drives hardship in this county?]</p>'
-))
-```
-
-:::
-
-::: {.card}
-### Lowest Economic Hardship: Arizona Counties
-
-```{r}
-#| label: card-az-bottom
-#| output: asis
-az_bottom <- az_counties %>% slice(n())
-cat(glue::glue(
-  '<p style="font-size:1.4rem;font-weight:900;color:#1696d2;margin:4px 0">
-  {az_bottom$County}</p>
-  <p style="font-size:0.88rem;color:#555;margin:2px 0">
-  Economic Hardship Index: <strong>{az_bottom$Hardship}</strong> &nbsp;|&nbsp;
-  US Rank: <strong>#{az_bottom$`US Rank`} of {n_counties}</strong></p>
-  <p style="font-size:0.82rem;color:#767676;margin-top:8px;font-style:italic">
-  [Your interpretation here — what explains lower hardship in this county?]</p>'
-))
-```
-
-:::
-
-::: {.card}
-### All Arizona Counties vs. U.S. Extremes
+### Row {height=50%}
 
 ```{r}
 #| label: card-dot-compare
-#| fig-height: 7
+#| title: "All Arizona Counties vs. U.S. Extremes"
+#| fig-height: 5
 
 # Top 5 worst hardship nationally
 top5_us <- county_2023 %>%
@@ -535,21 +494,6 @@ ggplot(compare_df,
     caption  = "ACS 2019–2023 5-Year Estimates"
   )
 ```
-
-```{r}
-#| label: card-dot-text
-#| output: asis
-cat('<p style="font-size:0.82rem;color:#333;margin-top:8px;line-height:1.5">
-<strong>[Your interpretation here]</strong> Apache County is Arizona\'s
-most economically distressed county, facing barriers including [describe].
-Maricopa County has the lowest measured economic hardship among Arizona
-counties, driven by [describe factors]. However, there is significant
-variation <em>within</em> Maricopa County — the spatial concentration
-of that hardship is what we examine in the following panels.
-</p>')
-```
-
-:::
 
 # Local Hardship
 
