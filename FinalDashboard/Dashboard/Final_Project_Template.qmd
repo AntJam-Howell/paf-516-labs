@@ -455,7 +455,7 @@ list(title="Cold Spot Tracts (LL)", value=n_ll, icon="snow", color="primary")
 ```{r}
 #| label: vb-moran
 #| content: valuebox
-list(title="Global Moran's I", value=round(moran_global$estimate[1],3),
+list(title="Global Moran's I", value=round(unname(moran_global$estimate[1]),3),
      icon="diagram-3", color="secondary")
 ```
 
