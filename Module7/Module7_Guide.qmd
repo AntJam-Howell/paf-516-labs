@@ -26,7 +26,7 @@ execute:
 ::: {.section-box}
 ## Module Overview and Objectives
 
-Over the past six modules you have built a complete spatial analytics pipeline: measuring neighborhood hardship (Lab 1), visualizing it with professional cartography (Lab 2), enriching it with external spatial data (Lab 3), testing for statistically significant clusters (Lab 4), tracking change over time (Lab 5), and synthesizing your findings in a policy brief (Lab 6). In this final module you bring everything together in an **interactive Quarto dashboard** designed for a policy audience.
+Over the past six modules you have built a complete spatial analytics pipeline: measuring economic hardship (Lab 1), visualizing it with professional cartography (Lab 2), enriching it with external spatial data (Lab 3), testing for statistically significant clusters (Lab 4), tracking change over time (Lab 5), and analyzing spatio-temporal trajectories (Lab 6). In this final module you bring everything together in an **interactive Quarto dashboard** designed for a policy audience.
 
 Dashboards are how spatial analysis reaches decision-makers in practice. A city council member is unlikely to read your .qmd file, but they will explore an interactive map, scan key metrics in value boxes, and read your three targeted recommendations. This module teaches you how to design and build that communication tool.
 
