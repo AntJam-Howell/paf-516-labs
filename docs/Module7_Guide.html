@@ -3063,6 +3063,7 @@ padding: 5px;
 border: 1px solid #d3d3d3;
 padding: 10px;
 margin-top: 10px;
+margin-bottom: 30px;
 width: 98%;
 }
 </style>
@@ -3092,7 +3093,7 @@ width: 98%;
   <li><a href="#section-2-synthesizing-multi-scale-analysis" id="toc-section-2-synthesizing-multi-scale-analysis" class="nav-link" data-scroll-target="#section-2-synthesizing-multi-scale-analysis">Section 2: Synthesizing Multi-Scale Analysis</a>
   <ul class="collapse">
   <li><a href="#the-scale-hierarchy" id="toc-the-scale-hierarchy" class="nav-link" data-scroll-target="#the-scale-hierarchy">The Scale Hierarchy</a></li>
-  <li><a href="#the-hardship-index" id="toc-the-hardship-index" class="nav-link" data-scroll-target="#the-hardship-index">The Hardship Index</a></li>
+  <li><a href="#the-economic-hardship-index" id="toc-the-economic-hardship-index" class="nav-link" data-scroll-target="#the-economic-hardship-index">The Economic Hardship Index</a></li>
   </ul></li>
   <li><a href="#section-3-interactive-visualization-with-mapgl" id="toc-section-3-interactive-visualization-with-mapgl" class="nav-link" data-scroll-target="#section-3-interactive-visualization-with-mapgl">Section 3: Interactive Visualization with mapgl</a>
   <ul class="collapse">
@@ -3195,13 +3196,13 @@ width: 98%;
 <tbody>
 <tr class="odd">
 <td><strong>National Context</strong></td>
-<td>Where does Maricopa sit in the national picture?</td>
-<td>Static US county choropleth (ggplot + shift_geometry)</td>
+<td>Where does your county sit in the national picture?</td>
+<td>Interactive county choropleth (mapgl)</td>
 </tr>
 <tr class="even">
-<td><strong>Local Patterns</strong></td>
-<td>What does hardship look like at the block group level?</td>
-<td>Interactive mapgl map + data table</td>
+<td><strong>Local Hardship</strong></td>
+<td>What does hardship look like at the tract level?</td>
+<td>Static choropleth map + data table</td>
 </tr>
 <tr class="odd">
 <td><strong>Hot Spots</strong></td>
@@ -3209,14 +3210,14 @@ width: 98%;
 <td>LISA cluster map + cluster statistics</td>
 </tr>
 <tr class="even">
-<td><strong>Change Over Time</strong></td>
-<td>How has hardship shifted since 2015?</td>
-<td>Diverging change map + trend statistics</td>
+<td><strong>Change &amp; Trajectories</strong></td>
+<td>How has hardship shifted from 2013 to 2019?</td>
+<td>Temporal change map + trajectory classification</td>
 </tr>
 <tr class="odd">
 <td><strong>Policy</strong></td>
 <td>What should decision-makers do?</td>
-<td>Priority areas table + your 3 recommendations</td>
+<td>Your 3 evidence-based recommendations</td>
 </tr>
 </tbody>
 </table>
@@ -3321,8 +3322,8 @@ width: 98%;
 </table>
 <p>Each page builds on the previous. The national map provides context (“hardship exists everywhere but concentrates regionally”). The local map zooms in (“within Maricopa, hardship varies dramatically by block group”). The hot spot map adds statistical rigor (“these specific clusters are statistically significant, not just visual patterns”). The change map adds temporal depth (“these clusters have persisted over 8 years”). The policy page demands action (“given all of this, here is what should be done”).</p>
 </section>
-<section id="the-hardship-index" class="level3">
-<h3 class="anchored" data-anchor-id="the-hardship-index">The Hardship Index</h3>
+<section id="the-economic-hardship-index" class="level3">
+<h3 class="anchored" data-anchor-id="the-economic-hardship-index">The Economic Hardship Index</h3>
 <p>The same five-variable composite index powers every page:</p>
 <ul>
 <li><strong>Poverty rate</strong> (below 100% FPL)</li>
@@ -3473,8 +3474,8 @@ width: 98%;
 <section id="deliverables" class="level3">
 <h3 class="anchored" data-anchor-id="deliverables">Deliverables</h3>
 <ol type="1">
-<li><strong>Final_Project_Template.qmd</strong>: The completed dashboard with your three recommendations written in the Policy page</li>
-<li><strong>Final_Project_Template.html</strong>: The rendered dashboard HTML file</li>
+<li><strong>Final_Project_Template.qmd</strong> — completed with your county and 3 recommendations</li>
+<li><strong>Final_Project_Template.html</strong> — rendered dashboard HTML</li>
 </ol>
 </section>
 <section id="grading-criteria" class="level3">
@@ -3490,13 +3491,13 @@ width: 98%;
 <ol type="1">
 <li>Download the template and save it in your <code>PAF516/FinalProject/</code> folder</li>
 <li>Install your Census API key if you haven’t already: <code>census_api_key(&quot;YOUR_KEY&quot;, install = TRUE)</code></li>
-<li>Run the renv block once to install required packages, then comment it out</li>
+<li>Render the file — the renv block installs required packages automatically on first run</li>
 <li>Render the dashboard to verify it works before writing your recommendations</li>
 <li>Study the National Context, Local Patterns, Hot Spots, and Change Over Time pages</li>
 <li>Write your three recommendations on the Policy page</li>
 <li>Re-render and submit both .qmd and .html to Canvas</li>
 </ol>
-<p><strong>Download:</strong> <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/Assignment/Final_Project_Template.qmd">Final_Project_Template.qmd</a></p>
+<p><strong>Download:</strong> <a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/FinalDashboard/Dashboard/Final_Project_Template.qmd">Final_Project_Template.qmd</a></p>
 </section>
 </section>
 <section id="yellowdig-discussion" class="level2 section-box">

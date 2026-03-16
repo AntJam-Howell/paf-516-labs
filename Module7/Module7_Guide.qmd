@@ -59,11 +59,11 @@ Your dashboard has five pages, each building on the previous:
 
 | Page | Purpose | Key Visualization |
 |---|---|---|
-| **National Context** | Where does Maricopa sit in the national picture? | Static US county choropleth (ggplot + shift_geometry) |
-| **Local Patterns** | What does hardship look like at the block group level? | Interactive mapgl map + data table |
+| **National Context** | Where does your county sit in the national picture? | Interactive county choropleth (mapgl) |
+| **Local Hardship** | What does hardship look like at the tract level? | Static choropleth map + data table |
 | **Hot Spots** | Where are statistically significant clusters? | LISA cluster map + cluster statistics |
-| **Change Over Time** | How has hardship shifted since 2015? | Diverging change map + trend statistics |
-| **Policy** | What should decision-makers do? | Priority areas table + your 3 recommendations |
+| **Change & Trajectories** | How has hardship shifted from 2013 to 2019? | Temporal change map + trajectory classification |
+| **Policy** | What should decision-makers do? | Your 3 evidence-based recommendations |
 
 ### What You Need to Write
 
@@ -254,8 +254,8 @@ For Lab 7, you will complete the Quarto Dashboard template by writing three orig
 
 ### Deliverables
 
-1. **Final_Project_Template.qmd**: The completed dashboard with your three recommendations written in the Policy page
-2. **Final_Project_Template.html**: The rendered dashboard HTML file
+1. **Final_Project_Template.qmd** — completed with your county and 3 recommendations
+2. **Final_Project_Template.html** — rendered dashboard HTML
 
 ### Grading Criteria
 
@@ -273,7 +273,7 @@ For Lab 7, you will complete the Quarto Dashboard template by writing three orig
 6. Write your three recommendations on the Policy page
 7. Re-render and submit both .qmd and .html to Canvas
 
-**Download:** [Final_Project_Template.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab7/Assignment/Final_Project_Template.qmd)
+**Download:** [Final_Project_Template.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/FinalDashboard/Dashboard/Final_Project_Template.qmd)
 :::
 
 ::: {.section-box}
