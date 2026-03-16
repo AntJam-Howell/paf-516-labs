@@ -1,0 +1,373 @@
+---
+title: "Economic Hardship in Maricopa County, AZ"
+subtitle: "A Policy Brief"
+author: "[Your Name]"
+date: today
+format:
+  html:
+    theme: readable
+    toc: false
+    code-fold: true
+    code-summary: "Show code"
+    self-contained: true
+    number-sections: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+::: {.callout-important}
+## Before You Begin
+1. **Rename** this file `Policy_Brief_YourLastName.qmd`.
+2. **Update the county block** (TARGET_STATE, TARGET_COUNTY, TARGET_LABEL).
+   This controls all data pulls and figure titles — no other code changes needed.
+3. **Knit the file** to see your county's results.
+4. **Write your answers** in each [Your answer here] section.
+5. **Submit** both `.qmd` and `.html` to Canvas.
+:::
+
+```{r}
+#| label: setup
+#| include: false
+options(tigris_use_cache = TRUE)
+options(tigris_progress_bar = FALSE)
+set.seed(42)
+```
+
+```{r}
+#| label: packages
+#| include: false
+if (!file.exists("~/.paf516_ready")) {
+  if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+  tmp <- tempfile(fileext = ".lock")
+  download.file(
+    url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/renv.lock",
+    destfile = tmp, mode = "wb"
+  )
+  renv::restore(lockfile = tmp, prompt = FALSE)
+  file.create("~/.paf516_ready")
+}
+library(tidyverse); library(tidycensus); library(sf); library(spdep)
+library(viridis); library(patchwork); library(scales)
+```
+
+```{r}
+#| label: county-config
+TARGET_STATE  <- "AZ"
+TARGET_COUNTY <- "Maricopa"
+TARGET_LABEL  <- "Maricopa County, AZ"
+```
+
+```{r}
+#| label: index-config
+hardship_vars <- c(
+  pov_below50   = "C17002_002",
+  pov_50to99    = "C17002_003",
+  pov_den       = "C17002_001",
+  unemp_num     = "B23025_005",
+  unemp_den     = "B23025_002",
+  median_income = "B19013_001"
+)
+
+build_hardship_index <- function(raw_df) {
+  raw_df %>%
+    select(-moe) %>%
+    pivot_wider(names_from = variable, values_from = estimate) %>%
+    mutate(
+      poverty_rate = (pov_below50 + pov_50to99) / pov_den,
+      unemp_rate   = unemp_num / unemp_den
+    ) %>%
+    filter(!is.na(poverty_rate), !is.na(unemp_rate), !is.na(median_income)) %>%
+    (function(df) {
+      geom <- if (inherits(df, "sf")) st_geometry(df) else NULL
+      tbl  <- st_drop_geometry(df)
+      z_pov  <- as.numeric(scale(tbl$poverty_rate))
+      z_unemp <- as.numeric(scale(tbl$unemp_rate))
+      z_inc  <- -1 * as.numeric(scale(tbl$median_income))
+      tbl$hardship_index <- rowMeans(cbind(z_pov, z_unemp, z_inc), na.rm = TRUE)
+      if (!is.null(geom)) st_sf(tbl, geometry = geom) else tbl
+    })()
+}
+```
+
+```{r}
+#| label: pull-local
+local_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/FinalDashboard/NoAPI/data/maricopa_local_2023_RAW.rds"))
+local_2023 <- build_hardship_index(local_raw)
+```
+
+```{r}
+#| label: pull-temporal
+local_2013_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/FinalDashboard/NoAPI/data/maricopa_tract_2013_RAW.rds"))
+local_2019_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/FinalDashboard/NoAPI/data/maricopa_tract_2019_RAW.rds"))
+local_2016_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/FinalDashboard/NoAPI/data/maricopa_tract_2016_RAW.rds"))
+```
+
+```{r}
+#| label: pooled-std
+widen_and_rate <- function(df) {
+  df %>%
+    select(-moe) %>%
+    pivot_wider(names_from = variable, values_from = estimate) %>%
+    mutate(
+      poverty_rate = (pov_below50 + pov_50to99) / pov_den,
+      unemp_rate   = unemp_num / unemp_den
+    ) %>%
+    filter(!is.na(poverty_rate), !is.na(unemp_rate), !is.na(median_income))
+}
+
+local_2013_wide <- widen_and_rate(local_2013_raw)
+local_2019_wide <- widen_and_rate(local_2019_raw)
+
+r2013 <- local_2013_wide %>% st_drop_geometry() %>%
+  select(GEOID, poverty_rate, unemp_rate, median_income)
+r2019 <- local_2019_wide %>% st_drop_geometry() %>%
+  select(GEOID, poverty_rate, unemp_rate, median_income)
+
+vars_pool <- c("poverty_rate", "unemp_rate", "median_income")
+pooled_stats <- map_dfr(vars_pool, function(v) {
+  vals <- c(r2013[[v]], r2019[[v]])
+  tibble(variable = v, mean = mean(vals, na.rm = TRUE), sd = sd(vals, na.rm = TRUE))
+})
+
+apply_pooled_z <- function(df, stats) {
+  for (v in stats$variable) {
+    df[[paste0("z_", v)]] <- (df[[v]] - stats$mean[stats$variable==v]) /
+                              stats$sd[stats$variable==v]
+  }
+  df$z_median_income <- -1 * df$z_median_income
+  df$hardship_index  <- rowMeans(
+    df[, c("z_poverty_rate","z_unemp_rate","z_median_income")], na.rm = TRUE)
+  df
+}
+
+r2013_z <- apply_pooled_z(r2013, pooled_stats)
+r2019_z <- apply_pooled_z(r2019, pooled_stats)
+
+change_df <- local_2019_wide %>%
+  select(GEOID, NAME) %>%
+  left_join(r2019_z %>% select(GEOID, hardship_2019 = hardship_index), by = "GEOID") %>%
+  inner_join(r2013_z %>% select(GEOID, hardship_2013 = hardship_index), by = "GEOID") %>%
+  mutate(hardship_change = hardship_2019 - hardship_2013)
+```
+
+```{r}
+#| label: lisa-analysis
+nb    <- poly2nb(change_df, queen = TRUE)
+w     <- nb2listw(nb, style = "W", zero.policy = TRUE)
+lisa  <- localmoran(change_df$hardship_2019, w, zero.policy = TRUE)
+z19   <- scale(change_df$hardship_2019)[,1]
+wz19  <- lag.listw(w, z19, zero.policy = TRUE)
+p19   <- lisa[, "Pr(z != E(Ii))"]
+
+change_df <- change_df %>%
+  mutate(lisa_2019 = case_when(
+    z19 > 0 & wz19 > 0 & p19 < 0.05 ~ "HH",
+    z19 < 0 & wz19 < 0 & p19 < 0.05 ~ "LL",
+    z19 > 0 & wz19 < 0 & p19 < 0.05 ~ "HL",
+    z19 < 0 & wz19 > 0 & p19 < 0.05 ~ "LH",
+    TRUE ~ "NS"
+  ))
+
+moran_global <- moran.test(change_df$hardship_2019, w, zero.policy = TRUE)
+n_hh <- sum(change_df$lisa_2019 == "HH", na.rm = TRUE)
+```
+
+```{r}
+#| label: trajectories
+lisa_2013  <- localmoran(change_df$hardship_2013, w, zero.policy = TRUE)
+z13  <- scale(change_df$hardship_2013)[,1]
+wz13 <- lag.listw(w, z13, zero.policy = TRUE)
+p13  <- lisa_2013[, "Pr(z != E(Ii))"]
+
+local_2016_wide <- widen_and_rate(local_2016_raw %>% mutate(geometry = NULL))
+r2016_z <- apply_pooled_z(
+  local_2016_wide %>% select(GEOID, poverty_rate, unemp_rate, median_income),
+  pooled_stats
+)
+
+change_df <- change_df %>%
+  mutate(
+    lisa_2013 = case_when(
+      z13 > 0 & wz13 > 0 & p13 < 0.05 ~ "HH",
+      z13 < 0 & wz13 < 0 & p13 < 0.05 ~ "LL",
+      z13 > 0 & wz13 < 0 & p13 < 0.05 ~ "HL",
+      z13 < 0 & wz13 > 0 & p13 < 0.05 ~ "LH",
+      TRUE ~ "NS"
+    ),
+    trajectory = case_when(
+      lisa_2013 == "HH" & lisa_2019 == "HH" ~ "Persistent HH",
+      lisa_2013 != "HH" & lisa_2019 == "HH" ~ "Emerging HH",
+      lisa_2013 == "HH" & lisa_2019 != "HH" ~ "Dissolving HH",
+      lisa_2013 == "LL" & lisa_2019 == "LL" ~ "Persistent LL",
+      lisa_2013 != "LL" & lisa_2019 == "LL" ~ "Emerging LL",
+      lisa_2013 == "HL" | lisa_2019 == "HL" ~ "HL Outlier",
+      TRUE                                   ~ "Stable NS"
+    )
+  ) %>%
+  left_join(r2016_z %>% select(GEOID, hardship_2016 = hardship_index), by = "GEOID") %>%
+  mutate(trend_type = case_when(
+    hardship_2013 > hardship_2016 & hardship_2016 > hardship_2019 ~ "Consistently improving",
+    hardship_2013 < hardship_2016 & hardship_2016 < hardship_2019 ~ "Consistently worsening",
+    hardship_2013 > hardship_2016 & hardship_2016 < hardship_2019 ~ "V-shaped (improved mid)",
+    hardship_2013 < hardship_2016 & hardship_2016 > hardship_2019 ~ "Inverted-V (worsened mid)",
+    TRUE ~ "Flat / non-monotone"
+  ))
+```
+
+```{r}
+#| label: summary-stats
+traj_colors <- c(
+  "Persistent HH"="#D7191C", "Emerging HH"="#FDAE61", "Dissolving HH"="#FEE08B",
+  "Persistent LL"="#2C7BB6", "Emerging LL"="#ABD9E9", "HL Outlier"="#9E5BB4",
+  "Stable NS"="#CCCCCC"
+)
+lisa_colors <- c("HH"="#D7191C","LL"="#2C7BB6","HL"="#FDAE61","LH"="#ABD9E9","NS"="#CCCCCC")
+
+pct_persist_hh <- round(100 * mean(change_df$trajectory == "Persistent HH", na.rm=TRUE), 1)
+pct_emerg_hh   <- round(100 * mean(change_df$trajectory == "Emerging HH",   na.rm=TRUE), 1)
+pct_dissolving <- round(100 * mean(change_df$trajectory == "Dissolving HH", na.rm=TRUE), 1)
+```
+
+::: {.callout-note}
+## Executive Summary
+**[Your answer here — 3-4 sentences]**
+Name the county. State hardship level. Describe the spatial pattern.
+State your top recommendation.
+:::
+
+## Background
+
+This policy brief examines the spatial distribution and temporal trajectory of economic hardship across census tracts in `r TARGET_LABEL`. The analysis constructs a composite hardship index from three American Community Survey indicators — the poverty rate, the unemployment rate, and median household income (reverse-coded) — standardized and averaged into a single z-score measure. This index identifies neighborhoods where multiple dimensions of economic disadvantage overlap, providing a more nuanced picture than any single indicator alone.
+
+The temporal analysis compares hardship levels in the 2009–2013 and 2015–2019 ACS 5-year windows, spanning the post-recession recovery decade. Using Local Indicators of Spatial Association (LISA), the analysis identifies statistically significant hot spots (clusters of high hardship) and cold spots (clusters of low hardship) at each time point, then classifies each tract's trajectory — persistent, emerging, or dissolving — to reveal where hardship is entrenching, spreading, or receding. A three-point check using the 2012–2016 midpoint distinguishes monotonic trends from V-shaped or inverted-V patterns. *If you selected a different county, review whether these temporal patterns match your local context.*
+
+# Key Findings
+
+## Finding 1 — Where Is Hardship Concentrated?
+
+```{r}
+#| label: fig-lisa
+#| fig-width: 8
+#| fig-height: 6
+ggplot(change_df) +
+  geom_sf(aes(fill = lisa_2019), color = NA) +
+  scale_fill_manual(values = lisa_colors,
+    labels = c("HH" = "Hot Spot (HH)", "LL" = "Cold Spot (LL)",
+               "HL" = "High-Low Outlier", "LH" = "Low-High Outlier",
+               "NS" = "Not Significant"),
+    name = "LISA Cluster\n(2019, p<0.05)") +
+  theme_void(base_size = 11) +
+  labs(title    = paste0("Spatial Hardship Clusters: ", TARGET_LABEL),
+       subtitle = "LISA analysis on ACS 2019 5-Year economic hardship index",
+       caption  = paste0("Global Moran's I = ", round(moran_global$estimate[1], 3),
+                         " (p < 0.001) | Queen contiguity, row-standardized weights"))
+```
+
+How many hot spot tracts? Where are they located? What does the Moran's I statistic tell you about the degree of spatial clustering? Reference specific numbers from the map.
+
+*YOUR ANSWER HERE*
+
+---
+
+## Finding 2 — Which Neighborhoods Are Getting Worse?
+
+```{r}
+#| label: fig-trajectory
+#| fig-width: 8
+#| fig-height: 6
+ggplot(change_df) +
+  geom_sf(aes(fill = trajectory), color = NA) +
+  scale_fill_manual(values = traj_colors,
+    labels = c("Persistent HH" = "Persistent Hot Spot",
+               "Emerging HH"   = "Emerging Hot Spot",
+               "Dissolving HH" = "Dissolving Hot Spot",
+               "Persistent LL" = "Persistent Cold Spot",
+               "Emerging LL"   = "Emerging Cold Spot",
+               "HL Outlier"    = "Spatial Outlier",
+               "Stable NS"     = "No Dominant Pattern"),
+    name = "Trajectory\n(2013→2019)") +
+  theme_void(base_size = 11) +
+  labs(title    = paste0("Neighborhood Hardship Trajectories: ", TARGET_LABEL),
+       subtitle = "LISA cluster transition, 2013–2019 | Pooled z-score standardization",
+       caption  = "Pooled mean/SD across both years — comparable change scores")
+```
+
+What share of tracts are persistent vs. emerging vs. dissolving hot spots? Where are emerging hot spots located? What does the pattern suggest about the direction of change in your county?
+
+*YOUR ANSWER HERE*
+
+---
+
+## Finding 3 — The Hardship Profile
+
+```{r}
+#| label: fig-profile
+#| fig-width: 7
+#| fig-height: 4
+traj_summary <- change_df %>%
+  st_drop_geometry() %>%
+  filter(trajectory != "Stable NS") %>%
+  group_by(trajectory) %>%
+  summarise(mean_hardship = mean(hardship_2019, na.rm = TRUE),
+            n = n(), .groups = "drop") %>%
+  arrange(desc(mean_hardship))
+
+ggplot(traj_summary, aes(x = reorder(trajectory, mean_hardship),
+                          y = mean_hardship, fill = trajectory)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = traj_colors) +
+  coord_flip() +
+  theme_minimal(base_size = 11) +
+  labs(title    = paste0("Mean Hardship by Trajectory Type: ", TARGET_LABEL),
+       subtitle = "Pooled z-score standardized hardship index (2019)",
+       x = NULL, y = "Mean Hardship Index (2019)",
+       caption  = paste0("Excludes Stable NS tracts (n = ",
+                         sum(change_df$trajectory == "Stable NS", na.rm = TRUE), ")"))
+```
+
+Which trajectory type has the highest average hardship level? How do persistent hot spots compare to dissolving ones? What does this tell you about the pace of recovery?
+
+*YOUR ANSWER HERE*
+
+---
+
+# Recommendations
+
+::: {.callout-tip}
+## Recommendation 1 — [TODO: Add a specific policy title]
+**[Your answer here — 2-3 sentences]**
+Ground in Finding 1 (spatial concentration). Name a specific intervention
+type and how many tracts it would target. Name a responsible entity.
+:::
+
+::: {.callout-tip}
+## Recommendation 2 — [TODO: Add a specific policy title]
+**[Your answer here — 2-3 sentences]**
+Ground in Finding 2 (trajectories). Focus on emerging hot spots
+(early intervention) or dissolving hot spots (displacement risk).
+Reference the displacement paradox from Module 5.
+:::
+
+::: {.callout-tip}
+## Recommendation 3 — [TODO: Add a specific policy title]
+**[Your answer here — 2-3 sentences]**
+Ground in Finding 3 (hardship profile). Make a data-monitoring
+recommendation — what should policymakers track, how often, and why?
+:::
+
+---
+
+# Limitations
+
+This analysis relies on ACS 5-year estimates, which carry margins of
+error that can be substantial at the census tract level. The temporal
+comparison (2013–2019) reflects the post-recession recovery decade and
+does not capture COVID-era disruptions. Most importantly: a declining
+hardship index in a tract may reflect genuine improvement for existing
+residents — or it may reflect displacement, with lower-income households
+replaced by higher-income newcomers. Census aggregate statistics cannot
+distinguish these processes. This analysis identifies candidate
+intervention areas; on-the-ground verification is essential before
+resource allocation decisions are made.
