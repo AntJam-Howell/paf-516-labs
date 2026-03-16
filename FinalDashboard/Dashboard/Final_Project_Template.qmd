@@ -377,7 +377,7 @@ maplibre(
 
 ## Column {width=45%}
 
-### Row {height=50%}
+### Row {height=35%}
 
 ```{r}
 #| label: table-az-counties
@@ -394,7 +394,7 @@ az_counties %>%
   )
 ```
 
-### Row {height=50%}
+### Row {height=60%}
 
 ```{r}
 #| label: card-dot-compare
