@@ -219,11 +219,31 @@ change_df <- change_df %>%
 ```{r}
 #| label: summary-stats
 traj_colors <- c(
-  "Persistent HH"="#D7191C", "Emerging HH"="#FDAE61", "Dissolving HH"="#FEE08B",
-  "Persistent LL"="#2C7BB6", "Emerging LL"="#ABD9E9", "HL Outlier"="#9E5BB4",
-  "Stable NS"="#CCCCCC"
+  "Persistent HH"="#db2b27", "Emerging HH"="#fdbf11", "Dissolving HH"="#fdd870",
+  "Persistent LL"="#1696d2", "Emerging LL"="#73bfe2", "HL Outlier"="#ec008b",
+  "Stable NS"="#d2d2d2"
 )
-lisa_colors <- c("HH"="#D7191C","LL"="#2C7BB6","HL"="#FDAE61","LH"="#ABD9E9","NS"="#CCCCCC")
+lisa_colors <- c("HH"="#db2b27","LL"="#1696d2","HL"="#fdbf11","LH"="#73bfe2","NS"="#d2d2d2")
+
+# ── Urban Institute-inspired ggplot theme for dashboard maps ──────
+theme_urbn_dash <- function(base_size = 11) {
+  theme_void(base_size = base_size) +
+  theme(
+    plot.background   = element_rect(fill = "#ffffff", color = NA),
+    panel.background  = element_rect(fill = "#ffffff", color = NA),
+    plot.title        = element_text(color = "#333333", size = base_size + 1,
+                                     face = "bold", margin = margin(b = 3)),
+    plot.subtitle     = element_text(color = "#767676", size = base_size - 1,
+                                     margin = margin(b = 6)),
+    plot.caption      = element_text(color = "#767676", size = base_size - 2,
+                                     hjust = 0, margin = margin(t = 4)),
+    legend.background = element_rect(fill = "#ffffff", color = NA),
+    legend.key        = element_rect(fill = "#ffffff", color = NA),
+    legend.text       = element_text(color = "#333333", size = base_size - 1),
+    legend.title      = element_text(color = "#767676", size = base_size - 1),
+    plot.margin       = margin(8, 8, 8, 8)
+  )
+}
 
 pct_persist_hh <- round(100 * mean(change_df$trajectory == "Persistent HH", na.rm=TRUE), 1)
 pct_emerg_hh   <- round(100 * mean(change_df$trajectory == "Emerging HH",   na.rm=TRUE), 1)
@@ -258,7 +278,7 @@ ggplot(change_df) +
                "HL" = "High-Low Outlier", "LH" = "Low-High Outlier",
                "NS" = "Not Significant"),
     name = "LISA Cluster\n(2019, p<0.05)") +
-  theme_void(base_size = 11) +
+  theme_urbn_dash(base_size = 11) +
   labs(title    = paste0("Spatial Hardship Clusters: ", TARGET_LABEL),
        subtitle = "LISA analysis on ACS 2019 5-Year economic hardship index",
        caption  = paste0("Global Moran's I = ", round(moran_global$estimate[1], 3),
@@ -288,7 +308,7 @@ ggplot(change_df) +
                "HL Outlier"    = "Spatial Outlier",
                "Stable NS"     = "No Dominant Pattern"),
     name = "Trajectory\n(2013→2019)") +
-  theme_void(base_size = 11) +
+  theme_urbn_dash(base_size = 11) +
   labs(title    = paste0("Neighborhood Hardship Trajectories: ", TARGET_LABEL),
        subtitle = "LISA cluster transition, 2013–2019 | Pooled z-score standardization",
        caption  = "Pooled mean/SD across both years — comparable change scores")
