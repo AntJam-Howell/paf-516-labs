@@ -36,7 +36,7 @@ if (!file.exists("~/.paf516_ready")) {
   file.create("~/.paf516_ready")
 }
 library(tidyverse); library(tidycensus); library(sf); library(spdep)
-library(viridis); library(patchwork); library(biscale); library(tigris); library(DT)
+library(viridis); library(patchwork); library(biscale); library(tigris); library(DT); library(mapgl)
 library(scales)
 ```
 
@@ -312,85 +312,185 @@ theme_urbn_dash <- function(base_size = 11) {
     plot.margin       = margin(8, 8, 8, 8)
   )
 }
+
+# ── National context rankings (used by National Context tab) ──────
+us_ranks <- county_2023 %>%
+  st_drop_geometry() %>%
+  filter(!is.na(hardship_index)) %>%
+  mutate(us_rank = rank(-hardship_index, ties.method = "min")) %>%
+  select(GEOID, us_rank)
+
+az_counties <- county_2023 %>%
+  st_drop_geometry() %>%
+  filter(str_detect(NAME, "Arizona")) %>%
+  left_join(us_ranks, by = "GEOID") %>%
+  arrange(desc(hardship_index)) %>%
+  mutate(
+    az_rank  = row_number(),
+    County   = str_remove(NAME, " County, Arizona"),
+    Hardship = round(hardship_index, 3)
+  ) %>%
+  select(`AZ Rank` = az_rank, County, Hardship,
+         `US Rank` = us_rank)
 ```
 
 # National Context
 
-## Column {width=62%}
+## Column {width=55%}
+
+### Row {height=55%}
 
 ```{r}
 #| label: map-national
-county_shifted <- county_2023 %>%
+county_map <- county_2023 %>%
   filter(!is.na(hardship_index)) %>%
-  shift_geometry(position = "outside")
+  st_simplify(preserveTopology = TRUE, dTolerance = 5000) %>%
+  st_transform(4326)
 
-ggplot(county_shifted) +
-  geom_sf(aes(fill = hardship_index), color = NA, linewidth = 0) +
-  scale_fill_viridis_c(
-    option    = "inferno",
-    direction = -1,
-    name      = "Hardship\nIndex",
-    na.value  = "grey80"
-  ) +
-  theme_urbn_dash(base_size = 11) +
-  labs(
-    title    = "Economic Hardship Across U.S. Counties",
-    subtitle = paste0("ACS 2019–2023 | ", TARGET_LABEL,
-                      " highlighted in context"),
-    caption  = "Alaska and Hawaii shown as insets. Puerto Rico and territories excluded."
+maplibre(
+  style = carto_style("dark-matter"),
+  bounds = st_bbox(county_map)
+) |>
+  add_fill_layer(
+    id = "hardship-fill",
+    source = county_map,
+    fill_color = interpolate(
+      column = "hardship_index",
+      values = c(-2, -1, 0, 1, 2),
+      stops  = c("#1696d2", "#73bfe2", "#f5f5f5", "#ec6a5a", "#db2b27")
+    ),
+    fill_opacity = 0.8
+  ) |>
+  add_line_layer(
+    id = "hardship-outline",
+    source = county_map,
+    line_color = "#333333",
+    line_width = 0.2
+  ) |>
+  add_tooltip("NAME", "hardship_index")
+```
+
+### Row {height=45%}
+
+```{r}
+#| label: table-az-counties
+az_counties %>%
+  DT::datatable(
+    options = list(pageLength = 8, dom = "tp"),
+    rownames = FALSE,
+    caption = "Arizona Counties — Economic Hardship Rankings"
+  ) %>%
+  DT::formatStyle(
+    columns = "County",
+    target = "row",
+    backgroundColor = DT::styleEqual(TARGET_COUNTY, "#fffde6")
   )
 ```
 
-## Column {width=38%}
+## Column {width=45%}
+
+::: {.card}
+### Highest Hardship: Arizona Counties
 
 ```{r}
-#| label: vb-counties
-#| content: valuebox
-list(title="Counties Mapped", value=comma(n_counties), icon="map")
+#| label: card-az-top
+#| output: asis
+az_top <- az_counties %>% slice(1)
+cat(glue::glue(
+  '<p style="font-size:1.4rem;font-weight:900;color:#db2b27;margin:4px 0">
+  {az_top$County}</p>
+  <p style="font-size:0.88rem;color:#555;margin:2px 0">
+  Hardship Index: <strong>{az_top$Hardship}</strong> &nbsp;|&nbsp;
+  US Rank: <strong>#{az_top$`US Rank`} of {n_counties}</strong></p>
+  <p style="font-size:0.82rem;color:#333;margin-top:8px">
+  {az_top$County} County has the highest economic hardship among Arizona\'s 15 counties. This reflects a combination of persistent rural poverty, limited employment opportunities outside of seasonal industries, and the presence of tribal lands where federal underinvestment has compounded economic disadvantage across generations.</p>'
+))
 ```
 
-```{r}
-#| label: vb-highest
-#| content: valuebox
-list(title="Highest Hardship County", value=county_hi, icon="exclamation-triangle-fill", color="danger")
-```
+:::
+
+::: {.card}
+### Lowest Hardship: Arizona Counties
 
 ```{r}
-#| label: vb-rank
-#| content: valuebox
-list(
-  title = paste0(TARGET_LABEL, " National Rank"),
-  value = {
-    rank_val <- rank(-county_2023$hardship_index, na.last="keep", ties.method="min")
-    target_geoid <- county_2023 %>%
-      st_drop_geometry() %>%
-      filter(str_detect(NAME, fixed(TARGET_COUNTY)),
-             str_detect(NAME, state.name[match(TARGET_STATE, state.abb)])) %>%
-      slice(1)
-    if(nrow(target_geoid) > 0) {
-      r <- rank_val[which(county_2023$GEOID == target_geoid$GEOID[1])]
-      paste0("#", r, " of ", n_counties)
-    } else "—"
-  },
-  icon = "bar-chart-fill"
-)
+#| label: card-az-bottom
+#| output: asis
+az_bottom <- az_counties %>% slice(n())
+cat(glue::glue(
+  '<p style="font-size:1.4rem;font-weight:900;color:#1696d2;margin:4px 0">
+  {az_bottom$County}</p>
+  <p style="font-size:0.88rem;color:#555;margin:2px 0">
+  Hardship Index: <strong>{az_bottom$Hardship}</strong> &nbsp;|&nbsp;
+  US Rank: <strong>#{az_bottom$`US Rank`} of {n_counties}</strong></p>
+  <p style="font-size:0.82rem;color:#333;margin-top:8px">
+  {az_bottom$County} County ranks as Arizona\'s least economically distressed county. Its lower hardship score reflects a diversified employment base, higher median household incomes, and proximity to metro-area economic opportunities that buffer against the structural disadvantages seen in the state\'s rural counties.</p>'
+))
 ```
 
+:::
+
+::: {.card}
+### Maricopa County vs. National Extremes
+
 ```{r}
-#| label: table-national
-county_2023 %>%
+#| label: card-dot-compare
+#| fig-height: 4
+top5_us <- county_2023 %>%
   st_drop_geometry() %>%
+  left_join(us_ranks, by = "GEOID") %>%
   filter(!is.na(hardship_index)) %>%
-  arrange(desc(hardship_index)) %>%
+  slice_min(us_rank, n = 5, with_ties = FALSE) %>%
+  mutate(group = "Top 5 Hardship (US)",
+         label = str_remove(NAME, " County.*"))
+
+bot5_us <- county_2023 %>%
+  st_drop_geometry() %>%
+  left_join(us_ranks, by = "GEOID") %>%
+  filter(!is.na(hardship_index)) %>%
+  slice_max(us_rank, n = 5, with_ties = FALSE) %>%
+  mutate(group = "Lowest 5 Hardship (US)",
+         label = str_remove(NAME, " County.*"))
+
+maricopa_row <- county_2023 %>%
+  st_drop_geometry() %>%
+  left_join(us_ranks, by = "GEOID") %>%
+  filter(str_detect(NAME, fixed(TARGET_COUNTY)),
+         str_detect(NAME, state.name[match(TARGET_STATE, state.abb)])) %>%
+  slice(1) %>%
+  mutate(group = TARGET_LABEL,
+         label = str_remove(NAME, " County.*"))
+
+compare_df <- bind_rows(top5_us, maricopa_row, bot5_us) %>%
   mutate(
-    County   = str_remove(NAME, ", .+"),
-    State    = str_extract(NAME, "(?<=, )[A-Z].+"),
-    Hardship = round(hardship_index, 3)
-  ) %>%
-  select(County, State, Hardship) %>%
-  head(20) %>%
-  DT::datatable(options=list(pageLength=8, dom="tp"), rownames=FALSE)
+    color_group = case_when(
+      group == TARGET_LABEL          ~ "#fdbf11",
+      group == "Top 5 Hardship (US)" ~ "#db2b27",
+      TRUE                           ~ "#1696d2"
+    ),
+    label = fct_reorder(label, hardship_index)
+  )
+
+ggplot(compare_df, aes(x = hardship_index, y = label, color = color_group)) +
+  geom_point(size = 3.5) +
+  geom_vline(xintercept = maricopa_row$hardship_index,
+             linetype = "dashed", color = "#fdbf11", linewidth = 0.5) +
+  scale_color_identity() +
+  theme_urbn_dash(base_size = 9) +
+  theme(
+    axis.text.y  = element_text(size = 8, color = "#333333"),
+    axis.text.x  = element_text(size = 8, color = "#767676"),
+    panel.grid.major.x = element_line(color = "#eeeeee", linewidth = 0.4)
+  ) +
+  labs(
+    title    = paste0(TARGET_LABEL, " vs. National Extremes"),
+    subtitle = "Red = highest US hardship | Cyan = lowest | Amber = focal county",
+    x        = "Hardship Index (pooled z-score)",
+    y        = NULL,
+    caption  = "ACS 2019–2023 5-Year Estimates"
+  )
 ```
+
+:::
 
 # Local Hardship
 
