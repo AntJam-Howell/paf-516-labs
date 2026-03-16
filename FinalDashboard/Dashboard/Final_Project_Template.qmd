@@ -395,7 +395,7 @@ maplibre(
 
 ## Column {width=45%}
 
-### Row {height=35%}
+### Row {height=30%}
 
 ```{r}
 #| label: table-az-counties
@@ -412,7 +412,7 @@ az_counties %>%
   )
 ```
 
-### Row {height=60%}
+### Row {height=65%}
 
 ```{r}
 #| label: card-dot-compare
@@ -501,15 +501,14 @@ p <- ggplot(compare_df,
     y = NULL
   )
 
-# Sorted labels for the mean line endpoints
-sorted_labels <- levels(compare_df$label)
+# Midpoint label for hover on the AZ mean line
+mid_label <- levels(compare_df$label)[ceiling(nlevels(compare_df$label) / 2)]
 
 ggplotly(p, tooltip = "text") %>%
-  add_trace(
-    x = rep(az_mean, length(sorted_labels)),
-    y = sorted_labels,
-    type = "scatter", mode = "lines",
-    line = list(color = "#9d9d9d", width = 1.5, dash = "dot"),
+  add_markers(
+    x = az_mean, y = mid_label,
+    marker = list(color = "#9d9d9d", size = 8, symbol = "line-ns-open",
+                  line = list(width = 0)),
     hoverinfo = "text",
     text = paste0("AZ State Average\nIndex: ", round(az_mean, 3)),
     showlegend = FALSE, inherit = FALSE
@@ -524,9 +523,16 @@ ggplotly(p, tooltip = "text") %>%
                     "<span style=\"color:#9d9d9d\">┊</span> AZ Mean</sup>"),
       font = list(size = 13, color = "#333333")
     ),
-    margin = list(t = 65, b = 50),
+    margin = list(t = 65, b = 55),
     xaxis = list(title = list(text = "Economic Hardship Index",
-                              font = list(size = 12, color = "#333333")))
+                              font = list(size = 12, color = "#333333"))),
+    yaxis = list(automargin = TRUE),
+    shapes = list(
+      list(type = "line",
+           x0 = az_mean, x1 = az_mean,
+           y0 = 0, y1 = 1, yref = "paper",
+           line = list(color = "#9d9d9d", width = 1.5, dash = "dot"))
+    )
   ) %>%
   config(displayModeBar = TRUE,
          modeBarButtonsToRemove = c("lasso2d", "select2d", "zoom2d",
