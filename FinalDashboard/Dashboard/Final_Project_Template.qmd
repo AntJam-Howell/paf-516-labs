@@ -270,11 +270,9 @@ change_df <- change_df %>%
 ```{r}
 #| label: summary-stats
 moran_global <- moran.test(change_df$hardship_2019, w, zero.policy = TRUE)
-moran_chg    <- moran.mc(change_df$hardship_change, w, nsim = 499, zero.policy = TRUE)
 
 n_hh <- sum(change_df$lisa_2019 == "HH", na.rm = TRUE)
 n_ll <- sum(change_df$lisa_2019 == "LL", na.rm = TRUE)
-n_total <- nrow(change_df)
 pct_improved    <- round(100 * mean(change_df$hardship_change < -0.05, na.rm=TRUE), 1)
 pct_worsened    <- round(100 * mean(change_df$hardship_change >  0.05, na.rm=TRUE), 1)
 pct_persist_hh  <- round(100 * mean(change_df$trajectory == "Persistent HH", na.rm=TRUE), 1)
@@ -282,7 +280,7 @@ pct_emerg_hh    <- round(100 * mean(change_df$trajectory == "Emerging HH",   na.
 
 county_hi <- county_2023 %>% st_drop_geometry() %>%
   filter(!is.na(hardship_index)) %>%
-  slice_max(hardship_index, n = 1) %>%
+  slice_max(hardship_index, n = 1, with_ties = FALSE) %>%
   mutate(label = paste0(str_remove(NAME, ",.*"), " (", round(hardship_index,2), ")")) %>%
   pull(label)
 n_counties <- sum(!is.na(county_2023$hardship_index))
@@ -301,7 +299,10 @@ lisa_colors <- c("HH"="#D7191C","LL"="#2C7BB6","HL"="#FDAE61","LH"="#ABD9E9","NS
 
 ```{r}
 #| label: map-national
-county_4326 <- county_2023 %>% st_transform(4326) %>% filter(!is.na(hardship_index))
+county_4326 <- county_2023 %>%
+  st_transform(4326) %>%
+  filter(!is.na(hardship_index)) %>%
+  st_simplify(preserveTopology = TRUE, dTolerance = 5000)
 maplibre(
   bounds = st_bbox(county_4326),
   style  = carto_style("dark-matter")
@@ -329,16 +330,19 @@ maplibre(
 ## Column {width=38%}
 
 ```{r}
+#| label: vb-counties
 #| content: valuebox
 list(title="Counties Mapped", value=comma(n_counties), icon="map")
 ```
 
 ```{r}
+#| label: vb-highest
 #| content: valuebox
 list(title="Highest Hardship County", value=county_hi, icon="exclamation-triangle-fill", color="danger")
 ```
 
 ```{r}
+#| label: vb-rank
 #| content: valuebox
 list(
   title = paste0(TARGET_LABEL, " National Rank"),
@@ -346,7 +350,8 @@ list(
     rank_val <- rank(-county_2023$hardship_index, na.last="keep", ties.method="min")
     target_geoid <- county_2023 %>%
       st_drop_geometry() %>%
-      filter(str_detect(NAME, fixed(TARGET_COUNTY))) %>%
+      filter(str_detect(NAME, fixed(TARGET_COUNTY)),
+             str_detect(NAME, state.name[match(TARGET_STATE, state.abb)])) %>%
       slice(1)
     if(nrow(target_geoid) > 0) {
       r <- rank_val[which(county_2023$GEOID == target_geoid$GEOID[1])]
@@ -436,16 +441,19 @@ ggplot(change_df) +
 ## Column {width=40%}
 
 ```{r}
+#| label: vb-hh
 #| content: valuebox
 list(title="Hot Spot Tracts (HH)", value=n_hh, icon="fire", color="danger")
 ```
 
 ```{r}
+#| label: vb-ll
 #| content: valuebox
 list(title="Cold Spot Tracts (LL)", value=n_ll, icon="snow", color="primary")
 ```
 
 ```{r}
+#| label: vb-moran
 #| content: valuebox
 list(title="Global Moran's I", value=round(moran_global$estimate[1],3),
      icon="diagram-3", color="secondary")
@@ -494,18 +502,28 @@ ggplot(change_df) +
 ## Column {width=50%}
 
 ```{r}
+#| label: vb-improved
 #| content: valuebox
 list(title="Tracts Improved (2013→2019)", value=paste0(pct_improved,"%"),
      icon="arrow-down-circle", color="success")
 ```
 
 ```{r}
+#| label: vb-worsened
+#| content: valuebox
+list(title="Tracts Worsened (2013→2019)", value=paste0(pct_worsened,"%"),
+     icon="arrow-up-circle", color="warning")
+```
+
+```{r}
+#| label: vb-persistent
 #| content: valuebox
 list(title="Persistently High Hardship", value=paste0(pct_persist_hh,"%"),
      icon="exclamation-circle", color="danger")
 ```
 
 ```{r}
+#| label: vb-emerging
 #| content: valuebox
 list(title="Emerging Hot Spots", value=paste0(pct_emerg_hh,"%"),
      icon="arrow-up-right-circle", color="warning")
