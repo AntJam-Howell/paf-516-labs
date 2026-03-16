@@ -348,11 +348,7 @@ county_map <- county_2023 %>%
 
 maplibre(
   style  = carto_style("dark-matter"),
-  bounds = list(
-    lng1 = -125.0, lat1 = 24.0,
-    lng2 = -66.0,  lat2 = 50.0
-  ),
-  projection = "mercator"
+  bounds = c(-125.0, 24.0, -66.0, 50.0)
 ) |>
   add_fill_layer(
     id = "hardship-fill",
