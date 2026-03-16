@@ -4,7 +4,7 @@ subtitle: "Instructor Reference | Completed Analysis"
 format:
   dashboard:
     theme:
-      - darkly
+      - flatly
       - ../../assets/dashboard-theme.scss
     orientation: columns
     embed-resources: true

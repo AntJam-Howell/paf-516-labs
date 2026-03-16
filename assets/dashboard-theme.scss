@@ -1,71 +1,143 @@
-/*-- Dark Intelligence Theme for PAF 516 Dashboard --*/
 /*-- scss:defaults --*/
 
-$body-bg: #0d1117;
-$body-color: #e6edf3;
-$card-bg: #161b22;
-$card-border-color: #30363d;
-$primary: #58a6ff;
-$secondary: #8b949e;
-$success: #3fb950;
-$warning: #d29922;
-$danger: #f85149;
+/* ── Fonts ─────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap');
+$font-family-sans-serif: 'Lato', -apple-system, BlinkMacSystemFont, sans-serif;
 
-$font-family-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-$headings-font-weight: 600;
+/* ── Core colors from Urban Institute style guide ───────────────── */
+/* Primary */
+$urbn-cyan:      #1696d2;
+$urbn-cyan-dark: #0a4c6a;
+/* Neutrals */
+$urbn-gray:      #d2d2d2;
+$urbn-spacegray: #9d9d9d;
+$urbn-black:     #1a1a1a;
+/* Accent */
+$urbn-yellow:    #fdbf11;
+$urbn-magenta:   #ec008b;
+$urbn-green:     #55b748;
+$urbn-red:       #db2b27;
 
-/* Navbar */
-$navbar-bg: #010409;
+/* ── Bootstrap overrides ────────────────────────────────────────── */
+$body-bg:        #f8f9fa;
+$body-color:     #1a1a1a;
+$card-bg:        #ffffff;
+$navbar-bg:      #1a365d;
+$navbar-fg:      #ffffff;
+$border-color:   #e3e3e3;
+
+/* ── Valuebox semantic colors (policy-meaningful) ───────────────── */
+$danger:    #db2b27;   /* hot spots, worsening */
+$primary:   #1a365d;   /* authority/context */
+$success:   #55b748;   /* improving */
+$warning:   #fdbf11;   /* caution */
+$secondary: #9d9d9d;   /* neutral stats */
+
+/* ── Typography ─────────────────────────────────────────────────── */
+$headings-font-weight: 700;
+$font-size-base:       0.9rem;
 
 /*-- scss:rules --*/
 
-/* Google Font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-/* Value boxes */
-.value-box {
-  border-left: 3px solid $primary;
-  background: $card-bg !important;
+/* ── Navbar ─────────────────────────────────────────────────────── */
+.navbar {
+  border-bottom: 3px solid $urbn-cyan;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
 }
-.value-box-title { color: $secondary !important; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-.value-box-value { color: $body-color !important; font-size: 2rem; font-weight: 600; }
+.navbar-brand {
+  font-weight: 900;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+.navbar-subtitle {
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
 
-/* Cards */
+/* ── Cards ───────────────────────────────────────────────────────── */
 .card {
-  background: $card-bg !important;
-  border: 1px solid $card-border-color !important;
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 .card-header {
-  background: #21262d !important;
-  border-bottom: 1px solid $card-border-color !important;
-  color: $body-color !important;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e3e3e3;
+  border-left: 4px solid $urbn-cyan;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
+  color: #555555;
+  padding: 0.55rem 0.75rem 0.55rem 0.6rem;
 }
 
-/* Tables (DT DataTables) */
-.dataTables_wrapper { color: $body-color; }
-table.dataTable { background-color: $card-bg !important; color: $body-color !important; }
-table.dataTable thead th {
-  background-color: #0d1117 !important;
-  color: $primary !important;
-  border-bottom: 1px solid $card-border-color !important;
+/* ── Value boxes ────────────────────────────────────────────────── */
+.value-box-value {
+  font-weight: 900;
+  font-size: 1.9rem;
+  line-height: 1.15;
 }
-table.dataTable tbody tr { background-color: $card-bg !important; }
-table.dataTable tbody tr:hover { background-color: #1c2128 !important; }
-table.dataTable tbody td { border-color: $card-border-color !important; }
+.value-box-title {
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  opacity: 0.88;
+}
+/* Warning box: dark text (yellow bg needs dark text for contrast) */
+.bslib-value-box.bg-warning .value-box-value,
+.bslib-value-box.bg-warning .value-box-title {
+  color: #1a1a1a !important;
+}
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: $body-bg; }
-::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+/* ── Tables ─────────────────────────────────────────────────────── */
+.dataTables_wrapper {
+  font-size: 0.81rem;
+  color: #333333;
+}
+.dataTables_wrapper thead th {
+  background-color: #f5f5f5 !important;
+  border-bottom: 2px solid $urbn-cyan !important;
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #555555 !important;
+}
+.dataTables_wrapper tbody tr:nth-child(even) {
+  background-color: rgba(0,0,0,0.018);
+}
+.dataTables_wrapper tbody tr:hover {
+  background-color: rgba(22,150,210,0.07) !important;
+}
+.dataTables_wrapper .dataTables_filter input {
+  border: 1px solid #d2d2d2;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 0.8rem;
+}
 
-/* Narrative text cards */
-.card-body p, .card-body li { color: $body-color; }
-.card-body h3, .card-body h4 { color: $primary; }
+/* ── Tab navigation ─────────────────────────────────────────────── */
+.navbar-nav .nav-link {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.35rem 0.7rem;
+  border-radius: 3px;
+  margin: 0 1px;
+  transition: background-color 0.12s;
+}
+.navbar-nav .nav-link.active {
+  background-color: rgba(255,255,255,0.18) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+.navbar-nav .nav-link:hover:not(.active) {
+  background-color: rgba(255,255,255,0.1);
+}
 
-/* Navbar tweaks */
-.navbar-brand { color: $primary !important; font-weight: 600; }
-.navbar { border-bottom: 1px solid $card-border-color; }
+/* ── Body padding ───────────────────────────────────────────────── */
+.quarto-dashboard .dashboard-fill {
+  padding: 0.6rem;
+}

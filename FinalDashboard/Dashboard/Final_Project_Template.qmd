@@ -4,7 +4,7 @@ subtitle: "Maricopa County, AZ"
 format:
   dashboard:
     theme:
-      - darkly
+      - flatly
       - ../../assets/dashboard-theme.scss
     orientation: columns
     embed-resources: true
@@ -287,11 +287,31 @@ county_hi <- county_2023 %>% st_drop_geometry() %>%
 n_counties <- sum(!is.na(county_2023$hardship_index))
 
 traj_colors <- c(
-  "Persistent HH"="#D7191C", "Emerging HH"="#FDAE61", "Dissolving HH"="#FEE08B",
-  "Persistent LL"="#2C7BB6", "Emerging LL"="#ABD9E9", "HL Outlier"="#9E5BB4",
-  "Stable NS"="#CCCCCC"
+  "Persistent HH"="#db2b27", "Emerging HH"="#fdbf11", "Dissolving HH"="#fdd870",
+  "Persistent LL"="#1696d2", "Emerging LL"="#73bfe2", "HL Outlier"="#ec008b",
+  "Stable NS"="#d2d2d2"
 )
-lisa_colors <- c("HH"="#D7191C","LL"="#2C7BB6","HL"="#FDAE61","LH"="#ABD9E9","NS"="#CCCCCC")
+lisa_colors <- c("HH"="#db2b27","LL"="#1696d2","HL"="#fdbf11","LH"="#73bfe2","NS"="#d2d2d2")
+
+# ── Urban Institute-inspired ggplot theme for dashboard maps ──────
+theme_urbn_dash <- function(base_size = 11) {
+  theme_void(base_size = base_size) +
+  theme(
+    plot.background   = element_rect(fill = "#ffffff", color = NA),
+    panel.background  = element_rect(fill = "#ffffff", color = NA),
+    plot.title        = element_text(color = "#333333", size = base_size + 1,
+                                     face = "bold", margin = margin(b = 3)),
+    plot.subtitle     = element_text(color = "#767676", size = base_size - 1,
+                                     margin = margin(b = 6)),
+    plot.caption      = element_text(color = "#767676", size = base_size - 2,
+                                     hjust = 0, margin = margin(t = 4)),
+    legend.background = element_rect(fill = "#ffffff", color = NA),
+    legend.key        = element_rect(fill = "#ffffff", color = NA),
+    legend.text       = element_text(color = "#333333", size = base_size - 1),
+    legend.title      = element_text(color = "#767676", size = base_size - 1),
+    plot.margin       = margin(8, 8, 8, 8)
+  )
+}
 ```
 
 # National Context
@@ -312,7 +332,7 @@ ggplot(county_shifted) +
     name      = "Hardship\nIndex",
     na.value  = "grey80"
   ) +
-  theme_void(base_size = 11) +
+  theme_urbn_dash(base_size = 11) +
   labs(
     title    = "Economic Hardship Across U.S. Counties",
     subtitle = paste0("ACS 2019–2023 | ", TARGET_LABEL,
@@ -383,7 +403,7 @@ ggplot(local_2023) +
   geom_sf(aes(fill = hardship_index), color = NA) +
   scale_fill_viridis_c(option="inferno", direction=-1,
                        name="Hardship\nIndex", na.value="grey40") +
-  theme_void(base_size=11) +
+  theme_urbn_dash(base_size=11) +
   labs(title    = paste0("Economic Hardship: ", TARGET_LABEL),
        subtitle = "Census tracts | ACS 2019–2023 5-Year",
        caption  = "3-variable index: poverty rate, unemployment rate, median income (reversed)")
@@ -401,7 +421,7 @@ bi_data <- local_2023 %>%
 p_bi <- ggplot(bi_data) +
   geom_sf(aes(fill=bi_class), color=NA, show.legend=FALSE) +
   bi_scale_fill(pal="DkBlue", dim=3) +
-  theme_void(base_size=11) +
+  theme_urbn_dash(base_size=11) +
   labs(title    = "Hardship × Renter Rate",
        subtitle = paste0(TARGET_LABEL, " | ACS 2019–2023"),
        caption  = "Dark blue = high hardship AND high renter rate")
@@ -425,7 +445,7 @@ ggplot(change_df) +
     labels=c("HH"="Hot Spot (HH)","LL"="Cold Spot (LL)",
              "HL"="High-Low Outlier","LH"="Low-High Outlier","NS"="Not Significant"),
     name="LISA Cluster\n(2019, p<0.05)") +
-  theme_void(base_size=11) +
+  theme_urbn_dash(base_size=11) +
   labs(title    = paste0("Spatial Hardship Clusters: ", TARGET_LABEL),
        subtitle = "LISA analysis on 2015–2019 ACS economic hardship index",
        caption  = paste0("Global Moran's I = ", round(moran_global$estimate[1],3),
@@ -487,7 +507,7 @@ ggplot(change_df) +
              "HL Outlier"   ="Spatial Outlier",
              "Stable NS"    ="No Dominant Pattern"),
     name="Trajectory\n(2013→2019)") +
-  theme_void(base_size=11) +
+  theme_urbn_dash(base_size=11) +
   labs(title    = paste0("Neighborhood Hardship Trajectories: ", TARGET_LABEL),
        subtitle = "LISA cluster transition, 2013–2019 | Pooled z-score standardization",
        caption  = "Pooled mean/SD across both years — comparable change scores")
@@ -528,9 +548,9 @@ list(title="Emerging Hot Spots", value=paste0(pct_emerg_hh,"%"),
 #| fig-height: 5.5
 ggplot(change_df) +
   geom_sf(aes(fill=change_plot), color=NA) +
-  scale_fill_gradient2(low="#2C7BB6", mid="white", high="#D7191C",
+  scale_fill_gradient2(low="#0a4c6a", mid="#f5f5f5", high="#db2b27",
     midpoint=0, limits=c(-max_abs, max_abs), name="Hardship\nChange") +
-  theme_void(base_size=10) +
+  theme_urbn_dash(base_size=10) +
   labs(title    = paste0("Hardship Change (2013→2019): ", TARGET_LABEL),
        subtitle = "Blue = improved | Red = worsened | Winsorized at 2nd/98th pct")
 ```
