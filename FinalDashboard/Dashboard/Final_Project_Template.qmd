@@ -327,10 +327,16 @@ az_counties <- county_2023 %>%
   arrange(desc(hardship_index)) %>%
   mutate(
     az_rank  = row_number(),
+    n_az     = n(),
     County   = str_remove(NAME, " County, Arizona"),
-    Hardship = round(hardship_index, 3)
+    `Economic Hardship Index` = round(hardship_index, 3),
+    `AZ Rank` = case_when(
+      az_rank == 1   ~ "1 - Worse Off",
+      az_rank == n_az ~ paste0(n_az, " - Better Off"),
+      TRUE           ~ as.character(az_rank)
+    )
   ) %>%
-  select(`AZ Rank` = az_rank, County, Hardship,
+  select(`AZ Rank`, County, `Economic Hardship Index`,
          `US Rank` = us_rank)
 ```
 
@@ -411,7 +417,7 @@ az_counties %>%
 ```{r}
 #| label: card-dot-compare
 #| title: "All Arizona Counties vs. U.S. Extremes"
-#| fig-height: 5
+#| fig-height: 6
 
 # Top 5 worst hardship nationally
 top5_us <- county_2023 %>%
@@ -495,11 +501,13 @@ p <- ggplot(compare_df,
     y = NULL
   )
 
+# Sorted labels for the mean line endpoints
+sorted_labels <- levels(compare_df$label)
+
 ggplotly(p, tooltip = "text") %>%
   add_trace(
-    x = rep(az_mean, 2),
-    y = c(levels(compare_df$label)[1],
-          levels(compare_df$label)[nlevels(compare_df$label)]),
+    x = rep(az_mean, length(sorted_labels)),
+    y = sorted_labels,
     type = "scatter", mode = "lines",
     line = list(color = "#9d9d9d", width = 1.5, dash = "dot"),
     hoverinfo = "text",
@@ -516,7 +524,7 @@ ggplotly(p, tooltip = "text") %>%
                     "<span style=\"color:#9d9d9d\">┊</span> AZ Mean</sup>"),
       font = list(size = 13, color = "#333333")
     ),
-    margin = list(t = 65),
+    margin = list(t = 65, b = 50),
     xaxis = list(title = list(text = "Economic Hardship Index",
                               font = list(size = 12, color = "#333333")))
   ) %>%
@@ -680,7 +688,7 @@ list(title="Emerging Hot Spots", value=paste0(pct_emerg_hh,"%"),
 
 ```{r}
 #| label: map-change
-#| fig-height: 5.5
+#| fig-height: 6.5
 ggplot(change_df) +
   geom_sf(aes(fill=change_plot), color=NA) +
   scale_fill_gradient2(low="#0a4c6a", mid="#f5f5f5", high="#db2b27",
