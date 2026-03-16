@@ -45,16 +45,6 @@ After completing this module, you will be able to:
 :::
 
 
-## Lecture
-
-::: {.section-box}
-
-The lecture covers the analytical scenario, the three-variable hardship index, the dashboard structure, and how to write strong evidence-based policy recommendations. It also introduces the policy brief format and discusses how to translate spatial analysis into language that decision-makers can act on.
-
-Download the lecture notes: [Final Project — Lecture Notes (PDF)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module7/Lecture/Module7_Lecture_Slides.pdf)
-
-:::
-
 
 ::: {.section-box}
 
@@ -260,23 +250,6 @@ For the Final Project, you will complete two deliverables using a county of your
 
 :::
 
-
-::: {.section-box}
-
-## Yellowdig Discussion
-
-For your final Yellowdig post, step fully into the role of the applied researcher. You have now delivered a dashboard and policy brief to a local government client. Reflect on the experience of translating spatial statistics into policy-ready communication.
-
-**Your prompt:** Choose one of your three policy recommendations from the Final Project and expand on it in your post. Address the following:
-
-- **What does the data actually show?** Describe the specific spatial pattern (persistent hot spot, emerging cluster, trajectory type) and the statistics behind it (Moran's I, tract counts, hardship index values). What can you confidently claim, and what are you inferring?
-- **What can't the data show?** Every recommendation requires assumptions beyond what census data can prove. If you recommended workforce development, you are assuming that unemployment in those tracts reflects a skills gap rather than employer discrimination or transportation barriers. Name at least one assumption behind your recommendation and discuss how you would test it with additional data.
-- **What would your client push back on?** City officials have budget constraints, political constituencies, and institutional knowledge you lack. Anticipate one realistic objection to your recommendation (e.g., "we tried that in 2018 and it didn't work," or "those tracts are already served by Program X") and describe how you would respond.
-- **What did you learn this semester?** Connect this final project to the skills you built across the course. How did the progression from measurement (Lab 1) to visualization (Lab 2) to spatial joins (Lab 3) to clustering (Lab 4) to temporal change (Labs 5--6) prepare you to write this recommendation?
-
-Engage with at least one classmate's post by evaluating the specificity of their recommendation using the three-part framework from this module (finding → implication → action).
-
-:::
 
 
 ::: {.section-box}
