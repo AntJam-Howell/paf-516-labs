@@ -383,7 +383,8 @@ maplibre(
     "Economic Hardship Index",
     values  = c("Worse-off", "", "Better-off"),
     colors  = c("#db2b27", "#f5f5f5", "#1696d2"),
-    position = "bottom-left"
+    position = "bottom-left",
+    width = 200
   )
 ```
 
@@ -488,12 +489,12 @@ p <- ggplot(compare_df,
              linetype = "dotted", color = "#9d9d9d", linewidth = 0.5) +
   theme_urbn_dash(base_size = 11) +
   theme(
-    axis.text.y        = element_text(size = 10, color = "#333333"),
+    axis.text.y        = element_text(size = 8.5, color = "#333333"),
     axis.text.x        = element_text(size = 10, color = "#767676"),
     panel.grid.major.x = element_line(color = "#eeeeee", linewidth = 0.4)
   ) +
   labs(
-    x = "Economic Hardship Index (pooled z-score)",
+    x = "Economic Hardship Index",
     y = NULL
   )
 
@@ -502,13 +503,19 @@ ggplotly(p, tooltip = "text") %>%
     title = list(
       text = paste0("All Arizona Counties vs. U.S. Extremes",
                     "<br><sup style='color:#767676'>",
-                    "Yellow = AZ | Red = 5 highest US | Cyan = 5 lowest",
-                    " | Dotted = AZ mean</sup>"),
+                    "<span style=\"color:#fdbf11\">\u25CF</span> AZ Counties &nbsp; ",
+                    "<span style=\"color:#db2b27\">\u25CF</span> 5 Highest US &nbsp; ",
+                    "<span style=\"color:#1696d2\">\u25CF</span> 5 Lowest US &nbsp; ",
+                    "<span style=\"color:#9d9d9d\">┊</span> AZ Mean</sup>"),
       font = list(size = 13, color = "#333333")
     ),
-    margin = list(t = 60)
+    margin = list(t = 65)
   ) %>%
-  config(displayModeBar = TRUE, modeBarButtonsToRemove = c("lasso2d", "select2d"))
+  config(displayModeBar = TRUE,
+         modeBarButtonsToRemove = c("lasso2d", "select2d", "zoom2d",
+                                    "pan2d", "zoomIn2d", "zoomOut2d",
+                                    "autoScale2d", "hoverClosestCartesian",
+                                    "hoverCompareCartesian"))
 ```
 
 # Local Hardship
