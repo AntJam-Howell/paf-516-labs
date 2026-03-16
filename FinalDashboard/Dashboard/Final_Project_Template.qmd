@@ -346,6 +346,12 @@ county_map <- county_2023 %>%
   st_simplify(preserveTopology = TRUE, dTolerance = 5000) %>%
   st_transform(4326)
 
+# Dissolve Arizona counties into a single state outline
+az_outline <- county_map %>%
+  filter(str_detect(NAME, "Arizona")) %>%
+  st_union() %>%
+  st_sf()
+
 maplibre(
   style  = carto_style("dark-matter"),
   bounds = c(-125.0, 24.0, -66.0, 50.0)
@@ -366,6 +372,12 @@ maplibre(
     source = county_map,
     line_color = "#333333",
     line_width = 0.2
+  ) |>
+  add_line_layer(
+    id = "az-highlight",
+    source = az_outline,
+    line_color = "#fdbf11",
+    line_width = 2.5
   ) |>
   add_legend(
     "Economic Hardship Index",
