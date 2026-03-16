@@ -36,7 +36,7 @@ if (!file.exists("~/.paf516_ready")) {
   file.create("~/.paf516_ready")
 }
 library(tidyverse); library(tidycensus); library(sf); library(spdep)
-library(viridis); library(patchwork); library(biscale); library(mapgl); library(DT)
+library(viridis); library(patchwork); library(biscale); library(tigris); library(DT)
 library(scales)
 ```
 
@@ -101,7 +101,8 @@ build_hardship_index <- function(raw_df) {
 ```{r}
 #| label: pull-national
 county_raw <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/FinalDashboard/StudentExample/data/sandiego_county_2023_RAW.rds"))
-county_2023 <- build_hardship_index(county_raw)
+county_2023 <- build_hardship_index(county_raw) %>%
+  filter(!str_sub(GEOID, 1, 2) %in% c("72","78","66","60","69"))
 ```
 
 ```{r}
@@ -282,31 +283,24 @@ lisa_colors <- c("HH"="#D7191C","LL"="#2C7BB6","HL"="#FDAE61","LH"="#ABD9E9","NS
 
 ```{r}
 #| label: map-national
-county_4326 <- county_2023 %>%
-  st_transform(4326) %>%
+county_shifted <- county_2023 %>%
   filter(!is.na(hardship_index)) %>%
-  st_simplify(preserveTopology = TRUE, dTolerance = 5000)
-maplibre(
-  bounds = st_bbox(county_4326),
-  style  = carto_style("dark-matter")
-) %>%
-  add_fill_layer(
-    id     = "counties",
-    source = list(type = "geojson", data = county_4326),
-    fill_color = interpolate(
-      column   = "hardship_index",
-      values   = as.numeric(quantile(county_4326$hardship_index, c(0, 0.25, 0.5, 0.75, 1))),
-      stops    = c("#313695","#74ADD1","#FFFFBF","#F46D43","#A50026"),
-      na_color = "#333333"
-    ),
-    fill_opacity = 0.8,
-    tooltip = c("NAME", "hardship_index")
-  ) %>%
-  add_legend(
-    "Economic Hardship Index",
-    values   = round(quantile(county_4326$hardship_index, c(0,0.25,0.5,0.75,1)), 2),
-    colors   = c("#313695","#74ADD1","#FFFFBF","#F46D43","#A50026"),
-    position = "bottom-left"
+  shift_geometry(position = "outside")
+
+ggplot(county_shifted) +
+  geom_sf(aes(fill = hardship_index), color = NA, linewidth = 0) +
+  scale_fill_viridis_c(
+    option    = "inferno",
+    direction = -1,
+    name      = "Hardship\nIndex",
+    na.value  = "grey80"
+  ) +
+  theme_void(base_size = 11) +
+  labs(
+    title    = "Economic Hardship Across U.S. Counties",
+    subtitle = paste0("ACS 2019–2023 | ", TARGET_LABEL,
+                      " highlighted in context"),
+    caption  = "Alaska and Hawaii shown as insets. Puerto Rico and territories excluded."
   )
 ```
 
