@@ -1,6 +1,6 @@
 ---
-title: "Economic Hardship Dashboard"
-subtitle: "Maricopa County, AZ"
+title: "Economic Hardship in Arizona"
+subtitle: "A Community Analytics Dashboard"
 format:
   dashboard:
     theme:
@@ -36,14 +36,14 @@ if (!file.exists("~/.paf516_ready")) {
   file.create("~/.paf516_ready")
 }
 library(tidyverse); library(tidycensus); library(sf); library(spdep)
-library(viridis); library(patchwork); library(biscale); library(tigris); library(DT); library(mapgl); library(glue); library(plotly)
-library(scales)
+library(viridis); library(patchwork); library(tigris); library(DT)
+library(mapgl); library(glue); library(plotly); library(scales)
 ```
 
 ```{r}
 #| label: county-config
-# ── STUDENT: change these lines + the subtitle in the YAML header above ─
-# Examples of other metros:
+# ── STUDENT: change these 3 lines + update the YAML subtitle above ──────
+# Examples:
 #   Los Angeles:      TARGET_STATE="CA", TARGET_COUNTY="Los Angeles",  TARGET_LABEL="Los Angeles County, CA"
 #   Cook (Chicago):   TARGET_STATE="IL", TARGET_COUNTY="Cook",         TARGET_LABEL="Cook County, IL"
 #   Miami-Dade:       TARGET_STATE="FL", TARGET_COUNTY="Miami-Dade",   TARGET_LABEL="Miami-Dade County, FL"
@@ -82,9 +82,9 @@ build_hardship_index <- function(raw_df) {
     (function(df) {
       geom <- if (inherits(df, "sf")) st_geometry(df) else NULL
       tbl  <- st_drop_geometry(df)
-      z_pov  <- as.numeric(scale(tbl$poverty_rate))
+      z_pov   <- as.numeric(scale(tbl$poverty_rate))
       z_unemp <- as.numeric(scale(tbl$unemp_rate))
-      z_inc  <- -1 * as.numeric(scale(tbl$median_income))
+      z_inc   <- -1 * as.numeric(scale(tbl$median_income))
       tbl$hardship_index <- rowMeans(cbind(z_pov, z_unemp, z_inc), na.rm = TRUE)
       if (!is.null(geom)) st_sf(tbl, geometry = geom) else tbl
     })()
@@ -107,6 +107,29 @@ county_2023 <- build_hardship_index(county_raw) %>%
 ```
 
 ```{r}
+#| label: pull-az-tracts
+#| cache: true
+# All Arizona census tracts — for the state-level interactive map
+az_tract_raw <- get_acs(
+  geography    = "tract",
+  variables    = hardship_vars,
+  state        = TARGET_STATE,
+  year         = 2023,
+  survey       = "acs5",
+  geometry     = TRUE,
+  progress_bar = FALSE
+)
+az_tract_2023 <- build_hardship_index(az_tract_raw)
+
+# Maricopa County boundary — derived from tract union for yellow outline
+maricopa_boundary <- az_tract_2023 %>%
+  filter(str_detect(NAME, TARGET_COUNTY)) %>%
+  st_union() %>%
+  st_sf() %>%
+  st_transform(4326)
+```
+
+```{r}
 #| label: pull-local-current
 #| cache: true
 local_combined_raw <- get_acs(
@@ -119,11 +142,9 @@ local_combined_raw <- get_acs(
   geometry     = TRUE,
   progress_bar = FALSE
 )
-# Split: hardship index
 local_2023 <- build_hardship_index(
   local_combined_raw %>% filter(variable %in% names(hardship_vars))
 )
-# Renter rate join
 renter_tbl <- local_combined_raw %>%
   filter(variable %in% names(renter_vars)) %>%
   st_drop_geometry() %>% select(-moe) %>%
@@ -200,8 +221,8 @@ change_df <- local_2019_wide %>%
   inner_join(r2013_z %>% select(GEOID, hardship_2013 = hardship_index), by = "GEOID") %>%
   mutate(hardship_change = hardship_2019 - hardship_2013)
 
-lo <- quantile(change_df$hardship_change, 0.02, na.rm = TRUE)
-hi <- quantile(change_df$hardship_change, 0.98, na.rm = TRUE)
+lo      <- quantile(change_df$hardship_change, 0.02, na.rm = TRUE)
+hi      <- quantile(change_df$hardship_change, 0.98, na.rm = TRUE)
 max_abs <- max(abs(lo), abs(hi))
 change_df <- change_df %>%
   mutate(change_plot = pmax(pmin(hardship_change, max_abs), -max_abs))
@@ -209,12 +230,12 @@ change_df <- change_df %>%
 
 ```{r}
 #| label: lisa-analysis
-nb    <- poly2nb(change_df, queen = TRUE)
-w     <- nb2listw(nb, style = "W", zero.policy = TRUE)
-lisa  <- localmoran(change_df$hardship_2019, w, zero.policy = TRUE)
-z19   <- scale(change_df$hardship_2019)[,1]
-wz19  <- lag.listw(w, z19, zero.policy = TRUE)
-p19   <- lisa[, "Pr(z != E(Ii))"]
+nb   <- poly2nb(change_df, queen = TRUE)
+w    <- nb2listw(nb, style = "W", zero.policy = TRUE)
+lisa <- localmoran(change_df$hardship_2019, w, zero.policy = TRUE)
+z19  <- scale(change_df$hardship_2019)[,1]
+wz19 <- lag.listw(w, z19, zero.policy = TRUE)
+p19  <- lisa[, "Pr(z != E(Ii))"]
 
 change_df <- change_df %>%
   mutate(lisa_2019 = case_when(
@@ -228,7 +249,7 @@ change_df <- change_df %>%
 
 ```{r}
 #| label: trajectories
-lisa_2013  <- localmoran(change_df$hardship_2013, w, zero.policy = TRUE)
+lisa_2013 <- localmoran(change_df$hardship_2013, w, zero.policy = TRUE)
 z13  <- scale(change_df$hardship_2013)[,1]
 wz13 <- lag.listw(w, z13, zero.policy = TRUE)
 p13  <- lisa_2013[, "Pr(z != E(Ii))"]
@@ -272,28 +293,29 @@ change_df <- change_df %>%
 #| label: summary-stats
 moran_global <- moran.test(change_df$hardship_2019, w, zero.policy = TRUE)
 
-n_hh <- sum(change_df$lisa_2019 == "HH", na.rm = TRUE)
-n_ll <- sum(change_df$lisa_2019 == "LL", na.rm = TRUE)
-pct_improved    <- round(100 * mean(change_df$hardship_change < -0.05, na.rm=TRUE), 1)
-pct_worsened    <- round(100 * mean(change_df$hardship_change >  0.05, na.rm=TRUE), 1)
-pct_persist_hh  <- round(100 * mean(change_df$trajectory == "Persistent HH", na.rm=TRUE), 1)
-pct_emerg_hh    <- round(100 * mean(change_df$trajectory == "Emerging HH",   na.rm=TRUE), 1)
+n_hh           <- sum(change_df$lisa_2019 == "HH", na.rm = TRUE)
+n_ll           <- sum(change_df$lisa_2019 == "LL", na.rm = TRUE)
+n_tracts       <- nrow(change_df)
+pct_improved   <- round(100 * mean(change_df$hardship_change < -0.05, na.rm=TRUE), 1)
+pct_worsened   <- round(100 * mean(change_df$hardship_change >  0.05, na.rm=TRUE), 1)
+pct_persist_hh <- round(100 * mean(change_df$trajectory == "Persistent HH", na.rm=TRUE), 1)
+pct_emerg_hh   <- round(100 * mean(change_df$trajectory == "Emerging HH",   na.rm=TRUE), 1)
+n_persist_hh   <- sum(change_df$trajectory == "Persistent HH", na.rm = TRUE)
+n_emerg_hh     <- sum(change_df$trajectory == "Emerging HH",   na.rm = TRUE)
 
-county_hi <- county_2023 %>% st_drop_geometry() %>%
-  filter(!is.na(hardship_index)) %>%
-  slice_max(hardship_index, n = 1, with_ties = FALSE) %>%
-  mutate(label = paste0(str_remove(NAME, ",.*"), " (", round(hardship_index,2), ")")) %>%
-  pull(label)
 n_counties <- sum(!is.na(county_2023$hardship_index))
 
 traj_colors <- c(
-  "Persistent HH"="#db2b27", "Emerging HH"="#fdbf11", "Dissolving HH"="#fdd870",
-  "Persistent LL"="#1696d2", "Emerging LL"="#73bfe2", "HL Outlier"="#ec008b",
-  "Stable NS"="#d2d2d2"
+  "Persistent HH" = "#db2b27", "Emerging HH"   = "#fdbf11",
+  "Dissolving HH" = "#fdd870", "Persistent LL" = "#1696d2",
+  "Emerging LL"   = "#73bfe2", "HL Outlier"    = "#ec008b",
+  "Stable NS"     = "#d2d2d2"
 )
-lisa_colors <- c("HH"="#db2b27","LL"="#1696d2","HL"="#fdbf11","LH"="#73bfe2","NS"="#d2d2d2")
+lisa_colors <- c(
+  "HH" = "#db2b27", "LL" = "#1696d2",
+  "HL" = "#fdbf11", "LH" = "#73bfe2", "NS" = "#d2d2d2"
+)
 
-# ── Urban Institute-inspired ggplot theme for dashboard maps ──────
 theme_urbn_dash <- function(base_size = 11) {
   theme_void(base_size = base_size) +
   theme(
@@ -313,7 +335,7 @@ theme_urbn_dash <- function(base_size = 11) {
   )
 }
 
-# ── National context rankings (used by National Context tab) ──────
+# National context rankings
 us_ranks <- county_2023 %>%
   st_drop_geometry() %>%
   filter(!is.na(hardship_index)) %>%
@@ -326,13 +348,14 @@ az_counties <- county_2023 %>%
   left_join(us_ranks, by = "GEOID") %>%
   arrange(desc(hardship_index)) %>%
   mutate(
-    az_rank  = row_number(),
-    n_az     = n(),
+    az_rank     = row_number(),
+    n_az        = n(),
     county_name = str_remove(NAME, " County, Arizona"),
-    County   = case_when(
-      az_rank == 1    ~ paste0(county_name, " (Worse Off in AZ)"),
-      az_rank == n_az ~ paste0(county_name, " (Best Off in AZ)"),
-      TRUE            ~ county_name
+    County = case_when(
+      az_rank == 1    ~ paste0(county_name, " (Worst in AZ)"),
+      az_rank == n_az ~ paste0(county_name, " (Best in AZ)"),
+      county_name == TARGET_COUNTY ~ paste0(county_name, " ← your county"),
+      TRUE ~ county_name
     ),
     `Economic Hardship Index` = round(hardship_index, 3)
   ) %>%
@@ -352,7 +375,6 @@ county_map <- county_2023 %>%
   st_simplify(preserveTopology = TRUE, dTolerance = 5000) %>%
   st_transform(4326)
 
-# Arizona state boundary (clean outline, no internal county lines)
 az_outline <- states(cb = TRUE) %>%
   filter(STUSPS == TARGET_STATE) %>%
   st_transform(4326)
@@ -373,7 +395,7 @@ maplibre(
     tooltip = "NAME"
   ) |>
   add_line_layer(
-    id = "hardship-outline",
+    id = "county-borders",
     source = county_map,
     line_color = "#333333",
     line_width = 0.2
@@ -386,10 +408,10 @@ maplibre(
   ) |>
   add_legend(
     "Economic Hardship Index",
-    values  = c("Worse-off", "", "Better-off"),
-    colors  = c("#db2b27", "#f5f5f5", "#1696d2"),
+    values   = c("Worse-off", "", "Average", "", "Better-off"),
+    colors   = c("#db2b27", "#ec6a5a", "#f5f5f5", "#73bfe2", "#1696d2"),
     position = "bottom-left",
-    width = 200
+    width    = 220
   )
 ```
 
@@ -407,19 +429,20 @@ az_counties %>%
   ) %>%
   DT::formatStyle(
     columns = "County",
-    target = "row",
-    backgroundColor = DT::styleEqual(TARGET_COUNTY, "#fffde6")
+    target  = "row",
+    backgroundColor = DT::styleEqual(
+      paste0(TARGET_COUNTY, " \u2190 your county"),
+      "#fffde6"
+    )
   )
 ```
 
-### Row {height=60%}
+### Row {height=65%}
 
 ```{r}
 #| label: card-dot-compare
 #| title: "All Arizona Counties vs. U.S. Extremes"
 #| fig-height: 6
-
-# Top 5 worst hardship nationally
 top5_us <- county_2023 %>%
   st_drop_geometry() %>%
   left_join(us_ranks, by = "GEOID") %>%
@@ -433,7 +456,6 @@ top5_us <- county_2023 %>%
     label = paste0(county_short, ", ", coalesce(state_abb, state_name))
   )
 
-# Bottom 5 lowest hardship nationally
 bot5_us <- county_2023 %>%
   st_drop_geometry() %>%
   left_join(us_ranks, by = "GEOID") %>%
@@ -447,12 +469,10 @@ bot5_us <- county_2023 %>%
     label = paste0(county_short, ", ", coalesce(state_abb, state_name))
   )
 
-# All 15 Arizona counties
 az_all <- county_2023 %>%
   st_drop_geometry() %>%
   left_join(us_ranks, by = "GEOID") %>%
-  filter(str_detect(NAME, "Arizona")) %>%
-  filter(!is.na(hardship_index)) %>%
+  filter(str_detect(NAME, "Arizona"), !is.na(hardship_index)) %>%
   mutate(
     group = "Arizona Counties",
     label = paste0(str_remove(NAME, " County, Arizona"), ", AZ")
@@ -461,299 +481,316 @@ az_all <- county_2023 %>%
 compare_df <- bind_rows(top5_us, az_all, bot5_us) %>%
   mutate(
     color_group = case_when(
-      group == "Arizona Counties"                   ~ "#fdbf11",
-      group == "Top 5 US (Most Economic Hardship)"  ~ "#db2b27",
-      TRUE                                          ~ "#1696d2"
+      group == "Arizona Counties"                    ~ "#fdbf11",
+      group == "Top 5 US (Most Economic Hardship)"   ~ "#db2b27",
+      TRUE                                           ~ "#1696d2"
     ),
-    point_size = 2.5,
     label = fct_reorder(label, hardship_index)
   )
 
-# Reference values for annotations
-az_mean <- compare_df %>%
-  filter(group == "Arizona Counties") %>%
-  summarise(m = mean(hardship_index)) %>% pull(m)
-
-maricopa_val <- compare_df %>%
-  filter(str_detect(label, TARGET_COUNTY)) %>%
-  pull(hardship_index)
-
-maricopa_y <- compare_df %>%
-  filter(str_detect(label, TARGET_COUNTY)) %>%
-  pull(label) %>% as.character()
+az_mean    <- mean(compare_df$hardship_index[compare_df$group == "Arizona Counties"],
+                   na.rm = TRUE)
+target_val <- compare_df$hardship_index[str_detect(compare_df$label, TARGET_COUNTY)][1]
+mid_label  <- levels(compare_df$label)[ceiling(nlevels(compare_df$label) / 2)]
 
 p <- ggplot(compare_df,
-       aes(x = hardship_index, y = label,
-           color = color_group, size = point_size,
-           text = paste0(label, "\nIndex: ", round(hardship_index, 3),
-                         "\nGroup: ", group))) +
-  geom_point() +
-  scale_size_identity() +
+       aes(x = hardship_index, y = label, color = color_group,
+           text = paste0(label, "\nIndex: ", round(hardship_index, 3)))) +
+  geom_point(size = 2.8) +
   scale_color_identity() +
-  theme_urbn_dash(base_size = 11) +
+  theme_urbn_dash(base_size = 10) +
   theme(
-    axis.text.y        = element_text(size = 8.5, color = "#333333"),
-    axis.text.x        = element_text(size = 10, color = "#767676"),
+    axis.text.y        = element_text(size = 8, color = "#333333"),
+    axis.text.x        = element_text(size = 9, color = "#767676"),
     panel.grid.major.x = element_line(color = "#eeeeee", linewidth = 0.4)
   ) +
-  labs(
-    x = "Economic Hardship Index",
-    y = NULL
-  )
-
-# Midpoint label for hover on the AZ mean line
-mid_label <- levels(compare_df$label)[ceiling(nlevels(compare_df$label) / 2)]
+  labs(x = "Economic Hardship Index", y = NULL)
 
 ggplotly(p, tooltip = "text") %>%
-  add_markers(
-    x = az_mean, y = mid_label,
-    marker = list(color = "#9d9d9d", size = 8, symbol = "line-ns-open",
-                  line = list(width = 0)),
-    hoverinfo = "text",
-    text = paste0("AZ State Average\nIndex: ", round(az_mean, 3)),
-    showlegend = FALSE, inherit = FALSE
-  ) %>%
   layout(
-    title = list(
+    title  = list(
       text = paste0("All Arizona Counties vs. U.S. Extremes",
-                    "<br><sup style='color:#767676'>",
-                    "<span style=\"color:#fdbf11\">\u25CF</span> AZ Counties &nbsp; ",
-                    "<span style=\"color:#db2b27\">\u25CF</span> 5 Highest US &nbsp; ",
-                    "<span style=\"color:#1696d2\">\u25CF</span> 5 Lowest US &nbsp; ",
-                    "<span style=\"color:#9d9d9d\">┊</span> AZ Mean</sup>"),
-      font = list(size = 13, color = "#333333")
+                    "<br><sup><span style=\"color:#fdbf11\">&#9679;</span> AZ Counties &nbsp;",
+                    "<span style=\"color:#db2b27\">&#9679;</span> 5 Highest US &nbsp;",
+                    "<span style=\"color:#1696d2\">&#9679;</span> 5 Lowest US &nbsp;",
+                    "<span style=\"color:#9d9d9d\">&#9474;</span> AZ Mean</sup>"),
+      font = list(size = 12, color = "#333333")
     ),
-    margin = list(t = 45, b = 35),
-    xaxis = list(title = list(text = "Economic Hardship Index",
-                              font = list(size = 12, color = "#333333"))),
-    yaxis = list(automargin = TRUE),
-    shapes = list(
-      list(type = "line",
-           x0 = az_mean, x1 = az_mean,
-           y0 = 0, y1 = 1, yref = "paper",
-           line = list(color = "#9d9d9d", width = 1.5, dash = "dot"))
-    )
+    margin = list(t = 50, b = 30),
+    xaxis  = list(title = list(text = "Economic Hardship Index",
+                               font = list(size = 11, color = "#555555"))),
+    yaxis  = list(automargin = TRUE),
+    shapes = list(list(
+      type = "line",
+      x0 = az_mean, x1 = az_mean, y0 = 0, y1 = 1, yref = "paper",
+      line = list(color = "#9d9d9d", width = 1.5, dash = "dot")
+    ))
   ) %>%
-  config(displayModeBar = TRUE,
-         modeBarButtonsToRemove = c("lasso2d", "select2d", "zoom2d",
-                                    "pan2d", "zoomIn2d", "zoomOut2d",
-                                    "autoScale2d", "hoverClosestCartesian",
-                                    "hoverCompareCartesian"))
+  config(displayModeBar = FALSE)
 ```
 
-# Local Hardship
-
-## Column {width=50%}
-
-```{r}
-#| label: map-local
-#| fig-height: 7
-ggplot(local_2023) +
-  geom_sf(aes(fill = hardship_index), color = NA) +
-  scale_fill_viridis_c(option="inferno", direction=-1,
-                       name="Economic\nHardship Index", na.value="grey40") +
-  theme_urbn_dash(base_size=11) +
-  labs(title    = paste0("Economic Hardship: ", TARGET_LABEL),
-       subtitle = "Census tracts | ACS 2019–2023 5-Year",
-       caption  = "3-variable index: poverty rate, unemployment rate, median income (reversed)")
-```
-
-## Column {width=50%}
-
-```{r}
-#| label: map-bivariate
-#| fig-height: 7
-bi_data <- local_2023 %>%
-  filter(!is.na(hardship_index), !is.na(renter_rate)) %>%
-  bi_class(x=hardship_index, y=renter_rate, style="quantile", dim=3)
-
-p_bi <- ggplot(bi_data) +
-  geom_sf(aes(fill=bi_class), color=NA, show.legend=FALSE) +
-  bi_scale_fill(pal="DkBlue", dim=3) +
-  theme_urbn_dash(base_size=11) +
-  labs(title    = "Economic Hardship × Renter Rate",
-       subtitle = paste0(TARGET_LABEL, " | ACS 2019–2023"),
-       caption  = "Dark blue = high hardship AND high renter rate")
-
-p_legend <- bi_legend(pal="DkBlue", dim=3,
-                       xlab="Economic Hardship →", ylab="% Renter →", size=9)
-
-p_bi + inset_element(p_legend, left=0.72, bottom=0.05, right=1, top=0.35)
-```
-
-# Hot Spots
+# Arizona in Focus
 
 ## Column {width=60%}
 
 ```{r}
-#| label: map-lisa
-#| fig-height: 8
-ggplot(change_df) +
-  geom_sf(aes(fill=lisa_2019), color=NA) +
-  scale_fill_manual(values=lisa_colors,
-    labels=c("HH"="Hot Spot (HH)","LL"="Cold Spot (LL)",
-             "HL"="High-Low Outlier","LH"="Low-High Outlier","NS"="Not Significant"),
-    name="LISA Cluster\n(2019, p<0.05)") +
-  theme_urbn_dash(base_size=11) +
-  labs(title    = paste0("Spatial Economic Hardship Clusters: ", TARGET_LABEL),
-       subtitle = "LISA analysis on 2015–2019 ACS economic hardship index",
-       caption  = paste0("Global Moran's I = ", round(moran_global$estimate[1],3),
-                         " (p < 0.001) — significant positive spatial autocorrelation"))
+#| label: map-az-tracts
+#| title: "Economic Hardship: Arizona Census Tracts (2023)"
+az_map <- az_tract_2023 %>%
+  filter(!is.na(hardship_index)) %>%
+  st_simplify(preserveTopology = TRUE, dTolerance = 500) %>%
+  st_transform(4326)
+
+maplibre(
+  style  = carto_style("dark-matter"),
+  bounds = c(-115.0, 31.0, -108.5, 37.5)
+) |>
+  add_fill_layer(
+    id           = "az-tracts",
+    source       = az_map,
+    fill_color   = interpolate(
+      column = "hardship_index",
+      values = c(-2, -1, 0, 1, 2),
+      stops  = c("#1696d2", "#73bfe2", "#f5f5f5", "#ec6a5a", "#db2b27")
+    ),
+    fill_opacity = 0.8,
+    tooltip      = "NAME"
+  ) |>
+  add_line_layer(
+    id           = "maricopa-border",
+    source       = maricopa_boundary,
+    line_color   = "#fdbf11",
+    line_width   = 2.5
+  ) |>
+  add_legend(
+    "Economic Hardship Index",
+    values   = c("Worse-off", "", "Average", "", "Better-off"),
+    colors   = c("#db2b27", "#ec6a5a", "#f5f5f5", "#73bfe2", "#1696d2"),
+    position = "bottom-left",
+    width    = 220
+  )
 ```
 
 ## Column {width=40%}
 
 ```{r}
+#| label: map-lisa
+#| title: "Hardship Clusters: Maricopa County (LISA)"
+#| fig-height: 7
+ggplot(change_df) +
+  geom_sf(aes(fill = lisa_2019), color = NA) +
+  scale_fill_manual(
+    values = lisa_colors,
+    labels = c(
+      "HH" = "Hot Spot — High Hardship Cluster",
+      "LL" = "Cold Spot — Low Hardship Cluster",
+      "HL" = "High-Low Outlier",
+      "LH" = "Low-High Outlier",
+      "NS" = "Not Statistically Significant"
+    ),
+    name = "LISA Cluster\n(2019, p < 0.05)"
+  ) +
+  theme_urbn_dash(base_size = 10) +
+  labs(
+    title    = paste0("Hardship Clusters: ", TARGET_LABEL),
+    subtitle = "Statistically significant spatial concentration of economic hardship",
+    caption  = paste0(
+      "Global Moran's I = ", round(moran_global$estimate[1], 3),
+      " (p < 0.001) — strong positive spatial autocorrelation"
+    )
+  )
+```
+
+```{r}
 #| label: vb-hh
 #| content: valuebox
-list(title="Hot Spot Tracts (HH)", value=n_hh, icon="fire", color="danger")
+list(
+  title = "Hot Spot Tracts — High Economic Hardship Clusters",
+  value = n_hh,
+  icon  = "fire",
+  color = "danger"
+)
 ```
 
 ```{r}
 #| label: vb-ll
 #| content: valuebox
-list(title="Cold Spot Tracts (LL)", value=n_ll, icon="snow", color="primary")
+list(
+  title = "Cold Spot Tracts — Low Economic Hardship Clusters",
+  value = n_ll,
+  icon  = "snow",
+  color = "primary"
+)
 ```
 
 ```{r}
 #| label: vb-moran
 #| content: valuebox
-list(title="Global Moran's I", value=round(unname(moran_global$estimate[1]),3),
-     icon="diagram-3", color="secondary")
+list(
+  title = "Global Moran's I — Spatial Clustering Strength",
+  value = round(unname(moran_global$estimate[1]), 3),
+  icon  = "diagram-3",
+  color = "secondary"
+)
 ```
 
-```{r}
-#| label: table-hotspots
-change_df %>%
-  st_drop_geometry() %>%
-  filter(lisa_2019 %in% c("HH","LL")) %>%
-  arrange(desc(hardship_2019)) %>%
-  mutate(
-    Tract    = str_extract(NAME, "Census Tract [\\d\\.]+"),
-    Cluster  = lisa_2019,
-    Hardship = round(hardship_2019, 3),
-    Trajectory = trajectory
-  ) %>%
-  select(Tract, Cluster, Hardship, Trajectory) %>%
-  DT::datatable(options=list(pageLength=10, dom="tp"), rownames=FALSE)
-```
-
-# Change & Trajectories
-
-## Column {width=50%}
-
-```{r}
-#| label: map-trajectory
-#| fig-height: 8
-ggplot(change_df) +
-  geom_sf(aes(fill=trajectory), color=NA) +
-  scale_fill_manual(values=traj_colors,
-    labels=c("Persistent HH"="Persistent Hot Spot",
-             "Emerging HH"  ="Emerging Hot Spot",
-             "Dissolving HH"="Dissolving Hot Spot",
-             "Persistent LL"="Persistent Cold Spot",
-             "Emerging LL"  ="Emerging Cold Spot",
-             "HL Outlier"   ="Spatial Outlier",
-             "Stable NS"    ="No Dominant Pattern"),
-    name="Trajectory\n(2013→2019)") +
-  theme_urbn_dash(base_size=11) +
-  labs(title    = paste0("Neighborhood Economic Hardship Trajectories: ", TARGET_LABEL),
-       subtitle = "LISA cluster transition, 2013–2019 | Pooled z-score standardization",
-       caption  = "Pooled mean/SD across both years — comparable change scores")
-```
-
-## Column {width=50%}
-
-```{r}
-#| label: vb-improved
-#| content: valuebox
-list(title="Tracts Improved (2013→2019)", value=paste0(pct_improved,"%"),
-     icon="arrow-down-circle", color="success")
-```
-
-```{r}
-#| label: vb-worsened
-#| content: valuebox
-list(title="Tracts Worsened (2013→2019)", value=paste0(pct_worsened,"%"),
-     icon="arrow-up-circle", color="warning")
-```
-
-```{r}
-#| label: vb-persistent
-#| content: valuebox
-list(title="Persistently High Economic Hardship", value=paste0(pct_persist_hh,"%"),
-     icon="exclamation-circle", color="danger")
-```
-
-```{r}
-#| label: vb-emerging
-#| content: valuebox
-list(title="Emerging Hot Spots", value=paste0(pct_emerg_hh,"%"),
-     icon="arrow-up-right-circle", color="warning")
-```
-
-```{r}
-#| label: map-change
-#| fig-height: 6.5
-ggplot(change_df) +
-  geom_sf(aes(fill=change_plot), color=NA) +
-  scale_fill_gradient2(low="#0a4c6a", mid="#f5f5f5", high="#db2b27",
-    midpoint=0, limits=c(-max_abs, max_abs), name="Economic\nHardship Change") +
-  theme_urbn_dash(base_size=10) +
-  labs(title    = paste0("Economic Hardship Change (2013→2019): ", TARGET_LABEL),
-       subtitle = "Blue = improved | Red = worsened | Winsorized at 2nd/98th pct")
-```
-
-# Policy
+# Hardship Trajectories: 2013–2019
 
 ## Column {width=55%}
 
 ```{r}
-#| label: table-policy
-change_df %>%
-  st_drop_geometry() %>%
-  filter(trajectory %in% c("Persistent HH","Emerging HH")) %>%
-  arrange(desc(hardship_2019)) %>%
-  mutate(
-    Tract        = str_extract(NAME, "Census Tract [\\d\\.]+"),
-    Trajectory   = trajectory,
-    `Hardship 2019` = round(hardship_2019, 3),
-    `Change 2013–19` = round(hardship_change, 3)
-  ) %>%
-  select(Tract, Trajectory, `Hardship 2019`, `Change 2013–19`) %>%
-  DT::datatable(
-    filter  = "top",
-    options = list(pageLength=12, dom="ftp"),
-    rownames = FALSE
+#| label: map-trajectory
+#| title: "Neighborhood Hardship Trajectories (2013–2019)"
+#| fig-height: 9
+ggplot(change_df) +
+  geom_sf(aes(fill = trajectory), color = NA) +
+  scale_fill_manual(
+    values = traj_colors,
+    labels = c(
+      "Persistent HH" = "Persistent Hot Spot — entrenched hardship",
+      "Emerging HH"   = "Emerging Hot Spot — newly forming cluster",
+      "Dissolving HH" = "Dissolving Hot Spot — improving cluster",
+      "Persistent LL" = "Persistent Cold Spot — stable low hardship",
+      "Emerging LL"   = "Emerging Cold Spot",
+      "HL Outlier"    = "Spatial Outlier",
+      "Stable NS"     = "No Dominant Pattern"
+    ),
+    name = "Trajectory\n(2013 → 2019)"
+  ) +
+  theme_urbn_dash(base_size = 10) +
+  labs(
+    title    = paste0("Neighborhood Economic Hardship Trajectories: ", TARGET_LABEL),
+    subtitle = "LISA cluster transition 2013–2019 | Pooled z-score standardization",
+    caption  = "Red = persistent/emerging hardship | Blue = stable/improving low-hardship areas"
   )
 ```
 
 ## Column {width=45%}
 
+### Row {height=55%}
+
+```{r}
+#| label: map-change
+#| title: "Economic Hardship Change (2013–2019)"
+#| fig-height: 6
+ggplot(change_df) +
+  geom_sf(aes(fill = change_plot), color = NA) +
+  scale_fill_gradient2(
+    low      = "#0a4c6a",
+    mid      = "#f5f5f5",
+    high     = "#db2b27",
+    midpoint = 0,
+    limits   = c(-max_abs, max_abs),
+    name     = "Economic\nHardship Change"
+  ) +
+  theme_urbn_dash(base_size = 10) +
+  labs(
+    title    = paste0("Economic Hardship Change (2013→2019): ", TARGET_LABEL),
+    subtitle = "Blue = improved | Red = worsened | Winsorized at 2nd/98th percentile",
+    caption  = "Pooled z-score standardization — scores are comparable across years"
+  )
+```
+
+### Row {height=45%}
+
+```{r}
+#| label: vb-improved
+#| content: valuebox
+list(title = "Tracts Improved (2013→2019)",
+     value = paste0(pct_improved, "%"),
+     icon  = "arrow-down-circle", color = "success")
+```
+
+```{r}
+#| label: vb-worsened
+#| content: valuebox
+list(title = "Tracts Worsened (2013→2019)",
+     value = paste0(pct_worsened, "%"),
+     icon  = "arrow-up-circle", color = "warning")
+```
+
+```{r}
+#| label: vb-persistent
+#| content: valuebox
+list(title = "Persistently High Hardship",
+     value = paste0(pct_persist_hh, "%"),
+     icon  = "exclamation-circle", color = "danger")
+```
+
+```{r}
+#| label: vb-emerging
+#| content: valuebox
+list(title = "Emerging Hot Spots",
+     value = paste0(pct_emerg_hh, "%"),
+     icon  = "arrow-up-right-circle", color = "warning")
+```
+
+# Policy Implications
+
+## Column {width=50%}
+
+::: {.card style="border-left: 5px solid #db2b27; margin-bottom: 12px;"}
+### 🔴 Areas of Persistent Concern
+
+**`r n_persist_hh` Persistent Hot Spot Tracts (`r pct_persist_hh`% of all tracts)**
+
+These census tracts had statistically significant high-hardship clustering in **both** 2013 and 2019. The pattern is not random — a Global Moran's I of `r round(moran_global$estimate[1], 3)` confirms that hardship is spatially concentrated, not scattered. Tracts in this category share infrastructure deficits, limited employment access, and concentrated poverty that reinforce one another across neighborhood boundaries.
+
+**Implication:** Individual-level interventions alone are unlikely to move the needle. Place-based, multi-sector investment is required.
+
+*[TODO: Identify the specific geographic corridor in your county where these tracts are concentrated.]*
+:::
+
+::: {.card style="border-left: 5px solid #fdbf11; margin-bottom: 12px;"}
+### 🟡 Early Warning Signals
+
+**`r n_emerg_hh` Emerging Hot Spot Tracts (`r pct_emerg_hh`% of all tracts)**
+
+These tracts were **not** significant hardship clusters in 2013 but became statistically significant by 2019 — representing the spatial expansion of hardship beyond historically distressed cores. This is an early warning signal that hardship is spreading, not contained.
+
+**Displacement paradox:** Some "improving" tracts nearby may be gentrifying, pushing lower-income households outward into these emerging clusters. Declining hardship scores do not necessarily mean existing residents are better off.
+
+*[TODO: Identify where emerging hot spots are forming in your county and what may be driving displacement.]*
+:::
+
+::: {.card style="border-left: 5px solid #55b748;"}
+### 🟢 Signs of Progress — Read With Caution
+
+**`r pct_improved`% of tracts showed improvement (2013→2019)**
+
+The majority of tracts improved over the post-recession recovery window. However, aggregate improvement masks significant variation, and the data cannot distinguish genuine economic uplift from population turnover. A tract with a declining hardship index may simply have replaced lower-income residents with higher-income newcomers.
+
+**Data limitation:** Before drawing conclusions from improving scores, ground-truth verification through community engagement and displacement tracking is essential.
+
+*[TODO: Customize with your county's specific context.]*
+:::
+
+## Column {width=50%}
+
 ::: {.card}
-## Recommendation 1
-**TODO:** Write your first recommendation targeting Persistent HH tracts
-— neighborhoods with entrenched, long-standing hardship clusters.
-Name a specific geography, cite the hardship score, and propose a
-concrete intervention with a responsible entity.
+### Recommendation 1
+**TODO:** Write your first recommendation targeting the `r n_persist_hh` Persistent HH tracts.
+Name the specific geographic corridor, cite the hardship index values, and propose a
+concrete place-based intervention with a named responsible entity.
 
 *[Your answer here — minimum 3 sentences]*
 :::
 
 ::: {.card}
-## Recommendation 2
-**TODO:** Write your second recommendation targeting Emerging HH tracts
-— neighborhoods where spatial clustering of hardship is newly forming.
-Reference the change score and consider displacement risk.
+### Recommendation 2
+**TODO:** Write your second recommendation targeting the `r n_emerg_hh` Emerging HH tracts.
+Reference the displacement paradox, identify where these clusters are forming,
+and propose an early-intervention or monitoring strategy.
 
 *[Your answer here — minimum 3 sentences]*
 :::
 
 ::: {.card}
-## Recommendation 3
-**TODO:** Write your third recommendation using the temporal evidence
-— the trajectory map, change scores, and space-time Moran's I statistic.
-Make a forward-looking data-monitoring or early-intervention argument.
+### Recommendation 3
+**TODO:** Write your third recommendation using the temporal evidence —
+the trajectory map, change scores, and the Moran's I statistic of
+`r round(moran_global$estimate[1], 3)`. Make a forward-looking
+data-monitoring or cross-sector coordination argument.
 
 *[Your answer here — minimum 3 sentences]*
 :::
