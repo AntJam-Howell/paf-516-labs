@@ -1,0 +1,404 @@
+---
+title: "Economic Hardship in Maricopa County"
+subtitle: "Policy Brief — Instructor Reference"
+author: "PAF 516 | Arizona State University"
+date: today
+format:
+  html:
+    theme: readable
+    toc: false
+    code-fold: true
+    code-summary: "Show code"
+    self-contained: true
+    number-sections: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+::: {.callout-warning}
+## Instructor Reference
+This is the completed example for Maricopa County. Students should
+view this as a model for what a strong submission looks like —
+not as a template to copy. Your analysis will use a different county
+and must reflect your own interpretation of the results.
+:::
+
+::: {.callout-important}
+## Before You Begin
+1. **Rename** this file `Policy_Brief_YourLastName.qmd`.
+2. **Update the county block** (TARGET_STATE, TARGET_COUNTY, TARGET_LABEL).
+   This controls all data pulls and figure titles — no other code changes needed.
+3. **Knit the file** to see your county's results.
+4. **Write your answers** in each [Your answer here] section.
+5. **Submit** both `.qmd` and `.html` to Canvas.
+:::
+
+```{r}
+#| label: setup
+#| include: false
+options(tigris_use_cache = TRUE)
+options(tigris_progress_bar = FALSE)
+set.seed(42)
+```
+
+```{r}
+#| label: packages
+#| include: false
+if (!file.exists("~/.paf516_ready")) {
+  if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+  tmp <- tempfile(fileext = ".lock")
+  download.file(
+    url      = "https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/renv.lock",
+    destfile = tmp, mode = "wb"
+  )
+  renv::restore(lockfile = tmp, prompt = FALSE)
+  file.create("~/.paf516_ready")
+}
+library(tidyverse); library(tidycensus); library(sf); library(spdep)
+library(viridis); library(patchwork); library(scales)
+```
+
+```{r}
+#| label: county-config
+TARGET_STATE  <- "AZ"
+TARGET_COUNTY <- "Maricopa"
+TARGET_LABEL  <- "Maricopa County, AZ"
+```
+
+```{r}
+#| label: index-config
+hardship_vars <- c(
+  pov_below50   = "C17002_002",
+  pov_50to99    = "C17002_003",
+  pov_den       = "C17002_001",
+  unemp_num     = "B23025_005",
+  unemp_den     = "B23025_002",
+  median_income = "B19013_001"
+)
+
+build_hardship_index <- function(raw_df) {
+  raw_df %>%
+    select(-moe) %>%
+    pivot_wider(names_from = variable, values_from = estimate) %>%
+    mutate(
+      poverty_rate = (pov_below50 + pov_50to99) / pov_den,
+      unemp_rate   = unemp_num / unemp_den
+    ) %>%
+    filter(!is.na(poverty_rate), !is.na(unemp_rate), !is.na(median_income)) %>%
+    (function(df) {
+      geom <- if (inherits(df, "sf")) st_geometry(df) else NULL
+      tbl  <- st_drop_geometry(df)
+      z_pov  <- as.numeric(scale(tbl$poverty_rate))
+      z_unemp <- as.numeric(scale(tbl$unemp_rate))
+      z_inc  <- -1 * as.numeric(scale(tbl$median_income))
+      tbl$hardship_index <- rowMeans(cbind(z_pov, z_unemp, z_inc), na.rm = TRUE)
+      if (!is.null(geom)) st_sf(tbl, geometry = geom) else tbl
+    })()
+}
+```
+
+```{r}
+#| label: pull-local
+#| cache: true
+local_raw <- get_acs(
+  geography = "tract", variables = hardship_vars,
+  state = TARGET_STATE, county = TARGET_COUNTY,
+  year = 2023, survey = "acs5", geometry = TRUE, progress_bar = FALSE
+)
+local_2023 <- build_hardship_index(local_raw)
+```
+
+```{r}
+#| label: pull-temporal
+#| cache: true
+local_2013_raw <- get_acs(
+  geography = "tract", variables = hardship_vars,
+  state = TARGET_STATE, county = TARGET_COUNTY,
+  year = 2013, survey = "acs5", geometry = TRUE, progress_bar = FALSE
+)
+local_2019_raw <- get_acs(
+  geography = "tract", variables = hardship_vars,
+  state = TARGET_STATE, county = TARGET_COUNTY,
+  year = 2019, survey = "acs5", geometry = TRUE, progress_bar = FALSE
+)
+local_2016_raw <- get_acs(
+  geography = "tract", variables = hardship_vars,
+  state = TARGET_STATE, county = TARGET_COUNTY,
+  year = 2016, survey = "acs5", geometry = FALSE, progress_bar = FALSE
+)
+```
+
+```{r}
+#| label: pooled-std
+widen_and_rate <- function(df) {
+  df %>%
+    select(-moe) %>%
+    pivot_wider(names_from = variable, values_from = estimate) %>%
+    mutate(
+      poverty_rate = (pov_below50 + pov_50to99) / pov_den,
+      unemp_rate   = unemp_num / unemp_den
+    ) %>%
+    filter(!is.na(poverty_rate), !is.na(unemp_rate), !is.na(median_income))
+}
+
+local_2013_wide <- widen_and_rate(local_2013_raw)
+local_2019_wide <- widen_and_rate(local_2019_raw)
+
+r2013 <- local_2013_wide %>% st_drop_geometry() %>%
+  select(GEOID, poverty_rate, unemp_rate, median_income)
+r2019 <- local_2019_wide %>% st_drop_geometry() %>%
+  select(GEOID, poverty_rate, unemp_rate, median_income)
+
+vars_pool <- c("poverty_rate", "unemp_rate", "median_income")
+pooled_stats <- map_dfr(vars_pool, function(v) {
+  vals <- c(r2013[[v]], r2019[[v]])
+  tibble(variable = v, mean = mean(vals, na.rm = TRUE), sd = sd(vals, na.rm = TRUE))
+})
+
+apply_pooled_z <- function(df, stats) {
+  for (v in stats$variable) {
+    df[[paste0("z_", v)]] <- (df[[v]] - stats$mean[stats$variable==v]) /
+                              stats$sd[stats$variable==v]
+  }
+  df$z_median_income <- -1 * df$z_median_income
+  df$hardship_index  <- rowMeans(
+    df[, c("z_poverty_rate","z_unemp_rate","z_median_income")], na.rm = TRUE)
+  df
+}
+
+r2013_z <- apply_pooled_z(r2013, pooled_stats)
+r2019_z <- apply_pooled_z(r2019, pooled_stats)
+
+change_df <- local_2019_wide %>%
+  select(GEOID, NAME) %>%
+  left_join(r2019_z %>% select(GEOID, hardship_2019 = hardship_index), by = "GEOID") %>%
+  inner_join(r2013_z %>% select(GEOID, hardship_2013 = hardship_index), by = "GEOID") %>%
+  mutate(hardship_change = hardship_2019 - hardship_2013)
+```
+
+```{r}
+#| label: lisa-analysis
+nb    <- poly2nb(change_df, queen = TRUE)
+w     <- nb2listw(nb, style = "W", zero.policy = TRUE)
+lisa  <- localmoran(change_df$hardship_2019, w, zero.policy = TRUE)
+z19   <- scale(change_df$hardship_2019)[,1]
+wz19  <- lag.listw(w, z19, zero.policy = TRUE)
+p19   <- lisa[, "Pr(z != E(Ii))"]
+
+change_df <- change_df %>%
+  mutate(lisa_2019 = case_when(
+    z19 > 0 & wz19 > 0 & p19 < 0.05 ~ "HH",
+    z19 < 0 & wz19 < 0 & p19 < 0.05 ~ "LL",
+    z19 > 0 & wz19 < 0 & p19 < 0.05 ~ "HL",
+    z19 < 0 & wz19 > 0 & p19 < 0.05 ~ "LH",
+    TRUE ~ "NS"
+  ))
+
+moran_global <- moran.test(change_df$hardship_2019, w, zero.policy = TRUE)
+n_hh <- sum(change_df$lisa_2019 == "HH", na.rm = TRUE)
+```
+
+```{r}
+#| label: trajectories
+lisa_2013  <- localmoran(change_df$hardship_2013, w, zero.policy = TRUE)
+z13  <- scale(change_df$hardship_2013)[,1]
+wz13 <- lag.listw(w, z13, zero.policy = TRUE)
+p13  <- lisa_2013[, "Pr(z != E(Ii))"]
+
+local_2016_wide <- widen_and_rate(local_2016_raw %>% mutate(geometry = NULL))
+r2016_z <- apply_pooled_z(
+  local_2016_wide %>% select(GEOID, poverty_rate, unemp_rate, median_income),
+  pooled_stats
+)
+
+change_df <- change_df %>%
+  mutate(
+    lisa_2013 = case_when(
+      z13 > 0 & wz13 > 0 & p13 < 0.05 ~ "HH",
+      z13 < 0 & wz13 < 0 & p13 < 0.05 ~ "LL",
+      z13 > 0 & wz13 < 0 & p13 < 0.05 ~ "HL",
+      z13 < 0 & wz13 > 0 & p13 < 0.05 ~ "LH",
+      TRUE ~ "NS"
+    ),
+    trajectory = case_when(
+      lisa_2013 == "HH" & lisa_2019 == "HH" ~ "Persistent HH",
+      lisa_2013 != "HH" & lisa_2019 == "HH" ~ "Emerging HH",
+      lisa_2013 == "HH" & lisa_2019 != "HH" ~ "Dissolving HH",
+      lisa_2013 == "LL" & lisa_2019 == "LL" ~ "Persistent LL",
+      lisa_2013 != "LL" & lisa_2019 == "LL" ~ "Emerging LL",
+      lisa_2013 == "HL" | lisa_2019 == "HL" ~ "HL Outlier",
+      TRUE                                   ~ "Stable NS"
+    )
+  ) %>%
+  left_join(r2016_z %>% select(GEOID, hardship_2016 = hardship_index), by = "GEOID") %>%
+  mutate(trend_type = case_when(
+    hardship_2013 > hardship_2016 & hardship_2016 > hardship_2019 ~ "Consistently improving",
+    hardship_2013 < hardship_2016 & hardship_2016 < hardship_2019 ~ "Consistently worsening",
+    hardship_2013 > hardship_2016 & hardship_2016 < hardship_2019 ~ "V-shaped (improved mid)",
+    hardship_2013 < hardship_2016 & hardship_2016 > hardship_2019 ~ "Inverted-V (worsened mid)",
+    TRUE ~ "Flat / non-monotone"
+  ))
+```
+
+```{r}
+#| label: summary-stats
+traj_colors <- c(
+  "Persistent HH"="#db2b27", "Emerging HH"="#fdbf11", "Dissolving HH"="#fdd870",
+  "Persistent LL"="#1696d2", "Emerging LL"="#73bfe2", "HL Outlier"="#ec008b",
+  "Stable NS"="#d2d2d2"
+)
+lisa_colors <- c("HH"="#db2b27","LL"="#1696d2","HL"="#fdbf11","LH"="#73bfe2","NS"="#d2d2d2")
+
+# ── Urban Institute-inspired ggplot theme for dashboard maps ──────
+theme_urbn_dash <- function(base_size = 11) {
+  theme_void(base_size = base_size) +
+  theme(
+    plot.background   = element_rect(fill = "#ffffff", color = NA),
+    panel.background  = element_rect(fill = "#ffffff", color = NA),
+    plot.title        = element_text(color = "#333333", size = base_size + 1,
+                                     face = "bold", margin = margin(b = 3)),
+    plot.subtitle     = element_text(color = "#767676", size = base_size - 1,
+                                     margin = margin(b = 6)),
+    plot.caption      = element_text(color = "#767676", size = base_size - 2,
+                                     hjust = 0, margin = margin(t = 4)),
+    legend.background = element_rect(fill = "#ffffff", color = NA),
+    legend.key        = element_rect(fill = "#ffffff", color = NA),
+    legend.text       = element_text(color = "#333333", size = base_size - 1),
+    legend.title      = element_text(color = "#767676", size = base_size - 1),
+    plot.margin       = margin(8, 8, 8, 8)
+  )
+}
+
+pct_persist_hh <- round(100 * mean(change_df$trajectory == "Persistent HH", na.rm=TRUE), 1)
+pct_emerg_hh   <- round(100 * mean(change_df$trajectory == "Emerging HH",   na.rm=TRUE), 1)
+pct_dissolving <- round(100 * mean(change_df$trajectory == "Dissolving HH", na.rm=TRUE), 1)
+```
+
+::: {.callout-note}
+## Executive Summary
+Maricopa County ranks #2,464 of 3,220 US counties in composite economic hardship, indicating moderate overall conditions but masking severe internal inequality. Spatial analysis reveals extreme clustering of hardship (Global Moran's I = 0.624, p < 0.001), with 175 census tracts forming statistically significant hot spots concentrated in the south Phoenix corridor, Maryvale, and south Mesa. Of these, 16.6% of all county tracts have been persistently high-hardship clusters since at least 2013, while 2.8% are newly emerging hot spots showing the early stages of hardship concentration. The highest-priority intervention is targeted workforce investment in the approximately 150 persistent hot-spot tracts, paired with an early-warning monitoring system to intercept emerging clusters before they become entrenched.
+:::
+
+## Background
+
+This policy brief examines the spatial distribution and temporal trajectory of economic hardship across census tracts in `r TARGET_LABEL`. The analysis constructs a composite hardship index from three American Community Survey indicators — the poverty rate, the unemployment rate, and median household income (reverse-coded) — standardized and averaged into a single z-score measure. This index identifies neighborhoods where multiple dimensions of economic disadvantage overlap, providing a more nuanced picture than any single indicator alone.
+
+The temporal analysis compares hardship levels in the 2009–2013 and 2015–2019 ACS 5-year windows, spanning the post-recession recovery decade. Using Local Indicators of Spatial Association (LISA), the analysis identifies statistically significant hot spots (clusters of high hardship) and cold spots (clusters of low hardship) at each time point, then classifies each tract's trajectory — persistent, emerging, or dissolving — to reveal where hardship is entrenching, spreading, or receding. A three-point check using the 2012–2016 midpoint distinguishes monotonic trends from V-shaped or inverted-V patterns. *If you selected a different county, review whether these temporal patterns match your local context.*
+
+# Key Findings
+
+## Finding 1 — Where Is Hardship Concentrated?
+
+```{r}
+#| label: fig-lisa
+#| fig-width: 8
+#| fig-height: 6
+ggplot(change_df) +
+  geom_sf(aes(fill = lisa_2019), color = NA) +
+  scale_fill_manual(values = lisa_colors,
+    labels = c("HH" = "Hot Spot (HH)", "LL" = "Cold Spot (LL)",
+               "HL" = "High-Low Outlier", "LH" = "Low-High Outlier",
+               "NS" = "Not Significant"),
+    name = "LISA Cluster\n(2019, p<0.05)") +
+  theme_urbn_dash(base_size = 11) +
+  labs(title    = paste0("Spatial Hardship Clusters: ", TARGET_LABEL),
+       subtitle = "LISA analysis on ACS 2019 5-Year economic hardship index",
+       caption  = paste0("Global Moran's I = ", round(moran_global$estimate[1], 3),
+                         " (p < 0.001) | Queen contiguity, row-standardized weights"))
+```
+
+The LISA analysis identifies 175 census tracts as statistically significant High-High hot spots (p < 0.05), concentrated in a contiguous band stretching from the South Mountain Village planning area through central south Phoenix and westward into the Maryvale corridor along the I-10/I-17 interchange. The Global Moran's I of 0.624 indicates very strong positive spatial autocorrelation — hardship is not randomly distributed across the county but instead clusters intensely, meaning that high-hardship tracts are overwhelmingly surrounded by other high-hardship tracts. This spatial concentration has policy significance beyond what individual tract-level statistics convey: it signals that the infrastructure deficits, limited service access, and labor market barriers in these neighborhoods compound across adjacent areas, creating a regional pocket of disadvantage that tract-by-tract interventions alone cannot address. An additional 149 tracts form Low-Low cold spots, primarily in northeast Scottsdale, north Phoenix, and the east Valley suburbs, confirming a strong spatial polarization of economic outcomes within the county.
+
+---
+
+## Finding 2 — Which Neighborhoods Are Getting Worse?
+
+```{r}
+#| label: fig-trajectory
+#| fig-width: 8
+#| fig-height: 6
+ggplot(change_df) +
+  geom_sf(aes(fill = trajectory), color = NA) +
+  scale_fill_manual(values = traj_colors,
+    labels = c("Persistent HH" = "Persistent Hot Spot",
+               "Emerging HH"   = "Emerging Hot Spot",
+               "Dissolving HH" = "Dissolving Hot Spot",
+               "Persistent LL" = "Persistent Cold Spot",
+               "Emerging LL"   = "Emerging Cold Spot",
+               "HL Outlier"    = "Spatial Outlier",
+               "Stable NS"     = "No Dominant Pattern"),
+    name = "Trajectory\n(2013→2019)") +
+  theme_urbn_dash(base_size = 11) +
+  labs(title    = paste0("Neighborhood Hardship Trajectories: ", TARGET_LABEL),
+       subtitle = "LISA cluster transition, 2013–2019 | Pooled z-score standardization",
+       caption  = "Pooled mean/SD across both years — comparable change scores")
+```
+
+The trajectory analysis reveals that 16.6% of Maricopa County tracts are Persistent HH — neighborhoods that were high-hardship hot spots in both 2013 and 2019, indicating deeply entrenched structural disadvantage that persisted through the post-recession recovery. An additional 2.8% are Emerging HH tracts, newly forming clusters located primarily along the western fringe of the existing south Phoenix hot spot and in portions of south Mesa near the US-60 corridor. While 85.7% of tracts showed improvement over the period (hardship change < -0.05), the persistence of the core cluster and the emergence of new peripheral hot spots suggest that countywide economic gains are not reaching the most disadvantaged neighborhoods — a pattern consistent with spatially uneven recovery. Critically, the small number of Dissolving HH tracts (those that were hot spots in 2013 but no longer in 2019) raises the displacement paradox identified in Module 5: when a previously high-hardship tract improves on census measures, this may reflect genuine gains for existing residents, or it may signal that lower-income households have been displaced and replaced by higher-income newcomers — a distinction that aggregate census statistics cannot resolve without complementary data on residential mobility.
+
+---
+
+## Finding 3 — The Hardship Profile
+
+```{r}
+#| label: fig-profile
+#| fig-width: 7
+#| fig-height: 4
+traj_summary <- change_df %>%
+  st_drop_geometry() %>%
+  filter(trajectory != "Stable NS") %>%
+  group_by(trajectory) %>%
+  summarise(mean_hardship = mean(hardship_2019, na.rm = TRUE),
+            n = n(), .groups = "drop") %>%
+  arrange(desc(mean_hardship))
+
+ggplot(traj_summary, aes(x = reorder(trajectory, mean_hardship),
+                          y = mean_hardship, fill = trajectory)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = traj_colors) +
+  coord_flip() +
+  theme_minimal(base_size = 11) +
+  labs(title    = paste0("Mean Hardship by Trajectory Type: ", TARGET_LABEL),
+       subtitle = "Pooled z-score standardized hardship index (2019)",
+       x = NULL, y = "Mean Hardship Index (2019)",
+       caption  = paste0("Excludes Stable NS tracts (n = ",
+                         sum(change_df$trajectory == "Stable NS", na.rm = TRUE), ")"))
+```
+
+Persistent HH tracts have the highest mean hardship index of any trajectory type, substantially exceeding both Emerging HH and Dissolving HH categories — confirming that the neighborhoods that have been hot spots the longest also face the most severe current conditions. The gap between Persistent HH and Dissolving HH average hardship levels is particularly revealing: Dissolving HH tracts show markedly lower 2019 hardship, indicating that the tracts that exited hot-spot status did so through meaningful (though not necessarily equitable) economic change. The Emerging HH tracts occupy an intermediate position, with hardship levels high enough to newly cross the significance threshold but not yet reaching the severity of persistently disadvantaged areas. This gradient — from persistently severe to newly forming to recovering — suggests that without targeted intervention, today's emerging hot spots may follow the trajectory of the persistent cluster, which has resisted improvement despite a decade of countywide economic recovery and declining unemployment rates statewide.
+
+---
+
+# Recommendations
+
+::: {.callout-tip}
+## Recommendation 1 — Satellite Workforce Centers in the South Phoenix Persistent Hot-Spot Cluster
+The 175 HH cluster tracts — with a Global Moran's I of 0.624 confirming non-random spatial concentration — require place-based investment that addresses the structural mismatch between where hardship clusters and where economic opportunity concentrates. Maricopa County Workforce Development, in partnership with the City of Phoenix Community and Economic Development Department, should establish three satellite workforce training centers within the persistent HH cluster in the South Mountain Village, Maryvale, and central south Phoenix planning areas, targeting the approximately 150 tracts where hardship indices have remained above 1.0 across both analysis periods. These centers should prioritize sector-based training in healthcare and logistics — the two fastest-growing accessible-wage industries within a 30-minute commute of the cluster — and include co-located childcare and transit voucher services to address the access barriers that prevent residents of high-poverty tracts from participating in existing county-wide training programs.
+:::
+
+::: {.callout-tip}
+## Recommendation 2 — LISA-Triggered Early Intervention Protocol for Emerging Hardship Clusters
+The 2.8% of tracts classified as Emerging HH represent a narrow but critical intervention window: these neighborhoods have crossed the statistical threshold into hot-spot status only recently, meaning their hardship clustering has not yet become structurally entrenched. The Maricopa Association of Governments (MAG) should adopt a formal LISA-triggered protocol in its annual Regional Analysis Letter, whereby any tract that transitions from non-significant to HH status across consecutive ACS releases automatically triggers expedited Section 8 Housing Choice Voucher allocation and small-business micro-lending referrals through the City of Mesa Office of Economic Development and City of Glendale Community Services. This approach directly addresses the displacement paradox identified by Freeman (2005) — by stabilizing housing costs and supporting local entrepreneurship in emerging clusters before hardship deepens, the intervention reduces the risk that low-income residents are pushed out as neighborhood conditions change, rather than waiting until displacement pressures are already acute.
+:::
+
+::: {.callout-tip}
+## Recommendation 3 — Countywide Hardship Surveillance Dashboard with Three-Point Trajectory Tracking
+The finding that 85.7% of tracts improved county-wide while 16.6% remained persistently distressed demonstrates that aggregate county statistics are insufficient for equitable resource allocation — spatial analysis reveals the neighborhoods being left behind by broad recovery trends. Arizona State University's Morrison Institute for Public Policy, in partnership with the Maricopa County Board of Supervisors, should deploy a publicly accessible hardship surveillance dashboard that tracks the three-point trajectory classification (consistently improving, consistently worsening, V-shaped, inverted-V) for every census tract, updated annually as new ACS 5-year estimates become available. This monitoring infrastructure would enable the County's Community Services Department to direct federal Community Development Block Grant (CDBG) funds proactively — specifically targeting tracts showing the V-shaped pattern (temporary mid-decade improvement followed by reversal) before they re-enter persistent hot-spot status, rather than relying on reactive allocation that consistently arrives after hardship has already re-entrenched.
+:::
+
+---
+
+# Limitations
+
+This analysis relies on ACS 5-year estimates, which carry margins of
+error that can be substantial at the census tract level. The temporal
+comparison (2013–2019) reflects the post-recession recovery decade and
+does not capture COVID-era disruptions. Most importantly: a declining
+hardship index in a tract may reflect genuine improvement for existing
+residents — or it may reflect displacement, with lower-income households
+replaced by higher-income newcomers. Census aggregate statistics cannot
+distinguish these processes. This analysis identifies candidate
+intervention areas; on-the-ground verification is essential before
+resource allocation decisions are made.
