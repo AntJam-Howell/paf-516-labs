@@ -459,7 +459,7 @@ compare_df <- bind_rows(top5_us, az_all, bot5_us) %>%
       group == "Top 5 US (Most Economic Hardship)"  ~ "#db2b27",
       TRUE                                          ~ "#1696d2"
     ),
-    point_size = if_else(group == "Arizona Counties", 4, 3),
+    point_size = 3.5,
     label = fct_reorder(label, hardship_index)
   )
 
@@ -484,8 +484,6 @@ p <- ggplot(compare_df,
   geom_point() +
   scale_size_identity() +
   scale_color_identity() +
-  geom_vline(xintercept = az_mean,
-             linetype = "dotted", color = "#9d9d9d", linewidth = 0.5) +
   theme_urbn_dash(base_size = 11) +
   theme(
     axis.text.y        = element_text(size = 8.5, color = "#333333"),
@@ -498,6 +496,16 @@ p <- ggplot(compare_df,
   )
 
 ggplotly(p, tooltip = "text") %>%
+  add_trace(
+    x = rep(az_mean, 2),
+    y = c(levels(compare_df$label)[1],
+          levels(compare_df$label)[nlevels(compare_df$label)]),
+    type = "scatter", mode = "lines",
+    line = list(color = "#9d9d9d", width = 1.5, dash = "dot"),
+    hoverinfo = "text",
+    text = paste0("AZ State Average\nIndex: ", round(az_mean, 3)),
+    showlegend = FALSE, inherit = FALSE
+  ) %>%
   layout(
     title = list(
       text = paste0("All Arizona Counties vs. U.S. Extremes",
