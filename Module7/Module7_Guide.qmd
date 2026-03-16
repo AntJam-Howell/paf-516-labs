@@ -14,296 +14,286 @@ execute:
   message: false
 ---
 
-```{=html}
-<div class="module-header">
-  <h2><strong>M7 Overview & Learning Materials</strong></h2>
-  <div class="module-subtitle">
-    <span style="font-size: 14pt;"><strong>Final Project Dashboard</strong></span>
-  </div>
-</div>
-```
+::: {.module-header}
+## **M7 Overview & Learning Materials**
+
+::: {.module-subtitle}
+**Final Project — Economic Hardship Dashboard & Policy Brief**
+:::
+:::
 
 ::: {.section-box}
+
 ## Module Overview and Objectives
 
-Over the past six modules you have built a complete spatial analytics pipeline: measuring economic hardship (Lab 1), visualizing it with professional cartography (Lab 2), enriching it with external spatial data (Lab 3), testing for statistically significant clusters (Lab 4), tracking change over time (Lab 5), and analyzing spatio-temporal trajectories (Lab 6). In this final module you bring everything together in an **interactive Quarto dashboard** designed for a policy audience.
+Over the past six modules you have built a complete spatial analytics pipeline: measuring economic hardship (Lab 1), visualizing it with professional cartography (Lab 2), enriching it with external spatial data (Lab 3), testing for statistically significant clusters (Lab 4), tracking change over time (Lab 5), and analyzing spatio-temporal trajectories (Lab 6). In this final module you step into the role of an applied researcher and use everything you have learned to deliver a client-facing analytical product.
 
-Dashboards are how spatial analysis reaches decision-makers in practice. A city council member is unlikely to read your .qmd file, but they will explore an interactive map, scan key metrics in value boxes, and read your three targeted recommendations. This module teaches you how to design and build that communication tool.
+**Your scenario:** You are an independent researcher at the Urban Institute, commissioned by a local government to deliver a spatial analysis of economic hardship across their county. Your client needs to know where hardship is concentrated, whether it is getting better or worse, and what specific policy interventions the data support. You will deliver two products: a **policy brief** (a short professional document with static figures) and an **interactive Quarto dashboard** (a multi-tab analytical tool the client's staff can explore on their own). Both deliverables draw on the same three-variable economic hardship index you build from Census data.
 
 ---
 
 After completing this module, you will be able to:
 
-- Build a **multi-page Quarto dashboard** with dark theme and professional styling
-- Design effective **dashboard layouts** using columns, value boxes, and narrative cards
-- Choose between **static maps** (ggplot) and **interactive maps** (mapgl) based on communication goals
-- Use **mapgl** with GeoJSON sources, choropleth fill layers, polygon borders, and hover tooltips
-- Present **LISA hot spot analysis** results in a dashboard context with summary statistics
-- Construct a **temporal change panel** comparing two ACS vintages side by side
-- Write **data-driven policy recommendations** that reference specific geographies and statistics from your dashboard
-- Synthesize all six prior labs into a cohesive analytical narrative for a non-technical audience
+- Construct a **three-variable economic hardship index** (poverty rate, unemployment rate, median household income) from ACS data for any U.S. county
+- Situate a county within the **national distribution** of hardship using a static choropleth of all U.S. counties
+- Identify statistically significant **LISA hot spots and cold spots** at the census tract level within your study area
+- Classify tracts into **spatio-temporal trajectories** (persistent, emerging, dissolving) by comparing LISA membership across 2013 and 2019
+- Write **evidence-based policy recommendations** that cite specific geographies, specific statistics, and specific responsible entities
+- Package your analysis into a **Quarto dashboard** with value boxes, maps, data tables, and narrative cards designed for a non-technical audience
+- Write a **professional policy brief** with an executive summary, key findings grounded in your visualizations, and three actionable recommendations
+
 :::
 
+
+## Lecture
+
 ::: {.section-box}
-## Lab 7 Overview
 
-**What you will build:** A five-page interactive Quarto Dashboard analyzing economic hardship in Maricopa County. The dashboard includes a national context map, an interactive block-group-level hardship map, LISA hot spot analysis, temporal change analysis, and a policy page with your three original recommendations.
+The lecture covers the analytical scenario, the three-variable hardship index, the dashboard structure, and how to write strong evidence-based policy recommendations. It also introduces the policy brief format and discusses how to translate spatial analysis into language that decision-makers can act on.
 
-### Downloading the Lab Template
+Download the lecture notes: [Final Project — Lecture Notes (PDF)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Module7/Lecture/Module7_Lecture_Slides.pdf)
 
-Right-click the link in the **Lab Assignment** section below and choose **"Save Link As"** to download the `.qmd` file. Do not open it in the browser --- save it first, then open it in RStudio.
-
-### Dashboard Pages
-
-Your dashboard has five pages, each building on the previous:
-
-| Page | Purpose | Key Visualization |
-|---|---|---|
-| **National Context** | Where does your county sit in the national picture? | Interactive county choropleth (mapgl) |
-| **Local Hardship** | What does hardship look like at the tract level? | Static choropleth map + data table |
-| **Hot Spots** | Where are statistically significant clusters? | LISA cluster map + cluster statistics |
-| **Change & Trajectories** | How has hardship shifted from 2013 to 2019? | Temporal change map + trajectory classification |
-| **Policy** | What should decision-makers do? | Your 3 evidence-based recommendations |
-
-### What You Need to Write
-
-All data processing, analysis, and visualization code is provided. **Your task is to write three original policy recommendations** on the Policy page. Each recommendation must:
-
-1. Identify a specific geographic area from the LISA or temporal analysis
-2. Describe the problem using data visible in the dashboard
-3. Propose a targeted policy intervention with a specific responsible entity
 :::
 
+
 ::: {.section-box}
-## Section 1: Dashboard Design Principles
 
-### Dashboards vs. Reports
+## Section 1: The Analytical Scenario
 
-A dashboard is not a report reformatted for the web. Reports are read linearly; dashboards are **scanned and explored**. This has implications for design:
+Imagine you have been contracted by the City of Phoenix to produce an independent assessment of economic hardship across Maricopa County. Your client --- the Office of Community and Economic Development --- needs answers to four questions:
 
-- **Lead with visuals**: Maps and value boxes should be the first things a reader sees, not paragraphs of text
-- **Progressive disclosure**: Overview first (national map), then detail (block group map), then analysis (LISA), then action (policy)
-- **Value boxes as scannable metrics**: A busy reader should understand the scale of the problem in 3 seconds by reading the value boxes alone
-- **Narrative text supports, not leads**: Place explanatory text in sidebars to contextualize the visuals, not to replace them
+1. **Where does Maricopa County stand nationally?** How does its overall hardship compare to other U.S. counties?
+2. **Where is hardship concentrated within the county?** Which census tracts have the highest hardship, and is there evidence of spatial clustering?
+3. **Is the situation improving or worsening?** How has hardship changed between 2013 and 2019, and are hot spots persistent, emerging, or dissolving?
+4. **What should we do about it?** Based on the spatial patterns and trajectories, what three specific policy interventions do the data support?
 
-### Dark Theme Design
+These are the same questions your dashboard and policy brief will answer --- but for the county *you* choose. The code in the template is fully parameterized: change three lines (state, county name, county label), render, and the entire analysis updates to your study area.
 
-The Lab 7 dashboard uses a dark theme (`darkly` + custom SCSS). Dark themes work well for data-dense dashboards because they:
+### Why This Framing Matters
 
-- Reduce visual fatigue when displaying many choropleth maps
-- Make bright colors (value boxes, map fills) stand out more
-- Convey a professional, modern aesthetic appropriate for analytical tools
+Applied spatial analysis is always done *for* someone. A city council member will not read a `.qmd` file or interpret a Moran's I statistic. They will scan your value boxes for headline numbers, look at your maps to see which neighborhoods are flagged, and read your recommendations to decide what to fund. The dashboard and policy brief are communication tools --- they translate your statistical analysis into actionable intelligence. Every design choice (what goes on each tab, what statistics appear in value boxes, how recommendations are structured) should be driven by what the client needs to make decisions.
 
-The custom `theme_dark_dash()` function ensures ggplot static maps match the dashboard background (#0d1117). Without it, ggplot figures would render with white backgrounds inside dark cards.
-
-### Column Layouts
-
-Quarto dashboards use a column-based layout system. Each page defines columns with percentage widths:
-
-```
-## Column {width=60%}
-### Map Card
-[map code]
-
-## Column {width=40%}
-### Value Box
-[value box code]
-```
-
-The 60/40 split works well for map + sidebar layouts. Keep the map in the wider column and supporting metrics or text in the narrower one.
 :::
 
+
 ::: {.section-box}
-## Section 2: Synthesizing Multi-Scale Analysis
 
-The dashboard's five-page structure mirrors the **multi-scale analytical approach** you have been building all semester:
+## Section 2: The Three-Variable Hardship Index
 
-### The Scale Hierarchy
+The Final Project uses a streamlined **three-variable** economic hardship index:
 
-| Scale | Data Source | Lab of Origin | Dashboard Page |
-|---|---|---|---|
-| National (3,200+ counties) | ACS county-level data | Lab 1 | National Context |
-| Local (2,600+ block groups) | ACS block-group-level data | Labs 1--3 | Local Patterns |
-| Clusters (LISA) | Spatial autocorrelation analysis | Lab 4 | Hot Spots |
-| Temporal (2015 vs. 2023) | Two ACS vintages | Lab 5 | Change Over Time |
-| Synthesis | All of the above | Lab 6 | Policy |
+| Variable | ACS Table | Computation |
+|----------|-----------|-------------|
+| **Poverty rate** | C17002 | (Below 50% FPL + 50--99% FPL) / Total population for whom poverty status is determined |
+| **Unemployment rate** | B23025 | Unemployed / In labor force |
+| **Median household income** | B19013 | Direct estimate (reverse-coded: higher income = lower hardship) |
 
-Each page builds on the previous. The national map provides context ("hardship exists everywhere but concentrates regionally"). The local map zooms in ("within Maricopa, hardship varies dramatically by block group"). The hot spot map adds statistical rigor ("these specific clusters are statistically significant, not just visual patterns"). The change map adds temporal depth ("these clusters have persisted over 8 years"). The policy page demands action ("given all of this, here is what should be done").
+Each variable is z-score standardized. Median income is multiplied by --1 before standardizing so that higher values indicate greater hardship on all three dimensions. The index is the row mean of the three z-scores:
 
-### The Economic Hardship Index
+$$\text{hardship\_index} = \frac{z_{\text{poverty}} + z_{\text{unemployment}} + (-1 \times z_{\text{income}})}{3}$$
 
-The same five-variable composite index powers every page:
+A county with a hardship index of +1.0 is, on average, one standard deviation above the national mean across all three dimensions. A value near zero indicates a county close to the national average.
 
-- **Poverty rate** (below 100% FPL)
-- **Unemployment rate**
-- **Educational attainment** (no high school diploma)
-- **Health insurance coverage** (uninsured rate)
-- **Median household income** (reverse-coded)
+### Why Three Variables Instead of Five?
 
-Each variable is z-score standardized before averaging, so a one-unit increase in the index corresponds to one standard deviation above the mean on the composite hardship measure. Cronbach's alpha validates that these five variables measure a coherent latent construct.
+The full index from Lab 1 included educational attainment and health insurance coverage. The Final Project drops these for two reasons. First, the three retained variables are available at the tract level across all ACS vintages needed for the temporal analysis (2013, 2016, 2019, 2023), keeping the index consistent across all tabs. Second, a simpler index is easier to explain to a policy audience --- "poverty, unemployment, and income" is a sentence; a five-variable composite requires a paragraph.
+
+### Pooled Standardization for Temporal Comparison
+
+When comparing 2013 and 2019 hardship, the dashboard uses **pooled standardization** --- the same mean and standard deviation (computed from the combined 2013 + 2019 data) are applied to both years. This ensures that a one-unit change in the index has the same meaning regardless of the baseline year. Without pooling, z-scores from different years would be standardized to different distributions, making the difference meaningless.
+
 :::
 
+
 ::: {.section-box}
-## Section 3: Interactive Visualization with mapgl
 
-### When to Use Static vs. Interactive Maps
+## Section 3: Dashboard Structure
 
-| Feature | Static (ggplot) | Interactive (mapgl) |
-|---|---|---|
-| **Best for** | Publication figures, multi-panel layouts, national maps | Exploration, tooltips, zoom/pan, block-group detail |
-| **File size** | Small (embedded PNG) | Larger (GeoJSON data in HTML) |
-| **User interaction** | None | Hover, click, zoom, pan |
-| **Legends** | Built-in (ggplot scales) | Must be custom-built or omitted |
-| **AK/HI insets** | Supported via shift_geometry() | Not supported (tiles show true lat/lon) |
+Your dashboard has five tabs, each answering one layer of the client's question:
 
-The Lab 7 dashboard uses **static ggplot** for the national map (shift_geometry needed for AK/HI insets), the LISA cluster map (categorical legend is easier in ggplot), and the temporal change map. It uses **interactive mapgl** for the block-group hardship map where tooltips and zoom are most valuable.
+| Tab | Client Question | What It Shows |
+|-----|----------------|---------------|
+| **National Context** | Where does our county rank? | Static US county choropleth with AK/HI insets, value boxes for county count, highest-hardship county, and your county's national rank |
+| **Local Hardship** | Where is hardship concentrated? | Static tract-level choropleth + searchable DT data table of all tracts |
+| **Hot Spots** | Are clusters statistically significant? | LISA cluster map (HH/LL/HL/LH), Moran's I statistic, hot spot and cold spot counts |
+| **Change & Trajectories** | Is it getting better or worse? | Temporal change map (2013→2019), trajectory classification (persistent/emerging/dissolving), three-point trend analysis |
+| **Policy** | What should we do? | Your three evidence-based recommendations in narrative cards |
 
-### mapgl with GeoJSON Sources
+The first four tabs are pre-built --- all code runs automatically when you render. **Your task is to write the three recommendation cards on the Policy tab.** This is the deliverable your client cares about most.
 
-The dashboard uses `add_source(type = "geojson")` to embed spatial data directly in the HTML file. This makes the map fully self-contained --- no tile server required.
+### Value Boxes Tell the Story at a Glance
 
-Key mapgl functions used:
+Each tab includes value boxes that surface the most important numbers. A busy decision-maker should be able to scan the value boxes across all five tabs and understand the core narrative without reading a single paragraph:
 
-- `maplibre()`: Creates the base map with a dark tile style
-- `add_source()`: Adds an sf object as a GeoJSON data source
-- `add_fill_layer()`: Colors polygons using `interpolate()` for continuous scales
-- `add_line_layer()`: Adds polygon borders for visual clarity
-- `tooltip = concat(...)`: Builds multi-field hover tooltips
-- `hover_options`: Highlights polygons on mouseover
+- **National Context**: "Maricopa County ranks #2,386 of 3,142 counties" (relatively low hardship nationally)
+- **Hot Spots**: "175 High-High tracts, Moran's I = 0.62" (strong spatial clustering)
+- **Change**: "85.7% of tracts improved, 2.8% are emerging hot spots" (overall improvement, but new clusters forming)
 
-### Color Scales on Dark Backgrounds
+These numbers ground your policy recommendations in evidence the client can verify by exploring the dashboard themselves.
 
-Choosing colors for dark-background maps requires care:
-
-- Avoid very dark colors (< #404040) for meaningful data --- they blend with the background
-- Use `viridis` palettes which are perceptually uniform and colorblind-safe
-- For diverging scales (change maps), ensure the midpoint color is visible against the background
-- Test your dashboard at different zoom levels to verify readability
 :::
 
-::: {.section-box}
-## Section 4: Writing Data-Driven Policy Recommendations
 
-The Policy page is where your analysis becomes **actionable**. This is the most important page for your audience and the part of the dashboard you must write yourself.
+::: {.section-box}
+
+## Section 4: Writing Evidence-Based Policy Recommendations
+
+The Policy tab is where your analysis becomes actionable. This is the most important part of the assignment and the part you must write yourself.
 
 ### The Three-Part Framework
 
 Each recommendation should follow this structure:
 
-1. **State the finding**: Reference a specific pattern from the dashboard. Name the geography (e.g., "south Phoenix corridor"), the statistic (e.g., "14 High-High cluster block groups"), and the data source (e.g., "LISA analysis at p < 0.05")
-2. **Explain the implication**: Why does this pattern matter for the community? Connect the spatial data to real-world consequences
-3. **Propose the action**: Name a specific intervention, a responsible entity (e.g., "Maricopa County Department of Public Health"), and a target geography
+1. **State the finding**: Reference a specific pattern from the dashboard. Name the geography (e.g., "the 14 persistent hot spot tracts in the South Mountain Village area"), cite the statistic (e.g., "mean hardship index of 1.42, ranking in the top 5% nationally"), and identify the data source (e.g., "LISA trajectory analysis, 2013--2019")
+2. **Explain the implication**: Why does this pattern matter for the community? Connect the spatial data to real-world consequences. A persistent hot spot surrounded by other hot spots faces compounding disadvantage that isolated pockets do not.
+3. **Propose the action**: Name a specific intervention, a specific responsible entity (e.g., "Maricopa County Workforce Development Board"), and a target geography with approximate tract count.
 
 ### What Makes a Strong Recommendation
 
 **Weak**: "The city should address poverty in underserved areas."
 
-**Strong**: "The 14 High-High cluster block groups in south Phoenix show unemployment rates 2--3x the county average with no improvement between 2015 and 2023. We recommend the Maricopa Workforce Connection invest in a satellite workforce center co-located with the 19th Avenue light rail station, targeting healthcare, logistics, and construction training with wraparound childcare support."
+**Strong**: "The 14 persistent hot spot tracts in the South Mountain Village corridor (south of Baseline Road between Central Ave and 24th Street) show a mean hardship index of 1.42 with no improvement between 2013 and 2019 despite county-wide recovery in 85.7% of tracts. We recommend the Maricopa County Workforce Development Board partner with the City of Phoenix Community and Economic Development Department to establish a satellite workforce center targeting healthcare and logistics certifications, co-located with the Baseline/Central light rail station to maximize transit accessibility for the 23,000 residents in these tracts."
 
-The strong version names specific geographies, cites dashboard statistics, identifies a responsible entity, and proposes a concrete action.
+The strong version names specific geographies, cites dashboard statistics, identifies responsible entities, and proposes a concrete intervention that a policymaker could act on.
 
-### Using Dashboard Data in Recommendations
+### Grounding Recommendations in Course Concepts
 
-Your recommendations should reference specific metrics visible in the dashboard:
+Your recommendations should connect to concepts from the course readings:
 
-- Hot spot and cold spot counts from the value boxes
-- Percentage of CBGs where hardship worsened vs. improved
-- Global Moran's I value (evidence of spatial clustering)
-- Mean hardship change over time
-- Specific block groups from the priority areas table
+- **Persistent hot spots** → Sampson (2012) on durable neighborhood effects; place-based investment
+- **Emerging hot spots** → Galster (2012) on neighborhood tipping points; early intervention before self-reinforcing decline
+- **Dissolving hot spots** → Freeman (2005) on gentrification and displacement; protect existing residents during recovery
+- **Spatial diffusion** → If space-time Moran's I is significant, decline is spreading; intervene at the boundary, not just the core
+
 :::
 
+
 ::: {.section-box}
-## Lecture
 
-<!-- PLACEHOLDER: Record lecture on dashboard design, mapgl interactivity, and policy communication -->
+## Section 5: The Policy Brief
 
-<iframe src="" width="560" height="315" loading="lazy" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>
+The policy brief is a short professional document (1--2 pages when rendered) that distills your dashboard analysis into a format suitable for a written report. It includes:
+
+- **Executive Summary** (3--4 sentences): County name, national rank, spatial clustering strength, most urgent finding, top recommendation
+- **Three Key Findings** with pre-built figures: LISA cluster map, trajectory map, mean-hardship-by-trajectory bar chart
+- **Three Recommendations** in callout boxes, each grounded in one of the findings
+- **Limitations** section (pre-filled)
+
+The policy brief uses the same parameterized code as the dashboard. Change the three county lines, render, and all figures and statistics update. Your task is to write the executive summary, interpret each finding in a paragraph, and write three recommendation callouts.
+
+### Policy Brief vs. Dashboard
+
+The two deliverables serve different audiences and purposes:
+
+| | Policy Brief | Dashboard |
+|--|-------------|-----------|
+| **Audience** | Executive leadership, board members | Staff analysts, program managers |
+| **Format** | Linear document, read top to bottom | Multi-tab tool, explored non-linearly |
+| **Figures** | Static (ggplot) | Static (ggplot) + data tables (DT) |
+| **Purpose** | Summarize and recommend | Explore and verify |
+| **Length** | 1--2 pages of student writing | 3 recommendation cards |
+
+Together, the brief and dashboard form a complete analytical deliverable: the brief tells the story, the dashboard provides the evidence.
+
 :::
 
+
 ::: {.section-box}
+
 ## Readings
 
-### Dashboard Design
+### Spatial Analysis for Policy Communication
 
-- Few, S. (2013). *Information Dashboard Design: Displaying Data for At-a-Glance Monitoring* (2nd ed.). Analytics Press. --- The definitive guide to dashboard design principles. Chapters on visual perception, layout, and avoiding chartjunk are directly applicable to your final project.
-
-- Tufte, E. R. (2001). *The Visual Display of Quantitative Information* (2nd ed.). Graphics Press. --- The classic text on data visualization. Tufte's principles of data-ink ratio and graphical integrity should guide your map and value box design.
-
-### Interactive Spatial Visualization
-
-- Walker, K. (2023). *Analyzing US Census Data: Methods, Maps, and Models in R*. CRC Press. [Free online version](https://walker-data.com/census-r/) --- Chapters 6--8 cover mapping census data with ggplot2, mapgl, and interactive tools. The authoritative reference for the tidycensus and mapgl workflow used in this lab.
-
-- [mapgl R package documentation](https://walker-data.com/mapgl/) --- API reference for maplibre(), add_source(), add_fill_layer(), and other functions used in the dashboard.
-
-- [Quarto Dashboards](https://quarto.org/docs/dashboards/) --- Official documentation for Quarto dashboard format, including layouts, value boxes, and theming.
-
-### Spatial Analysis for Policy
+- Schwabish, J., & Feng, A. (2021). *Do No Harm Guide: Applying Equity Awareness in Data Visualization*. Urban Institute. [[free online]](https://www.urban.org/research/publication/do-no-harm-guide-applying-equity-awareness-data-visualization) --- Essential guidance on presenting data about communities ethically, particularly when mapping disadvantage. Directly relevant to how you frame hardship in your dashboard and brief.
 
 - Sampson, R. J. (2012). *Great American City: Chicago and the Enduring Neighborhood Effect*. University of Chicago Press. --- Demonstrates that neighborhood-level inequality is durable and self-reinforcing, providing the empirical foundation for the spatial targeting approach your recommendations should take.
 
-- Anselin, L. (1995). Local Indicators of Spatial Association --- LISA. *Geographical Analysis*, 27(2), 93--115. --- The original paper introducing LISA statistics. Understanding this method is essential for interpreting the Hot Spots page of your dashboard.
+### Neighborhood Change and Displacement
 
-- Schwabish, J., & Feng, A. (2021). *Do No Harm Guide: Applying Equity Awareness in Data Visualization*. Urban Institute. [[free online]](https://www.urban.org/research/publication/do-no-harm-guide-applying-equity-awareness-data-visualization) --- Essential guidance on presenting data about communities ethically, particularly when mapping disadvantage.
+- Freeman, L. (2005). Displacement or succession? Residential mobility in gentrifying neighborhoods. *Urban Affairs Review*, 40(4), 463--491. --- The central reference for the displacement paradox: when a dissolving hot spot shows improving hardship scores, is it because residents are better off, or because they have been replaced? Your recommendations for dissolving hot spots should grapple with this distinction.
+
+- Ding, L., Hwang, J., & Divringi, E. (2016). Gentrification and residential mobility in Philadelphia. *Regional Science and Urban Economics*, 61, 38--51. --- Empirical evidence on who moves during gentrification. Useful for grounding recommendations about anti-displacement policy in dissolving or emerging LL tracts.
+
+### Evidence-Based Policy Recommendations
+
+- Galster, G. (2012). The mechanism(s) of neighbourhood effects: Theory, evidence, and policy implications. In M. van Ham et al. (Eds.), *Neighbourhood Effects Research: New Perspectives* (pp. 23--56). Springer. --- Systematic review of how neighborhood conditions affect resident outcomes. The theoretical foundation for why place-based recommendations (targeting specific tracts) are justified rather than person-based interventions alone.
+
+- Anselin, L. (1995). Local Indicators of Spatial Association --- LISA. *Geographical Analysis*, 27(2), 93--115. --- The original paper introducing LISA statistics. Understanding this method is essential for interpreting the Hot Spots tab and writing recommendations grounded in cluster analysis.
+
+### Quarto and R Tools
+
+- Walker, K. (2023). *Analyzing US Census Data: Methods, Maps, and Models in R*. CRC Press. [Free online version](https://walker-data.com/census-r/) --- Chapters 6--8 cover mapping census data with ggplot2 and interactive tools. The authoritative reference for the tidycensus workflow used in this project.
+
+- [Quarto Dashboards](https://quarto.org/docs/dashboards/) --- Official documentation for the Quarto dashboard format, including layouts, value boxes, and theming.
+
 :::
 
-::: {.section-box}
-## Lab 07: Final Project Dashboard
 
-For Lab 7, you will complete the Quarto Dashboard template by writing three original policy recommendations on the Policy page. All data processing, visualization, and analysis code is provided --- your task is to interpret the results and propose evidence-based interventions.
+::: {.section-box}
+
+## Lab 07: Final Project Dashboard & Policy Brief
+
+For the Final Project, you will complete two deliverables using a county of your choice. All data processing, visualization, and analysis code is provided --- your task is to interpret the results and propose evidence-based interventions.
 
 ### Deliverables
 
-1. **Final_Project_Template.qmd** — completed with your county and 3 recommendations
+1. **Final_Project_Template.qmd** — completed with your county and 3 policy recommendations on the Policy tab
 2. **Final_Project_Template.html** — rendered dashboard HTML
 
 ### Grading Criteria
 
 - **Recommendation quality** (60%): Are your three recommendations specific, evidence-based, and actionable? Do they reference dashboard statistics and name target geographies?
-- **Dashboard renders correctly** (20%): Does the HTML file render without errors? Do all five pages display correctly?
-- **Professional presentation** (20%): Is the Policy page well-written? Are recommendations clearly structured? Do they demonstrate understanding of the spatial analysis?
+- **Dashboard renders correctly** (20%): Does the HTML file render without errors? Do all five tabs display correctly?
+- **Professional presentation** (20%): Is the Policy tab well-written? Are recommendations clearly structured? Do they demonstrate understanding of the spatial analysis?
 
 ### Getting Started
 
 1. Download the template and save it in your `PAF516/FinalProject/` folder
 2. Install your Census API key if you haven't already: `census_api_key("YOUR_KEY", install = TRUE)`
-3. Render the file &mdash; the renv block installs required packages automatically on first run
+3. Open the `.qmd` file in RStudio and change the three county parameter lines (TARGET_STATE, TARGET_COUNTY, TARGET_LABEL) to your chosen county
 4. Render the dashboard to verify it works before writing your recommendations
-5. Study the National Context, Local Patterns, Hot Spots, and Change Over Time pages
-6. Write your three recommendations on the Policy page
-7. Re-render and submit both .qmd and .html to Canvas
+5. Study the National Context, Local Hardship, Hot Spots, and Change & Trajectories tabs
+6. Write your three recommendations on the Policy tab
+7. Re-render and submit both `.qmd` and `.html` to Canvas
 
 **Download:** [Final_Project_Template.qmd](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/FinalDashboard/Dashboard/Final_Project_Template.qmd)
+
 :::
 
+
 ::: {.section-box}
+
 ## Yellowdig Discussion
 
-You have now completed the full PAF 516 spatial analytics pipeline, from raw Census data to an interactive policy dashboard. For your final Yellowdig post, reflect on the **semester-long analytical journey** and what you have learned about using spatial data for community decision-making.
+For your final Yellowdig post, step fully into the role of the applied researcher. You have now delivered a dashboard and policy brief to a local government client. Reflect on the experience of translating spatial statistics into policy-ready communication.
 
-Find an example of an **interactive dashboard** or **spatial data tool** used by a government agency, nonprofit, or research organization to communicate community-level data. Examples include the CDC's Social Vulnerability Index dashboard, the Urban Institute's spatial equity tools, or a local government's open data portal. Post a link and write a response addressing:
+**Your prompt:** Choose one of your three policy recommendations from the Final Project and expand on it in your post. Address the following:
 
-- **Design and usability**: How does the dashboard's layout, color scheme, and interactivity compare to what you built in Lab 7? What design choices work well, and what would you change?
-- **Data communication**: How effectively does the dashboard translate complex spatial data into information a non-expert can understand? Does it include the multi-scale perspective (national, local, cluster, temporal) that we used in this course?
-- **Policy connection**: Does the dashboard include recommendations or link to policy actions? If so, evaluate their specificity using the framework from this module. If not, what recommendations would you add based on the data shown?
-- **Course reflection**: What is the single most important skill or concept you learned in PAF 516 that you will carry into your career? How did the progression from measurement to visualization to clustering to policy communication build your analytical capabilities?
+- **What does the data actually show?** Describe the specific spatial pattern (persistent hot spot, emerging cluster, trajectory type) and the statistics behind it (Moran's I, tract counts, hardship index values). What can you confidently claim, and what are you inferring?
+- **What can't the data show?** Every recommendation requires assumptions beyond what census data can prove. If you recommended workforce development, you are assuming that unemployment in those tracts reflects a skills gap rather than employer discrimination or transportation barriers. Name at least one assumption behind your recommendation and discuss how you would test it with additional data.
+- **What would your client push back on?** City officials have budget constraints, political constituencies, and institutional knowledge you lack. Anticipate one realistic objection to your recommendation (e.g., "we tried that in 2018 and it didn't work," or "those tracts are already served by Program X") and describe how you would respond.
+- **What did you learn this semester?** Connect this final project to the skills you built across the course. How did the progression from measurement (Lab 1) to visualization (Lab 2) to spatial joins (Lab 3) to clustering (Lab 4) to temporal change (Labs 5--6) prepare you to write this recommendation?
 
-Engage with at least one classmate's post by comparing their example dashboard with yours. What patterns do you see in how organizations communicate spatial data to policy audiences?
+Engage with at least one classmate's post by evaluating the specificity of their recommendation using the three-part framework from this module (finding → implication → action).
+
 :::
 
+
 ::: {.section-box}
+
 ## Key Terms
 
 | Term | Definition |
-|---|---|
-| **Quarto Dashboard** | A multi-page interactive document format designed for data visualization and key metrics display |
-| **Value Box** | A dashboard component that displays a single key metric with an icon and color, designed for at-a-glance scanning |
-| **mapgl** | An R package for creating interactive maps using MapLibre GL JS, supporting GeoJSON sources and style-based rendering |
-| **GeoJSON Source** | A method of embedding spatial data directly in a map rather than serving it from a tile server |
-| **Dark Theme** | A visual design using dark backgrounds and light text, common in analytical dashboards and data tools |
-| **SCSS** | Sass CSS --- a stylesheet language that extends CSS with variables and nesting, used to customize dashboard themes |
-| **Choropleth** | A map where areas are shaded proportional to a data variable, the primary visualization type in this dashboard |
-| **LISA Cluster** | A classification from Local Moran's I analysis identifying areas of significant spatial association (High-High, Low-Low, etc.) |
-| **Diverging Color Scale** | A color palette with a neutral midpoint and contrasting colors at each extreme, used for change maps |
-| **Progressive Disclosure** | A design principle that presents overview information first and detail on demand, matching the dashboard's page sequence |
+|------|-----------|
+| **Economic Hardship Index** | A composite z-score measure combining poverty rate, unemployment rate, and median household income (reverse-coded) |
+| **Pooled Standardization** | Computing z-scores using the combined mean and SD from two time periods, ensuring comparable scores across years |
+| **LISA Trajectory** | A tract's LISA cluster membership compared across two time periods (e.g., HH→HH = persistent hot spot) |
+| **Persistent Hot Spot** | A tract classified HH in both the 2013 and 2019 LISA analysis --- deep structural clustering |
+| **Emerging Hot Spot** | A tract that becomes HH between periods --- a deteriorating neighborhood where early intervention may be effective |
+| **Dissolving Hot Spot** | A tract that was HH in 2013 but not in 2019 --- recovery underway, but displacement risk must be assessed |
+| **Displacement Paradox** | The ambiguity in dissolving hot spots: improving hardship scores may reflect genuine recovery or the replacement of low-income residents with higher-income newcomers |
+| **Evidence-Based Recommendation** | A policy proposal that cites specific geographies, specific statistics, and specific responsible entities from the analysis |
+| **Quarto Dashboard** | A multi-tab interactive document format with value boxes, maps, tables, and narrative cards |
+| **Value Box** | A dashboard component displaying a single key metric with an icon, designed for at-a-glance scanning by decision-makers |
+
 :::
