@@ -359,15 +359,15 @@ maplibre(
       values = c(-2, -1, 0, 1, 2),
       stops  = c("#1696d2", "#73bfe2", "#f5f5f5", "#ec6a5a", "#db2b27")
     ),
-    fill_opacity = 0.8
+    fill_opacity = 0.8,
+    tooltip = "NAME"
   ) |>
   add_line_layer(
     id = "hardship-outline",
     source = county_map,
     line_color = "#333333",
     line_width = 0.2
-  ) |>
-  add_tooltip("NAME", "hardship_index")
+  )
 ```
 
 ### Row {height=45%}
