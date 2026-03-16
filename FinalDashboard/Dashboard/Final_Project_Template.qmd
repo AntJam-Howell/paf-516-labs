@@ -36,7 +36,7 @@ if (!file.exists("~/.paf516_ready")) {
   file.create("~/.paf516_ready")
 }
 library(tidyverse); library(tidycensus); library(sf); library(spdep)
-library(viridis); library(patchwork); library(biscale); library(tigris); library(DT); library(mapgl)
+library(viridis); library(patchwork); library(biscale); library(tigris); library(DT); library(mapgl); library(glue)
 library(scales)
 ```
 
@@ -348,8 +348,12 @@ county_map <- county_2023 %>%
   st_transform(4326)
 
 maplibre(
-  style = carto_style("dark-matter"),
-  bounds = st_bbox(county_map)
+  style  = carto_style("dark-matter"),
+  bounds = list(
+    lng1 = -125.0, lat1 = 24.0,
+    lng2 = -66.0,  lat2 = 50.0
+  ),
+  projection = "mercator"
 ) |>
   add_fill_layer(
     id = "hardship-fill",
@@ -367,6 +371,12 @@ maplibre(
     source = county_map,
     line_color = "#333333",
     line_width = 0.2
+  ) |>
+  add_legend(
+    "Economic Hardship Index",
+    values  = c("More Hardship", "", "Average", "", "Less Hardship"),
+    colors  = c("#db2b27", "#ec6a5a", "#f5f5f5", "#73bfe2", "#1696d2"),
+    position = "bottom-left"
   )
 ```
 
@@ -390,7 +400,7 @@ az_counties %>%
 ## Column {width=45%}
 
 ::: {.card}
-### Highest Hardship: Arizona Counties
+### Highest Economic Hardship: Arizona Counties
 
 ```{r}
 #| label: card-az-top
@@ -400,7 +410,7 @@ cat(glue::glue(
   '<p style="font-size:1.4rem;font-weight:900;color:#db2b27;margin:4px 0">
   {az_top$County}</p>
   <p style="font-size:0.88rem;color:#555;margin:2px 0">
-  Hardship Index: <strong>{az_top$Hardship}</strong> &nbsp;|&nbsp;
+  Economic Hardship Index: <strong>{az_top$Hardship}</strong> &nbsp;|&nbsp;
   US Rank: <strong>#{az_top$`US Rank`} of {n_counties}</strong></p>
   <p style="font-size:0.82rem;color:#767676;margin-top:8px;font-style:italic">
   [Your interpretation here — what drives hardship in this county?]</p>'
@@ -410,7 +420,7 @@ cat(glue::glue(
 :::
 
 ::: {.card}
-### Lowest Hardship: Arizona Counties
+### Lowest Economic Hardship: Arizona Counties
 
 ```{r}
 #| label: card-az-bottom
@@ -420,7 +430,7 @@ cat(glue::glue(
   '<p style="font-size:1.4rem;font-weight:900;color:#1696d2;margin:4px 0">
   {az_bottom$County}</p>
   <p style="font-size:0.88rem;color:#555;margin:2px 0">
-  Hardship Index: <strong>{az_bottom$Hardship}</strong> &nbsp;|&nbsp;
+  Economic Hardship Index: <strong>{az_bottom$Hardship}</strong> &nbsp;|&nbsp;
   US Rank: <strong>#{az_bottom$`US Rank`} of {n_counties}</strong></p>
   <p style="font-size:0.82rem;color:#767676;margin-top:8px;font-style:italic">
   [Your interpretation here — what explains lower hardship in this county?]</p>'
@@ -430,64 +440,113 @@ cat(glue::glue(
 :::
 
 ::: {.card}
-### Maricopa County vs. National Extremes
+### All Arizona Counties vs. U.S. Extremes
 
 ```{r}
 #| label: card-dot-compare
-#| fig-height: 4
+#| fig-height: 7
+
+# Top 5 worst hardship nationally
 top5_us <- county_2023 %>%
   st_drop_geometry() %>%
   left_join(us_ranks, by = "GEOID") %>%
   filter(!is.na(hardship_index)) %>%
   slice_min(us_rank, n = 5, with_ties = FALSE) %>%
-  mutate(group = "Top 5 Hardship (US)",
-         label = str_remove(NAME, " County.*"))
+  mutate(
+    state_name   = str_extract(NAME, "(?<=, ).+"),
+    state_abb    = state.abb[match(state_name, state.name)],
+    county_short = str_remove(NAME, " County.*"),
+    group = "Top 5 US (Most Economic Hardship)",
+    label = paste0(county_short, ", ", coalesce(state_abb, state_name))
+  )
 
+# Bottom 5 lowest hardship nationally
 bot5_us <- county_2023 %>%
   st_drop_geometry() %>%
   left_join(us_ranks, by = "GEOID") %>%
   filter(!is.na(hardship_index)) %>%
   slice_max(us_rank, n = 5, with_ties = FALSE) %>%
-  mutate(group = "Lowest 5 Hardship (US)",
-         label = str_remove(NAME, " County.*"))
+  mutate(
+    state_name   = str_extract(NAME, "(?<=, ).+"),
+    state_abb    = state.abb[match(state_name, state.name)],
+    county_short = str_remove(NAME, " County.*"),
+    group = "Bottom 5 US (Least Economic Hardship)",
+    label = paste0(county_short, ", ", coalesce(state_abb, state_name))
+  )
 
-maricopa_row <- county_2023 %>%
+# All 15 Arizona counties
+az_all <- county_2023 %>%
   st_drop_geometry() %>%
   left_join(us_ranks, by = "GEOID") %>%
-  filter(str_detect(NAME, fixed(TARGET_COUNTY)),
-         str_detect(NAME, state.name[match(TARGET_STATE, state.abb)])) %>%
-  slice(1) %>%
-  mutate(group = TARGET_LABEL,
-         label = str_remove(NAME, " County.*"))
+  filter(str_detect(NAME, "Arizona")) %>%
+  filter(!is.na(hardship_index)) %>%
+  mutate(
+    group = "Arizona Counties",
+    label = paste0(str_remove(NAME, " County, Arizona"), ", AZ")
+  )
 
-compare_df <- bind_rows(top5_us, maricopa_row, bot5_us) %>%
+compare_df <- bind_rows(top5_us, az_all, bot5_us) %>%
   mutate(
     color_group = case_when(
-      group == TARGET_LABEL          ~ "#fdbf11",
-      group == "Top 5 Hardship (US)" ~ "#db2b27",
-      TRUE                           ~ "#1696d2"
+      group == "Arizona Counties"                   ~ "#fdbf11",
+      group == "Top 5 US (Most Economic Hardship)"  ~ "#db2b27",
+      TRUE                                          ~ "#1696d2"
     ),
+    point_size = if_else(group == "Arizona Counties", 4, 3),
     label = fct_reorder(label, hardship_index)
   )
 
-ggplot(compare_df, aes(x = hardship_index, y = label, color = color_group)) +
-  geom_point(size = 3.5) +
-  geom_vline(xintercept = maricopa_row$hardship_index,
-             linetype = "dashed", color = "#fdbf11", linewidth = 0.5) +
+# Reference values for annotations
+az_mean <- compare_df %>%
+  filter(group == "Arizona Counties") %>%
+  summarise(m = mean(hardship_index)) %>% pull(m)
+
+maricopa_val <- compare_df %>%
+  filter(str_detect(label, TARGET_COUNTY)) %>%
+  pull(hardship_index)
+
+maricopa_y <- compare_df %>%
+  filter(str_detect(label, TARGET_COUNTY)) %>%
+  pull(label) %>% as.character()
+
+ggplot(compare_df,
+       aes(x = hardship_index, y = label,
+           color = color_group, size = point_size)) +
+  geom_point() +
+  scale_size_identity() +
   scale_color_identity() +
-  theme_urbn_dash(base_size = 9) +
+  geom_vline(xintercept = az_mean,
+             linetype = "dotted", color = "#9d9d9d", linewidth = 0.5) +
+  annotate("text", x = maricopa_val + 0.05, y = maricopa_y,
+           label = paste0("\u2190 ", TARGET_COUNTY),
+           hjust = 0, size = 2.4, color = "#555555") +
+  theme_urbn_dash(base_size = 8.5) +
   theme(
-    axis.text.y  = element_text(size = 8, color = "#333333"),
-    axis.text.x  = element_text(size = 8, color = "#767676"),
+    axis.text.y        = element_text(size = 7.5, color = "#333333"),
+    axis.text.x        = element_text(size = 7.5, color = "#767676"),
     panel.grid.major.x = element_line(color = "#eeeeee", linewidth = 0.4)
   ) +
   labs(
-    title    = paste0(TARGET_LABEL, " vs. National Extremes"),
-    subtitle = "Red = highest US hardship | Cyan = lowest | Amber = focal county",
-    x        = "Hardship Index (pooled z-score)",
+    title    = "All Arizona Counties vs. U.S. Extremes",
+    subtitle = paste0("Yellow = AZ counties | Red = 5 highest US hardship",
+                      " | Cyan = 5 lowest | Dotted = AZ mean"),
+    x        = "Economic Hardship Index (pooled z-score)",
     y        = NULL,
     caption  = "ACS 2019–2023 5-Year Estimates"
   )
+```
+
+```{r}
+#| label: card-dot-text
+#| output: asis
+cat('<p style="font-size:0.82rem;color:#333;margin-top:8px;line-height:1.5">
+<strong>[Your interpretation here]</strong> Apache County is Arizona\'s
+most economically distressed county, facing barriers including [describe].
+Maricopa County has the lowest measured economic hardship among Arizona
+counties, driven by [describe factors]. However, there is significant
+variation <em>within</em> Maricopa County — the spatial concentration
+of that hardship is what we examine in the following panels.
+</p>')
 ```
 
 :::
@@ -502,7 +561,7 @@ ggplot(compare_df, aes(x = hardship_index, y = label, color = color_group)) +
 ggplot(local_2023) +
   geom_sf(aes(fill = hardship_index), color = NA) +
   scale_fill_viridis_c(option="inferno", direction=-1,
-                       name="Hardship\nIndex", na.value="grey40") +
+                       name="Economic\nHardship Index", na.value="grey40") +
   theme_urbn_dash(base_size=11) +
   labs(title    = paste0("Economic Hardship: ", TARGET_LABEL),
        subtitle = "Census tracts | ACS 2019–2023 5-Year",
@@ -522,12 +581,12 @@ p_bi <- ggplot(bi_data) +
   geom_sf(aes(fill=bi_class), color=NA, show.legend=FALSE) +
   bi_scale_fill(pal="DkBlue", dim=3) +
   theme_urbn_dash(base_size=11) +
-  labs(title    = "Hardship × Renter Rate",
+  labs(title    = "Economic Hardship × Renter Rate",
        subtitle = paste0(TARGET_LABEL, " | ACS 2019–2023"),
        caption  = "Dark blue = high hardship AND high renter rate")
 
 p_legend <- bi_legend(pal="DkBlue", dim=3,
-                       xlab="Hardship →", ylab="% Renter →", size=9)
+                       xlab="Economic Hardship →", ylab="% Renter →", size=9)
 
 p_bi + inset_element(p_legend, left=0.72, bottom=0.05, right=1, top=0.35)
 ```
@@ -546,7 +605,7 @@ ggplot(change_df) +
              "HL"="High-Low Outlier","LH"="Low-High Outlier","NS"="Not Significant"),
     name="LISA Cluster\n(2019, p<0.05)") +
   theme_urbn_dash(base_size=11) +
-  labs(title    = paste0("Spatial Hardship Clusters: ", TARGET_LABEL),
+  labs(title    = paste0("Spatial Economic Hardship Clusters: ", TARGET_LABEL),
        subtitle = "LISA analysis on 2015–2019 ACS economic hardship index",
        caption  = paste0("Global Moran's I = ", round(moran_global$estimate[1],3),
                          " (p < 0.001) — significant positive spatial autocorrelation"))
@@ -608,7 +667,7 @@ ggplot(change_df) +
              "Stable NS"    ="No Dominant Pattern"),
     name="Trajectory\n(2013→2019)") +
   theme_urbn_dash(base_size=11) +
-  labs(title    = paste0("Neighborhood Hardship Trajectories: ", TARGET_LABEL),
+  labs(title    = paste0("Neighborhood Economic Hardship Trajectories: ", TARGET_LABEL),
        subtitle = "LISA cluster transition, 2013–2019 | Pooled z-score standardization",
        caption  = "Pooled mean/SD across both years — comparable change scores")
 ```
@@ -632,7 +691,7 @@ list(title="Tracts Worsened (2013→2019)", value=paste0(pct_worsened,"%"),
 ```{r}
 #| label: vb-persistent
 #| content: valuebox
-list(title="Persistently High Hardship", value=paste0(pct_persist_hh,"%"),
+list(title="Persistently High Economic Hardship", value=paste0(pct_persist_hh,"%"),
      icon="exclamation-circle", color="danger")
 ```
 
@@ -649,9 +708,9 @@ list(title="Emerging Hot Spots", value=paste0(pct_emerg_hh,"%"),
 ggplot(change_df) +
   geom_sf(aes(fill=change_plot), color=NA) +
   scale_fill_gradient2(low="#0a4c6a", mid="#f5f5f5", high="#db2b27",
-    midpoint=0, limits=c(-max_abs, max_abs), name="Hardship\nChange") +
+    midpoint=0, limits=c(-max_abs, max_abs), name="Economic\nHardship Change") +
   theme_urbn_dash(base_size=10) +
-  labs(title    = paste0("Hardship Change (2013→2019): ", TARGET_LABEL),
+  labs(title    = paste0("Economic Hardship Change (2013→2019): ", TARGET_LABEL),
        subtitle = "Blue = improved | Red = worsened | Winsorized at 2nd/98th pct")
 ```
 
