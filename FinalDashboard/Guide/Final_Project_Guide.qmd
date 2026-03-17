@@ -138,5 +138,5 @@ For students comfortable with R who want to explore a different geography, it is
 
 ## Downloads
 
-- [Instructor Dashboard (3-variable baseline reference)](../Dashboard/Final_Project_Template.html){target="_blank"}
-- [Student Dashboard QMD (download and edit)](Final_Project_Student.qmd){target="_blank"}
+- [Instructor Dashboard (3-variable baseline reference)](../InstructorDashboard/Final_Project_Template.html){target="_blank"}
+- [Student Dashboard QMD (download and edit)](../StudentExample/Final_Project_Student.qmd){target="_blank"}
