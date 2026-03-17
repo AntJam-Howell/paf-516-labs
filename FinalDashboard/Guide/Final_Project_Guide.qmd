@@ -94,7 +94,7 @@ Each component is automatically z-score standardized and averaged into the compo
 
 6. **Delete the `_cache/` folder** next to the QMD file if one exists. This is only an issue if you are rendering multiple times and changing your component selection between renders --- cached data from a previous render will prevent your new variables from being pulled from the Census API. If this is your first render, there is no cache folder and you can skip this step
 
-7. **Click Render** in RStudio (or use the terminal: `quarto render Final_Project_Student.qmd`)
+7. **Click Render** in RStudio (or use the terminal: `quarto render Final_Project.qmd`)
 
 8. **Wait approximately 5--10 minutes** for Census API pulls to complete. The national county pull is cached and will be fast; the state and local tract pulls will re-run with your expanded variable list
 
