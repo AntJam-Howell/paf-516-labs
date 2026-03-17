@@ -938,16 +938,16 @@ maplibre(
         { color: '#d2d2d2', label: 'Not Significant (NS)' }
       ];
       var leg = document.createElement('div');
-      leg.style.cssText = 'position:absolute;bottom:32px;left:12px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:11px;font-family:Lato,sans-serif;padding:10px 13px;border-radius:5px;line-height:1.7;min-width:230px;';
+      leg.style.cssText = 'position:absolute;bottom:32px;left:12px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:9px;font-family:Lato,sans-serif;padding:6px 8px;border-radius:5px;line-height:1.7;min-width:170px;';
       var title = document.createElement('div');
-      title.style.cssText = 'font-weight:700;font-size:11.5px;margin-bottom:7px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:5px;';
+      title.style.cssText = 'font-weight:700;font-size:9.5px;margin-bottom:7px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:5px;';
       title.textContent = 'LISA Clusters (p < 0.05)';
       leg.appendChild(title);
       entries.forEach(function(e) {
         var row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;margin-bottom:3px;';
+        row.style.cssText = 'display:flex;align-items:center;margin-bottom:2px;';
         var swatch = document.createElement('span');
-        swatch.style.cssText = 'display:inline-block;width:13px;height:13px;border-radius:2px;margin-right:8px;flex-shrink:0;background:' + e.color + ';';
+        swatch.style.cssText = 'display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;flex-shrink:0;background:' + e.color + ';';
         var lbl = document.createElement('span');
         lbl.textContent = e.label;
         row.appendChild(swatch); row.appendChild(lbl);
@@ -1053,20 +1053,32 @@ az_county_hetero_tbl %>%
 
 ```{r}
 #| label: vb-az-hh
-#| content: valuebox
-list(
-  title = "Hot Spot Clusters (HH)",
-  value = paste0(az_n_hh, " Tracts"), icon = "fire", color = "danger"
-)
+#| output: asis
+cat(paste0('
+<div style="background:#a93226;border-radius:8px;padding:18px 20px;color:#fff;height:100%;display:flex;gap:14px;align-items:flex-start;">
+  <span style="font-size:28px;line-height:1;">🔥</span>
+  <div>
+    <div style="font-size:32px;font-weight:700;line-height:1.1;">', az_n_hh, '</div>
+    <div style="font-size:11px;color:#e8c4c0;margin-top:4px;">census tracts statewide</div>
+    <div style="font-size:12px;font-weight:600;margin-top:6px;">Hot Spot Clusters (HH)</div>
+  </div>
+</div>
+'))
 ```
 
 ```{r}
 #| label: vb-az-ll
-#| content: valuebox
-list(
-  title = "Cold Spot Clusters (LL)",
-  value = paste0(az_n_ll, " Tracts"), icon = "snow", color = "primary"
-)
+#| output: asis
+cat(paste0('
+<div style="background:#2471a3;border-radius:8px;padding:18px 20px;color:#fff;height:100%;display:flex;gap:14px;align-items:flex-start;">
+  <span style="font-size:28px;line-height:1;">❄️</span>
+  <div>
+    <div style="font-size:32px;font-weight:700;line-height:1.1;">', az_n_ll, '</div>
+    <div style="font-size:11px;color:#bdd8ec;margin-top:4px;">census tracts statewide</div>
+    <div style="font-size:12px;font-weight:600;margin-top:6px;">Cold Spot Clusters (LL)</div>
+  </div>
+</div>
+'))
 ```
 
 
@@ -1239,16 +1251,16 @@ maplibre(
         { color: '#ec008b', label: 'Spatial Outlier (HL / LH)' }
       ];
       var leg = document.createElement('div');
-      leg.style.cssText = 'position:absolute;top:12px;left:12px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:11px;font-family:Lato,sans-serif;padding:10px 13px;border-radius:5px;line-height:1.7;min-width:210px;';
+      leg.style.cssText = 'position:absolute;top:12px;left:12px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:9px;font-family:Lato,sans-serif;padding:6px 8px;border-radius:5px;line-height:1.7;min-width:170px;';
       var title = document.createElement('div');
-      title.style.cssText = 'font-weight:700;font-size:11.5px;margin-bottom:7px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:5px;';
+      title.style.cssText = 'font-weight:700;font-size:9.5px;margin-bottom:7px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:5px;';
       title.textContent = 'Cluster Trajectory (2013\u21922019)';
       leg.appendChild(title);
       entries.forEach(function(e) {
         var row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;margin-bottom:3px;';
+        row.style.cssText = 'display:flex;align-items:center;margin-bottom:2px;';
         var swatch = document.createElement('span');
-        swatch.style.cssText = 'display:inline-block;width:13px;height:13px;border-radius:2px;margin-right:8px;flex-shrink:0;background:' + e.color + ';';
+        swatch.style.cssText = 'display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;flex-shrink:0;background:' + e.color + ';';
         var lbl = document.createElement('span');
         lbl.textContent = e.label;
         row.appendChild(swatch); row.appendChild(lbl);
