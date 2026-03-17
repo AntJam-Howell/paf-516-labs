@@ -149,4 +149,4 @@ For students comfortable with R who want to explore a different geography, it is
 ## Downloads
 
 - [Instructor Dashboard (3-variable baseline reference)](https://antjam-howell.github.io/paf-516-labs/Final_Project_Complete.html){target="_blank"}
-- [Student Dashboard QMD (download and edit)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/FinalDashboard/InstructorDashboard/Final_Project.qmd){target="_blank"}
+- [Student Dashboard QMD (right-click → Save Link As…)](https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/FinalDashboard/InstructorDashboard/Final_Project.qmd){target="_blank"}
