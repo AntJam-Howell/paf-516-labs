@@ -931,8 +931,8 @@ maplibre(
   htmlwidgets::onRender("
     function(el, x) {
       var entries = [
-        { color: '#db2b27', label: 'Hot Spot (HH) \u2014 High hardship cluster' },
-        { color: '#1696d2', label: 'Cold Spot (LL) \u2014 Low hardship cluster' },
+        { color: '#db2b27', label: 'Hot Spot (HH)' },
+        { color: '#1696d2', label: 'Cold Spot (LL)' },
         { color: '#fdbf11', label: 'High-Low Outlier (HL)' },
         { color: '#73bfe2', label: 'Low-High Outlier (LH)' },
         { color: '#d2d2d2', label: 'Not Significant (NS)' }
