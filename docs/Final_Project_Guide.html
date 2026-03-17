@@ -3230,7 +3230,7 @@ vertical-align: -.125em;
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">#   &quot;no_vehicle_rate&quot;    # Option D — Transportation Disadvantage</span></span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div></li>
 <li><p><strong>Save</strong> the file</p></li>
-<li><p><strong>Delete the <code>_cache/</code> folder</strong> next to the QMD file if one exists. This is important — cached data from a previous render will prevent your new variables from being pulled from the Census API</p></li>
+<li><p><strong>Delete the <code>_cache/</code> folder</strong> next to the QMD file if one exists. This is only an issue if you are rendering multiple times and changing your component selection between renders — cached data from a previous render will prevent your new variables from being pulled from the Census API. If this is your first render, there is no cache folder and you can skip this step</p></li>
 <li><p><strong>Click Render</strong> in RStudio (or use the terminal: <code>quarto render Final_Project_Student.qmd</code>)</p></li>
 <li><p><strong>Wait approximately 5–10 minutes</strong> for Census API pulls to complete. The national county pull is cached and will be fast; the state and local tract pulls will re-run with your expanded variable list</p></li>
 <li><p><strong>Open the rendered HTML</strong> and visually compare each tab against the instructor dashboard</p></li>
