@@ -531,7 +531,7 @@ ggplotly(p, tooltip = "text") %>%
 
 # Arizona in Focus
 
-## Column {width=50%}
+## Column {width=60%}
 
 ```{r}
 #| label: map-az-tracts
@@ -571,20 +571,14 @@ maplibre(
   )
 ```
 
-## Column {width=50%}
+## Column {width=40%}
 
-### Row {height=55%}
-
-::: {.card}
-**Economic Hardship Clusters in `r TARGET_LABEL` (LISA)**
-
-County-level maps mask enormous within-county variation. Apache and Navajo counties show uniformly high hardship across nearly all census tracts — the county average *is* the tract-level story. A large, diverse county like Maricopa is different: its county-level score averages over tracts ranging from deep poverty to affluent suburbs, making hardship hot spots invisible at the county scale. Local Indicators of Spatial Association (LISA) solve this by testing each tract against its neighbors, identifying statistically significant clusters of high hardship (hot spots) and low hardship (cold spots) that county averages obscure.
-:::
+### Row {height=72%}
 
 ```{r}
 #| label: map-lisa
 #| title: "LISA Clusters — Statistically Significant Hardship Patterns"
-#| fig-height: 5
+#| fig-height: 8
 ggplot(change_df) +
   geom_sf(aes(fill = lisa_2019), color = NA) +
   scale_fill_manual(
@@ -600,25 +594,36 @@ ggplot(change_df) +
   ) +
   theme_urbn_dash(base_size = 10) +
   labs(
-    caption  = paste0(
-      "Global Moran's I = ", round(moran_global$estimate[1], 3),
-      " (p < 0.001) — strong positive spatial autocorrelation"
-    )
+    title    = paste0("Hardship Clusters: ", TARGET_LABEL),
+    subtitle = "Census tracts where hardship is statistically concentrated among neighbors",
+    caption  = paste0("Global Moran's I = ",
+                      round(moran_global$estimate[1], 3),
+                      " (p < 0.001) — strong positive spatial autocorrelation")
   )
 ```
 
-### Row {height=10%}
+### Row {height=28%}
 
 ```{r}
-#| label: vb-lisa-summary
-#| output: asis
-cat(glue::glue(
-  '<div style="display:flex;gap:12px;justify-content:center;padding:4px 8px;">
-  <span style="background:#db2b27;color:#fff;padding:4px 12px;border-radius:4px;font-size:0.85rem;font-weight:600;">🔴 {n_hh} Hot Spot Tracts</span>
-  <span style="background:#1696d2;color:#fff;padding:4px 12px;border-radius:4px;font-size:0.85rem;font-weight:600;">🔵 {n_ll} Cold Spot Tracts</span>
-  <span style="background:#6c757d;color:#fff;padding:4px 12px;border-radius:4px;font-size:0.85rem;font-weight:600;">Moran\'s I = {round(unname(moran_global$estimate[1]), 3)}</span>
-  </div>'
-))
+#| label: vb-hh
+#| content: valuebox
+list(title = "Hot Spot Tracts (HH)",
+     value = n_hh, icon = "fire", color = "danger")
+```
+
+```{r}
+#| label: vb-ll
+#| content: valuebox
+list(title = "Cold Spot Tracts (LL)",
+     value = n_ll, icon = "snow", color = "primary")
+```
+
+```{r}
+#| label: vb-moran
+#| content: valuebox
+list(title = "Global Moran's I",
+     value = round(unname(moran_global$estimate[1]), 3),
+     icon = "diagram-3", color = "secondary")
 ```
 
 # Hardship Trajectories: 2013–2019
