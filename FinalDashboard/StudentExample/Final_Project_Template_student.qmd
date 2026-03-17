@@ -50,9 +50,9 @@ library(mapgl); library(plotly); library(scales); library(MASS)
 #   Miami-Dade:   TARGET_STATE="FL", TARGET_COUNTY="Miami-Dade",   TARGET_LABEL="Miami-Dade County, FL"
 #   King/Seattle: TARGET_STATE="WA", TARGET_COUNTY="King",         TARGET_LABEL="King County, WA"
 #   Harris/Houst: TARGET_STATE="TX", TARGET_COUNTY="Harris",       TARGET_LABEL="Harris County, TX"
-TARGET_STATE  <- "CA"
-TARGET_COUNTY <- "Los Angeles"
-TARGET_LABEL  <- "Los Angeles County, CA"
+TARGET_STATE  <- "AZ"
+TARGET_COUNTY <- "Maricopa"
+TARGET_LABEL  <- "Maricopa County, AZ"
 # ────────────────────────────────────────────────────────────────────────
 ```
 
@@ -1019,7 +1019,7 @@ list(title = "Tracts Worsened (2013\u21922023)",
 ```{r}
 #| label: vb-persistent
 #| content: valuebox
-list(title = "Persistently High Hardship (2013\u20132019)",
+list(title = "Persistently High Hardship (2013\u20132023)",
      value = paste0(pct_persist_hh_23, "%"),
      icon = "exclamation-circle", color = "danger")
 ```
@@ -1027,7 +1027,7 @@ list(title = "Persistently High Hardship (2013\u20132019)",
 ```{r}
 #| label: vb-emerging
 #| content: valuebox
-list(title = "Emerging Hot Spots (2013\u20132019)",
+list(title = "Emerging Hot Spots (2013\u20132023)",
      value = paste0(pct_emerg_hh_23, "%"),
      icon = "arrow-up-right-circle", color = "warning")
 ```
