@@ -1,0 +1,142 @@
+---
+title: "PAF 516 Final Project: Economic Hardship Index Sensitivity Analysis"
+subtitle: "Student Instructions"
+author: "PAF 516 | Arizona State University"
+date: today
+format:
+  html:
+    theme: readable
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    self-contained: true
+    code-fold: true
+execute:
+  echo: false
+  warning: false
+---
+
+## Overview
+
+The final project asks you to expand a baseline Economic Hardship Index (EHI) by adding one to four additional indicators and analyze how the spatial patterns, hot spot clusters, and policy implications change. This is fundamentally an exercise in **measurement sensitivity analysis** --- a core skill in applied policy research. You are not writing new code. You are uncommenting pre-built options, re-rendering the dashboard, and writing substantive analysis of what changes and why.
+
+The instructor dashboard uses a 3-variable baseline EHI (poverty rate, unemployment rate, median household income). Your student dashboard includes four additional variables that are commented out by default. By uncommenting one or more, you expand the index and observe how the spatial story shifts.
+
+## Why Index Construction Matters for Policy
+
+### Composite indices are unavoidably political
+
+Every composite index encodes a theory of what matters. The decision to include unemployment but not educational attainment, or poverty but not housing cost burden, determines which communities appear "hardship-affected" and which do not. These are not neutral technical choices --- they are value judgments with real distributional consequences. Two researchers studying the same county with different index compositions will identify different hot spots, recommend different interventions, and direct resources to different neighborhoods.
+
+### Multidimensional disadvantage
+
+Amartya Sen's Capability Approach and Martha Nussbaum's development framework argue that poverty and disadvantage are inherently multidimensional. A household can be above the federal poverty line but face severe transportation barriers, food insecurity, and housing instability simultaneously. Single-indicator measures --- including the federal poverty rate alone --- systematically under-identify disadvantage by collapsing a complex, multi-dimensional phenomenon into a single number. Composite indices attempt to address this, but the specific dimensions chosen still constrain what the index can "see."
+
+### Real-world stakes
+
+This is not an academic exercise. The CDFI Fund's Community Development Financial Institutions program, HUD's Community Development Block Grants, and the Biden administration's Justice40 initiative all use composite indices to allocate billions in federal resources. The EPA's EJScreen tool determines which communities qualify for environmental justice investments. In every case, index composition determines who gets funding and who does not. A community that scores high on poverty but low on the other included dimensions may be excluded from programs that could transform residents' lives.
+
+### The tyranny of indicators
+
+Cathy O'Neil's *Weapons of Math Destruction* documents how composite scores, once embedded in policy systems, can be gamed, can systematically exclude the most vulnerable, and can create feedback loops that entrench the very inequalities they claim to measure. When an index becomes a policy target, actors optimize for the measured dimensions while neglecting unmeasured ones. Your sensitivity analysis directly engages this problem: by changing which dimensions are measured, you observe how the "map of hardship" shifts --- and which communities appear or disappear from the policy radar.
+
+## What You Are Doing
+
+### This is essentially a no-code assignment
+
+The baseline dashboard (instructor version) uses a 3-variable Economic Hardship Index and is already rendered and available for you to view. Your student dashboard is **identical code** but with four additional variables commented out in the `index-config` chunk.
+
+All you do is remove the `#` from one to four lines and re-render. That is the only code change required.
+
+Everything else --- all Census API pulls, all maps, all LISA spatial clustering analysis, all trajectory detection, all value boxes, all policy statistics --- updates automatically based on your expanded index. This is intentional: it lets you focus on **interpreting substantive changes in spatial patterns** rather than debugging code.
+
+### The four additional components
+
+| Option | Variable | What It Measures | ACS Table |
+|--------|----------|-----------------|-----------|
+| A | `renter_rate` | % households that rent (housing cost pressure) | B25003 |
+| B | `no_hs_rate` | % adults 25+ without a high school diploma | B06009 |
+| C | `snap_rate` | % households receiving SNAP/food stamps | B22003 |
+| D | `no_vehicle_rate` | % households with no vehicle available | B08201 |
+
+Each component is automatically z-score standardized and averaged into the composite index alongside the three baseline variables. The direction of each variable is pre-configured (higher values = more hardship for all four options).
+
+## Step-by-Step Instructions
+
+1. **Download** the student QMD file using the link at the bottom of this page
+
+2. **Open** the file in RStudio
+
+3. **Find the STUDENT CONFIGURATION block** (around lines 60--100). Look for the section bordered by `╔══════╗` characters
+
+4. **Uncomment at least one option** by removing the `#` from one to four lines inside the `STUDENT_COMPONENTS <- c(...)` block. For example, to add renter burden and SNAP receipt:
+
+    ```r
+    STUDENT_COMPONENTS <- c(
+        "renter_rate",       # Option A — Renter Burden
+    #   "no_hs_rate",        # Option B — Low Educational Attainment
+        "snap_rate",         # Option C — Food Insecurity (SNAP)
+    #   "no_vehicle_rate"    # Option D — Transportation Disadvantage
+    )
+    ```
+
+5. **Save** the file
+
+6. **Delete the `_cache/` folder** next to the QMD file if one exists. This is important --- cached data from a previous render will prevent your new variables from being pulled from the Census API
+
+7. **Click Render** in RStudio (or use the terminal: `quarto render Final_Project_Student.qmd`)
+
+8. **Wait approximately 5--10 minutes** for Census API pulls to complete. The national county pull is cached and will be fast; the state and local tract pulls will re-run with your expanded variable list
+
+9. **Open the rendered HTML** and visually compare each tab against the instructor dashboard
+
+## Comparison Guide
+
+When comparing your expanded-index dashboard to the instructor baseline, focus on these specific questions for each tab:
+
+**National Context tab:**
+
+- Does your county's national rank change? By how much?
+- Do any Arizona counties change relative position in the state ranking table?
+- Does the dot plot show Arizona counties shifting left or right relative to the U.S. extremes?
+
+**Arizona in Focus tab:**
+
+- Does the spatial distribution of high-hardship tracts change visually?
+- Which counties gained or lost hot spot status in the LISA map?
+- Does the Moran's I value (spatial clustering strength) increase or decrease?
+
+**Clusters & Trajectories tab:**
+
+- Do the Persistent HH corridors stay in the same locations or shift?
+- Does the Sankey diagram show different quintile mobility patterns?
+- Do the "Tracts Improved" and "Tracts Worsened" percentages change meaningfully?
+
+**Policy Implications tab:**
+
+- Do the auto-computed statistics (persistent hot spots, emerging hot spots) change?
+- Would your policy recommendations differ based on the expanded index results?
+
+## What You Submit
+
+1. **Your rendered HTML file** --- the student dashboard with your expanded index (the `.html` file produced by rendering)
+2. **Completed answers** in the Index Sensitivity tab (3 reflection questions)
+3. **Completed policy recommendations** in the Policy Implications tab (3 cards)
+
+You do **not** submit a separate policy brief. Everything is inside the dashboard.
+
+## Advanced Option (Optional --- Not Required)
+
+For students comfortable with R who want to explore a different geography, it is technically possible to change the target county. This requires:
+
+- Changing `TARGET_STATE` and `TARGET_COUNTY` (3 lines in the county-config chunk)
+- Deleting all `_cache/` folders so data re-pulls for the new geography
+- Debugging potential tidycensus county name ambiguity errors (e.g., "Harris" in Texas matches both Harris County and Harrison County --- you would need to use the full county name or FIPS code)
+- Accepting that the Arizona-specific bounding boxes in the mapgl calls will need manual adjustment
+
+**Recommendation:** Stick with Arizona/Maricopa County and focus your analytical energy on index sensitivity. The measurement question is the point of the assignment --- not geographic novelty.
+
+## Downloads
+
+- [Instructor Dashboard (3-variable baseline reference)](../Dashboard/Final_Project_Template.html){target="_blank"}
+- [Student Dashboard QMD (download and edit)](Final_Project_Student.qmd){target="_blank"}
