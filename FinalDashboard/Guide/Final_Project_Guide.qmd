@@ -1,8 +1,7 @@
 ---
 title: "PAF 516 Final Project: Economic Hardship Index Sensitivity Analysis"
 subtitle: "Student Instructions"
-author: "PAF 516 | Arizona State University"
-date: today
+date: ""
 format:
   html:
     theme: readable
