@@ -539,19 +539,13 @@ maplibre(
     id = "state-highlight", source = state_outline,
     line_color = "#fdbf11", line_width = 2.5
   ) |>
-  htmlwidgets::onRender("
-    function(el, x) {
-      var leg = document.createElement('div');
-      leg.style.cssText = 'position:absolute;bottom:32px;left:10px;background:rgba(15,15,15,0.82);padding:7px 10px 6px;border-radius:4px;font-family:Lato,sans-serif;min-width:180px;';
-      leg.innerHTML = '<div style=\"font-size:10px;color:#cccccc;font-weight:600;margin-bottom:5px;\">Economic Hardship Index</div>'
-        + '<div style=\"display:flex;align-items:center;gap:6px;\">'
-        +   '<span style=\"font-size:9px;color:#73bfe2;white-space:nowrap;\">Better-off</span>'
-        +   '<div style=\"flex:1;height:10px;border-radius:2px;background:linear-gradient(to right,#1696d2,#73bfe2,#f5f5f5,#ec6a5a,#db2b27);\"></div>'
-        +   '<span style=\"font-size:9px;color:#ec6a5a;white-space:nowrap;\">Worse-off</span>'
-        + '</div>';
-      el.appendChild(leg);
-    }
-  ")
+  add_legend(
+    "Economic Hardship Index",
+    values   = c("Worse-off", "", "Average", "", "Better-off"),
+    colors   = c("#db2b27", "#ec6a5a", "#f5f5f5", "#73bfe2", "#1696d2"),
+    position = "bottom-left",
+    width    = 220
+  )
 ```
 
 ## Column {width=45%}
@@ -655,23 +649,13 @@ maplibre(
     id = "target-county-border", source = target_boundary,
     line_color = "#fdbf11", line_width = 2.5
   ) |>
-  htmlwidgets::onRender("
-    function(el, x) {
-      var badge = document.createElement('div');
-      badge.style.cssText = 'position:absolute;top:10px;left:10px;background:rgba(10,10,10,0.75);color:#fdbf11;font-size:11px;font-family:Lato,sans-serif;padding:5px 9px;border-radius:3px;border:1px solid #fdbf11;pointer-events:none;';
-      badge.innerHTML = '&#9632;&nbsp;Target county boundary';
-      el.appendChild(badge);
-      var leg = document.createElement('div');
-      leg.style.cssText = 'position:absolute;bottom:32px;left:10px;background:rgba(15,15,15,0.82);padding:7px 10px 6px;border-radius:4px;font-family:Lato,sans-serif;min-width:170px;';
-      leg.innerHTML = '<div style=\"font-size:10px;color:#cccccc;font-weight:600;margin-bottom:5px;\">Economic Hardship Index</div>'
-        + '<div style=\"display:flex;align-items:center;gap:6px;\">'
-        +   '<span style=\"font-size:9px;color:#73bfe2;white-space:nowrap;\">Better-off</span>'
-        +   '<div style=\"flex:1;height:10px;border-radius:2px;background:linear-gradient(to right,#1696d2,#73bfe2,#f5f5f5,#ec6a5a,#db2b27);\"></div>'
-        +   '<span style=\"font-size:9px;color:#ec6a5a;white-space:nowrap;\">Worse-off</span>'
-        + '</div>';
-      el.appendChild(leg);
-    }
-  ")
+  add_legend(
+    "Economic Hardship Index",
+    values   = c("Worse-off", "", "Average", "", "Better-off"),
+    colors   = c("#db2b27", "#ec6a5a", "#f5f5f5", "#73bfe2", "#1696d2"),
+    position = "bottom-left",
+    width    = 220
+  )
 ```
 
 ### Scatter {width=34%}
@@ -779,35 +763,12 @@ maplibre(
     id = "lisa-borders", source = az_lisa_map,
     line_color = "#2a2a2a", line_width = 0.4, line_opacity = 0.6
   ) |>
-  htmlwidgets::onRender("
-    function(el, x) {
-      var entries = [
-        { color: '#db2b27', label: 'Hot Spot (HH) \u2014 High hardship cluster' },
-        { color: '#1696d2', label: 'Cold Spot (LL) \u2014 Low hardship cluster' },
-        { color: '#fdbf11', label: 'High-Low Outlier (HL)' },
-        { color: '#73bfe2', label: 'Low-High Outlier (LH)' },
-        { color: '#d2d2d2', label: 'Not Significant (NS)' }
-      ];
-      var leg = document.createElement('div');
-      leg.style.cssText = 'position:absolute;bottom:32px;left:12px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:11px;font-family:Lato,sans-serif;padding:10px 13px;border-radius:5px;line-height:1.7;min-width:230px;';
-      var title = document.createElement('div');
-      title.style.cssText = 'font-weight:700;font-size:11.5px;margin-bottom:7px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:5px;';
-      title.textContent = 'Economic Hardship Clusters (p < 0.05)';
-      leg.appendChild(title);
-      entries.forEach(function(e) {
-        var row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;margin-bottom:3px;';
-        var sw = document.createElement('span');
-        sw.style.cssText = 'display:inline-block;width:13px;height:13px;border-radius:2px;margin-right:8px;flex-shrink:0;background:' + e.color + ';';
-        var lb = document.createElement('span'); lb.textContent = e.label;
-        row.appendChild(sw); row.appendChild(lb); leg.appendChild(row);
-      });
-      var badge = document.createElement('div');
-      badge.style.cssText = 'position:absolute;top:10px;right:12px;background:rgba(10,10,10,0.75);color:#fdbf11;font-size:11px;font-family:Lato,sans-serif;padding:5px 9px;border-radius:3px;border:1px solid #fdbf11;pointer-events:none;';
-      badge.innerHTML = '\u25a0&nbsp;Target county boundary';
-      el.appendChild(leg); el.appendChild(badge);
-    }
-  ")
+  add_legend(
+    "LISA Clusters (p < 0.05)",
+    values   = c("Hot Spot (HH)", "Cold Spot (LL)", "High-Low (HL)", "Low-High (LH)", "Not Significant"),
+    colors   = c("#db2b27", "#1696d2", "#fdbf11", "#73bfe2", "#d2d2d2"),
+    position = "bottom-left"
+  )
 ```
 
 ## Bottom Row {height=45%}
@@ -969,33 +930,12 @@ maplibre(
     id = "traj-border", source = traj_map,
     line_color = "#ffffff", line_width = 0.3, line_opacity = 0.3
   ) |>
-  htmlwidgets::onRender("
-    function(el, x) {
-      var entries = [
-        { color: '#db2b27', label: 'Persistent Hot Spot (HH\u2192HH)' },
-        { color: '#fdbf11', label: 'Emerging Hot Spot (NS\u2192HH)' },
-        { color: '#fdd870', label: 'Dissolving Hot Spot (HH\u2192NS)' },
-        { color: '#1696d2', label: 'Persistent Cold Spot (LL\u2192LL)' },
-        { color: '#73bfe2', label: 'Emerging Cold Spot (NS\u2192LL)' },
-        { color: '#ec008b', label: 'Spatial Outlier (HL/LH)' }
-      ];
-      var leg = document.createElement('div');
-      leg.style.cssText = 'position:absolute;top:12px;left:12px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:11px;font-family:Lato,sans-serif;padding:10px 13px;border-radius:5px;line-height:1.7;min-width:220px;';
-      var title = document.createElement('div');
-      title.style.cssText = 'font-weight:700;font-size:11.5px;margin-bottom:7px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:5px;';
-      title.textContent = 'Cluster Trajectory (2013\u21922019)';
-      leg.appendChild(title);
-      entries.forEach(function(e) {
-        var row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;margin-bottom:3px;';
-        var sw = document.createElement('span');
-        sw.style.cssText = 'display:inline-block;width:13px;height:13px;border-radius:2px;margin-right:8px;flex-shrink:0;background:' + e.color + ';';
-        var lb = document.createElement('span'); lb.textContent = e.label;
-        row.appendChild(sw); row.appendChild(lb); leg.appendChild(row);
-      });
-      el.appendChild(leg);
-    }
-  ")
+  add_legend(
+    "Trajectory (2013\u21922019)",
+    values   = c("Persistent HH", "Emerging HH", "Dissolving HH", "Persistent LL", "Emerging LL", "Spatial Outlier"),
+    colors   = c("#db2b27", "#fdbf11", "#fdd870", "#1696d2", "#73bfe2", "#ec008b"),
+    position = "top-left"
+  )
 ```
 
 ### Row {height=40%}
