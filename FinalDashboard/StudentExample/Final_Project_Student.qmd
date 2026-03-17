@@ -499,16 +499,15 @@ az_counties <- county_2023 %>%
     az_rank     = row_number(),
     n_az        = n(),
     county_name = str_remove(NAME, " County, Arizona"),
-    County = case_when(
-      county_name == TARGET_COUNTY ~ paste0(county_name, " \u2190 your county"),
-      az_rank == 1                 ~ paste0(county_name, " (Worst in AZ)"),
-      az_rank == n_az              ~ paste0(county_name, " (Best in AZ)"),
-      TRUE                         ~ county_name
-    ),
-    `Economic Hardship Index` = round(hardship_index, 3)
+    County      = county_name,
+    `EH Index Pos. = Worse-Off` = round(hardship_index, 3),
+    `AZ Rank (1 = most hardship, out of 15)` = az_rank,
+    `US Rank (1 = most hardship, out of ~3,140)` = us_rank
   ) %>%
-  select(`AZ Rank` = az_rank, County, `Economic Hardship Index`,
-         `US Rank` = us_rank)
+  select(County,
+         `EH Index Pos. = Worse-Off`,
+         `AZ Rank (1 = most hardship, out of 15)`,
+         `US Rank (1 = most hardship, out of ~3,140)`)
 
 # Within-county spatial heterogeneity table (all 15 AZ counties)
 az_county_hetero <- az_tract_2023 %>%
@@ -604,19 +603,33 @@ maplibre(
 
 ```{r}
 #| label: table-az-counties
-#| title: "Arizona Counties — Economic Hardship Rankings"
+#| title: "Economic Hardship (EH) Rankings — Arizona Counties"
+n_us_counties <- nrow(us_ranks)
+
 az_counties %>%
   DT::datatable(
-    options = list(pageLength = 8, dom = "tp"),
+    colnames = c(
+      "County",
+      "EH Index",
+      "AZ Rank",
+      "US Rank"
+    ),
+    options = list(
+      pageLength = 8, dom = "tp",
+      columnDefs = list(list(className = "dt-center", targets = 1:3)),
+      headerCallback = DT::JS(
+        "function(thead) {",
+        "  $(thead).find('th').eq(2).html('AZ Rank<br><small style=\"font-weight:normal;color:#777;\">out of 15 Counties</small>');",
+        paste0("  $(thead).find('th').eq(3).html('US Rank<br><small style=\"font-weight:normal;color:#777;\">out of ", n_us_counties, " Counties</small>');"),
+        "}"
+      )
+    ),
     rownames = FALSE
   ) %>%
   DT::formatStyle(
     columns = "County",
     target  = "row",
-    backgroundColor = DT::styleEqual(
-      paste0(TARGET_COUNTY, " \u2190 your county"),
-      "#fffde6"
-    )
+    backgroundColor = DT::styleEqual(TARGET_COUNTY, "#fffde6")
   )
 ```
 
@@ -938,16 +951,16 @@ maplibre(
         { color: '#d2d2d2', label: 'Not Significant (NS)' }
       ];
       var leg = document.createElement('div');
-      leg.style.cssText = 'position:absolute;bottom:32px;left:12px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:9px;font-family:Lato,sans-serif;padding:6px 8px;border-radius:5px;line-height:1.7;min-width:170px;';
+      leg.style.cssText = 'position:absolute;bottom:28px;left:10px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:9px;font-family:Lato,sans-serif;padding:6px 8px;border-radius:4px;line-height:1.5;min-width:170px;';
       var title = document.createElement('div');
-      title.style.cssText = 'font-weight:700;font-size:9.5px;margin-bottom:7px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:5px;';
+      title.style.cssText = 'font-weight:700;font-size:9.5px;margin-bottom:5px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:4px;';
       title.textContent = 'LISA Clusters (p < 0.05)';
       leg.appendChild(title);
       entries.forEach(function(e) {
         var row = document.createElement('div');
         row.style.cssText = 'display:flex;align-items:center;margin-bottom:2px;';
         var swatch = document.createElement('span');
-        swatch.style.cssText = 'display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;flex-shrink:0;background:' + e.color + ';';
+        swatch.style.cssText = 'display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;flex-shrink:0;background:' + e.color + ';';
         var lbl = document.createElement('span');
         lbl.textContent = e.label;
         row.appendChild(swatch); row.appendChild(lbl);
@@ -1031,7 +1044,7 @@ az_county_hetero_tbl %>%
                "Index Components (County Avg.)"),
             th(rowspan = 2,
                style = "text-align:center;border-left:2px solid #ccc;padding-left:8px;",
-               "EH Index (Mean)")
+               "EH Index")
           ),
           tr(
             th("Pov. Rate"), th("Unemp. Rate"), th("Med. Income"),
@@ -1052,33 +1065,46 @@ az_county_hetero_tbl %>%
 ### AZ Alert Stats {width=33%}
 
 ```{r}
-#| label: vb-az-hh
+#| label: vb-az-cards
 #| output: asis
-cat(paste0('
-<div style="background:#a93226;border-radius:8px;padding:18px 20px;color:#fff;height:100%;display:flex;gap:14px;align-items:flex-start;">
-  <span style="font-size:28px;line-height:1;">🔥</span>
-  <div>
-    <div style="font-size:32px;font-weight:700;line-height:1.1;">', az_n_hh, '</div>
-    <div style="font-size:11px;color:#e8c4c0;margin-top:4px;">census tracts statewide</div>
-    <div style="font-size:12px;font-weight:600;margin-top:6px;">Hot Spot Clusters (HH)</div>
-  </div>
-</div>
-'))
-```
+cat(paste0(
+  '<div style="display:flex;flex-direction:column;gap:12px;padding:8px;',
+  'height:100%;min-height:300px;box-sizing:border-box;">',
 
-```{r}
-#| label: vb-az-ll
-#| output: asis
-cat(paste0('
-<div style="background:#2471a3;border-radius:8px;padding:18px 20px;color:#fff;height:100%;display:flex;gap:14px;align-items:flex-start;">
-  <span style="font-size:28px;line-height:1;">❄️</span>
-  <div>
-    <div style="font-size:32px;font-weight:700;line-height:1.1;">', az_n_ll, '</div>
-    <div style="font-size:11px;color:#bdd8ec;margin-top:4px;">census tracts statewide</div>
-    <div style="font-size:12px;font-weight:600;margin-top:6px;">Cold Spot Clusters (LL)</div>
-  </div>
-</div>
-'))
+  # HH card
+  '<div style="background:#a93226;border-radius:10px;padding:22px 24px;color:#fff;',
+  'flex:1;display:flex;flex-direction:column;justify-content:space-between;',
+  'user-select:none;-webkit-user-select:none;">',
+  '<div style="font-size:34px;line-height:1;">&#128293;</div>',
+  '<div>',
+  '<div style="font-size:52px;font-weight:700;line-height:1;margin-top:6px;',
+  'text-shadow:0 2px 6px rgba(0,0,0,0.2);">', az_n_hh, '</div>',
+  '<div style="font-size:12px;color:#e8c4c0;margin-top:5px;letter-spacing:0.02em;">',
+  'census tracts statewide</div>',
+  '</div>',
+  '<div style="font-size:12px;font-weight:700;text-transform:uppercase;',
+  'letter-spacing:0.07em;opacity:0.95;margin-top:12px;border-top:1px solid rgba(255,255,255,0.25);',
+  'padding-top:10px;">Hot Spot (HH) \u2014 High Hardship Cluster</div>',
+  '</div>',
+
+  # LL card
+  '<div style="background:#2471a3;border-radius:10px;padding:22px 24px;color:#fff;',
+  'flex:1;display:flex;flex-direction:column;justify-content:space-between;',
+  'user-select:none;-webkit-user-select:none;">',
+  '<div style="font-size:34px;line-height:1;">&#10052;</div>',
+  '<div>',
+  '<div style="font-size:52px;font-weight:700;line-height:1;margin-top:6px;',
+  'text-shadow:0 2px 6px rgba(0,0,0,0.2);">', az_n_ll, '</div>',
+  '<div style="font-size:12px;color:#bdd8ec;margin-top:5px;letter-spacing:0.02em;">',
+  'census tracts statewide</div>',
+  '</div>',
+  '<div style="font-size:12px;font-weight:700;text-transform:uppercase;',
+  'letter-spacing:0.07em;opacity:0.95;margin-top:12px;border-top:1px solid rgba(255,255,255,0.25);',
+  'padding-top:10px;">Cold Spot (LL) \u2014 Low Hardship Cluster</div>',
+  '</div>',
+
+  '</div>'
+))
 ```
 
 
@@ -1251,16 +1277,16 @@ maplibre(
         { color: '#ec008b', label: 'Spatial Outlier (HL / LH)' }
       ];
       var leg = document.createElement('div');
-      leg.style.cssText = 'position:absolute;top:12px;left:12px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:9px;font-family:Lato,sans-serif;padding:6px 8px;border-radius:5px;line-height:1.7;min-width:170px;';
+      leg.style.cssText = 'position:absolute;top:12px;left:12px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:11px;font-family:Lato,sans-serif;padding:10px 13px;border-radius:5px;line-height:1.7;min-width:210px;';
       var title = document.createElement('div');
-      title.style.cssText = 'font-weight:700;font-size:9.5px;margin-bottom:7px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:5px;';
+      title.style.cssText = 'font-weight:700;font-size:11.5px;margin-bottom:7px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:5px;';
       title.textContent = 'Cluster Trajectory (2013\u21922019)';
       leg.appendChild(title);
       entries.forEach(function(e) {
         var row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;margin-bottom:2px;';
+        row.style.cssText = 'display:flex;align-items:center;margin-bottom:3px;';
         var swatch = document.createElement('span');
-        swatch.style.cssText = 'display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;flex-shrink:0;background:' + e.color + ';';
+        swatch.style.cssText = 'display:inline-block;width:13px;height:13px;border-radius:2px;margin-right:8px;flex-shrink:0;background:' + e.color + ';';
         var lbl = document.createElement('span');
         lbl.textContent = e.label;
         row.appendChild(swatch); row.appendChild(lbl);
@@ -1292,17 +1318,17 @@ list(title = "Tracts Worsened (2013\u21922023)",
 ```{r}
 #| label: vb-persistent
 #| content: valuebox
-list(title = "Persistently High Hardship (2013\u20132019)",
+list(title = "Persistently High Hardship (2013\u20132023)",
      value = paste0(pct_persist_hh_23, "%"),
-     icon  = "exclamation-circle", color = "#8b1a1a")
+     icon  = "exclamation-circle", color = "danger")
 ```
 
 ```{r}
 #| label: vb-emerging
 #| content: valuebox
-list(title = "Emerging Hot Spots (2013\u20132019)",
+list(title = "Emerging Hot Spots (2013\u20132023)",
      value = paste0(pct_emerg_hh_23, "%"),
-     icon  = "arrow-up-right-circle", color = "danger")
+     icon  = "arrow-up-right-circle", color = "warning")
 ```
 
 # Policy Implications
@@ -1314,7 +1340,7 @@ list(title = "Emerging Hot Spots (2013\u20132019)",
 
 **`r n_persist_hh` Persistent Hot Spot Tracts (`r pct_persist_hh_23`% of Maricopa tracts)**
 
-These census tracts had statistically significant high-hardship clustering in **both** 2013 and 2019. The pattern is not random — a Global Moran's I of `r round(moran_global$estimate[1], 3)` confirms that hardship is spatially concentrated, not scattered. Tracts in this category share infrastructure deficits, limited employment access, and concentrated poverty that reinforce one another across neighborhood boundaries.
+These census tracts had statistically significant high-hardship clustering in **both** 2013 and 2019. The pattern is not random: a Global Moran's I of `r round(moran_global$estimate[1], 3)` confirms that hardship is spatially concentrated, not scattered. Tracts in this category share infrastructure deficits, limited employment access, and concentrated poverty that reinforce one another across neighborhood boundaries.
 
 **Implication:** Individual-level interventions alone are unlikely to move the needle. Place-based, multi-sector investment is required.
 
@@ -1326,7 +1352,7 @@ These census tracts had statistically significant high-hardship clustering in **
 
 **`r n_emerg_hh` Emerging Hot Spot Tracts (`r pct_emerg_hh_23`% of Maricopa tracts)**
 
-These tracts were **not** significant hardship clusters in 2013 but became statistically significant by 2019 — representing the spatial expansion of hardship beyond historically distressed cores. This is an early warning signal that hardship is spreading, not contained.
+These tracts were **not** significant hardship clusters in 2013 but became statistically significant by 2019, representing the spatial expansion of hardship beyond historically distressed cores. This is an early warning signal that hardship is spreading, not contained.
 
 **Displacement paradox:** Some "improving" tracts nearby may be gentrifying, pushing lower-income households outward into these emerging clusters. Declining hardship scores do not necessarily mean existing residents are better off.
 
@@ -1334,11 +1360,11 @@ These tracts were **not** significant hardship clusters in 2013 but became stati
 :::
 
 ::: {.card style="border-left: 5px solid #55b748;"}
-### 🟢 Signs of Progress — Read With Caution
+### 🟢 Signs of Progress Read With Caution
 
 **`r pct_improved_23`% of Maricopa tracts showed EHI improvement (2013→2023)**
 
-The majority of tracts improved over the decade-long window. However, aggregate improvement masks significant variation — `r pct_worsened_23`% of tracts worsened over the same period. The data cannot distinguish genuine economic uplift from population turnover: a tract with a declining hardship index may simply have replaced lower-income residents with higher-income newcomers.
+The majority of tracts improved over the decade-long window. However, aggregate improvement masks significant variation: `r pct_worsened_23`% of tracts worsened over the same period. The data cannot distinguish genuine economic uplift from population turnover: a tract with a declining hardship index may simply have replaced lower-income residents with higher-income newcomers.
 
 **Data limitation:** Before drawing conclusions from improving scores, ground-truth verification through community engagement and displacement tracking is essential.
 
@@ -1349,20 +1375,20 @@ The majority of tracts improved over the decade-long window. However, aggregate 
 
 ::: {.card}
 ### Recommendation 1
-**Target:** `r n_persist_hh` Persistent Hot Spot tracts (`r pct_persist_hh_23`% of all Maricopa tracts) — spatially concentrated, entrenched hardship confirmed by a Global Moran's I of `r round(moran_global$estimate[1], 3)`.
+**Target:** `r n_persist_hh` Persistent Hot Spot tracts (`r pct_persist_hh_23`% of all Maricopa tracts): spatially concentrated, entrenched hardship confirmed by a Global Moran's I of `r round(moran_global$estimate[1], 3)`.
 
 **TODO:** Write your first recommendation. Name the specific geographic corridor, cite the hardship index values, and propose a concrete place-based intervention with a named responsible entity.
 
-*[Your answer here — minimum 3 sentences]*
+*[Your answer here minimum 3 sentences]*
 :::
 
 ::: {.card}
 ### Recommendation 2
-**Target:** `r n_emerg_hh` Emerging Hot Spot tracts (`r pct_emerg_hh_23`% of all Maricopa tracts) — new high-hardship clusters not present in 2013, signaling spatial expansion.
+**Target:** `r n_emerg_hh` Emerging Hot Spot tracts (`r pct_emerg_hh_23`% of all Maricopa tracts), new high-hardship clusters not present in 2013, signaling spatial expansion.
 
 **TODO:** Reference the displacement paradox, identify where these clusters are forming, and propose an early-intervention or monitoring strategy.
 
-*[Your answer here — minimum 3 sentences]*
+*[Your answer here minimum 3 sentences]*
 :::
 
 ::: {.card}
@@ -1371,7 +1397,7 @@ The majority of tracts improved over the decade-long window. However, aggregate 
 
 **TODO:** Using the trajectory map and mobility Sankey, make a forward-looking data-monitoring or cross-sector coordination argument.
 
-*[Your answer here — minimum 3 sentences]*
+*[Your answer here minimum 3 sentences]*
 :::
 
 # Index Sensitivity
@@ -1383,24 +1409,24 @@ The majority of tracts improved over the decade-long window. However, aggregate 
 
 The baseline EHI consists of **3 measures**: Poverty + Unemployment + Income (inv.)
 
-**Current index:** `r INDEX_N`-component EHI — `r INDEX_LABEL`
+**Current index:** `r INDEX_N`-component EHI: `r INDEX_LABEL`
 
 **After adding your extra component(s), answer the following (minimum 2 sentences each):**
 
 ---
 
-**Q1 — What changed spatially?**  
+**Q1: What changed spatially?**  
 Compare Hot Spot tract counts and cluster map patterns between your expanded index and the 3-component baseline. Did adding `r if(length(STUDENT_COMPONENTS)>0) paste(sapply(STUDENT_COMPONENTS, function(c) EXTRA_VAR_MENU[[c]]$label), collapse=" + ") else "[your chosen component]"` shift which tracts or corridors are flagged?
 
-*[Your answer here]*
+*[TODO: Describe what changed in the spatial cluster map and Hot Spot tract counts after adding your component. Be specific cite numbers and identify geographic areas.]*
 
-**Q2 — What stayed the same?**  
+**Q2: What stayed the same?**  
 Which Persistent Hot Spot areas appear robustly across index specifications? What does consistency across different index compositions tell us about the reliability of hardship diagnoses in those tracts?
 
-*[Your answer here]*
+*[TODO: Identify which Persistent Hot Spot corridors remained flagged regardless of index composition. Explain what this robustness tells us about entrenched hardship in those areas.]*
 
-**Q3 — Policy implications of index choice**  
+**Q3: Policy implications of index choice**  
 If a policymaker targeted place-based investments using the baseline index versus your expanded index, would resource allocation differ? Name specific tracts or geographic corridors and argue which composition better captures the full burden of economic hardship for policy purposes.
 
-*[Your answer here]*
+*[TODO: Compare resource targeting under each index. Argue which composition is more appropriate for policy, citing specific tracts or neighborhoods and the dimension of hardship your added component captures.]*
 :::

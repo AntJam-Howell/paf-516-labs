@@ -1,6 +1,6 @@
 ---
 title: "Economic Hardship in Arizona"
-subtitle: "A Community Analytics Dashboard"
+subtitle: "A Community Analytics Dashboard — PAF 516 Final Project"
 format:
   dashboard:
     theme:
@@ -57,6 +57,81 @@ TARGET_LABEL  <- "Maricopa County, AZ"
 
 ```{r}
 #| label: index-config
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║              STUDENT CONFIGURATION — READ CAREFULLY                     ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# The BASELINE Economic Hardship Index (EHI) uses THREE components:
+#   1. Poverty rate          (higher = more hardship)
+#   2. Unemployment rate     (higher = more hardship)
+#   3. Median household income, inverted (lower income = more hardship)
+#
+# YOUR TASK: Expand the index by uncommenting ONE or TWO options below.
+# After editing, re-render the dashboard. Then compare how the spatial
+# patterns, cluster maps, and policy findings shift with your new index.
+#
+# ── AVAILABLE EXTRA COMPONENTS ──────────────────────────────────────────────
+#
+#  Option A  Renter Burden
+#            % households that rent (housing cost pressure)
+#            ACS: B25003_003 (renter occ.) / B25003_001 (total occ.)
+#
+#  Option B  Low Educational Attainment
+#            % adults with no high school diploma
+#            ACS: B06009_002 (< HS) / B06009_001 (pop. 25+)
+#
+#  Option C  Food Insecurity (SNAP receipt)
+#            % households receiving SNAP/food stamps
+#            ACS: B22003_002 (received SNAP) / B22003_001 (total HH)
+#
+#  Option D  Transportation Disadvantage
+#            % households with no vehicle available
+#            ACS: B08201_002 (0 vehicles) / B08201_001 (total HH)
+#
+# ── SET YOUR CHOICE HERE ──────────────────────────────────────────────────
+# NOTE: After changing STUDENT_COMPONENTS, delete the _cache/ folder next to
+# this file (or use Session > Restart R) before re-rendering, so that data
+# pulls refresh with your new variables.
+# Uncomment the component(s) you want to add.
+
+STUDENT_COMPONENTS <- c(
+#   "renter_rate",       # Option A — Renter Burden
+#   "no_hs_rate",        # Option B — Low Educational Attainment
+#   "snap_rate",         # Option C — Food Insecurity (SNAP)
+#  "no_vehicle_rate"    # Option D — Transportation Disadvantage  ← ACTIVE
+)
+
+# ── INTERNALS — do not edit below this line ──────────────────────────────
+EXTRA_VAR_MENU <- list(
+  renter_rate = list(
+    vars      = c(renter_num = "B25003_003", renter_den = "B25003_001"),
+    rate_fn   = function(df) df$renter_num / df$renter_den,
+    direction = +1,
+    label     = "Renter Burden"
+  ),
+  no_hs_rate = list(
+    vars      = c(no_hs_num = "B06009_002", no_hs_den = "B06009_001"),
+    rate_fn   = function(df) df$no_hs_num / df$no_hs_den,
+    direction = +1,
+    label     = "Low Ed. Attainment"
+  ),
+  snap_rate = list(
+    vars      = c(snap_num = "B22003_002", snap_den = "B22003_001"),
+    rate_fn   = function(df) df$snap_num / df$snap_den,
+    direction = +1,
+    label     = "Food Insecurity (SNAP)"
+  ),
+  no_vehicle_rate = list(
+    vars      = c(no_veh_num = "B08201_002", no_veh_den = "B08201_001"),
+    rate_fn   = function(df) df$no_veh_num / df$no_veh_den,
+    direction = +1,
+    label     = "Transp. Disadvantage"
+  )
+)
+
+extra_vars <- if (length(STUDENT_COMPONENTS) > 0)
+  unlist(lapply(STUDENT_COMPONENTS, function(c) EXTRA_VAR_MENU[[c]]$vars)) else c()
+
 hardship_vars <- c(
   pov_below50   = "C17002_002",
   pov_50to99    = "C17002_003",
@@ -65,29 +140,43 @@ hardship_vars <- c(
   unemp_den     = "B23025_002",
   median_income = "B19013_001"
 )
-renter_vars <- c(
-  renter_num = "B25003_003",
-  renter_den = "B25003_001"
+all_hardship_vars <- c(hardship_vars, extra_vars)
+
+INDEX_N     <- 3 + length(STUDENT_COMPONENTS)
+INDEX_LABEL <- paste(
+  c("Poverty", "Unemployment", "Income (inv.)",
+    unlist(lapply(STUDENT_COMPONENTS, function(c) EXTRA_VAR_MENU[[c]]$label))),
+  collapse = " + "
 )
 
-build_hardship_index <- function(raw_df) {
-  raw_df %>%
+build_hardship_index <- function(raw_df, extra_components = STUDENT_COMPONENTS) {
+  df <- raw_df %>%
     select(-moe) %>%
     pivot_wider(names_from = variable, values_from = estimate) %>%
     mutate(
       poverty_rate = (pov_below50 + pov_50to99) / pov_den,
       unemp_rate   = unemp_num / unemp_den
     ) %>%
-    filter(!is.na(poverty_rate), !is.na(unemp_rate), !is.na(median_income)) %>%
-    (function(df) {
-      geom <- if (inherits(df, "sf")) st_geometry(df) else NULL
-      tbl  <- st_drop_geometry(df)
-      z_pov   <- as.numeric(scale(tbl$poverty_rate))
-      z_unemp <- as.numeric(scale(tbl$unemp_rate))
-      z_inc   <- -1 * as.numeric(scale(tbl$median_income))
-      tbl$hardship_index <- rowMeans(cbind(z_pov, z_unemp, z_inc), na.rm = TRUE)
-      if (!is.null(geom)) st_sf(tbl, geometry = geom) else tbl
-    })()
+    filter(!is.na(poverty_rate), !is.na(unemp_rate), !is.na(median_income))
+
+  for (comp in extra_components)
+    df[[comp]] <- EXTRA_VAR_MENU[[comp]]$rate_fn(df)
+
+  (function(df) {
+    geom <- if (inherits(df, "sf")) st_geometry(df) else NULL
+    tbl  <- st_drop_geometry(df)
+    z_mat <- cbind(
+      as.numeric(scale(tbl$poverty_rate)),
+      as.numeric(scale(tbl$unemp_rate)),
+      -1 * as.numeric(scale(tbl$median_income))
+    )
+    for (comp in extra_components) {
+      d <- EXTRA_VAR_MENU[[comp]]$direction
+      z_mat <- cbind(z_mat, d * as.numeric(scale(tbl[[comp]])))
+    }
+    tbl$hardship_index <- rowMeans(z_mat, na.rm = TRUE)
+    if (!is.null(geom)) st_sf(tbl, geometry = geom) else tbl
+  })(df)
 }
 ```
 
@@ -96,7 +185,7 @@ build_hardship_index <- function(raw_df) {
 #| cache: true
 county_raw <- get_acs(
   geography    = "county",
-  variables    = hardship_vars,
+  variables    = all_hardship_vars,
   year         = 2023,
   survey       = "acs5",
   geometry     = TRUE,
@@ -109,10 +198,11 @@ county_2023 <- build_hardship_index(county_raw) %>%
 ```{r}
 #| label: pull-az-tracts
 #| cache: true
+#| cache.extra: !expr paste(sort(STUDENT_COMPONENTS), collapse = ",")
 # All Arizona census tracts — state-level interactive map + AZ LISA
 az_tract_raw <- get_acs(
   geography    = "tract",
-  variables    = hardship_vars,
+  variables    = all_hardship_vars,
   state        = TARGET_STATE,
   year         = 2023,
   survey       = "acs5",
@@ -132,6 +222,7 @@ maricopa_boundary <- az_tract_2023 %>%
 ```{r}
 #| label: lisa-az
 #| cache: true
+#| cache.extra: !expr paste(sort(STUDENT_COMPONENTS), collapse = ",")
 # AZ-wide LISA — 2023 cross-sectional hardship clustering across all AZ tracts
 az_valid <- az_tract_2023 %>%
   filter(!is.na(hardship_index))
@@ -184,9 +275,10 @@ az_lisa_map <- az_valid %>%
 ```{r}
 #| label: pull-local-current
 #| cache: true
+#| cache.extra: !expr paste(sort(STUDENT_COMPONENTS), collapse = ",")
 local_combined_raw <- get_acs(
   geography    = "tract",
-  variables    = c(hardship_vars, renter_vars),
+  variables    = all_hardship_vars,
   state        = TARGET_STATE,
   county       = TARGET_COUNTY,
   year         = 2023,
@@ -194,33 +286,25 @@ local_combined_raw <- get_acs(
   geometry     = TRUE,
   progress_bar = FALSE
 )
-local_2023 <- build_hardship_index(
-  local_combined_raw %>% filter(variable %in% names(hardship_vars))
-)
-renter_tbl <- local_combined_raw %>%
-  filter(variable %in% names(renter_vars)) %>%
-  st_drop_geometry() %>% select(-moe) %>%
-  pivot_wider(names_from = variable, values_from = estimate) %>%
-  mutate(renter_rate = renter_num / renter_den) %>%
-  select(GEOID, renter_rate)
-local_2023 <- left_join(local_2023, renter_tbl, by = "GEOID")
+local_2023 <- build_hardship_index(local_combined_raw)
 ```
 
 ```{r}
 #| label: pull-temporal
 #| cache: true
+#| cache.extra: !expr paste(sort(STUDENT_COMPONENTS), collapse = ",")
 local_2013_raw <- get_acs(
-  geography = "tract", variables = hardship_vars,
+  geography = "tract", variables = all_hardship_vars,
   state = TARGET_STATE, county = TARGET_COUNTY,
   year = 2013, survey = "acs5", geometry = TRUE, progress_bar = FALSE
 )
 local_2019_raw <- get_acs(
-  geography = "tract", variables = hardship_vars,
+  geography = "tract", variables = all_hardship_vars,
   state = TARGET_STATE, county = TARGET_COUNTY,
   year = 2019, survey = "acs5", geometry = TRUE, progress_bar = FALSE
 )
 local_2016_raw <- get_acs(
-  geography = "tract", variables = hardship_vars,
+  geography = "tract", variables = all_hardship_vars,
   state = TARGET_STATE, county = TARGET_COUNTY,
   year = 2016, survey = "acs5", geometry = FALSE, progress_bar = FALSE
 )
@@ -228,8 +312,9 @@ local_2016_raw <- get_acs(
 
 ```{r}
 #| label: pooled-std
+# Extended to include student-selected extra components in pooled standardization
 widen_and_rate <- function(df) {
-  df %>%
+  out <- df %>%
     select(-moe) %>%
     pivot_wider(names_from = variable, values_from = estimate) %>%
     mutate(
@@ -237,30 +322,39 @@ widen_and_rate <- function(df) {
       unemp_rate   = unemp_num / unemp_den
     ) %>%
     filter(!is.na(poverty_rate), !is.na(unemp_rate), !is.na(median_income))
+  for (comp in STUDENT_COMPONENTS)
+    out[[comp]] <- EXTRA_VAR_MENU[[comp]]$rate_fn(out)
+  out
 }
 
 local_2013_wide <- widen_and_rate(local_2013_raw)
 local_2019_wide <- widen_and_rate(local_2019_raw)
 
-r2013 <- local_2013_wide %>% st_drop_geometry() %>%
-  select(GEOID, poverty_rate, unemp_rate, median_income)
-r2019 <- local_2019_wide %>% st_drop_geometry() %>%
-  select(GEOID, poverty_rate, unemp_rate, median_income)
+vars_pool <- c("poverty_rate", "unemp_rate", "median_income", STUDENT_COMPONENTS)
+r2013 <- local_2013_wide %>% st_drop_geometry() %>% select(GEOID, all_of(vars_pool))
+r2019 <- local_2019_wide %>% st_drop_geometry() %>% select(GEOID, all_of(vars_pool))
 
-vars_pool <- c("poverty_rate", "unemp_rate", "median_income")
 pooled_stats <- map_dfr(vars_pool, function(v) {
   vals <- c(r2013[[v]], r2019[[v]])
   tibble(variable = v, mean = mean(vals, na.rm = TRUE), sd = sd(vals, na.rm = TRUE))
 })
 
 apply_pooled_z <- function(df, stats) {
-  for (v in stats$variable) {
-    df[[paste0("z_", v)]] <- (df[[v]] - stats$mean[stats$variable==v]) /
-                              stats$sd[stats$variable==v]
+  for (v in c("poverty_rate", "unemp_rate", "median_income")) {
+    df[[paste0("z_", v)]] <- (df[[v]] - stats$mean[stats$variable == v]) /
+                               stats$sd[stats$variable == v]
   }
   df$z_median_income <- -1 * df$z_median_income
-  df$hardship_index  <- rowMeans(
-    df[, c("z_poverty_rate","z_unemp_rate","z_median_income")], na.rm = TRUE)
+  for (comp in STUDENT_COMPONENTS) {
+    d <- EXTRA_VAR_MENU[[comp]]$direction
+    df[[paste0("z_", comp)]] <- d *
+      (df[[comp]] - stats$mean[stats$variable == comp]) /
+       stats$sd[stats$variable == comp]
+  }
+  extra_z <- if (length(STUDENT_COMPONENTS) > 0) paste0("z_", STUDENT_COMPONENTS) else character(0)
+  z_cols <- c("z_poverty_rate", "z_unemp_rate", "z_median_income", extra_z)
+  z_tbl  <- st_drop_geometry(df)[, z_cols, drop = FALSE]
+  df$hardship_index <- rowMeans(as.matrix(z_tbl), na.rm = TRUE)
   df
 }
 
@@ -309,7 +403,7 @@ p13  <- lisa_2013[, "Pr(z != E(Ii))"]
 
 local_2016_wide <- widen_and_rate(local_2016_raw %>% mutate(geometry = NULL))
 r2016_z <- apply_pooled_z(
-  local_2016_wide %>% select(GEOID, poverty_rate, unemp_rate, median_income),
+  local_2016_wide %>% select(GEOID, all_of(vars_pool)),
   pooled_stats
 )
 
@@ -405,16 +499,15 @@ az_counties <- county_2023 %>%
     az_rank     = row_number(),
     n_az        = n(),
     county_name = str_remove(NAME, " County, Arizona"),
-    County = case_when(
-      county_name == TARGET_COUNTY ~ paste0(county_name, " \u2190 your county"),
-      az_rank == 1                 ~ paste0(county_name, " (Worst in AZ)"),
-      az_rank == n_az              ~ paste0(county_name, " (Best in AZ)"),
-      TRUE                         ~ county_name
-    ),
-    `Economic Hardship Index` = round(hardship_index, 3)
+    County      = county_name,
+    `EH Index Pos. = Worse-Off` = round(hardship_index, 3),
+    `AZ Rank (1 = most hardship, out of 15)` = az_rank,
+    `US Rank (1 = most hardship, out of ~3,140)` = us_rank
   ) %>%
-  select(`AZ Rank` = az_rank, County, `Economic Hardship Index`,
-         `US Rank` = us_rank)
+  select(County,
+         `EH Index Pos. = Worse-Off`,
+         `AZ Rank (1 = most hardship, out of 15)`,
+         `US Rank (1 = most hardship, out of ~3,140)`)
 
 # Within-county spatial heterogeneity table (all 15 AZ counties)
 az_county_hetero <- az_tract_2023 %>%
@@ -510,19 +603,33 @@ maplibre(
 
 ```{r}
 #| label: table-az-counties
-#| title: "Arizona Counties — Economic Hardship Rankings"
+#| title: "Economic Hardship (EH) Rankings — Arizona Counties"
+n_us_counties <- nrow(us_ranks)
+
 az_counties %>%
   DT::datatable(
-    options = list(pageLength = 8, dom = "tp"),
+    colnames = c(
+      "County",
+      "EH Index",
+      "AZ Rank",
+      "US Rank"
+    ),
+    options = list(
+      pageLength = 8, dom = "tp",
+      columnDefs = list(list(className = "dt-center", targets = 1:3)),
+      headerCallback = DT::JS(
+        "function(thead) {",
+        "  $(thead).find('th').eq(2).html('AZ Rank<br><small style=\"font-weight:normal;color:#777;\">out of 15 Counties</small>');",
+        paste0("  $(thead).find('th').eq(3).html('US Rank<br><small style=\"font-weight:normal;color:#777;\">out of ", n_us_counties, " Counties</small>');"),
+        "}"
+      )
+    ),
     rownames = FALSE
   ) %>%
   DT::formatStyle(
     columns = "County",
     target  = "row",
-    backgroundColor = DT::styleEqual(
-      paste0(TARGET_COUNTY, " \u2190 your county"),
-      "#fffde6"
-    )
+    backgroundColor = DT::styleEqual(TARGET_COUNTY, "#fffde6")
   )
 ```
 
@@ -844,16 +951,16 @@ maplibre(
         { color: '#d2d2d2', label: 'Not Significant (NS)' }
       ];
       var leg = document.createElement('div');
-      leg.style.cssText = 'position:absolute;bottom:32px;left:12px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:9px;font-family:Lato,sans-serif;padding:6px 8px;border-radius:5px;line-height:1.7;min-width:170px;';
+      leg.style.cssText = 'position:absolute;bottom:28px;left:10px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:9px;font-family:Lato,sans-serif;padding:6px 8px;border-radius:4px;line-height:1.5;min-width:170px;';
       var title = document.createElement('div');
-      title.style.cssText = 'font-weight:700;font-size:9.5px;margin-bottom:7px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:5px;';
+      title.style.cssText = 'font-weight:700;font-size:9.5px;margin-bottom:5px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:4px;';
       title.textContent = 'LISA Clusters (p < 0.05)';
       leg.appendChild(title);
       entries.forEach(function(e) {
         var row = document.createElement('div');
         row.style.cssText = 'display:flex;align-items:center;margin-bottom:2px;';
         var swatch = document.createElement('span');
-        swatch.style.cssText = 'display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;flex-shrink:0;background:' + e.color + ';';
+        swatch.style.cssText = 'display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;flex-shrink:0;background:' + e.color + ';';
         var lbl = document.createElement('span');
         lbl.textContent = e.label;
         row.appendChild(swatch); row.appendChild(lbl);
@@ -884,6 +991,16 @@ county_name_lookup <- county_2023 %>%
   ) %>%
   select(county_geoid, county_name)
 
+# Build extra component summary columns dynamically
+extra_summary_cols <- if (length(STUDENT_COMPONENTS) > 0) {
+  setNames(
+    lapply(STUDENT_COMPONENTS, function(comp)
+      rlang::quo(scales::percent(mean(!!rlang::sym(comp), na.rm = TRUE), accuracy = 0.1))
+    ),
+    sapply(STUDENT_COMPONENTS, function(comp) EXTRA_VAR_MENU[[comp]]$label)
+  )
+} else list()
+
 az_county_hetero_tbl <- az_tract_2023 %>%
   st_drop_geometry() %>%
   filter(!is.na(hardship_index)) %>%
@@ -892,22 +1009,27 @@ az_county_hetero_tbl <- az_tract_2023 %>%
   filter(!is.na(county_name)) %>%
   group_by(county_name) %>%
   summarise(
-    `N Tracts`      = n(),
-    `Pov. Rate`     = scales::percent(mean(poverty_rate,    na.rm = TRUE), accuracy = 0.1),
-    `Unemp. Rate`   = scales::percent(mean(unemp_rate,      na.rm = TRUE), accuracy = 0.1),
-    `Med. Income`   = scales::dollar(mean(median_income,    na.rm = TRUE), accuracy = 1),
-    `EHI Mean`      = round(mean(hardship_index,            na.rm = TRUE), 3),
-    .groups         = "drop"
+    `N Tracts`    = n(),
+    `Pov. Rate`   = scales::percent(mean(poverty_rate,  na.rm = TRUE), accuracy = 0.1),
+    `Unemp. Rate` = scales::percent(mean(unemp_rate,    na.rm = TRUE), accuracy = 0.1),
+    `Med. Income` = scales::dollar(mean(median_income,  na.rm = TRUE), accuracy = 1),
+    !!!extra_summary_cols,
+    `EHI Mean`    = round(mean(hardship_index,          na.rm = TRUE), 3),
+    .groups       = "drop"
   ) %>%
-  arrange(`EHI Mean`) %>%      # Better-off (most negative) first
+  arrange(`EHI Mean`) %>%
   rename(County = county_name)
+
+# Dynamic header: colspan expands with extra components
+n_comp_cols <- 3 + length(STUDENT_COMPONENTS)
+extra_th    <- lapply(STUDENT_COMPONENTS, function(comp) htmltools::tags$th(EXTRA_VAR_MENU[[comp]]$label))
 
 az_county_hetero_tbl %>%
   DT::datatable(
     options = list(
       pageLength = 8, dom = "t",
       scrollY = "280px", scrollX = TRUE,
-      columnDefs = list(list(className = "dt-center", targets = 1:5))
+      columnDefs = list(list(className = "dt-center", targets = 1:(n_comp_cols + 1)))
     ),
     rownames = FALSE,
     container = htmltools::withTags(
@@ -917,20 +1039,23 @@ az_county_hetero_tbl %>%
           tr(
             th(rowspan = 2, "County"),
             th(rowspan = 2, "N Tracts"),
-            th(colspan = 3, style = "text-align:center;border-bottom:2px solid #ddd;",
+            th(colspan = n_comp_cols,
+               style = "text-align:center;border-bottom:2px solid #ddd;",
                "Index Components (County Avg.)"),
-            th(rowspan = 2, style = "text-align:center;border-left:2px solid #ccc;padding-left:8px;",
-               "EH Index (Mean)")
+            th(rowspan = 2,
+               style = "text-align:center;border-left:2px solid #ccc;padding-left:8px;",
+               "EH Index")
           ),
           tr(
-            th("Pov. Rate"), th("Unemp. Rate"), th("Med. Income")
+            th("Pov. Rate"), th("Unemp. Rate"), th("Med. Income"),
+            extra_th
           )
         )
       )
     ),
     caption = htmltools::tags$caption(
       style = "font-size:0.71rem;color:#767676;text-align:left;caption-side:bottom;padding-top:4px;",
-      "Sorted best-off to worst-off by mean EH Index. SD = within-county variation."
+      paste0("Index composition: ", INDEX_LABEL, ". Sorted best-off to worst-off.")
     )
   ) %>%
   DT::formatStyle("County", target = "row",
@@ -940,33 +1065,46 @@ az_county_hetero_tbl %>%
 ### AZ Alert Stats {width=33%}
 
 ```{r}
-#| label: vb-az-hh
+#| label: vb-az-cards
 #| output: asis
-cat(paste0('
-<div style="background:#a93226;border-radius:8px;padding:18px 20px;color:#fff;height:100%;display:flex;gap:14px;align-items:flex-start;">
-  <span style="font-size:28px;line-height:1;">🔥</span>
-  <div>
-    <div style="font-size:32px;font-weight:700;line-height:1.1;">', az_n_hh, '</div>
-    <div style="font-size:11px;color:#e8c4c0;margin-top:4px;">census tracts statewide</div>
-    <div style="font-size:12px;font-weight:600;margin-top:6px;">Hot Spot Clusters (HH)</div>
-  </div>
-</div>
-'))
-```
+cat(paste0(
+  '<div style="display:flex;flex-direction:column;gap:12px;padding:8px;',
+  'height:100%;min-height:300px;box-sizing:border-box;">',
 
-```{r}
-#| label: vb-az-ll
-#| output: asis
-cat(paste0('
-<div style="background:#2471a3;border-radius:8px;padding:18px 20px;color:#fff;height:100%;display:flex;gap:14px;align-items:flex-start;">
-  <span style="font-size:28px;line-height:1;">❄️</span>
-  <div>
-    <div style="font-size:32px;font-weight:700;line-height:1.1;">', az_n_ll, '</div>
-    <div style="font-size:11px;color:#bdd8ec;margin-top:4px;">census tracts statewide</div>
-    <div style="font-size:12px;font-weight:600;margin-top:6px;">Cold Spot Clusters (LL)</div>
-  </div>
-</div>
-'))
+  # HH card
+  '<div style="background:#a93226;border-radius:10px;padding:22px 24px;color:#fff;',
+  'flex:1;display:flex;flex-direction:column;justify-content:space-between;',
+  'user-select:none;-webkit-user-select:none;">',
+  '<div style="font-size:34px;line-height:1;">&#128293;</div>',
+  '<div>',
+  '<div style="font-size:52px;font-weight:700;line-height:1;margin-top:6px;',
+  'text-shadow:0 2px 6px rgba(0,0,0,0.2);">', az_n_hh, '</div>',
+  '<div style="font-size:12px;color:#e8c4c0;margin-top:5px;letter-spacing:0.02em;">',
+  'census tracts statewide</div>',
+  '</div>',
+  '<div style="font-size:12px;font-weight:700;text-transform:uppercase;',
+  'letter-spacing:0.07em;opacity:0.95;margin-top:12px;border-top:1px solid rgba(255,255,255,0.25);',
+  'padding-top:10px;">Hot Spot (HH) \u2014 High Hardship Cluster</div>',
+  '</div>',
+
+  # LL card
+  '<div style="background:#2471a3;border-radius:10px;padding:22px 24px;color:#fff;',
+  'flex:1;display:flex;flex-direction:column;justify-content:space-between;',
+  'user-select:none;-webkit-user-select:none;">',
+  '<div style="font-size:34px;line-height:1;">&#10052;</div>',
+  '<div>',
+  '<div style="font-size:52px;font-weight:700;line-height:1;margin-top:6px;',
+  'text-shadow:0 2px 6px rgba(0,0,0,0.2);">', az_n_ll, '</div>',
+  '<div style="font-size:12px;color:#bdd8ec;margin-top:5px;letter-spacing:0.02em;">',
+  'census tracts statewide</div>',
+  '</div>',
+  '<div style="font-size:12px;font-weight:700;text-transform:uppercase;',
+  'letter-spacing:0.07em;opacity:0.95;margin-top:12px;border-top:1px solid rgba(255,255,255,0.25);',
+  'padding-top:10px;">Cold Spot (LL) \u2014 Low Hardship Cluster</div>',
+  '</div>',
+
+  '</div>'
+))
 ```
 
 
@@ -1139,16 +1277,16 @@ maplibre(
         { color: '#ec008b', label: 'Spatial Outlier (HL / LH)' }
       ];
       var leg = document.createElement('div');
-      leg.style.cssText = 'position:absolute;top:12px;left:12px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:9px;font-family:Lato,sans-serif;padding:6px 8px;border-radius:5px;line-height:1.7;min-width:170px;';
+      leg.style.cssText = 'position:absolute;top:12px;left:12px;background:rgba(15,15,15,0.82);color:#e8e8e8;font-size:11px;font-family:Lato,sans-serif;padding:10px 13px;border-radius:5px;line-height:1.7;min-width:210px;';
       var title = document.createElement('div');
-      title.style.cssText = 'font-weight:700;font-size:9.5px;margin-bottom:7px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:5px;';
+      title.style.cssText = 'font-weight:700;font-size:11.5px;margin-bottom:7px;color:#ffffff;border-bottom:1px solid #444;padding-bottom:5px;';
       title.textContent = 'Cluster Trajectory (2013\u21922019)';
       leg.appendChild(title);
       entries.forEach(function(e) {
         var row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;margin-bottom:2px;';
+        row.style.cssText = 'display:flex;align-items:center;margin-bottom:3px;';
         var swatch = document.createElement('span');
-        swatch.style.cssText = 'display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;flex-shrink:0;background:' + e.color + ';';
+        swatch.style.cssText = 'display:inline-block;width:13px;height:13px;border-radius:2px;margin-right:8px;flex-shrink:0;background:' + e.color + ';';
         var lbl = document.createElement('span');
         lbl.textContent = e.label;
         row.appendChild(swatch); row.appendChild(lbl);
@@ -1180,17 +1318,17 @@ list(title = "Tracts Worsened (2013\u21922023)",
 ```{r}
 #| label: vb-persistent
 #| content: valuebox
-list(title = "Persistently High Hardship (2013\u20132019)",
+list(title = "Persistently High Hardship (2013\u20132023)",
      value = paste0(pct_persist_hh_23, "%"),
-     icon  = "exclamation-circle", color = "#8b1a1a")
+     icon  = "exclamation-circle", color = "danger")
 ```
 
 ```{r}
 #| label: vb-emerging
 #| content: valuebox
-list(title = "Emerging Hot Spots (2013\u20132019)",
+list(title = "Emerging Hot Spots (2013\u20132023)",
      value = paste0(pct_emerg_hh_23, "%"),
-     icon  = "arrow-up-right-circle", color = "danger")
+     icon  = "arrow-up-right-circle", color = "warning")
 ```
 
 # Policy Implications
@@ -1202,7 +1340,7 @@ list(title = "Emerging Hot Spots (2013\u20132019)",
 
 **`r n_persist_hh` Persistent Hot Spot Tracts (`r pct_persist_hh_23`% of Maricopa tracts)**
 
-These census tracts had statistically significant high-hardship clustering in **both** 2013 and 2019. The pattern is not random — a Global Moran's I of `r round(moran_global$estimate[1], 3)` confirms that hardship is spatially concentrated, not scattered. Tracts in this category share infrastructure deficits, limited employment access, and concentrated poverty that reinforce one another across neighborhood boundaries.
+These census tracts had statistically significant high-hardship clustering in **both** 2013 and 2019. The pattern is not random: a Global Moran's I of `r round(moran_global$estimate[1], 3)` confirms that hardship is spatially concentrated, not scattered. Tracts in this category share infrastructure deficits, limited employment access, and concentrated poverty that reinforce one another across neighborhood boundaries.
 
 **Implication:** Individual-level interventions alone are unlikely to move the needle. Place-based, multi-sector investment is required.
 
@@ -1214,7 +1352,7 @@ These census tracts had statistically significant high-hardship clustering in **
 
 **`r n_emerg_hh` Emerging Hot Spot Tracts (`r pct_emerg_hh_23`% of Maricopa tracts)**
 
-These tracts were **not** significant hardship clusters in 2013 but became statistically significant by 2019 — representing the spatial expansion of hardship beyond historically distressed cores. This is an early warning signal that hardship is spreading, not contained.
+These tracts were **not** significant hardship clusters in 2013 but became statistically significant by 2019, representing the spatial expansion of hardship beyond historically distressed cores. This is an early warning signal that hardship is spreading, not contained.
 
 **Displacement paradox:** Some "improving" tracts nearby may be gentrifying, pushing lower-income households outward into these emerging clusters. Declining hardship scores do not necessarily mean existing residents are better off.
 
@@ -1222,11 +1360,11 @@ These tracts were **not** significant hardship clusters in 2013 but became stati
 :::
 
 ::: {.card style="border-left: 5px solid #55b748;"}
-### 🟢 Signs of Progress — Read With Caution
+### 🟢 Signs of Progress Read With Caution
 
 **`r pct_improved_23`% of Maricopa tracts showed EHI improvement (2013→2023)**
 
-The majority of tracts improved over the decade-long window. However, aggregate improvement masks significant variation — `r pct_worsened_23`% of tracts worsened over the same period. The data cannot distinguish genuine economic uplift from population turnover: a tract with a declining hardship index may simply have replaced lower-income residents with higher-income newcomers.
+The majority of tracts improved over the decade-long window. However, aggregate improvement masks significant variation: `r pct_worsened_23`% of tracts worsened over the same period. The data cannot distinguish genuine economic uplift from population turnover: a tract with a declining hardship index may simply have replaced lower-income residents with higher-income newcomers.
 
 **Data limitation:** Before drawing conclusions from improving scores, ground-truth verification through community engagement and displacement tracking is essential.
 
@@ -1237,20 +1375,20 @@ The majority of tracts improved over the decade-long window. However, aggregate 
 
 ::: {.card}
 ### Recommendation 1
-**Target:** `r n_persist_hh` Persistent Hot Spot tracts (`r pct_persist_hh_23`% of all Maricopa tracts) — spatially concentrated, entrenched hardship confirmed by a Global Moran's I of `r round(moran_global$estimate[1], 3)`.
+**Target:** `r n_persist_hh` Persistent Hot Spot tracts (`r pct_persist_hh_23`% of all Maricopa tracts): spatially concentrated, entrenched hardship confirmed by a Global Moran's I of `r round(moran_global$estimate[1], 3)`.
 
 **TODO:** Write your first recommendation. Name the specific geographic corridor, cite the hardship index values, and propose a concrete place-based intervention with a named responsible entity.
 
-*[Your answer here — minimum 3 sentences]*
+*[Your answer here minimum 3 sentences]*
 :::
 
 ::: {.card}
 ### Recommendation 2
-**Target:** `r n_emerg_hh` Emerging Hot Spot tracts (`r pct_emerg_hh_23`% of all Maricopa tracts) — new high-hardship clusters not present in 2013, signaling spatial expansion.
+**Target:** `r n_emerg_hh` Emerging Hot Spot tracts (`r pct_emerg_hh_23`% of all Maricopa tracts), new high-hardship clusters not present in 2013, signaling spatial expansion.
 
 **TODO:** Reference the displacement paradox, identify where these clusters are forming, and propose an early-intervention or monitoring strategy.
 
-*[Your answer here — minimum 3 sentences]*
+*[Your answer here minimum 3 sentences]*
 :::
 
 ::: {.card}
@@ -1259,5 +1397,36 @@ The majority of tracts improved over the decade-long window. However, aggregate 
 
 **TODO:** Using the trajectory map and mobility Sankey, make a forward-looking data-monitoring or cross-sector coordination argument.
 
-*[Your answer here — minimum 3 sentences]*
+*[Your answer here minimum 3 sentences]*
+:::
+
+# Index Sensitivity
+
+## Column {width=100%}
+
+::: {.card style="border-left: 5px solid #9370db;"}
+### 🔬 Index Sensitivity Reflection
+
+The baseline EHI consists of **3 measures**: Poverty + Unemployment + Income (inv.)
+
+**Current index:** `r INDEX_N`-component EHI: `r INDEX_LABEL`
+
+**After adding your extra component(s), answer the following (minimum 2 sentences each):**
+
+---
+
+**Q1: What changed spatially?**  
+Compare Hot Spot tract counts and cluster map patterns between your expanded index and the 3-component baseline. Did adding `r if(length(STUDENT_COMPONENTS)>0) paste(sapply(STUDENT_COMPONENTS, function(c) EXTRA_VAR_MENU[[c]]$label), collapse=" + ") else "[your chosen component]"` shift which tracts or corridors are flagged?
+
+*[TODO: Describe what changed in the spatial cluster map and Hot Spot tract counts after adding your component. Be specific cite numbers and identify geographic areas.]*
+
+**Q2: What stayed the same?**  
+Which Persistent Hot Spot areas appear robustly across index specifications? What does consistency across different index compositions tell us about the reliability of hardship diagnoses in those tracts?
+
+*[TODO: Identify which Persistent Hot Spot corridors remained flagged regardless of index composition. Explain what this robustness tells us about entrenched hardship in those areas.]*
+
+**Q3: Policy implications of index choice**  
+If a policymaker targeted place-based investments using the baseline index versus your expanded index, would resource allocation differ? Name specific tracts or geographic corridors and argue which composition better captures the full burden of economic hardship for policy purposes.
+
+*[TODO: Compare resource targeting under each index. Argue which composition is more appropriate for policy, citing specific tracts or neighborhoods and the dimension of hardship your added component captures.]*
 :::
