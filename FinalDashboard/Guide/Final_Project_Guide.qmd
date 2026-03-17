@@ -68,13 +68,24 @@ Each component is automatically z-score standardized and averaged into the compo
 
 3. **Find the STUDENT CONFIGURATION block** (around lines 60--100). Look for the section bordered by `╔══════╗` characters
 
-4. **Uncomment at least one option** by removing the `#` from one to four lines inside the `STUDENT_COMPONENTS <- c(...)` block. For example, to add renter burden and SNAP receipt:
+4. **Uncomment the indicator lines** by removing the `#` from lines inside the `STUDENT_COMPONENTS <- c(...)` block. The simplest approach is to uncomment all four:
+
+    ```r
+    STUDENT_COMPONENTS <- c(
+        "renter_rate",       # Option A — Renter Burden
+        "no_hs_rate",        # Option B — Low Educational Attainment
+        "snap_rate",         # Option C — Food Insecurity (SNAP)
+        "no_vehicle_rate"    # Option D — Transportation Disadvantage
+    )
+    ```
+
+    You may also experiment by uncommenting fewer options to see how different combinations change the results. If you leave `no_vehicle_rate` (the last item) commented out, make sure the line above it does **not** end with a trailing comma --- R will throw an error. For example, this is correct (no comma after `"snap_rate"`):
 
     ```r
     STUDENT_COMPONENTS <- c(
         "renter_rate",       # Option A — Renter Burden
     #   "no_hs_rate",        # Option B — Low Educational Attainment
-        "snap_rate",         # Option C — Food Insecurity (SNAP)
+        "snap_rate"          # Option C — Food Insecurity (SNAP)
     #   "no_vehicle_rate"    # Option D — Transportation Disadvantage
     )
     ```

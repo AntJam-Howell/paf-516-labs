@@ -3215,13 +3215,20 @@ vertical-align: -.125em;
 <li><p><strong>Download</strong> the student QMD file using the link at the bottom of this page</p></li>
 <li><p><strong>Open</strong> the file in RStudio</p></li>
 <li><p><strong>Find the STUDENT CONFIGURATION block</strong> (around lines 60–100). Look for the section bordered by <code>╔══════╗</code> characters</p></li>
-<li><p><strong>Uncomment at least one option</strong> by removing the <code>#</code> from one to four lines inside the <code>STUDENT_COMPONENTS &lt;- c(...)</code> block. For example, to add renter burden and SNAP receipt:</p>
+<li><p><strong>Uncomment the indicator lines</strong> by removing the <code>#</code> from lines inside the <code>STUDENT_COMPONENTS &lt;- c(...)</code> block. The simplest approach is to uncomment all four:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>STUDENT_COMPONENTS <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;renter_rate&quot;</span>,       <span class="co"># Option A — Renter Burden</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   &quot;no_hs_rate&quot;,        # Option B — Low Educational Attainment</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;no_hs_rate&quot;</span>,        <span class="co"># Option B — Low Educational Attainment</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;snap_rate&quot;</span>,         <span class="co"># Option C — Food Insecurity (SNAP)</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#   &quot;no_vehicle_rate&quot;    # Option D — Transportation Disadvantage</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div></li>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;no_vehicle_rate&quot;</span>    <span class="co"># Option D — Transportation Disadvantage</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>You may also experiment by uncommenting fewer options to see how different combinations change the results. If you leave <code>no_vehicle_rate</code> (the last item) commented out, make sure the line above it does <strong>not</strong> end with a trailing comma — R will throw an error. For example, this is correct (no comma after <code>&quot;snap_rate&quot;</code>):</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>STUDENT_COMPONENTS <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;renter_rate&quot;</span>,       <span class="co"># Option A — Renter Burden</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   &quot;no_hs_rate&quot;,        # Option B — Low Educational Attainment</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;snap_rate&quot;</span>          <span class="co"># Option C — Food Insecurity (SNAP)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">#   &quot;no_vehicle_rate&quot;    # Option D — Transportation Disadvantage</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div></li>
 <li><p><strong>Save</strong> the file</p></li>
 <li><p><strong>Delete the <code>_cache/</code> folder</strong> next to the QMD file if one exists. This is important — cached data from a previous render will prevent your new variables from being pulled from the Census API</p></li>
 <li><p><strong>Click Render</strong> in RStudio (or use the terminal: <code>quarto render Final_Project_Student.qmd</code>)</p></li>
