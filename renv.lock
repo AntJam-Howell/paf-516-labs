@@ -1,6 +1,12 @@
 {
   "R": {
-    "Version": "4.5.0"
+    "Version": "4.5.0",
+    "Repositories": [
+      {
+        "Name": "CRAN",
+        "URL": "https://packagemanager.posit.co/cran/latest"
+      }
+    ]
   },
   "Packages": {
     "tidyverse": {
