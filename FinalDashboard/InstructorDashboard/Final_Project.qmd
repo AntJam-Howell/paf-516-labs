@@ -975,7 +975,7 @@ maplibre(
   ")
 ```
 
-## Bottom Row {height=45%}
+## Bottom Row {height=55%}
 
 ### County Table {width=67%}
 
@@ -1062,35 +1062,41 @@ az_county_hetero_tbl %>%
     backgroundColor = DT::styleEqual(TARGET_COUNTY, "#fffde6"))
 ```
 
-### Row {height=45%}
+### AZ Alert Stats {width=33%}
+
+#### Row
 
 ```{r}
 #| label: vb-az-hh
 #| content: valuebox
 list(
-  title = paste0("Hot Spot Tracts Statewide — High Economic Hardship Clusters (HH)"),
+  title = "High Economic Hardship Clusters (HH) — Hot Spot Tracts Statewide:",
   value = az_n_hh,
   icon  = "fire",
   color = "danger"
 )
 ```
 
+#### Row
+
 ```{r}
 #| label: vb-az-ll
 #| content: valuebox
 list(
-  title = "Cold Spot Tracts Statewide — Low Economic Hardship Clusters (LL)",
+  title = "Low Economic Hardship Clusters (LL) — Cold Spot Tracts Statewide:",
   value = az_n_ll,
   icon  = "snow",
   color = "primary"
 )
 ```
 
+#### Row
+
 ```{r}
 #| label: vb-az-moran
 #| content: valuebox
 list(
-  title = "Global Moran\u2019s I — Strength of Spatial Clustering (Arizona)",
+  title = "Global Moran\u2019s I \u2014 Strength of Spatial Clustering (Arizona)",
   value = az_moran_i,
   icon  = "diagram-3",
   color = "secondary"
