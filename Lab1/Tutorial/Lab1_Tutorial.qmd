@@ -61,6 +61,23 @@ library(patchwork)
 ```
 
 ```{r}
+#| label: build-tools
+#| eval: false
+# ── One-time build tools setup ─────────────────────────────────────────────
+# R needs a system-level compiler to install certain packages in this course.
+# This is a one-time setup — you will not need to repeat it in future labs.
+#
+# Windows: run these two lines in your RStudio Console:
+#   install.packages("installr")
+#   installr::install.Rtools()
+#
+# Mac: run this line in your Terminal (Applications → Utilities → Terminal):
+#   xcode-select --install
+#
+# Once complete, restart RStudio, then run the packages chunk above.
+```
+
+```{r}
 #| label: api-key
 # Get a free Census API key at: https://api.census.gov/data/key_signup.html
 # After receiving your key by email, run this line ONCE in the RStudio console:
