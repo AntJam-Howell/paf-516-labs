@@ -305,9 +305,9 @@ The course runs for seven modules. Each module includes lecture content, a weekl
   \noindent\colorbox{#2}{\parbox{\dimexpr\textwidth\relax}{%
     \vspace{5pt}
     \hspace{6pt}%
-    \textcolor{white}{\Large\textbf{M#1}}\quad
-    \textcolor{white}{\normalsize\textbf{#3}}\quad
-    \textcolor{white!70!black}{\small\itshape #4}%
+    \textcolor{asudark}{\Large\textbf{M#1}}\quad
+    \textcolor{asudark}{\normalsize\textbf{#3}}\quad
+    \textcolor{asugray}{\small\textbf{#4}}%
     \vspace{5pt}
   }}%
   \begin{modulebody}
