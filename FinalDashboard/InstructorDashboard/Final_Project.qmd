@@ -1062,47 +1062,39 @@ az_county_hetero_tbl %>%
     backgroundColor = DT::styleEqual(TARGET_COUNTY, "#fffde6"))
 ```
 
-### AZ Alert Stats {width=33%}
+### Row {height=45%}
 
 ```{r}
-#| label: vb-az-cards
-#| output: asis
-cat(paste0(
-  '<div style="display:flex;flex-direction:column;gap:12px;padding:8px;',
-  'height:100%;min-height:300px;box-sizing:border-box;">',
+#| label: vb-az-hh
+#| content: valuebox
+list(
+  title = paste0("Hot Spot Tracts Statewide — High Economic Hardship Clusters (HH)"),
+  value = az_n_hh,
+  icon  = "fire",
+  color = "danger"
+)
+```
 
-# HH card — pure block stack, nothing can overlap
-  '<div style="background:#a93226;border-radius:10px;padding:18px 20px;color:#fff;',
-  'flex:1;box-sizing:border-box;user-select:none;-webkit-user-select:none;">',
-  '<div style="font-size:28px;line-height:1;margin-bottom:8px;">&#128293;</div>',
-  '<div style="font-size:48px;font-weight:700;line-height:1;',
-  'text-shadow:0 2px 6px rgba(0,0,0,0.2);margin-bottom:14px;">',
-  az_n_hh,
-  '<span style="font-size:13px;font-weight:400;color:#e8c4c0;letter-spacing:0.02em;margin-left:10px;">',
-  'census tracts statewide</span>',
-  '</div>',
-  '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;',
-  'border-top:1px solid rgba(255,255,255,0.25);padding-top:10px;">',
-  'Hot Spot (HH) \u2014 High Hardship Cluster</div>',
-  '</div>',
+```{r}
+#| label: vb-az-ll
+#| content: valuebox
+list(
+  title = "Cold Spot Tracts Statewide — Low Economic Hardship Clusters (LL)",
+  value = az_n_ll,
+  icon  = "snow",
+  color = "primary"
+)
+```
 
-  # LL card — pure block stack
-  '<div style="background:#2471a3;border-radius:10px;padding:18px 20px;color:#fff;',
-  'flex:1;box-sizing:border-box;user-select:none;-webkit-user-select:none;">',
-  '<div style="font-size:28px;line-height:1;margin-bottom:8px;">&#10052;</div>',
-  '<div style="font-size:48px;font-weight:700;line-height:1;',
-  'text-shadow:0 2px 6px rgba(0,0,0,0.2);margin-bottom:14px;">',
-  az_n_ll,
-  '<span style="font-size:13px;font-weight:400;color:#bdd8ec;letter-spacing:0.02em;margin-left:10px;">',
-  'census tracts statewide</span>',
-  '</div>',
-  '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;',
-  'border-top:1px solid rgba(255,255,255,0.25);padding-top:10px;">',
-  'Cold Spot (LL) \u2014 Low Hardship Cluster</div>',
-  '</div>',
-
-  '</div>'
-))
+```{r}
+#| label: vb-az-moran
+#| content: valuebox
+list(
+  title = "Global Moran\u2019s I — Strength of Spatial Clustering (Arizona)",
+  value = az_moran_i,
+  icon  = "diagram-3",
+  color = "secondary"
+)
 ```
 
 
