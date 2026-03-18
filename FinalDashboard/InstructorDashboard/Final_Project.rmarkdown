@@ -536,9 +536,13 @@ az_county_hetero <- az_tract_2023 %>%
   )
 ```
 
+
+
 # National Context
 
 ## Column {width=55%}
+
+
 
 ```{r}
 #| label: map-national
@@ -594,9 +598,13 @@ maplibre(
   ")
 ```
 
+
+
 ## Column {width=45%}
 
 ### Row {height=35%}
+
+
 
 ```{r}
 #| label: table-az-counties
@@ -630,7 +638,11 @@ az_counties %>%
   )
 ```
 
+
+
 ### Row {height=65%}
+
+
 
 ```{r}
 #| label: card-dot-compare
@@ -720,11 +732,15 @@ ggplotly(p, tooltip = "text") %>%
   config(displayModeBar = FALSE)
 ```
 
+
+
 # Arizona in Focus {orientation="rows"}
 
 ## Top Row {height=55%}
 
 ### EHI Map {width=33%}
+
+
 
 ```{r}
 #| label: map-az-tracts
@@ -776,7 +792,11 @@ maplibre(
   ")
 ```
 
+
+
 ### Decomposing the Economic Hardship Index {width=34%}
+
+
 
 ```{r}
 #| label: scatter-pov-unemp
@@ -901,7 +921,11 @@ ggplotly(p_scatter, tooltip = "text") %>%
   config(displayModeBar = FALSE)
 ```
 
+
+
 ### LISA Map {width=33%}
+
+
 
 ```{r}
 #| label: map-az-lisa
@@ -972,9 +996,13 @@ maplibre(
   ")
 ```
 
+
+
 ## Bottom Row {height=55%}
 
 ### County Table {width=67%}
+
+
 
 ```{r}
 #| label: table-county-hetero
@@ -1059,9 +1087,13 @@ az_county_hetero_tbl %>%
     backgroundColor = DT::styleEqual(TARGET_COUNTY, "#fffde6"))
 ```
 
+
+
 ### AZ Alert Stats {width=33%}
 
 #### Row
+
+
 
 ```{r}
 #| label: vb-az-hh
@@ -1074,7 +1106,11 @@ list(
 )
 ```
 
+
+
 #### Row
+
+
 
 ```{r}
 #| label: vb-az-ll
@@ -1089,9 +1125,13 @@ list(
 
 
 
+
+
 # Maricopa: Clusters & Trajectories
 
 ## Column {width=50%}
+
+
 
 
 ```{r}
@@ -1175,10 +1215,14 @@ plot_ly(
 ```
 
 
+
+
 ## Column {width=50%}
 
 
 ### Row {height=60%}
+
+
 
 ```{r}
 #| label: stats-2023
@@ -1277,7 +1321,11 @@ maplibre(
   ")
 ```
 
+
+
 ### Row {height=40%}
+
+
 
 ```{r}
 #| label: vb-improved
@@ -1310,6 +1358,8 @@ list(title = "Emerging Hot Spots (2013\u20132023)",
      value = paste0(pct_emerg_hh_23, "%"),
      icon  = "arrow-up-right-circle", color = "warning")
 ```
+
+
 
 # Policy Implications
 
@@ -1410,3 +1460,4 @@ If a policymaker targeted place-based investments using the baseline index versu
 
 *[TODO: Compare resource targeting under each index. Argue which composition is more appropriate for policy, citing specific tracts or neighborhoods and the dimension of hardship your added component captures.]*
 :::
+
