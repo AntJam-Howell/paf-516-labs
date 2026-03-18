@@ -174,7 +174,19 @@
     Lab1_Assignment_Howell.html  ← submit this to Canvas
   Lab2/  Lab3/  ...</pre>
 
-    <h3>2 — Install Packages (Run Once)</h3>
+    <h3>2 — Install System Build Tools (Windows/Mac — Run Once)</h3>
+    <div class="callout important">
+      <div class="callout-title">⚠ One-time setup for the entire course</div>
+      <p>R needs a system-level compiler to install certain packages used in this course. You only need to do this once — it applies to all future labs.</p>
+      <p><strong>Windows:</strong> Run these two lines in your RStudio Console:</p>
+      <pre style="background:#f0e8eb;padding:10px 14px;border-radius:5px;font-size:0.88rem;margin:8px 0;">install.packages("installr")
+installr::install.Rtools()</pre>
+      <p><strong>Mac:</strong> Run this line in your Terminal (Applications → Utilities → Terminal):</p>
+      <pre style="background:#f0e8eb;padding:10px 14px;border-radius:5px;font-size:0.88rem;margin:8px 0;">xcode-select --install</pre>
+      <p>Once complete, restart RStudio before proceeding.</p>
+    </div>
+
+    <h3>3 — Install Packages (Run Once)</h3>
     <div class="callout important">
       <div class="callout-title">⚠ Do this before knitting</div>
       <div class="steps"><ol>
@@ -190,7 +202,7 @@
       renv records the exact version of every package used so that code that works today still works next semester.
     </div>
 
-    <h3>3 — Census API Key</h3>
+    <h3>4 — Census API Key</h3>
     <p>The lab pulls live data from the Census Bureau. If you don't have a key yet:</p>
     <div class="steps"><ol>
       <li>Register free at <a href="https://api.census.gov/data/key_signup.html" target="_blank">api.census.gov/data/key_signup.html</a></li>
