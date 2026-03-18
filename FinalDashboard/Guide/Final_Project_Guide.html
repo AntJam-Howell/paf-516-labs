@@ -3103,8 +3103,9 @@ vertical-align: -.125em;
   <li><a href="#step-by-step-instructions" id="toc-step-by-step-instructions" class="nav-link" data-scroll-target="#step-by-step-instructions"><span class="header-section-number">4</span> Step-by-Step Instructions</a></li>
   <li><a href="#comparison-guide" id="toc-comparison-guide" class="nav-link" data-scroll-target="#comparison-guide"><span class="header-section-number">5</span> Comparison Guide</a></li>
   <li><a href="#what-you-submit" id="toc-what-you-submit" class="nav-link" data-scroll-target="#what-you-submit"><span class="header-section-number">6</span> What You Submit</a></li>
-  <li><a href="#advanced-option-optional-not-required" id="toc-advanced-option-optional-not-required" class="nav-link" data-scroll-target="#advanced-option-optional-not-required"><span class="header-section-number">7</span> Advanced Option (Optional — Not Required)</a></li>
-  <li><a href="#downloads" id="toc-downloads" class="nav-link" data-scroll-target="#downloads"><span class="header-section-number">8</span> Downloads</a></li>
+  <li><a href="#publishing-to-rpubs" id="toc-publishing-to-rpubs" class="nav-link" data-scroll-target="#publishing-to-rpubs"><span class="header-section-number">7</span> Publishing to RPubs</a></li>
+  <li><a href="#advanced-option-optional-not-required" id="toc-advanced-option-optional-not-required" class="nav-link" data-scroll-target="#advanced-option-optional-not-required"><span class="header-section-number">8</span> Advanced Option (Optional — Not Required)</a></li>
+  <li><a href="#downloads" id="toc-downloads" class="nav-link" data-scroll-target="#downloads"><span class="header-section-number">9</span> Downloads</a></li>
   </ul>
 </nav>
 </div>
@@ -3266,14 +3267,29 @@ vertical-align: -.125em;
 <section id="what-you-submit" class="level2" data-number="6">
 <h2 data-number="6" class="anchored" data-anchor-id="what-you-submit"><span class="header-section-number">6</span> What You Submit</h2>
 <ol type="1">
-<li><strong>Your rendered HTML file</strong> — the student dashboard with your expanded index (the <code>.html</code> file produced by rendering)</li>
 <li><strong>Completed answers</strong> in the Index Sensitivity tab (3 reflection questions)</li>
 <li><strong>Completed policy recommendations</strong> in the Policy Implications tab (3 cards)</li>
+<li><strong>Your RPubs link</strong> — the public URL of your published dashboard (see below)</li>
 </ol>
-<p>You do <strong>not</strong> submit a separate policy brief. Everything is inside the dashboard.</p>
+<p>You do <strong>not</strong> submit a separate policy brief or HTML file. Everything is inside the dashboard, and you publish it to RPubs.</p>
 </section>
-<section id="advanced-option-optional-not-required" class="level2" data-number="7">
-<h2 data-number="7" class="anchored" data-anchor-id="advanced-option-optional-not-required"><span class="header-section-number">7</span> Advanced Option (Optional — Not Required)</h2>
+<section id="publishing-to-rpubs" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="publishing-to-rpubs"><span class="header-section-number">7</span> Publishing to RPubs</h2>
+<p>After rendering your dashboard, you need to publish it online using RPubs so the instructor can view it:</p>
+<ol type="1">
+<li><strong>Open the rendered HTML</strong> in RStudio (it should open automatically after rendering, or click the <code>.html</code> file in the Files pane)</li>
+<li><strong>Click the Publish button</strong> (the blue publish icon in the top-right corner of the viewer pane)</li>
+<li>If prompted to install the <code>rsconnect</code> package, click <strong>Yes</strong> to install it</li>
+<li><strong>Select RPubs</strong> as the publishing destination</li>
+<li><strong>Create a free RPubs account</strong> at <a href="https://rpubs.com">rpubs.com</a> if you do not already have one — you can sign up with your ASU email</li>
+<li><strong>Name your publication</strong> something like <code>PAF 516 Final Dashboard</code> (or any descriptive title)</li>
+<li><strong>Click Publish</strong> — your dashboard will upload and you will be redirected to its public URL</li>
+<li><strong>Copy the RPubs URL</strong> (it will look something like <code>https://rpubs.com/yourusername/your-dashboard-name</code>)</li>
+<li><strong>Submit the RPubs link on Canvas</strong> — paste the URL into the Canvas assignment submission so the instructor can view your published dashboard</li>
+</ol>
+</section>
+<section id="advanced-option-optional-not-required" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="advanced-option-optional-not-required"><span class="header-section-number">8</span> Advanced Option (Optional — Not Required)</h2>
 <p>For students comfortable with R who want to explore a different geography, it is technically possible to change the target county. This requires:</p>
 <ul>
 <li>Changing <code>TARGET_STATE</code> and <code>TARGET_COUNTY</code> (3 lines in the county-config chunk)</li>
@@ -3283,8 +3299,8 @@ vertical-align: -.125em;
 </ul>
 <p><strong>Recommendation:</strong> Stick with Arizona/Maricopa County and focus your analytical energy on index sensitivity. The measurement question is the point of the assignment — not geographic novelty.</p>
 </section>
-<section id="downloads" class="level2" data-number="8">
-<h2 data-number="8" class="anchored" data-anchor-id="downloads"><span class="header-section-number">8</span> Downloads</h2>
+<section id="downloads" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="downloads"><span class="header-section-number">9</span> Downloads</h2>
 <ul>
 <li><a href="https://antjam-howell.github.io/paf-516-labs/Final_Project_Complete.html" target="_blank">Instructor Dashboard (3-variable baseline reference)</a></li>
 <li><a href="https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/FinalDashboard/InstructorDashboard/Final_Project.qmd" target="_blank">Student Dashboard QMD (right-click → Save Link As…)</a></li>

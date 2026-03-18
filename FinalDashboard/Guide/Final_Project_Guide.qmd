@@ -129,11 +129,25 @@ When comparing your expanded-index dashboard to the instructor baseline, focus o
 
 ## What You Submit
 
-1. **Your rendered HTML file** --- the student dashboard with your expanded index (the `.html` file produced by rendering)
-2. **Completed answers** in the Index Sensitivity tab (3 reflection questions)
-3. **Completed policy recommendations** in the Policy Implications tab (3 cards)
+1. **Completed answers** in the Index Sensitivity tab (3 reflection questions)
+2. **Completed policy recommendations** in the Policy Implications tab (3 cards)
+3. **Your RPubs link** --- the public URL of your published dashboard (see below)
 
-You do **not** submit a separate policy brief. Everything is inside the dashboard.
+You do **not** submit a separate policy brief or HTML file. Everything is inside the dashboard, and you publish it to RPubs.
+
+## Publishing to RPubs
+
+After rendering your dashboard, you need to publish it online using RPubs so the instructor can view it:
+
+1. **Open the rendered HTML** in RStudio (it should open automatically after rendering, or click the `.html` file in the Files pane)
+2. **Click the Publish button** (the blue publish icon in the top-right corner of the viewer pane)
+3. If prompted to install the `rsconnect` package, click **Yes** to install it
+4. **Select RPubs** as the publishing destination
+5. **Create a free RPubs account** at [rpubs.com](https://rpubs.com) if you do not already have one --- you can sign up with your ASU email
+6. **Name your publication** something like `PAF 516 Final Dashboard` (or any descriptive title)
+7. **Click Publish** --- your dashboard will upload and you will be redirected to its public URL
+8. **Copy the RPubs URL** (it will look something like `https://rpubs.com/yourusername/your-dashboard-name`)
+9. **Submit the RPubs link on Canvas** --- paste the URL into the Canvas assignment submission so the instructor can view your published dashboard
 
 ## Advanced Option (Optional --- Not Required)
 
