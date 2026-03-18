@@ -149,6 +149,16 @@ After rendering your dashboard, you need to publish it online using RPubs so the
 8. **Copy the RPubs URL** (it will look something like `https://rpubs.com/yourusername/your-dashboard-name`)
 9. **Submit the RPubs link on Canvas** --- paste the URL into the Canvas assignment submission so the instructor can view your published dashboard
 
+## Yellowdig Discussion
+
+After completing and publishing your dashboard, post a reflection on Yellowdig describing your experience. Your post should address:
+
+- **What you learned** from experimenting with adding new variables to the Economic Hardship Index --- which components did you add, and how did the spatial patterns change?
+- **Implications** --- what surprised you about how the index shifted when you expanded its composition? Did communities appear or disappear from the hardship map?
+- **Meaningful lessons** --- what does this exercise tell you about how composite indices work in practice, and why measurement choices matter for policy decisions?
+
+This is an open-ended reflection. There is no minimum word count, but your post should demonstrate genuine engagement with the sensitivity analysis you performed.
+
 ## Advanced Option (Optional --- Not Required)
 
 For students comfortable with R who want to explore a different geography, it is technically possible to change the target county. This requires:
