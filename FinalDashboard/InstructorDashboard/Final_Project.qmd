@@ -1090,19 +1090,6 @@ list(
 )
 ```
 
-#### Row
-
-```{r}
-#| label: vb-az-moran
-#| content: valuebox
-list(
-  title = "Global Moran\u2019s I \u2014 Strength of Spatial Clustering (Arizona)",
-  value = az_moran_i,
-  icon  = "diagram-3",
-  color = "secondary"
-)
-```
-
 
 
 # Maricopa: Clusters & Trajectories
