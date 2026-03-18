@@ -299,15 +299,18 @@ The course runs for seven modules. Each module includes lecture content, a weekl
 ```{=latex}
 
 %% ── Module card macro ────────────────────────────────────────────────────
-%% Usage: \modulecard{number}{color}{title}{subtitle}{topics}
-\newcommand{\modulecard}[5]{%
+%% Usage: \modulecard{number}{bgcolor}{title}{subtitle}{topics}{textcolor}{pipecolor}
+%% textcolor: white for maroon cards, asudark for gold cards
+%% pipecolor: white!50!asumaroon for maroon, asudark!40!asugold for gold
+\newcommand{\modulecard}[7]{%
   \vspace{4pt}
   \noindent\colorbox{#2}{\parbox{\dimexpr\textwidth\relax}{%
     \vspace{5pt}
     \hspace{6pt}%
-    \textcolor{asudark}{\Large\textbf{M#1}}\quad
-    \textcolor{asudark}{\normalsize\textbf{#3}}\quad
-    \textcolor{asugray}{\small\textbf{#4}}%
+    \textcolor{#6}{\Large\textbf{M#1}}\quad
+    \textcolor{#6}{\normalsize\textbf{#3}}\quad
+    {\color{#7}\textbf{\small|}}\quad
+    \textcolor{#6}{\small\textbf{#4}}%
     \vspace{5pt}
   }}%
   \begin{modulebody}
@@ -329,6 +332,8 @@ The course runs for seven modules. Each module includes lecture content, a weekl
       \item Multi-scale choropleth mapping (county $\to$ tract $\to$ CBG)
     \end{itemize}
   }
+  {white}
+  {white!50!asumaroon}
 
 \modulecard{2}{asugold}
   {Classification \& Spatial Scale}
@@ -341,6 +346,8 @@ The course runs for seven modules. Each module includes lecture content, a weekl
       \item Designing maps that accurately communicate inequality
     \end{itemize}
   }
+  {asudark}
+  {asudark!40!asugold}
 
 \modulecard{3}{asumaroon}
   {Spatial Data Integration}
@@ -353,6 +360,8 @@ The course runs for seven modules. Each module includes lecture content, a weekl
       \item Building enriched neighborhood quality measures
     \end{itemize}
   }
+  {white}
+  {white!50!asumaroon}
 
 \modulecard{4}{asugold}
   {Spatial Autocorrelation}
@@ -365,6 +374,8 @@ The course runs for seven modules. Each module includes lecture content, a weekl
       \item Identifying statistically significant hotspots and coldspots
     \end{itemize}
   }
+  {asudark}
+  {asudark!40!asugold}
 
 \modulecard{5}{asumaroon}
   {Spatio-Temporal Change (Part 1)}
@@ -377,6 +388,8 @@ The course runs for seven modules. Each module includes lecture content, a weekl
       \item LISA overlay: reading two measurements (level and change) at once
     \end{itemize}
   }
+  {white}
+  {white!50!asumaroon}
 
 \modulecard{6}{asugold}
   {Spatio-Temporal Change (Part 2)}
@@ -389,6 +402,8 @@ The course runs for seven modules. Each module includes lecture content, a weekl
       \item From trajectories to policy design: targeting interventions
     \end{itemize}
   }
+  {asudark}
+  {asudark!40!asugold}
 
 \modulecard{7}{asumaroon}
   {Final Project Dashboard}
@@ -401,6 +416,8 @@ The course runs for seven modules. Each module includes lecture content, a weekl
       \item Presenting findings to a policy-maker audience
     \end{itemize}
   }
+  {white}
+  {white!50!asumaroon}
 ```
 
 \vspace{10pt}
