@@ -174,16 +174,19 @@
     Lab1_Assignment_Howell.html  ← submit this to Canvas
   Lab2/  Lab3/  ...</pre>
 
-    <h3>2 — Install System Build Tools (Windows/Mac — Run Once)</h3>
+    <h3>2 — Troubleshooting: If Packages Fail to Install</h3>
     <div class="callout important">
-      <div class="callout-title">⚠ One-time setup for the entire course</div>
-      <p>R needs a system-level compiler to install certain packages used in this course. You only need to do this once — it applies to all future labs.</p>
-      <p><strong>Windows:</strong> Run these two lines in your RStudio Console:</p>
+      <div class="callout-title">⚠ If packages fail to install — try these steps in order</div>
+      <p><strong>Step 1 — Check your RStudio project and working directory (all users).</strong><br>
+      RStudio can default to an old or incorrect project folder, which causes package installation to fail. Fix by creating a new RStudio project:<br>
+      File → New Project → Existing Directory → navigate to your PAF516/Lab1/ folder<br>
+      Then re-run the packages chunk and try rendering again.</p>
+      <p><strong>Step 2 — Windows only: install Rtools.</strong><br>
+      Rtools provides the compiler needed to build some R packages from source.<br>
+      Run these two lines in your RStudio Console:</p>
       <pre style="background:#f0e8eb;padding:10px 14px;border-radius:5px;font-size:0.88rem;margin:8px 0;">install.packages("installr")
 installr::install.Rtools()</pre>
-      <p><strong>Mac:</strong> Run this line in your Terminal (Applications → Utilities → Terminal):</p>
-      <pre style="background:#f0e8eb;padding:10px 14px;border-radius:5px;font-size:0.88rem;margin:8px 0;">xcode-select --install</pre>
-      <p>Once complete, restart RStudio before proceeding.</p>
+      <p>Then restart RStudio and try rendering again.</p>
     </div>
 
     <h3>3 — Install Packages (Run Once)</h3>
