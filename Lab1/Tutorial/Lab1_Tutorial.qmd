@@ -63,18 +63,36 @@ library(patchwork)
 ```{r}
 #| label: build-tools
 #| eval: false
-# ── One-time build tools setup ─────────────────────────────────────────────
-# R needs a system-level compiler to install certain packages in this course.
-# This is a one-time setup — you will not need to repeat it in future labs.
+# ── TROUBLESHOOTING: If packages fail to install ───────────────────────────
+# If one or more packages fail to install (for example, spdep, sf, or other
+# dependencies), try the following steps in order.
 #
-# Windows: run these two lines in your RStudio Console:
-#   install.packages("installr")
-#   installr::install.Rtools()
+# 1) Update R and RStudio, restart your computer, and try rendering again.
+#    This is often the easiest fix if your copy of R or RStudio is old.
 #
-# Mac: run this line in your Terminal (Applications → Utilities → Terminal):
-#   xcode-select --install
+#    Update R:
+#      Windows — run in your RStudio Console:
+#        install.packages("installr")
+#        installr::updateR()
+#      Mac — download the latest R from: https://cran.r-project.org/bin/macosx/
 #
-# Once complete, restart RStudio, then run the packages chunk above.
+#    Update RStudio:
+#      Windows and Mac — go to Help → Check for Updates in RStudio
+#
+# 2) If package installation still fails on Windows, install Rtools.
+#    Run these two lines in your RStudio Console:
+#      install.packages("installr")
+#      installr::install.Rtools()
+#
+# 3) If package installation still fails on Mac, install Xcode Command Line Tools.
+#    Open Terminal (Applications → Utilities → Terminal) and run:
+#      xcode-select --install
+#
+# 4) If Xcode Command Line Tools are already installed and installation still fails,
+#    install GNU Fortran (gfortran), required by some packages on macOS.
+#    Download from: https://mac.r-project.org/tools/
+#
+# After completing any step above, restart RStudio and try rendering again.
 ```
 
 ```{r}
@@ -84,24 +102,6 @@ library(patchwork)
 # census_api_key("YOUR_KEY_HERE", install = TRUE)
 # Then restart R: Session → Restart R
 # You only need to do this once — the key is saved to your .Renviron file.
-```
-
-```{r}
-#| label: fallback-data
-# ── FALLBACK: Load pre-built datasets if Census API is unavailable ─────
-# Uncomment Option B lines below and skip Steps 1–4.
-#
-# Option A — from local file (save .rds files to PAF516/Lab1/data/ first):
-# county_complete <- readRDS("../data/hardship_counties_us.rds")
-# CenDF_complete  <- readRDS("../data/hardship_tracts_az.rds")
-# cbg_complete    <- readRDS("../data/hardship_cbg_maricopa.rds")
-#
-# Option B — directly from GitHub:
-# county_complete <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_counties_us.rds"))
-# CenDF_complete  <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_tracts_az.rds"))
-# cbg_complete    <- readRDS(url("https://raw.githubusercontent.com/AntJam-Howell/paf-516-labs/main/Lab1/data/hardship_cbg_maricopa.rds"))
-#
-# If using fallback data, skip to Step 5.
 ```
 
 
@@ -135,17 +135,6 @@ CenDF <- get_acs(
   geometry     = TRUE,
   progress_bar = FALSE
 )
-```
-
-```{r}
-#| label: step.01-offline
-#| eval: false
-# ── Offline fallback — run this block instead if the Census API is down ──
-# Replace the get_acs() chunk above with these readRDS() calls.
-# All datasets are pre-built and stored in data/ for offline use.
-#
-# CenDF_complete <- readRDS("../data/hardship_tracts_az.rds")
-# CenDF_complete <- readRDS("../data/CenDF_complete_5var.rds")
 ```
 
 **Variable justification:**
@@ -277,17 +266,6 @@ county_df <- get_acs(
 ```
 
 ```{r}
-#| label: step.05-pull-offline
-#| eval: false
-# ── Offline fallback — run this block instead if the Census API is down ──
-# Replace the get_acs() chunk above with these readRDS() calls.
-# All datasets are pre-built and stored in data/ for offline use.
-#
-# county_complete <- readRDS("../data/hardship_counties_us.rds")
-# county_complete <- readRDS("../data/county_complete.rds")
-```
-
-```{r}
 #| label: step.05-index
 
 county_wide <- county_df %>%
@@ -366,17 +344,6 @@ cbg_df <- get_acs(
   geometry     = TRUE,
   progress_bar = FALSE
 )
-```
-
-```{r}
-#| label: step.07-pull-offline
-#| eval: false
-# ── Offline fallback — run this block instead if the Census API is down ──
-# Replace the get_acs() chunk above with these readRDS() calls.
-# All datasets are pre-built and stored in data/ for offline use.
-#
-# cbg_complete <- readRDS("../data/hardship_cbg_maricopa.rds")
-# cbg_complete <- readRDS("../data/cbg_complete.rds")
 ```
 
 ```{r}
@@ -463,16 +430,6 @@ CenDF_10 <- get_acs(
   geometry     = TRUE,
   progress_bar = FALSE
 )
-```
-
-```{r}
-#| label: step.08-pull-offline
-#| eval: false
-# ── Offline fallback — run this block instead if the Census API is down ──
-# Replace the get_acs() chunk above with these readRDS() calls.
-# All datasets are pre-built and stored in data/ for offline use.
-#
-# CenDF_complete_10 <- readRDS("../data/CenDF_complete_10var.rds")
 ```
 
 ```{r}
