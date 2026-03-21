@@ -80,14 +80,26 @@ library(patchwork)
 #    Then restart RStudio and try rendering again.
 ```
 
+# Step 0: Get a US Census API Key
+
+Every lab in this course pulls data directly from the **US Census Bureau's API** (Application Programming Interface). The Census API is a free public service that lets programs — including R packages like `tidycensus` — request specific tables, geographies, and years of data on demand, instead of downloading bulk files manually. Think of it as a direct pipeline between your R session and the Census Bureau's data warehouse.
+
+To use the API you need a **key** — a short text string that identifies you as an authorized user. The key is free, has no usage limits for our purposes, and only needs to be set up once. Without it, every `get_acs()` call in this course will fail.
+
+**Setup (one time only):**
+
+1. Go to <https://api.census.gov/data/key_signup.html> and request a key. You will receive it by email within a few minutes.
+2. In your **RStudio Console** (not in this QMD), run the following line, replacing the placeholder with your actual key:
+
 ```{r}
 #| label: api-key
-# Get a free Census API key at: https://api.census.gov/data/key_signup.html
-# After receiving your key by email, run this line ONCE in the RStudio console:
-# census_api_key("YOUR_KEY_HERE", install = TRUE)
-# Then restart R: Session → Restart R
-# You only need to do this once — the key is saved to your .Renviron file.
+#| eval: false
+census_api_key("YOUR_KEY_HERE", install = TRUE)
 ```
+
+3. Restart R: **Session → Restart R**.
+
+That's it. The `install = TRUE` argument saves the key to a file called `.Renviron` in your home directory, so R will load it automatically every time you start a new session. You will not need to repeat this step in future labs.
 
 
 # Step 1: Retrieve Census Variables

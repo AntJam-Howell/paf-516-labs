@@ -3087,7 +3087,8 @@ vertical-align: -.125em;
     <h2 id="toc-title">Steps</h2>
    
   <ul>
-  <li><a href="#step-1-retrieve-census-variables" id="toc-step-1-retrieve-census-variables" class="nav-link active" data-scroll-target="#step-1-retrieve-census-variables">Step 1: Retrieve Census Variables</a></li>
+  <li><a href="#step-0-get-a-us-census-api-key" id="toc-step-0-get-a-us-census-api-key" class="nav-link active" data-scroll-target="#step-0-get-a-us-census-api-key">Step 0: Get a US Census API Key</a></li>
+  <li><a href="#step-1-retrieve-census-variables" id="toc-step-1-retrieve-census-variables" class="nav-link" data-scroll-target="#step-1-retrieve-census-variables">Step 1: Retrieve Census Variables</a></li>
   <li><a href="#step-2-compute-rates-and-standardize" id="toc-step-2-compute-rates-and-standardize" class="nav-link" data-scroll-target="#step-2-compute-rates-and-standardize">Step 2: Compute Rates and Standardize</a></li>
   <li><a href="#step-3-cronbachs-alpha" id="toc-step-3-cronbachs-alpha" class="nav-link" data-scroll-target="#step-3-cronbachs-alpha">Step 3: Cronbach’s Alpha</a></li>
   <li><a href="#step-4-build-the-index-and-visualize" id="toc-step-4-build-the-index-and-visualize" class="nav-link" data-scroll-target="#step-4-build-the-index-and-visualize">Step 4: Build the Index and Visualize</a></li>
@@ -3175,13 +3176,23 @@ How to use this file
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">#      installr::install.Rtools()</span></span>
 <span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">#    Then restart RStudio and try rendering again.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<section id="step-0-get-a-us-census-api-key" class="level1">
+<h1>Step 0: Get a US Census API Key</h1>
+<p>Every lab in this course pulls data directly from the <strong>US Census Bureau’s API</strong> (Application Programming Interface). The Census API is a free public service that lets programs — including R packages like <code>tidycensus</code> — request specific tables, geographies, and years of data on demand, instead of downloading bulk files manually. Think of it as a direct pipeline between your R session and the Census Bureau’s data warehouse.</p>
+<p>To use the API you need a <strong>key</strong> — a short text string that identifies you as an authorized user. The key is free, has no usage limits for our purposes, and only needs to be set up once. Without it, every <code>get_acs()</code> call in this course will fail.</p>
+<p><strong>Setup (one time only):</strong></p>
+<ol type="1">
+<li>Go to <a href="https://api.census.gov/data/key_signup.html" class="uri">https://api.census.gov/data/key_signup.html</a> and request a key. You will receive it by email within a few minutes.</li>
+<li>In your <strong>RStudio Console</strong> (not in this QMD), run the following line, replacing the placeholder with your actual key:</li>
+</ol>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get a free Census API key at: https://api.census.gov/data/key_signup.html</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># After receiving your key by email, run this line ONCE in the RStudio console:</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># census_api_key(&quot;YOUR_KEY_HERE&quot;, install = TRUE)</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Then restart R: Session → Restart R</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># You only need to do this once — the key is saved to your .Renviron file.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">census_api_key</span>(<span class="st">&quot;YOUR_KEY_HERE&quot;</span>, <span class="at">install =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<ol start="3" type="1">
+<li>Restart R: <strong>Session → Restart R</strong>.</li>
+</ol>
+<p>That’s it. The <code>install = TRUE</code> argument saves the key to a file called <code>.Renviron</code> in your home directory, so R will load it automatically every time you start a new session. You will not need to repeat this step in future labs.</p>
+</section>
 <section id="step-1-retrieve-census-variables" class="level1">
 <h1>Step 1: Retrieve Census Variables</h1>
 <p>We build an <strong>Economic Hardship Index</strong> from 5 computed rates at the Arizona tract level. Each rate requires a numerator/denominator pair from the ACS, so the variable list contains 10 census codes — but they collapse into 5 measures: poverty rate, unemployment rate, no high school diploma rate, no health insurance rate, and median income.</p>
