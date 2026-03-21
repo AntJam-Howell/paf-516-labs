@@ -64,35 +64,20 @@ library(patchwork)
 #| label: build-tools
 #| eval: false
 # ── TROUBLESHOOTING: If packages fail to install ───────────────────────────
-# If one or more packages fail to install (for example, spdep, sf, or other
-# dependencies), try the following steps in order.
+# If one or more packages fail to install, try the following steps in order.
 #
-# 1) Update R and RStudio, restart your computer, and try rendering again.
-#    This is often the easiest fix if your copy of R or RStudio is old.
+# 1) Check your RStudio project and working directory (all users).
+#    RStudio can default to an old or incorrect project folder, which causes
+#    package installation to fail. Fix by creating a new RStudio project:
+#      File → New Project → Existing Directory → navigate to your PAF516/Lab1/ folder
+#    Then re-run the packages chunk and try rendering again.
 #
-#    Update R:
-#      Windows — run in your RStudio Console:
-#        install.packages("installr")
-#        installr::updateR()
-#      Mac — download the latest R from: https://cran.r-project.org/bin/macosx/
-#
-#    Update RStudio:
-#      Windows and Mac — go to Help → Check for Updates in RStudio
-#
-# 2) If package installation still fails on Windows, install Rtools.
+# 2) Windows only — install Rtools.
+#    Rtools provides the compiler needed to build some R packages from source.
 #    Run these two lines in your RStudio Console:
 #      install.packages("installr")
 #      installr::install.Rtools()
-#
-# 3) If package installation still fails on Mac, install Xcode Command Line Tools.
-#    Open Terminal (Applications → Utilities → Terminal) and run:
-#      xcode-select --install
-#
-# 4) If Xcode Command Line Tools are already installed and installation still fails,
-#    install GNU Fortran (gfortran), required by some packages on macOS.
-#    Download from: https://mac.r-project.org/tools/
-#
-# After completing any step above, restart RStudio and try rendering again.
+#    Then restart RStudio and try rendering again.
 ```
 
 ```{r}
