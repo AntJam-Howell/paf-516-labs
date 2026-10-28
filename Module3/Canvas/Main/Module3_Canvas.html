@@ -22,7 +22,7 @@
     <li>Conduct <strong>buffer analysis</strong> using <code style="background:#f0e8eb;padding:1px 5px;border-radius:3px;font-size:13px;">st_buffer()</code> to measure proximity to spatial features</li>
     <li>Recognize the <strong>Uncertain Geographic Context Problem (UGCoP)</strong> and explain how buffer distance choices affect analytical conclusions</li>
     <li>Frame spatial analysis within an <strong>environmental justice</strong> context, connecting proximity to environmental burdens with socioeconomic hardship</li>
-    <li>Create an <strong>enriched economic hardship index</strong> that incorporates spatial access variables alongside census demographics</li>
+    <li>Test the environmental justice hypothesis with a <strong>distance-decay analysis</strong> that relates economic hardship to distance from environmental facilities</li>
   </ul>
 </div>
 
@@ -132,7 +132,7 @@
     <p style="margin:0;line-height:1.6;">Report results at <strong>multiple buffer distances</strong> and note where conclusions are stable vs. threshold-sensitive. A result that holds at 0.5, 1.0, and 1.5 miles is far more credible than one that only appears at a single distance.</p>
   </div>
   <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">UGCoP in the Lab</h4>
-  <p style="margin:0;line-height:1.6;">In Lab 3, Q2 asks you to change the buffer from 1 mile to 0.5 miles and compare results. This is a direct application of UGCoP: you are testing whether the conclusion that &ldquo;certain block groups are near facilities&rdquo; is sensitive to the distance threshold. If the enriched economic hardship index changes substantially at 0.5 miles, UGCoP is at work.</p>
+  <p style="margin:0;line-height:1.6;">In Lab 3, Step 8 computes mean hardship inside versus outside 0.5-, 1-, and 2-mile buffers around environmental facilities, and Q3 asks whether the inside-versus-outside gap is consistent across those three distances. This is a direct application of UGCoP: you are testing whether the conclusion that &ldquo;high-hardship block groups are near facilities&rdquo; is sensitive to the distance threshold. If the gap shrinks or reverses at one threshold, UGCoP is at work.</p>
 </div>
 
 <!-- ── Section 4 ─────────────────────────────────────────────── -->
@@ -156,7 +156,7 @@
     <li><strong>Confounding by land use</strong>: Industrial zones concentrate both facilities and lower-cost housing, which independently attracts lower-income residents; separating siting effects from residential sorting requires longitudinal data (Mohai &amp; Saha, 2015)</li>
   </ul>
   <h4 style="color:#8C1D40;font-size:14px;font-weight:700;margin:0 0 8px;">EJScreen</h4>
-  <p style="margin:0;line-height:1.6;">The EPA&rsquo;s EJScreen tool &mdash; now maintained by the Open Environmental Data Project after EPA removed it in 2025 &mdash; operationalizes cumulative burden analysis at the census block group level. It combines 11 environmental indicators (air quality, proximity to Superfund sites, wastewater discharge, etc.) with 6 demographic indicators to produce a composite score. The <strong>enriched economic hardship index</strong> you build in Lab 3 applies the same logic at a smaller scale.</p>
+  <p style="margin:0;line-height:1.6;">The EPA&rsquo;s EJScreen tool &mdash; now maintained by the Open Environmental Data Project after EPA removed it in 2025 &mdash; operationalizes cumulative burden analysis at the census block group level. It combines 11 environmental indicators (air quality, proximity to Superfund sites, wastewater discharge, etc.) with 6 demographic indicators to produce a composite score. The <strong>distance-decay analysis</strong> you run in Lab 3 applies the same logic at a smaller scale: it asks whether economic hardship rises as distance to environmental facilities falls.</p>
 </div>
 
 <!-- ── Readings ─────────────────────────────────────────────── -->

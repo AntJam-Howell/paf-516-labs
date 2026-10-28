@@ -39,7 +39,7 @@ After completing this module, you will be able to:
 - Conduct **buffer analysis** using `st_buffer()` to measure proximity to spatial features
 - Recognize the **Uncertain Geographic Context Problem (UGCoP)** and explain how buffer distance choices affect analytical conclusions
 - Frame spatial analysis within an **environmental justice** context, connecting proximity to environmental burdens with socioeconomic hardship
-- Create an **enriched economic hardship index** that incorporates spatial access variables alongside census demographics
+- Test the environmental justice hypothesis with a **distance-decay analysis** that relates economic hardship to distance from environmental facilities
 
 :::
 
@@ -143,7 +143,7 @@ When you report that a certain percentage of high-hardship block groups fall wit
 
 ### UGCoP in the Lab
 
-In Lab 3, Q2 asks you to change the buffer from 1 mile to 0.5 miles and compare results. This is a direct application of UGCoP: you are testing whether the conclusion that "certain block groups are near facilities" is sensitive to the distance threshold. If the enriched economic hardship index changes substantially at 0.5 miles, UGCoP is at work.
+In Lab 3, Step 8 computes mean hardship inside versus outside 0.5-, 1-, and 2-mile buffers around environmental facilities, and Q3 asks whether the inside-versus-outside gap is consistent across those three distances. This is a direct application of UGCoP: you are testing whether the conclusion that "high-hardship block groups are near facilities" is sensitive to the distance threshold. If the gap shrinks or reverses at one threshold, UGCoP is at work.
 
 :::
 
@@ -174,7 +174,7 @@ Every analytic choice in an EJ study carries implications for the conclusions:
 
 ### EJScreen
 
-The EPA's EJScreen tool — now maintained by the Open Environmental Data Project after EPA removed it in 2025 — operationalizes cumulative burden analysis at the census block group level. It combines 11 environmental indicators (air quality, proximity to Superfund sites, wastewater discharge, etc.) with 6 demographic indicators to produce a composite score. The **enriched economic hardship index** you build in Lab 3 applies the same logic at a smaller scale.
+The EPA's EJScreen tool — now maintained by the Open Environmental Data Project after EPA removed it in 2025 — operationalizes cumulative burden analysis at the census block group level. It combines 11 environmental indicators (air quality, proximity to Superfund sites, wastewater discharge, etc.) with 6 demographic indicators to produce a composite score. The **distance-decay analysis** you run in Lab 3 applies the same logic at a smaller scale: it asks whether economic hardship rises as distance to environmental facilities falls.
 
 :::
 

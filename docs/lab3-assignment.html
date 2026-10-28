@@ -142,7 +142,7 @@
     <h2>Assignment Workflow</h2>
     <div class="callout important">
       <div class="callout-title">This file is identical to the tutorial</div>
-      The pre-filled code (Steps 1&ndash;9) produces the same output as the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately and see the same results. If you placed it in a different location, run the <code>packages</code> chunk first, then knit.
+      The pre-filled code (Steps 1&ndash;8) produces the same output as the tutorial. If this file is in the same folder as your tutorial QMD, you can knit immediately and see the same results. If you placed it in a different location, run the <code>packages</code> chunk first, then knit.
     </div>
     <div class="callout tip">
       <div class="callout-title">Need a Census API key?</div>
@@ -161,14 +161,14 @@
         <div class="step-num">2</div>
         <div class="step-body">
           <h4>Knit the file first</h4>
-          <p>Press <strong>Cmd+Shift+K</strong> (Mac) or <strong>Ctrl+Shift+K</strong> (PC). Steps 1&ndash;9 render automatically. Review the output &mdash; these are the results you will interpret for Q1.</p>
+          <p>Press <strong>Cmd+Shift+K</strong> (Mac) or <strong>Ctrl+Shift+K</strong> (PC). Steps 1&ndash;8 render automatically. Review the Step 7 distance-decay charts and the Step 8 buffer comparison &mdash; these are the results you will interpret for Q1 and Q3.</p>
         </div>
       </div>
       <div class="workflow-step">
         <div class="step-num">3</div>
         <div class="step-body">
           <h4>Answer the three questions</h4>
-          <p><strong>Q1:</strong> Interpret the ICC and scale sensitivity results (text, 3 parts). <strong>Q2:</strong> Change the buffer distance to 0.5 miles by filling in the scaffold chunks at the end of the file (code). <strong>Q3:</strong> Compare the two buffer distances (text). Re-knit after completing Q2.</p>
+          <p><strong>Q1:</strong> Interpret the distance-decay pattern and the environmental justice finding (text, 2 parts). <strong>Q2:</strong> Re-run the distance-decay analysis with finer distance bands by filling in the scaffold chunks at the end of the file (code). <strong>Q3:</strong> Compare the band patterns, interpret the multi-buffer UGCoP table, and make a policy recommendation (text, 3 parts). Re-knit after completing Q2.</p>
         </div>
       </div>
       <div class="workflow-step">
@@ -188,15 +188,14 @@
     <div class="question-card">
       <div class="question-header">
         <span class="q-num">Q1</span>
-        <span class="q-title">Interpret the ICC and Scale Sensitivity</span>
+        <span class="q-title">Interpret the Distance-Decay Pattern</span>
         <span class="q-type">Text answer &mdash; no code required</span>
       </div>
       <div class="question-body">
-        <p>After knitting, answer the following three parts:</p>
+        <p>After knitting, review the Step 7&ndash;8 charts and answer the following two parts:</p>
         <ul>
-          <li><strong>1a.</strong> What is the ICC for the Maricopa County hardship index? Based on the interpretation table in Module 3, does aggregating to tract level lose meaningful variation?</li>
-          <li><strong>1b.</strong> Looking at the block group vs. tract maps in Step 3, where do you see the biggest differences? Name a specific area where the block group map reveals something the tract map hides.</li>
-          <li><strong>1c.</strong> If you were advising a city agency on where to target services, would you recommend block group or tract geography? Justify using the ICC result.</li>
+          <li><strong>Distance-decay:</strong> Describe the pattern in Step 7. Does mean hardship decrease as distance from facilities increases? Is the pattern strong or weak? Are there any unexpected reversals?</li>
+          <li><strong>EJ interpretation:</strong> Do the maps and distance-decay chart support the environmental justice hypothesis &mdash; that lower-income communities bear disproportionate proximity to environmental hazards? Cite specific numbers from the decay table in your answer.</li>
         </ul>
         <p>Replace the placeholder text in the Q1 section. A few sentences per bullet is sufficient.</p>
       </div>
@@ -205,15 +204,15 @@
     <div class="question-card">
       <div class="question-header">
         <span class="q-num">Q2</span>
-        <span class="q-title">Modify: Change Buffer Distance to 0.5 Miles</span>
+        <span class="q-title">Modify: Use Finer Distance Bands</span>
         <span class="q-type">Code + output required</span>
       </div>
       <div class="question-body">
-        <p>Change the buffer distance from 1 mile (5,280 feet) to <strong>0.5 miles (2,640 feet)</strong>:</p>
+        <p>Re-run the Step 7 distance-decay analysis with <strong>finer distance bands</strong>: <code>&lt; 0.25 mi</code>, <code>0.25&ndash;0.5 mi</code>, <code>0.5&ndash;1 mi</code>, <code>1&ndash;2 mi</code>, <code>&gt; 2 mi</code>.</p>
         <ul>
-          <li>Re-run Steps 7, 8, and 9 with the new buffer distance</li>
-          <li>Three scaffold chunks are provided: <code>q2-half-mile-buffer</code>, <code>q2-enriched-index</code>, and <code>q2-maps</code></li>
-          <li>Recompute the enriched index and regenerate the comparative maps</li>
+          <li>Two scaffold chunks are provided at the end of the file: <code>q2-fine-bands</code> and <code>q2-decay-plot</code></li>
+          <li>Copy the <code>cbg_decay</code> and <code>decay_summary</code> code from Step 7, then change the <code>breaks</code> in <code>cut()</code> to <code>c(0, 0.25, 0.5, 1.0, 2.0, Inf)</code> and update the <code>labels</code></li>
+          <li>Regenerate the hardship and poverty decay bar charts using the new summary</li>
         </ul>
       </div>
     </div>
@@ -221,15 +220,15 @@
     <div class="question-card">
       <div class="question-header">
         <span class="q-num">Q3</span>
-        <span class="q-title">Interpret the Buffer Sensitivity</span>
+        <span class="q-title">Interpret Buffer Sensitivity (UGCoP)</span>
         <span class="q-type">Text answer &mdash; no code required</span>
       </div>
       <div class="question-body">
-        <p>Compare the 1-mile and 0.5-mile enriched index results:</p>
+        <p>Answer the following three parts:</p>
         <ul>
-          <li>Did Cronbach&rsquo;s alpha improve or weaken when you changed from 1 mile to 0.5 miles? What does this tell you about how well the 0.5-mile proximity variable fits the hardship construct?</li>
-          <li>How sensitive are the results to buffer distance? Where do the two maps disagree most?</li>
-          <li>Buffer distance sensitivity is a form of MAUP. Drawing on the Module 3 readings, what steps would you take to make your buffer distance choice more defensible?</li>
+          <li><strong>Decay comparison:</strong> How does the finer-band pattern (Q2) compare to the original 5-band version (Step 7)? Did breaking <code>&lt; 0.5 mi</code> into two sub-bands reveal anything new about the very nearest block groups?</li>
+          <li><strong>UGCoP:</strong> Look at the multi-buffer comparison table from Step 8. Is the gap between inside and outside buffer consistent across the three distances (0.5, 1.0, 2.0 miles), or does it shrink or change at one threshold? What does this tell you about the Uncertain Geographic Context Problem?</li>
+          <li><strong>Policy recommendation:</strong> If you were advising a city agency on which block groups to prioritize for environmental remediation funding, what buffer distance would you recommend &mdash; and why? Drawing on Kwan (2012) and Maantay (2002), how would you defend that choice?</li>
         </ul>
       </div>
     </div>
