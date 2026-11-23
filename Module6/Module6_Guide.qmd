@@ -191,7 +191,9 @@ High-hardship islands within low-hardship areas. These communities are spatially
 
 - Galster, G. (2012). The mechanism(s) of neighbourhood effects: Theory, evidence, and policy implications. In M. van Ham et al. (Eds.), *Neighbourhood Effects Research: New Perspectives* (pp. 23–56). Springer. — Systematic review of how neighborhood conditions affect resident outcomes; essential theoretical grounding for interpreting trajectory maps.
 
-- Sampson, R. J. (2012). *Great American City: Chicago and the Enduring Neighborhood Effect*. University of Chicago Press. — Chapter 3 ("The Durable Effects of Concentrated Poverty") — The definitive account of why persistent hot spots are not just correlated with poverty but causally amplify it; motivates the distinction between persistent and emerging hot spots.
+- Sampson, R. J. (2012). *Great American City: Chicago and the Enduring Neighborhood Effect*. University of Chicago Press. — Chapter 5 ("Legacies of Inequality") — Examines long-term neighborhood inequality in Chicago, including persistent poverty and segregation. Shows that neighborhood disadvantage tends to reproduce itself across decades, which is the substantive basis for treating persistent hot spots as structurally different from emerging ones.
+
+- Delmelle, E. C. (2017). Differentiating pathways of neighborhood change in 50 U.S. metropolitan areas. *Environment and Planning A: Economy and Space*, 49(10), 2402–2424. [DOI](https://doi.org/10.1177/0308518X17722564) — Examines long-term (1980–2010) neighborhood socioeconomic trajectories across 50 metros and their spatial clustering; a large-scale empirical counterpart to the trajectory classification in Lab 6.
 
 - Ellen, I. G., & Turner, M. A. (1997). Does neighborhood matter? Assessing recent evidence. *Housing Policy Debate*, 8(4), 833–866. — Classic review establishing that neighborhood context matters for outcomes independently of individual characteristics; justifies place-based policy targeting.
 
